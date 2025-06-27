@@ -2,15 +2,20 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation'; // 导入 useRouter
+import { Session, User, AuthError } from '@supabase/supabase-js';
+import { createClientComponentClient } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
-  signOut: () => Promise<void>;
+  error: string | null;
+  signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signOut: () => Promise<{ error: AuthError | null }>;
+  resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
+  clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,51 +24,198 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter(); // 初始化 useRouter
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  
+  // 创建 Supabase 客户端实例
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
-    // 监听认证状态变化
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user || null);
-      setLoading(false);
-
-      // 根据认证事件进行重定向
-      if (_event === 'SIGNED_OUT') {
-        router.push('/auth'); // 用户登出时重定向到登录页
-      } else if (_event === 'SIGNED_IN' || _event === 'INITIAL_SESSION') {
-        // 如果用户已登录且当前在认证页面，则重定向到仪表盘
-        if (window.location.pathname === '/auth') {
-          router.push('/dashboard'); // 假设你的仪表盘路由是 /dashboard
-        }
-      }
-    });
+    let mounted = true; // 防止内存泄漏的标志
 
     // 获取初始会话
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user || null);
-      setLoading(false);
-    });
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!mounted) return; // 组件已卸载，忽略结果
+        
+        if (error) {
+          console.error('获取会话时出错:', error);
+          setError(error.message);
+        } else {
+          setSession(session);
+          setUser(session?.user || null);
+        }
+      } catch (err) {
+        if (!mounted) return;
+        console.error('获取会话时发生异常:', err);
+        setError('获取会话时发生未知错误');
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
 
-    // 清理订阅
+    getInitialSession();
+
+    // 监听认证状态变化
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+
+        console.log('认证状态变化:', event, session?.user?.email);
+        
+        setSession(session);
+        setUser(session?.user || null);
+        setLoading(false);
+        setError(null); // 清除之前的错误
+
+        // 根据认证事件进行重定向
+        if (event === 'SIGNED_OUT') {
+          router.push('/auth');
+        } else if (event === 'SIGNED_IN') {
+          // 如果用户已登录且当前在认证页面，则重定向到仪表盘
+          if (window.location.pathname === '/auth') {
+            router.push('/dashboard');
+          }
+        } else if (event === 'INITIAL_SESSION' && session) {
+          // 初始会话存在且当前在认证页面，重定向到仪表盘
+          if (window.location.pathname === '/auth') {
+            router.push('/dashboard');
+          }
+        }
+      }
+    );
+
+    // 清理函数
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, [router]); // 将 router 添加到依赖数组
+  }, [router, supabase.auth]);
 
-  const signOut = async () => {
+  // 注册函数
+  const signUp = async (email: string, password: string) => {
     setLoading(true);
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      console.error('Error signing out:', error.message);
+    setError(null);
+    
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+      
+      if (error) {
+        setError(error.message);
+      }
+      
+      return { error };
+    } catch (err) {
+      console.error('注册时发生异常:', err);
+      const errorMessage = '注册时发生未知错误';
+      setError(errorMessage);
+      return { error: new Error(errorMessage) as AuthError };
+    } finally {
       setLoading(false);
     }
-    // onAuthStateChange 会自动处理 session/user 为 null 并重定向
+  };
+
+  // 登录函数
+  const signIn = async (email: string, password: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        setError(error.message);
+      }
+      
+      return { error };
+    } catch (err) {
+      console.error('登录时发生异常:', err);
+      const errorMessage = '登录时发生未知错误';
+      setError(errorMessage);
+      return { error: new Error(errorMessage) as AuthError };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 登出函数
+  const signOut = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        setError(error.message);
+      }
+      
+      return { error };
+    } catch (err) {
+      console.error('登出时发生异常:', err);
+      const errorMessage = '登出时发生未知错误';
+      setError(errorMessage);
+      return { error: new Error(errorMessage) as AuthError };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 重置密码函数
+  const resetPassword = async (email: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`
+      });
+      
+      if (error) {
+        setError(error.message);
+      }
+      
+      return { error };
+    } catch (err) {
+      console.error('重置密码时发生异常:', err);
+      const errorMessage = '重置密码时发生未知错误';
+      setError(errorMessage);
+      return { error: new Error(errorMessage) as AuthError };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 清除错误函数
+  const clearError = () => setError(null);
+
+  const value = {
+    session,
+    user,
+    loading,
+    error,
+    signUp,
+    signIn,
+    signOut,
+    resetPassword,
+    clearError
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, loading, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
