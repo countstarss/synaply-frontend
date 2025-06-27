@@ -74,7 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // 根据认证事件进行重定向
         if (event === 'SIGNED_OUT') {
-          router.push('/auth');
+          // 退出登录后重定向到首页，让用户选择是否重新登录
+          router.push('/');
         } else if (event === 'SIGNED_IN') {
           // 如果用户已登录且当前在认证页面，则重定向到仪表盘
           if (window.location.pathname === '/auth') {

@@ -15,7 +15,9 @@ import {
   AlertCircle,
   Zap
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 type AuthMode = 'login' | 'register' | 'reset';
 
@@ -28,6 +30,7 @@ export default function AuthPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
   const { signIn, signUp, resetPassword, error, clearError, loading } = useAuth();
+  const t = useTranslations();
 
   // 清除错误信息当切换模式时
   useEffect(() => {
@@ -47,7 +50,7 @@ export default function AuthPage() {
     e.preventDefault();
     
     if (!email || (!password && mode !== 'reset')) {
-      setMessage({ type: 'error', text: '请填写所有必填字段' });
+      setMessage({ type: 'error', text: t('auth.fillAllFields') });
       return;
     }
 
@@ -62,14 +65,14 @@ export default function AuthPage() {
         case 'login':
           result = await signIn(email, password);
           if (!result.error) {
-            setMessage({ type: 'success', text: '登录成功！正在跳转...' });
+            setMessage({ type: 'success', text: t('auth.loginSuccess') });
           }
           break;
           
         case 'register':
           result = await signUp(email, password);
           if (!result.error) {
-            setMessage({ type: 'success', text: '注册成功！请检查您的邮箱确认账户。' });
+            setMessage({ type: 'success', text: t('auth.registerSuccess') });
             setMode('login');
           }
           break;
@@ -77,7 +80,7 @@ export default function AuthPage() {
         case 'reset':
           result = await resetPassword(email);
           if (!result.error) {
-            setMessage({ type: 'success', text: '密码重置邮件已发送！请检查您的邮箱。' });
+            setMessage({ type: 'success', text: t('auth.resetEmailSent') });
             setMode('login');
           }
           break;
@@ -106,8 +109,26 @@ export default function AuthPage() {
   const currentError = error || (message?.type === 'error' ? message.text : null);
   const currentSuccess = message?.type === 'success' ? message.text : null;
 
+  const getModeTitle = () => {
+    switch (mode) {
+      case 'login':
+        return t('auth.welcomeBack');
+      case 'register':
+        return t('auth.createAccount');
+      case 'reset':
+        return t('auth.resetPassword');
+      default:
+        return t('auth.welcomeBack');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* 语言切换器 - 固定在右上角 */}
+      <div className="absolute top-4 right-4 z-20">
+        <LanguageSwitcher />
+      </div>
+
       {/* 背景动画效果 */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-green-500 rounded-full filter blur-3xl animate-pulse"></div>
@@ -140,9 +161,7 @@ export default function AuthPage() {
             </motion.h1>
             
             <motion.p variants={fadeInUp} className="text-gray-400">
-              {mode === 'login' && '欢迎回来'}
-              {mode === 'register' && '创建您的账户'}
-              {mode === 'reset' && '重置您的密码'}
+              {getModeTitle()}
             </motion.p>
           </motion.div>
 
@@ -180,7 +199,7 @@ export default function AuthPage() {
               {/* 邮箱输入 */}
               <motion.div variants={fadeInUp}>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  邮箱地址
+                  {t('auth.emailAddress')}
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -199,7 +218,7 @@ export default function AuthPage() {
               {mode !== 'reset' && (
                 <motion.div variants={fadeInUp}>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    密码
+                    {t('auth.password')}
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -242,9 +261,9 @@ export default function AuthPage() {
                     {mode === 'register' && <User className="w-5 h-5" />}
                     {mode === 'reset' && <Mail className="w-5 h-5" />}
                     
-                    {mode === 'login' && '登录'}
-                    {mode === 'register' && '注册'}
-                    {mode === 'reset' && '发送重置邮件'}
+                    {mode === 'login' && t('auth.signIn')}
+                    {mode === 'register' && t('auth.signUp')}
+                    {mode === 'reset' && t('auth.sendResetEmail')}
                     
                     <ArrowRight className="w-4 h-4" />
                   </>
@@ -265,7 +284,7 @@ export default function AuthPage() {
                   onClick={() => setMode('register')}
                   className="text-gray-400 hover:text-green-400 transition-colors text-sm"
                 >
-                  没有账户？<span className="font-semibold">立即注册</span>
+                  {t('auth.noAccount')} <span className="font-semibold">{t('auth.registerNow')}</span>
                 </button>
                 <br />
                 <button
@@ -273,7 +292,7 @@ export default function AuthPage() {
                   onClick={() => setMode('reset')}
                   className="text-gray-400 hover:text-green-400 transition-colors text-sm"
                 >
-                  忘记密码？
+                  {t('auth.forgotPassword')}
                 </button>
               </>
             )}
@@ -284,7 +303,7 @@ export default function AuthPage() {
                 onClick={() => setMode('login')}
                 className="text-gray-400 hover:text-green-400 transition-colors text-sm"
               >
-                已有账户？<span className="font-semibold">立即登录</span>
+                {t('auth.hasAccount')} <span className="font-semibold">{t('auth.loginNow')}</span>
               </button>
             )}
             
@@ -294,7 +313,7 @@ export default function AuthPage() {
                 onClick={() => setMode('login')}
                 className="text-gray-400 hover:text-green-400 transition-colors text-sm"
               >
-                返回<span className="font-semibold">登录页面</span>
+                {t('auth.backToLogin')}
               </button>
             )}
           </motion.div>
@@ -307,7 +326,7 @@ export default function AuthPage() {
           transition={{ delay: 0.5 }}
           className="text-center mt-8 text-gray-500 text-sm"
         >
-          © 2024 Synaply. 保留所有权利.
+          {t('home.copyright')}
         </motion.div>
       </motion.div>
     </div>
