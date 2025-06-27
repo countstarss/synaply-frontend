@@ -1,3 +1,6 @@
+'use client';
+
+import { supabase } from '@/lib/supabase';
 import React from 'react';
 
 
@@ -5,7 +8,13 @@ const DashboardPage = () => {
   
 
   return (
-    <div>DashboardPage</div>
+    <div>
+      <button onClick={() => {
+        supabase.auth.signOut();
+      }}>
+        Sign Out
+      </button>
+    </div>
   );
 };
 

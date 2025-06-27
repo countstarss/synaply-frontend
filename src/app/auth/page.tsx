@@ -59,27 +59,27 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
+      <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md border border-gray-700">
+        <h1 className="text-3xl font-bold mb-8 text-center text-green-400">
           {isLogin ? '登录' : '注册'}
         </h1>
 
         {message && (
-          <div className="mb-4 p-3 rounded-md bg-blue-100 text-blue-700">
+          <div className="mb-4 p-3 rounded-md bg-green-900 text-white">
             {message}
           </div>
         )}
 
         <form onSubmit={isLogin ? handleLogin : handleSignUp}>
           <div className="mb-4">
-            <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
+            <label htmlFor="email" className="block text-gray-300 text-sm font-bold mb-2">
               邮箱
             </label>
             <input
               type="email"
               id="email"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow appearance-none border border-gray-600 rounded w-full py-2 px-3 bg-gray-700 text-white leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-green-500 placeholder-gray-400"
               placeholder="your@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -87,13 +87,13 @@ export default function AuthPage() {
             />
           </div>
           <div className="mb-6">
-            <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
+            <label htmlFor="password" className="block text-gray-300 text-sm font-bold mb-2">
               密码
             </label>
             <input
               type="password"
               id="password"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
+              className="shadow appearance-none border border-gray-600 rounded w-full py-2 px-3 bg-gray-700 text-white mb-3 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-green-500 placeholder-gray-400"
               placeholder="********"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -103,14 +103,14 @@ export default function AuthPage() {
           <div className="flex items-center justify-between">
             <button
               type="submit"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:shadow-outline transition duration-200"
             >
               {isLogin ? '登录' : '注册'}
             </button>
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
+              className="inline-block align-baseline font-bold text-sm text-green-400 hover:text-green-500 transition duration-200"
             >
               {isLogin ? '没有账号？注册' : '已有账号？登录'}
             </button>
@@ -118,11 +118,11 @@ export default function AuthPage() {
         </form>
 
         {isLogin && (
-          <div className="mt-4 text-center">
+          <div className="mt-6 text-center">
             <button
               type="button"
               onClick={handleResetPassword}
-              className="inline-block align-baseline font-bold text-sm text-gray-500 hover:text-gray-800"
+              className="inline-block align-baseline font-bold text-sm text-gray-400 hover:text-gray-300 transition duration-200"
             >
               忘记密码？
             </button>
@@ -135,7 +135,7 @@ export default function AuthPage() {
             <button
               type="button"
               onClick={handleChangePassword}
-              className="inline-block align-baseline font-bold text-sm text-gray-500 hover:text-gray-800"
+              className="inline-block align-baseline font-bold text-sm text-gray-400 hover:text-gray-300 transition duration-200"
             >
               修改密码 (通过邮件链接)
             </button>
