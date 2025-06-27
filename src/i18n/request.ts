@@ -1,6 +1,7 @@
 import { getRequestConfig } from 'next-intl/server';
 import { hasLocale } from 'next-intl';
 import { routing } from './routing';
+import { mergeMessages } from './merge-messages';
 
 export default getRequestConfig(async ({ requestLocale }) => {
   // 验证传入的 locale 参数
@@ -11,7 +12,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
 
   return {
     locale,
-    // 动态导入对应的消息文件
-    messages: (await import(`../../messages/${locale}.json`)).default
+    // 使用合并函数加载该语言的所有翻译文件
+    messages: await mergeMessages(locale)
   };
 }); 

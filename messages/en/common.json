@@ -1,0 +1,19 @@
+{
+  "loading": "Loading...",
+  "email": "Email",
+  "password": "Password",
+  "submit": "Submit",
+  "cancel": "Cancel",
+  "continue": "Continue",
+  "back": "Back",
+  "next": "Next",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "close": "Close",
+  "confirm": "Confirm",
+  "error": "Error",
+  "success": "Success",
+  "warning": "Warning",
+  "info": "Information"
+} 

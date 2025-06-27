@@ -1,0 +1,34 @@
+{
+  "title": "Synaplyへようこそ",
+  "subtitle": "アプリケーション向けの安全で信頼性の高いユーザー管理ソリューションを提供する現代的な認証システム",
+  "getStarted": "始める",
+  "learnMore": "詳細を見る",
+  "enterDashboard": "ダッシュボードに入る",
+  "whyChoose": "なぜSynaplyを選ぶのですか？",
+  "features": {
+    "security": {
+      "title": "セキュア認証",
+      "description": "Supabaseが提供するエンタープライズグレードのセキュリティ認証システム"
+    },
+    "performance": {
+      "title": "高性能",
+      "description": "最高のユーザーエクスペリエンスを提供するNext.jsで構築"
+    },
+    "design": {
+      "title": "現代的なデザイン",
+      "description": "様々なデバイスや画面サイズに対応するレスポンシブデザイン"
+    }
+  },
+  "systemFeatures": "システム機能",
+  "featuresList": {
+    "secureAuth": "安全なユーザー登録とログイン",
+    "passwordReset": "パスワードリセット機能",
+    "emailVerification": "メール確認",
+    "modernUI": "現代的なユーザーインターフェース",
+    "responsive": "レスポンシブデザイン",
+    "realTime": "リアルタイムステータス更新",
+    "routeProtection": "ルート保護",
+    "errorHandling": "エラーハンドリング"
+  },
+  "copyright": "© 2024 Synaply. 全著作権所有。"
+}
