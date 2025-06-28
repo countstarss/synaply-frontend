@@ -4,7 +4,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Session, User, AuthError } from '@supabase/supabase-js';
 import { createClientComponentClient } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from '@/i18n/navigation';
+import { useLocale } from 'next-intl';
 
 interface AuthContextType {
   session: Session | null;
@@ -26,6 +27,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
+  const locale = useLocale();
   
   // 创建 Supabase 客户端实例
   const supabase = createClientComponentClient();
@@ -78,12 +81,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           router.push('/');
         } else if (event === 'SIGNED_IN') {
           // 如果用户已登录且当前在认证页面，则重定向到仪表盘
-          if (window.location.pathname === '/auth') {
+          if (pathname === '/auth') {
             router.push('/dashboard');
           }
         } else if (event === 'INITIAL_SESSION' && session) {
           // 初始会话存在且当前在认证页面，重定向到仪表盘
-          if (window.location.pathname === '/auth') {
+          if (pathname === '/auth') {
             router.push('/dashboard');
           }
         }
@@ -95,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [router, supabase.auth]);
+  }, [router, pathname, locale, supabase.auth]);
 
   // 注册函数
   const signUp = async (email: string, password: string) => {
@@ -107,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
+          emailRedirectTo: `${window.location.origin}${locale === 'en' ? '' : `/${locale}`}/auth/callback`
         }
       });
       
@@ -182,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`
+        redirectTo: `${window.location.origin}${locale === 'en' ? '' : `/${locale}`}/auth/reset-password`
       });
       
       if (error) {

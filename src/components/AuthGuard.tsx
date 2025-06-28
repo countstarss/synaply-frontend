@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { useAuth } from '@/context/AuthContext';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
