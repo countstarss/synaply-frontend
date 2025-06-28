@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useEffect } from 'react';
 import { 
   Zap, 
   ArrowRight, 
@@ -13,11 +14,45 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from '@/i18n/navigation';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { createClientComponentClient } from '@/lib/supabase';
 
 export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const t = useTranslations();
+  const supabase = createClientComponentClient();
+
+  // 处理OAuth回调
+  useEffect(() => {
+    const handleOAuthCallback = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      
+      if (code) {
+        try {
+          console.log('检测到OAuth回调代码，正在处理...');
+          
+          // 使用code交换session
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (error) {
+            console.error('OAuth代码交换失败:', error);
+          } else if (data?.session) {
+            console.log('OAuth登录成功！');
+            // 清除URL中的code参数
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+            // 重定向到仪表盘
+            router.push('/dashboard');
+          }
+        } catch (err) {
+          console.error('处理OAuth回调时出错:', err);
+        }
+      }
+    };
+
+    handleOAuthCallback();
+  }, [router, supabase.auth]);
 
   const handleGetStarted = () => {
     if (user) {

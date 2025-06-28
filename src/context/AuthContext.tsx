@@ -14,6 +14,7 @@ interface AuthContextType {
   error: string | null;
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signInWithGoogle: () => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<{ error: AuthError | null }>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   clearError: () => void;
@@ -100,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [router, pathname, locale, supabase.auth]);
 
-  // 注册函数
+  // MARK: 注册函数
   const signUp = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
@@ -129,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 登录函数
+  // MARK: 登录函数
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
@@ -155,7 +156,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 登出函数
+  // MARK: Google登录函数
+  const signInWithGoogle = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}${locale === 'en' ? '' : `/${locale}`}/auth/callback`
+        }
+      });
+      
+      if (error) {
+        setError(error.message);
+      }
+      
+      return { error };
+    } catch (err) {
+      console.error('Google登录时发生异常:', err);
+      const errorMessage = 'Google登录时发生未知错误';
+      setError(errorMessage);
+      return { error: new Error(errorMessage) as AuthError };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // MARK: 登出函数
   const signOut = async () => {
     setLoading(true);
     setError(null);
@@ -178,7 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 重置密码函数
+  // MARK: 重置密码函数
   const resetPassword = async (email: string) => {
     setLoading(true);
     setError(null);
@@ -203,7 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 清除错误函数
+  // MARK: 清除错误
   const clearError = () => setError(null);
 
   const value = {
@@ -213,6 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     error,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
     resetPassword,
     clearError
