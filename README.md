@@ -1,3 +1,5 @@
+npx swagger-typescript-api generate --path http://localhost:5678/api-json -o src/api -n index.ts
+
 # Synaply 认证系统
 
 基于 Next.js 和 Supabase 构建的现代化认证系统，采用炫酷的黑绿色主题设计。

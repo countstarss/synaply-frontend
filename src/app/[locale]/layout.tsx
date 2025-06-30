@@ -4,6 +4,7 @@ import { hasLocale } from 'next-intl';
 import { routing } from '@/i18n/routing';
 import { AuthProvider } from '@/context/AuthContext';
 import '@/app/globals.css';
+import { ConvexClientProvider } from '@/providers/convex-provider';
 
 export default async function LocaleLayout({
   children,
@@ -24,11 +25,13 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <body>
+      <ConvexClientProvider>
         <NextIntlClientProvider>
           <AuthProvider>
             {children}
           </AuthProvider>
         </NextIntlClientProvider>
+      </ConvexClientProvider>
       </body>
     </html>
   );
