@@ -172,9 +172,9 @@ function DashboardContent() {
             variants={fadeInUp} 
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
           >
-            {statsCards.map((stat, index) => (
+            {statsCards.map((stat) => (
               <motion.div
-                key={index}
+                key={stat.title}
                 variants={fadeInUp}
                 whileHover={{ scale: 1.02 }}
                 className="bg-gray-900/60 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 space-y-4"
@@ -198,9 +198,9 @@ function DashboardContent() {
             <h2 className="text-2xl font-bold text-white">{t('dashboard.quickActions')}</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {quickActions.map((action, index) => (
+              {quickActions.map((action) => (
                 <motion.button
-                  key={index}
+                  key={action.title}
                   variants={fadeInUp}
                   whileHover={{ scale: 1.02 }}
                   onClick={action.action}
@@ -240,7 +240,9 @@ function DashboardContent() {
             <div className="flex flex-col sm:flex-row gap-4">
               <button 
                 onClick={handleSignOut}
-                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200">
+                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200"
+                type="button"
+              >
                 <Settings className="w-5 h-5 mr-2" />
                 Sign Out
               </button>
@@ -248,6 +250,7 @@ function DashboardContent() {
               <button 
                 onClick={() => router.push('/')}
                 className="inline-flex items-center px-6 py-3 bg-gray-800/50 text-white font-semibold rounded-lg hover:bg-gray-800/70 border border-gray-700/50 transition-all duration-200"
+                type="button"
               >
                 <Home className="w-5 h-5 mr-2" />
                 {t('dashboard.returnHome')}

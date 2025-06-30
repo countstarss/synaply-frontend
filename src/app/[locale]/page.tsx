@@ -128,9 +128,10 @@ export default function HomePage() {
               <LanguageSwitcher />
               
               {!loading && (
-                <>
+                <div>
                   {user ? (
                     <button
+                      type="button"
                       onClick={() => router.push('/dashboard')}
                       className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200"
                     >
@@ -139,12 +140,14 @@ export default function HomePage() {
                   ) : (
                     <>
                       <button
+                        type="button"
                         onClick={() => router.push('/auth')}
                         className="text-gray-300 hover:text-white transition-colors"
                       >
                         {t('nav.login')}
                       </button>
                       <button
+                        type="button"
                         onClick={() => router.push('/auth')}
                         className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200"
                       >
@@ -152,7 +155,7 @@ export default function HomePage() {
                       </button>
                     </>
                   )}
-                </>
+                </div>
               )}
             </div>
           </div>
@@ -189,13 +192,17 @@ export default function HomePage() {
               <button
                 onClick={handleGetStarted}
                 disabled={loading}
+                type="button"
                 className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-green-500/50 disabled:opacity-50 transition-all duration-200 group"
               >
                 {user ? t('home.enterDashboard') : t('home.getStarted')}
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
               
-              <button className="inline-flex items-center px-8 py-4 bg-gray-800/50 text-white font-semibold rounded-lg hover:bg-gray-800/70 focus:outline-none focus:ring-2 focus:ring-gray-500/50 transition-all duration-200 border border-gray-700/50">
+              <button
+                type="button"
+                className="inline-flex items-center px-8 py-4 bg-gray-800/50 text-white font-semibold rounded-lg hover:bg-gray-800/70 focus:outline-none focus:ring-2 focus:ring-gray-500/50 transition-all duration-200 border border-gray-700/50"
+              >
                 {t('home.learnMore')}
               </button>
             </motion.div>
@@ -208,9 +215,9 @@ export default function HomePage() {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {features.map((feature, index) => (
+              {features.map((feature) => (
                 <motion.div
-                  key={index}
+                  key={feature.title}
                   variants={fadeInUp}
                   whileHover={{ scale: 1.05 }}
                   className="bg-gray-900/60 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-8 space-y-4 hover:border-green-500/30 transition-all duration-300"
@@ -229,8 +236,8 @@ export default function HomePage() {
           <motion.div variants={fadeInUp} className="bg-gray-900/60 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-8 space-y-6">
             <h3 className="text-2xl font-bold text-white">{t('home.systemFeatures')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-              {featuresList.map((feature, index) => (
-                <div key={index} className="flex items-center space-x-3">
+              {featuresList.map((feature) => (
+                <div key={feature} className="flex items-center space-x-3">
                   <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
                   <span className="text-gray-300">{feature}</span>
                 </div>

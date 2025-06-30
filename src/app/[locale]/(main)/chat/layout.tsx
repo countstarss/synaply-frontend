@@ -1,7 +1,5 @@
 "use client";
 
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
 import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -37,13 +35,11 @@ const Layout = ({ children }: LayoutProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const messages = useQuery(api.messages.list, { channelId: "public", limit: 100 });
-
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, []);
 
   if (!session) {
     return (
@@ -84,7 +80,7 @@ const Layout = ({ children }: LayoutProps) => {
                     name: "Public",
                     type: "text",
                     isOfficial: true,
-                    createdAt: new Date().getTime(),
+                    createdAt: Date.now(),
                   }}
                   icon={Hash}
                   isOfficial={true}
@@ -101,7 +97,7 @@ const Layout = ({ children }: LayoutProps) => {
                     name: channel.name,
                     type: channel.type as ChannelType,
                     isOfficial: true,
-                    createdAt: new Date().getTime(),
+                    createdAt: Date.now(),
                   }}
                   icon={channel.type === "text" ? Hash : channel.type === "voice" ? Mic : Video}
                   isOfficial={true}
@@ -123,11 +119,12 @@ const Layout = ({ children }: LayoutProps) => {
               </div>
               {Array.from({ length: 5 }).map((_, i) => (
                 <button
-                  key={i}
+                  key={`recent-chat-${i}`}
                   className={cn(
                     "group px-2 py-2 rounded-md flex items-center gap-x-2 w-full",
                     "hover:bg-zinc-700/10 dark:hover:bg-zinc-700/50 transition mb-1"
                   )}
+                  type="button"
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={`https://avatar.vercel.sh/${i}`} />
@@ -181,7 +178,7 @@ const Layout = ({ children }: LayoutProps) => {
                                 name: "Public",
                                 type: "text",
                                 isOfficial: true,
-                                createdAt: new Date().getTime(),
+                                createdAt: Date.now(),
                               }}
                               icon={Hash}
                               isOfficial={true}
@@ -191,8 +188,9 @@ const Layout = ({ children }: LayoutProps) => {
                             />
                           </Link>
                           {channels.map((channel) => (
-                            <div
+                            <button
                               key={channel._id}
+                              type="button"
                               onClick={() => setIsSidebarOpen(false)}
                             >
                               <ServerChannel
@@ -202,7 +200,7 @@ const Layout = ({ children }: LayoutProps) => {
                                   name: channel.name,
                                   type: channel.type as ChannelType,
                                   isOfficial: true,
-                                  createdAt: new Date().getTime(),
+                                  createdAt: Date.now(),
                                 }}
                                 icon={channel.type === "text" ? Hash : channel.type === "voice" ? Mic : Video}
                                 isOfficial={true}
@@ -210,7 +208,7 @@ const Layout = ({ children }: LayoutProps) => {
                                 isGroup={false}
                                 isPublic={true}
                               />
-                            </div>
+                            </button>
                           ))}
                         </div>
                       </div>
@@ -222,8 +220,9 @@ const Layout = ({ children }: LayoutProps) => {
                       >
                         <div className="p-2 space-y-2">
                           {Array.from({ length: 10 }).map((_, i) => (
-                            <div
+                            <button
                               key={i}
+                              type="button"
                               className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent"
                               onClick={() => setIsSidebarOpen(false)}
                             >
@@ -232,7 +231,7 @@ const Layout = ({ children }: LayoutProps) => {
                                 <AvatarFallback>U{i}</AvatarFallback>
                               </Avatar>
                               <span className="text-sm">用户 {i + 1}</span>
-                            </div>
+                            </button>
                           ))}
                         </div>
                       </ScrollArea>
