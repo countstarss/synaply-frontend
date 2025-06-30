@@ -17,7 +17,6 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from '@/i18n/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 function DashboardContent() {
   const { user, signOut } = useAuth();
@@ -137,10 +136,8 @@ function DashboardContent() {
 
             {/* 用户菜单 */}
             <div className="flex items-center space-x-4">
-              <LanguageSwitcher />
-              
               <div className="flex items-center space-x-3 text-gray-300">
-                <span className="hidden sm:block">{user?.email}</span>
+                <span className="hidden sm:block">{user?.email?.split("@")[0]}</span>
               </div>
             </div>
           </div>

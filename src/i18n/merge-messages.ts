@@ -9,12 +9,12 @@ import { join } from 'path';
 export async function mergeMessages(locale: string) {
   try {
     // 动态导入所有该语言下的 JSON 文件
-    const commonMessages = await import(`../../messages/${locale}/common.json`);
-    const navMessages = await import(`../../messages/${locale}/nav.json`);
-    const authMessages = await import(`../../messages/${locale}/auth.json`);
-    const homeMessages = await import(`../../messages/${locale}/home.json`);
-    const dashboardMessages = await import(`../../messages/${locale}/dashboard.json`);
-    const languageMessages = await import(`../../messages/${locale}/language.json`);
+    const commonMessages = await import(`./messages/${locale}/common.json`);
+    const navMessages = await import(`./messages/${locale}/nav.json`);
+    const authMessages = await import(`./messages/${locale}/auth.json`);
+    const homeMessages = await import(`./messages/${locale}/home.json`);
+    const dashboardMessages = await import(`./messages/${locale}/dashboard.json`);
+    const languageMessages = await import(`./messages/${locale}/language.json`);
 
     // 合并所有消息文件
     return {
@@ -46,7 +46,7 @@ export async function mergeMessagesAuto(locale: string) {
     
     for (const file of files) {
       const moduleName = file.replace('.json', '');
-      const moduleMessages = await import(`../../messages/${locale}/${file}`);
+      const moduleMessages = await import(`./messages/${locale}/${file}`);
       messages[moduleName] = moduleMessages.default;
     }
     
