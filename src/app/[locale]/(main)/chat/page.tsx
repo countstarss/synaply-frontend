@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 import { ChatRoom } from "./_components/chat/chat-room";
 
 export default function Square() {
@@ -6,7 +6,7 @@ export default function Square() {
 
   return (
     <div className="w-full flex flex-col h-full overflow-hidden">
-      <ChatRoom channelId="public" type="public"/>
+      <ChatRoom channelId="public" type="public" />
     </div>
   );
 }

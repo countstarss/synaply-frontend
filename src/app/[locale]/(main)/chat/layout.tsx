@@ -51,14 +51,17 @@ const Layout = ({ children }: LayoutProps) => {
 
   return (
     <ContextMenuWrapper>
-      <div className="h-screen flex w-full overflow-hidden">
+      <div className="h-[calc(100vh-16px)] flex w-full overflow-hidden">
         {/* 
         MARK: 用户列表侧边栏
         */}
-        <Card className={cn(
-          "hidden md:flex flex-col w-60 border-r rounded-none",
-          "dark:bg-zinc-900 bg-zinc-50 select-none"
-        )}>
+        <Card
+          className={cn(
+            "hidden md:flex flex-col w-60 rounded-none",
+            "dark:bg-zinc-900 bg-zinc-50 select-none",
+            "pt-0"
+          )}
+        >
           <div className="p-3 h-14 flex items-center border-b border-neutral-200 dark:border-neutral-800">
             <h2 className="font-semibold text-lg">Channels</h2>
           </div>
@@ -99,7 +102,13 @@ const Layout = ({ children }: LayoutProps) => {
                     isOfficial: true,
                     createdAt: Date.now(),
                   }}
-                  icon={channel.type === "text" ? Hash : channel.type === "voice" ? Mic : Video}
+                  icon={
+                    channel.type === "text"
+                      ? Hash
+                      : channel.type === "voice"
+                      ? Mic
+                      : Video
+                  }
                   isOfficial={true}
                   isPrivate={false}
                   isGroup={false}
@@ -142,7 +151,7 @@ const Layout = ({ children }: LayoutProps) => {
         {/* 
         MARK: -   侧边栏移动端
         */}
-        <Card className="flex-1 flex flex-col rounded-none">
+        <Card className="flex-1 flex flex-col rounded-none pt-0">
           {/* 顶部栏 */}
           <div className="h-14 border-b flex items-center p-4 justify-between">
             <div className="flex items-center gap-2">
@@ -150,103 +159,110 @@ const Layout = ({ children }: LayoutProps) => {
             </div>
             <div className="flex items-center gap-2">
               <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-                  <SheetTrigger asChild>
+                <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className="md:hidden">
                     <Users className="h-6 w-6" />
                   </Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="p-0 w-60">
-                    <DialogTitle>
-                      <p className="sr-only">Chat Square</p>
-                    </DialogTitle>
-                    <div
-                      className="flex flex-col h-full"
-                    // MARK: -Mobile Channel 
-                    >
-                      <div className="mt-6">
-                        <div className="flex items-center justify-between p-4 border-b">
-                          <h2 className="font-semibold">Channels</h2>
-                        </div>
-                        <div className='p-2'>
-                          <Link href="/chat"
+                </SheetTrigger>
+                <SheetContent side="right" className="p-0 w-60">
+                  <DialogTitle>
+                    <p className="sr-only">Chat Square</p>
+                  </DialogTitle>
+                  <div
+                    className="flex flex-col h-full"
+                    // MARK: -Mobile Channel
+                  >
+                    <div className="mt-6">
+                      <div className="flex items-center justify-between p-4 border-b">
+                        <h2 className="font-semibold">Channels</h2>
+                      </div>
+                      <div className="p-2">
+                        <Link
+                          href="/chat"
+                          onClick={() => setIsSidebarOpen(false)}
+                        >
+                          <ServerChannel
+                            key={"/"}
+                            channel={{
+                              _id: "/" as Id<"channels">,
+                              name: "Public",
+                              type: "text",
+                              isOfficial: true,
+                              createdAt: Date.now(),
+                            }}
+                            icon={Hash}
+                            isOfficial={true}
+                            isPrivate={false}
+                            isGroup={false}
+                            isPublic={true}
+                          />
+                        </Link>
+                        {channels.map((channel) => (
+                          <button
+                            key={channel._id}
+                            type="button"
                             onClick={() => setIsSidebarOpen(false)}
                           >
                             <ServerChannel
-                              key={"/"}
+                              key={channel._id}
                               channel={{
-                                _id: "/" as Id<"channels">,
-                                name: "Public",
-                                type: "text",
+                                _id: channel._id as Id<"channels">,
+                                name: channel.name,
+                                type: channel.type as ChannelType,
                                 isOfficial: true,
                                 createdAt: Date.now(),
                               }}
-                              icon={Hash}
+                              icon={
+                                channel.type === "text"
+                                  ? Hash
+                                  : channel.type === "voice"
+                                  ? Mic
+                                  : Video
+                              }
                               isOfficial={true}
                               isPrivate={false}
                               isGroup={false}
                               isPublic={true}
                             />
-                          </Link>
-                          {channels.map((channel) => (
-                            <button
-                              key={channel._id}
-                              type="button"
-                              onClick={() => setIsSidebarOpen(false)}
-                            >
-                              <ServerChannel
-                                key={channel._id}
-                                channel={{
-                                  _id: channel._id as Id<"channels">,
-                                  name: channel.name,
-                                  type: channel.type as ChannelType,
-                                  isOfficial: true,
-                                  createdAt: Date.now(),
-                                }}
-                                icon={channel.type === "text" ? Hash : channel.type === "voice" ? Mic : Video}
-                                isOfficial={true}
-                                isPrivate={false}
-                                isGroup={false}
-                                isPublic={true}
-                              />
-                            </button>
-                          ))}
-                        </div>
+                          </button>
+                        ))}
                       </div>
-                      <div className="p-4 border-b">
-                        <h2 className="font-semibold">Recent Chats</h2>
-                      </div>
-                      <ScrollArea className="flex-1"
-                      // MARK: -Mobile Chats
-                      >
-                        <div className="p-2 space-y-2">
-                          {Array.from({ length: 10 }).map((_, i) => (
-                            <button
-                              key={i}
-                              type="button"
-                              className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent"
-                              onClick={() => setIsSidebarOpen(false)}
-                            >
-                              <Avatar className="h-8 w-8">
-                                <AvatarImage src={`https://avatar.vercel.sh/${i}`} />
-                                <AvatarFallback>U{i}</AvatarFallback>
-                              </Avatar>
-                              <span className="text-sm">用户 {i + 1}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </ScrollArea>
                     </div>
-                  </SheetContent>
+                    <div className="p-4 border-b">
+                      <h2 className="font-semibold">Recent Chats</h2>
+                    </div>
+                    <ScrollArea
+                      className="flex-1"
+                      // MARK: -Mobile Chats
+                    >
+                      <div className="p-2 space-y-2">
+                        {Array.from({ length: 10 }).map((_, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            className="flex items-center gap-2 p-2 rounded-lg hover:bg-accent"
+                            onClick={() => setIsSidebarOpen(false)}
+                          >
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage
+                                src={`https://avatar.vercel.sh/${i}`}
+                              />
+                              <AvatarFallback>U{i}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm">用户 {i + 1}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                </SheetContent>
               </Sheet>
             </div>
           </div>
 
-          {/* 内容区域 - 移除AppTransition包装 */}
-          <div className="flex-1 overflow-hidden">
-            {children}
-          </div>
+          {/* 聊天内容区域 */}
+          <div className="flex-1 flex flex-col overflow-hidden">{children}</div>
         </Card>
-          
       </div>
     </ContextMenuWrapper>
   );

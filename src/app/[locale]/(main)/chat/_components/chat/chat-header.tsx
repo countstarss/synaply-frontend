@@ -2,7 +2,7 @@
 
 import { Hash, Users, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Channel } from "@/lib/types/convex/channel";
+import { Channel } from "@/types/convex/channel";
 import { cn } from "@/lib/utils";
 
 interface ChatHeaderProps {
@@ -13,42 +13,56 @@ interface ChatHeaderProps {
   className?: string;
 }
 
-export function ChatHeader({ 
+export function ChatHeader({
   title,
   channel,
   onMembersClick,
   onSettingsClick,
-  className
+  className,
 }: ChatHeaderProps) {
   return (
-    <div className={cn(
-      "text-md font-semibold px-3 flex items-center h-12 border-b dark:border-b-neutral-800 dark:bg-[#2B2D31] bg-white light:bg-white sticky top-0 z-10",
-      className
-    )}>
-      <div className="flex items-center gap-2">
-        <Hash className="w-5 h-5 text-zinc-400" />
+    <div
+      className={cn(
+        "flex items-center justify-between h-16 px-6 border-b",
+        "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+        "border-border/50 shrink-0",
+        className
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          className={cn(
+            "flex items-center justify-center w-8 h-8 rounded-full",
+            "bg-primary/10 text-primary"
+          )}
+        >
+          <Hash className="w-4 h-4" />
+        </div>
         <div className="flex flex-col">
-          <p className="font-semibold text-md">{title}</p>
+          <h1 className="font-semibold text-base leading-none">{title}</h1>
           {channel.isOfficial && (
-            <p className="text-xs text-zinc-400">Official Channel</p>
+            <p className="text-xs text-muted-foreground mt-1">官方频道</p>
           )}
         </div>
       </div>
-      <div className="ml-auto flex items-center gap-2">
-        <Button 
-          variant="ghost" 
+
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
           size="icon"
           onClick={onMembersClick}
+          className="h-9 w-9 rounded-full hover:bg-accent transition-colors"
         >
-          <Users className="h-5 w-5" />
+          <Users className="h-4 w-4" />
         </Button>
         {!channel.isOfficial && channel.creatorId && (
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
             onClick={onSettingsClick}
+            className="h-9 w-9 rounded-full hover:bg-accent transition-colors"
           >
-            <Settings className="h-5 w-5" />
+            <Settings className="h-4 w-4" />
           </Button>
         )}
       </div>

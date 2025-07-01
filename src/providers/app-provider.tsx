@@ -1,5 +1,5 @@
 import React from 'react';
-import { ThemeProvider } from './theme-provider';
+// import { ThemeProvider } from './theme-provider';
 import { ConvexClientProvider } from './convex-provider';
 import { NextIntlClientProvider } from 'next-intl';
 import { AuthProvider } from '@/context/AuthContext';
@@ -12,13 +12,13 @@ const AppProvider = ({ children }: AppProviderProps) => {
   
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="dark"
-      enableSystem
-      disableTransitionOnChange
-      storageKey="synaply-theme"
-    >
+    // <ThemeProvider
+    //   attribute="class"
+    //   defaultTheme="dark"
+    //   enableSystem
+    //   disableTransitionOnChange
+    //   storageKey="synaply-theme"
+    // >
       <ConvexClientProvider>
         <NextIntlClientProvider>
           <AuthProvider>
@@ -26,7 +26,7 @@ const AppProvider = ({ children }: AppProviderProps) => {
           </AuthProvider>
         </NextIntlClientProvider>
       </ConvexClientProvider>
-    </ThemeProvider>
+    // </ThemeProvider>
   );
 };
 

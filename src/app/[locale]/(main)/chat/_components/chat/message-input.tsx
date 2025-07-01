@@ -2,91 +2,102 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FileIcon, ImageIcon, Send, SquarePlus, VideoIcon } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { CirclePlus, FileIcon, ImageIcon, Send, VideoIcon } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
 
 interface MessageInputProps {
-    newMessage: string;
-    setNewMessage: (content: string) => void;
-    onHandleSend: () => void;
-    className?: string;
+  newMessage: string;
+  setNewMessage: (content: string) => void;
+  onHandleSend: () => void;
+  className?: string;
 }
 
-const MessageInput = ({ 
-    newMessage,
-    setNewMessage,
-    onHandleSend,
-    className
+const MessageInput = ({
+  newMessage,
+  setNewMessage,
+  onHandleSend,
+  className,
 }: MessageInputProps) => {
-    const [isMobile, setIsMobile] = useState(false);
-    
-    // 检测移动设备
-    useEffect(() => {
-        const checkIsMobile = () => {
-            setIsMobile(window.innerWidth < 768);
-        };
-        
-        // 初始检查
-        checkIsMobile();
-        
-        // 监听窗口大小变化
-        window.addEventListener('resize', checkIsMobile);
-        
-        return () => {
-            window.removeEventListener('resize', checkIsMobile);
-        };
-    }, []);
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-3 p-4 bg-white/2",
+        "w-full min-h-[72px]",
+        className
+      )}
+    >
+      {/* 附件按钮 */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="h-6 w-6 rounded-full text-muted-foreground hover:text-foreground transition-colors">
+            <CirclePlus className="h-6 w-6" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-48">
+          <DropdownMenuItem className="gap-2">
+            <FileIcon className="h-4 w-4" />
+            <span>添加文件</span>
+            <input
+              type="file"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              title="选择文件"
+            />
+          </DropdownMenuItem>
+          <DropdownMenuItem className="gap-2">
+            <ImageIcon className="h-4 w-4" />
+            <span>添加图片</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem className="gap-2">
+            <VideoIcon className="h-4 w-4" />
+            <span>添加视频</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-    return (
-        <div className={cn(
-            "p-4 border bg-background w-full h-20 z-10", 
-            "fixed bottom-0 md:bottom-12",
-            isMobile ? "rounded-none" : "rounded-t-lg mx-auto max-w-3xl left-0 right-0 mb-2",
-            className
-        )}>
-            <div className="flex gap-2 w-full mb-3 h-full">
-                <div className="">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger>
-                            <SquarePlus strokeWidth={1.25} className="h-10 w-10 cursor-pointer text-muted-foreground rounded-xl" />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuItem>
-                                <FileIcon className="h-4 w-4" />
-                                <span>
-                                    Add File<input type="file" className="opacity-0 w-2" />
-                                </span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <ImageIcon className="h-4 w-4" />
-                                <span>Add Picture</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <VideoIcon className="h-4 w-4" />
-                                <span>Add Video</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-                <Input
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            onHandleSend();
-                        }
-                    }}
-                    placeholder="输入消息..."
-                    className="flex-1"
-                />
-                <Button onClick={() => onHandleSend()} disabled={!newMessage.trim()}>
-                    <Send className="h-4 w-4" />
-                </Button>
-            </div>
-        </div>
-    );
+      {/* 输入框容器 */}
+      <div className="flex-1 relative">
+        <Input
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              onHandleSend();
+            }
+          }}
+          placeholder="输入消息... (Enter发送，Shift+Enter换行)"
+          className={cn(
+            "w-full pr-12 rounded-full border-2 border-border/50",
+            "focus:border-primary/50 transition-all duration-200",
+            "bg-background/50 placeholder:text-muted-foreground/70",
+            "h-12 text-sm outline-none focus:outline-none"
+          )}
+        />
+
+        {/* 发送按钮 */}
+        <Button
+          onClick={onHandleSend}
+          disabled={!newMessage.trim()}
+          size="icon"
+          className={cn(
+            "absolute right-1 top-1 h-10 w-10 rounded-full",
+            "transition-all duration-200",
+            newMessage.trim()
+              ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
+              : "bg-muted text-muted-foreground"
+          )}
+        >
+          <Send className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
 };
 
 export default MessageInput;
