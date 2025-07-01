@@ -6,7 +6,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { mainNavItems } from "@/lib/data/constant";
 import Link from "next/link";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
-import RouterIndicator from "@/components/global/RouterIndicator";
+// import RouterIndicator from "@/components/global/RouterIndicator";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/stores/sidebar";
 import TabList from "../infobar/TabList";
@@ -103,17 +103,6 @@ const InfoBar = ({ showViewToggle = true, className }: InfoBarProps) => {
                 </SheetContent>
               </Sheet>
             </div>
-          </div>
-
-          {/* 中间区域 - 路由指示器 */}
-          <div
-            className={cn(
-              "absolute left-1/2 -translate-x-1/2 transition-all duration-300",
-              "lg:flex lg:flex-row items-center hidden",
-              !isOpen && "transform translate-x-8" // 当侧边栏隐藏时，稍微向右移动
-            )}
-          >
-            <RouterIndicator />
           </div>
 
           {/* 右侧区域 */}

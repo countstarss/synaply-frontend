@@ -8,6 +8,7 @@ import {
   ListCheck,
   MessageSquareCode,
   User,
+  Settings,
 } from "lucide-react";
 
 /*
@@ -27,6 +28,7 @@ export const mainNavItems = [
   { icon: ListCheck, label: "My Task", href: "/tasks" },
   { icon: MessageSquareCode, label: "Chat", href: "/chat" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
+  { icon: Settings, label: "Settings", href: "/settings" },
 ];
 export const secondaryNavItems = [
   { icon: Layers, label: "Team", href: "/team" },
