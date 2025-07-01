@@ -12,7 +12,7 @@ import { useSidebarStore } from "@/stores/sidebar";
 import TabList from "../infobar/TabList";
 
 // InfoBar 子组件
-import ViewToggle, { defaultViews } from "../infobar/ViewToggle";
+// import ViewToggle, { defaultViews } from "../infobar/ViewToggle";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { DialogTitle } from "@/components/ui/dialog";
 
@@ -26,7 +26,7 @@ interface InfoBarProps {
 
 const InfoBar = ({ showViewToggle = true, className }: InfoBarProps) => {
   const [open, setOpen] = useState(false);
-  const [activeView, setActiveView] = useState("list");
+  // const [activeView, setActiveView] = useState("list");
   const { isOpen, toggleSidebar } = useSidebarStore();
 
   const onGetPayment = async () => {};
@@ -35,10 +35,10 @@ const InfoBar = ({ showViewToggle = true, className }: InfoBarProps) => {
     onGetPayment();
   }, []);
 
-  const handleViewChange = (viewId: string) => {
-    setActiveView(viewId);
-    // 这里可以添加视图切换逻辑
-  };
+  // const handleViewChange = (viewId: string) => {
+  //   setActiveView(viewId);
+  //   // 这里可以添加视图切换逻辑
+  // };
 
   return (
     <ContextMenuWrapper>
@@ -122,11 +122,12 @@ const InfoBar = ({ showViewToggle = true, className }: InfoBarProps) => {
 
             {/* 视图切换 */}
             {showViewToggle && (
-              <ViewToggle
-                views={defaultViews}
-                activeView={activeView}
-                onViewChange={handleViewChange}
-              />
+              // <ViewToggle
+              //   views={defaultViews}
+              //   activeView={activeView}
+              //   onViewChange={handleViewChange}
+              // />
+              <></>
             )}
           </div>
         </div>

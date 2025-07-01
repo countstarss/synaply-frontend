@@ -1,13 +1,12 @@
-
-import { notFound } from 'next/navigation';
-import { hasLocale } from 'next-intl';
-import { routing } from '@/i18n/routing';
-import '@/app/globals.css';
-import AppProvider from '@/providers/app-provider';
+import { notFound } from "next/navigation";
+import { hasLocale } from "next-intl";
+import { routing } from "@/i18n/routing";
+import "@/app/globals.css";
+import AppProvider from "@/providers/app-provider";
 
 export default async function LocaleLayout({
   children,
-  params
+  params,
 }: {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
@@ -15,19 +14,28 @@ export default async function LocaleLayout({
   // 等待 params 解析
   const { locale } = await params;
 
-  
   // 验证 locale 是否有效
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
 
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const theme = localStorage.getItem('synaply-theme') || 'light';
+                document.documentElement.classList.toggle('dark', theme === 'dark');
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
       <body>
-      <AppProvider>
-        {children}
-      </AppProvider>
+        <AppProvider>{children}</AppProvider>
       </body>
     </html>
   );
-} 
+}
