@@ -1,9 +1,13 @@
 import {
   BookAIcon,
-  Home,
+  Eye,
+  FileText,
+  FolderOpen,
   Inbox,
+  Layers,
   ListCheck,
   MessageSquareCode,
+  User,
 } from "lucide-react";
 
 /*
@@ -18,42 +22,29 @@ export const clients = [...new Array(10)].map((_, index) => ({
 MARK: - menuOptions
 */
 
-export const menuOptions: {
-  name: string;
-  Component: React.ElementType;
-  href: string;
-  published: boolean;
-}[] = [
-  {
-    name: "Home",
-    Component: Home,
-    href: "/home",
-    published: true,
-  },
-  {
-    name: "Inbox",
-    Component: Inbox,
-    href: "/inbox",
-    published: true,
-  },
-  {
-    name: "My Tasks",
-    Component: ListCheck,
-    href: "/tasks",
-    published: true,
-  },
-  {
-    name: "Chat",
-    Component: MessageSquareCode,
-    href: "/chat",
-    published: false,
-  },
-  {
-    name: "Docs",
-    Component: BookAIcon,
-    href: "/docs",
-    published: false,
-  },
+export const mainNavItems = [
+  { icon: Inbox, label: "Inbox", href: "/inbox" },
+  { icon: ListCheck, label: "My Task", href: "/tasks" },
+  { icon: MessageSquareCode, label: "Chat", href: "/chat" },
+  { icon: BookAIcon, label: "Docs", href: "/docs" },
+];
+export const secondaryNavItems = [
+  { icon: Layers, label: "Team", href: "/team" },
+  { icon: User, label: "Personal", href: "/personal" },
+];
+
+// WorkSpace 子项
+export const workspaceItems = [
+  { icon: FolderOpen, label: "Projects", href: "/team/projects" },
+  { icon: Eye, label: "Views", href: "/team/views" },
+  { icon: FileText, label: "Docs", href: "/team/docs" },
+];
+
+// Personal 子项
+export const personalItems = [
+  { icon: FolderOpen, label: "Projects", href: "/personal/projects" },
+  { icon: Eye, label: "Views", href: "/personal/views" },
+  { icon: FileText, label: "Docs", href: "/personal/docs" },
 ];
 
 // MARK: mobileMenu

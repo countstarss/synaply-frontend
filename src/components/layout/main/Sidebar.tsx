@@ -2,52 +2,30 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import {
-  Inbox,
-  ListCheck,
-  MessageSquareCode,
-  BookAIcon,
-  FolderOpen,
-  Eye,
-  FileText,
-} from "lucide-react";
-
 import SidebarBrand from "../sidebar/SidebarBrand";
 import SidebarNavItem from "../sidebar/SidebarNavItem";
 import SidebarSection from "../sidebar/SidebarSection";
 import SidebarFooter from "../sidebar/SidebarFooter";
+import { useSidebarStore } from "@/stores/sidebar";
+import {
+  mainNavItems,
+  personalItems,
+  workspaceItems,
+} from "@/lib/data/constant";
 
 interface SidebarProps {
   className?: string;
 }
 
 const Sidebar = ({ className }: SidebarProps) => {
-  // 主要导航菜单
-  const mainNavItems = [
-    { icon: Inbox, label: "Inbox", href: "/inbox" },
-    { icon: ListCheck, label: "My Task", href: "/tasks" },
-    { icon: MessageSquareCode, label: "Chat", href: "/chat" },
-    { icon: BookAIcon, label: "Docs", href: "/docs" },
-  ];
-
-  // WorkSpace 子项
-  const workspaceItems = [
-    { icon: FolderOpen, label: "Projects", href: "/workspace/projects" },
-    { icon: Eye, label: "Views", href: "/workspace/views" },
-    { icon: FileText, label: "Docs", href: "/workspace/docs" },
-  ];
-
-  // Personal 子项
-  const personalItems = [
-    { icon: FolderOpen, label: "Projects", href: "/personal/projects" },
-    { icon: Eye, label: "Views", href: "/personal/views" },
-    { icon: FileText, label: "Docs", href: "/personal/docs" },
-  ];
+  const { isOpen: sidebarOpen } = useSidebarStore();
 
   return (
     <div
       className={cn(
-        "w-64 h-[calc(100vh-16px)] bg-app-bg lg:flex hidden flex-col my-2 ml-2 border border-app-border rounded-lg",
+        "w-64 h-[calc(100vh-16px)] bg-app-bg lg:flex hidden flex-col my-2 ml-2 mr-0 border border-app-border rounded-lg",
+        "transition-transform duration-300 ease-in-out",
+        !sidebarOpen && "pointer-events-none", // 隐藏时禁用交互
         className
       )}
     >

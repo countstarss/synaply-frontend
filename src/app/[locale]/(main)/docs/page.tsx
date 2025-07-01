@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { FileText, Search, Folder, Calendar, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 export default function DocsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,25 +52,11 @@ export default function DocsPage() {
   );
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 px-2 space-y-2 md:h-full h-[calc(100vh-74px)] overflow-y-auto">
       {/* 页面头部 */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <FileText className="w-4 h-4 mr-2" />
-            New Document
-          </Button>
-          <Button
-            variant="outline"
-            className="border-app-border text-gray-300 hover:text-white hover:bg-app-content-bg"
-          >
-            <Folder className="w-4 h-4 mr-2" />
-            New Folder
-          </Button>
-        </div>
-
+      <div className="flex items-center justify-between flex-col md:flex-row gap-2">
         {/* 搜索栏 */}
-        <div className="relative w-80">
+        <div className="relative md:w-80 w-full">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
             placeholder="Search documents..."
@@ -81,7 +68,7 @@ export default function DocsPage() {
       </div>
 
       {/* 文档网格 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:h-full overflow-y-auto">
         {filteredDocs.map((doc) => (
           <div
             key={doc.id}
@@ -150,11 +137,14 @@ export default function DocsPage() {
       {!searchQuery && filteredDocs.length > 0 && (
         <div className="mt-8">
           <h2 className="text-lg font-semibold mb-4">Recently Accessed</h2>
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {documents.slice(0, 3).map((doc) => (
               <div
                 key={`recent-${doc.id}`}
-                className="flex items-center gap-3 p-3 bg-app-content-bg rounded-lg border border-app-border hover:bg-app-bg transition-colors cursor-pointer"
+                className={cn(
+                  "flex items-center gap-3 p-3 bg-app-content-bg rounded-lg border border-app-border hover:bg-app-bg transition-colors cursor-pointer",
+                  "select-none"
+                )}
               >
                 <FileText className="w-4 h-4 text-gray-400" />
                 <div className="flex-1">
