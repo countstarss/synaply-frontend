@@ -10,7 +10,6 @@ import ContextMenuWrapper from "@/components/ContextMenuWrapper";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/stores/sidebar";
 import TabList from "../infobar/TabList";
-
 // InfoBar 子组件
 // import ViewToggle, { defaultViews } from "../infobar/ViewToggle";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
@@ -46,16 +45,21 @@ const InfoBar = ({ showViewToggle = true, className }: InfoBarProps) => {
         {/* 顶部栏 */}
         <div className="flex flex-row justify-between gap-6 items-center p-2 relative min-h-[56px]">
           {/* 左侧区域 */}
-          <div className="flex flex-row gap-3 items-center min-w-0 flex-1">
+          <div
+            className={cn("flex flex-row gap-3 items-center min-w-0 flex-1")}
+          >
             {/* 侧边栏切换按钮 */}
             <button
               onClick={toggleSidebar}
               className={cn(
                 "flex items-center justify-center w-9 h-9 rounded-lg shrink-0",
                 "hover:bg-accent hover:text-accent-foreground transition-all duration-200",
-                "text-muted-foreground hover:text-foreground group"
+                "text-muted-foreground hover:text-foreground group",
+                "md:opacity-100 opacity-0",
+                "md:block hidden pl-2"
               )}
               title={isOpen ? "隐藏侧边栏" : "显示侧边栏"}
+              disabled={false}
             >
               <PanelLeft
                 className={cn(

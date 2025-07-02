@@ -31,46 +31,41 @@ const Layout = ({ children }: LayoutProps) => {
       {/* Main Content - 始终保持8px间隔 */}
       <div
         className={cn(
-          "flex-1 flex flex-col overflow-hidden relative",
+          "flex-1 flex flex-col overflow-hidden",
           sidebarOpen ? "ml-2" : "ml-0"
         )}
       >
-        {/* 常规页面内容 */}
-        <div
-          className={cn(
-            "flex flex-col h-full transition-all duration-300 ease-in-out",
-            chatVisible
-              ? "opacity-0 translate-x-[-100%] pointer-events-none"
-              : "opacity-100 translate-x-0 pointer-events-auto"
-          )}
-        >
-          {/* InfoBar - 根据路由条件显示 */}
-          <Infobar />
-          <main
+        {/* InfoBar - 始终保持在顶部，不参与动画 */}
+        <Infobar />
+
+        {/* 内容区域 - 相对定位用于切换动画 */}
+        <div className="relative flex-1 overflow-hidden">
+          {/* 常规页面内容 */}
+          <div
             className={cn(
-              "mx-2 mb-2 bg-app-content-bg h-full rounded-lg border border-app-border"
+              "absolute inset-0 transition-all duration-300 ease-in-out",
+              chatVisible
+                ? "opacity-0 translate-x-[-100%] pointer-events-none"
+                : "opacity-100 translate-x-0 pointer-events-auto"
             )}
           >
-            <div className="flex-1 overflow-y-auto bg-app-content-bg rounded-lg">
-              {children}
-            </div>
-          </main>
-        </div>
+            <main className="mx-2 mb-2 bg-app-content-bg h-[calc(100vh-66px)] rounded-lg border border-app-border">
+              <div className="flex-1 overflow-y-auto bg-app-content-bg rounded-lg h-full">
+                {children}
+              </div>
+            </main>
+          </div>
 
-        {/* 全局缓存的Chat组件 - 在原layout结构内 */}
-        <div
-          className={cn(
-            "absolute inset-0 transition-all duration-300 ease-in-out",
-            chatVisible
-              ? "opacity-100 translate-x-0 pointer-events-auto"
-              : "opacity-0 translate-x-full pointer-events-none"
-          )}
-        >
-          {/* 保持与常规内容相同的结构和间距 */}
-          <div className="flex flex-col h-full">
-            {/* InfoBar占位，保持布局一致 */}
-            <div className="h-14" />
-            <div className="mx-2 mb-2 bg-app-content-bg h-full rounded-lg border border-app-border overflow-hidden">
+          {/* 全局缓存的Chat组件 */}
+          <div
+            className={cn(
+              "absolute inset-0 transition-all duration-300 ease-in-out",
+              chatVisible
+                ? "opacity-100 translate-x-0 pointer-events-auto"
+                : "opacity-0 translate-x-full pointer-events-none"
+            )}
+          >
+            <div className="mx-2 mb-2 bg-app-content-bg h-[calc(100vh-66px)] rounded-lg border border-app-border overflow-hidden">
               <GlobalChat />
             </div>
           </div>
