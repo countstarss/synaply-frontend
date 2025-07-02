@@ -29,13 +29,13 @@ const InfoBarTabs = ({
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
           className={cn(
-            "text-sm font-medium px-3 py-1 rounded-md transition-colors",
+            "text-sm font-medium px-3 py-1 rounded-md transition-colors cursor-pointer",
             activeTab === tab.id
               ? "text-gray-800 bg-blue-900/20 dark:bg-gray-200"
               : "text-gray-400"
           )}
         >
-          {tab.label}
+          <p className="whitespace-nowrap">{tab.label}</p>
         </button>
       ))}
     </div>
