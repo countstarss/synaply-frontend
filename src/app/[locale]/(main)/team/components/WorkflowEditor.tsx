@@ -126,7 +126,7 @@ function Flow() {
   const proOptions = { hideAttribution: true };
 
   return (
-    <div className="w-full h-[calc(100vh-160px)] bg-gray-50 rounded-lg border border-gray-200 relative">
+    <div className="w-full h-[calc(100vh-160px)] bg-app-button-hover dark:bg-app-content-bg rounded-lg border border-app-border relative">
       <NodePanel onAddNode={onAddNode} />
       <div className="w-full h-full" ref={reactFlowWrapper}>
         <ReactFlow
@@ -142,9 +142,9 @@ function Flow() {
           fitView
           proOptions={proOptions}
         >
-          <Controls />
-          <MiniMap />
-          <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+          <Controls className="!bg-app-content-bg !border-app-border" />
+          <MiniMap className="!bg-app-content-bg !border-app-border" />
+          <Background variant={BackgroundVariant.Dots} gap={12} size={1} className="!bg-transparent" />
         </ReactFlow>
       </div>
     </div>

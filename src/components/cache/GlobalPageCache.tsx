@@ -34,11 +34,11 @@ const PAGE_ORDER: Record<PageId, number> = {
 
 // 路径到页面ID的映射
 const getPageIdFromPath = (pathname: string): PageId | null => {
-  if (pathname.includes("/inbox")) return "inbox";
-  if (pathname.includes("/tasks")) return "tasks";
-  if (pathname.includes("/chat")) return "chat";
-  if (pathname.includes("/docs")) return "docs";
-  if (pathname.includes("/settings")) return "settings";
+  if (pathname.startsWith("/inbox")) return "inbox";
+  if (pathname.startsWith("/tasks")) return "tasks";
+  if (pathname.startsWith("/chat")) return "chat";
+  if (pathname.startsWith("/docs")) return "docs";
+  if (pathname.startsWith("/settings")) return "settings";
   return null;
 };
 
