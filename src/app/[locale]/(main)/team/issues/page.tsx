@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   RiAddLine,
   RiSearchLine,
@@ -9,18 +9,13 @@ import {
   RiRadioButtonLine,
   RiPlayCircleLine,
   RiCloseCircleLine,
+  RiFlowChart,
+  RiEyeLine,
 } from "react-icons/ri";
-
-interface Issue {
-  id: string;
-  title: string;
-  status: "todo" | "in_progress" | "done" | "canceled";
-  priority: "urgent" | "high" | "medium" | "low";
-  assignee?: string;
-  project?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import CreateIssueModal from "../components/CreateIssueModal";
+import WorkflowIssueDetail from "../components/WorkflowIssueDetail";
+import { Issue } from "../../../../../types/team";
+import { issueStorage } from "../utils/storage";
 
 const statusConfig = {
   todo: {
@@ -68,43 +63,46 @@ const priorityConfig = {
   },
 };
 
-const mockIssues: Issue[] = [
-  {
-    id: "1",
-    title: "优化首页加载性能",
-    status: "in_progress",
-    priority: "high",
-    assignee: "张三",
-    project: "主站优化",
-    createdAt: "2024-01-15",
-    updatedAt: "2024-01-16",
-  },
-  {
-    id: "2",
-    title: "修复移动端样式错位问题",
-    status: "todo",
-    priority: "urgent",
-    assignee: "李四",
-    project: "移动端适配",
-    createdAt: "2024-01-16",
-    updatedAt: "2024-01-16",
-  },
-  {
-    id: "3",
-    title: "添加用户反馈功能",
-    status: "done",
-    priority: "medium",
-    assignee: "王五",
-    project: "用户体验",
-    createdAt: "2024-01-10",
-    updatedAt: "2024-01-15",
-  },
-];
-
 export default function Issues() {
   const [selectedView, setSelectedView] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [issues] = useState<Issue[]>(mockIssues);
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  useEffect(() => {
+    loadIssues();
+  }, []);
+
+  const loadIssues = () => {
+    const storedIssues = issueStorage.getAll();
+    setIssues(storedIssues);
+  };
+
+  const handleCreateIssue = () => {
+    loadIssues(); // Reload issues from storage
+  };
+
+  const handleViewIssue = (issue: Issue) => {
+    if (issue.type === "workflow") {
+      setSelectedIssue(issue);
+      setIsDetailModalOpen(true);
+    } else {
+      // Navigate to normal issue detail page
+      console.log("Open normal issue detail:", issue);
+      // TODO: Implement navigation to normal issue detail
+    }
+  };
+
+  const handleCloseDetail = () => {
+    setSelectedIssue(null);
+    setIsDetailModalOpen(false);
+  };
+
+  const handleUpdateIssue = () => {
+    loadIssues(); // Reload issues when workflow issue is updated
+  };
 
   const filteredIssues = issues.filter((issue) =>
     issue.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -142,7 +140,10 @@ export default function Issues() {
               </button>
             </div>
           </div>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+          >
             <RiAddLine className="w-4 h-4" />
             新建 Issue
           </button>
@@ -172,56 +173,114 @@ export default function Issues() {
       {/* Issues List */}
       <div className="flex-1 overflow-y-auto">
         <div className="px-6 py-4">
-          <div className="space-y-1">
-            {filteredIssues.map((issue) => {
-              const status = statusConfig[issue.status];
-              const priority = priorityConfig[issue.priority];
-
-              return (
-                <div
-                  key={issue.id}
-                  className="group flex items-center gap-4 px-4 py-3 hover:bg-app-button-hover rounded-lg cursor-pointer transition-colors"
+          {filteredIssues.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-app-text-muted mb-4">
+                {issues.length === 0 ? "还没有 Issue" : "没有找到匹配的 Issue"}
+              </div>
+              {issues.length === 0 && (
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors mx-auto"
                 >
-                  <div className={`flex items-center ${status.color}`}>
-                    {status.icon}
-                  </div>
+                  <RiAddLine className="w-4 h-4" />
+                  创建第一个 Issue
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {filteredIssues.map((issue) => {
+                const status = statusConfig[issue.status];
+                const priority = priorityConfig[issue.priority];
 
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-medium text-app-text-primary truncate">
-                      {issue.title}
-                    </h3>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs text-app-text-muted">
-                        #{issue.id}
-                      </span>
-                      {issue.project && (
-                        <span className="text-xs text-app-text-secondary">
-                          {issue.project}
+                return (
+                  <div
+                    key={issue.id}
+                    className="group flex items-center gap-4 px-4 py-3 hover:bg-app-button-hover rounded-lg cursor-pointer transition-colors"
+                    onClick={() => handleViewIssue(issue)}
+                  >
+                    <div className={`flex items-center ${status.color}`}>
+                      {status.icon}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-medium text-app-text-primary truncate">
+                          {issue.title}
+                        </h3>
+                        {issue.type === "workflow" && (
+                          <div className="flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 rounded text-xs">
+                            <RiFlowChart className="w-3 h-3" />
+                            <span>工作流</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-xs text-app-text-muted">
+                          #{issue.id}
                         </span>
+                        {issue.project && (
+                          <span className="text-xs text-app-text-secondary">
+                            {issue.project}
+                          </span>
+                        )}
+                        {issue.type === "workflow" && issue.workflowData && (
+                          <span className="text-xs text-app-text-secondary">
+                            {issue.workflowData.workflowName}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded border ${priority.color}`}
+                      >
+                        {priority.label}
+                      </span>
+                      {issue.assignee && (
+                        <div className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                          <span className="text-xs text-white">
+                            {issue.assignee[0]}
+                          </span>
+                        </div>
                       )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewIssue(issue);
+                        }}
+                        className="p-1 opacity-0 group-hover:opacity-100 hover:bg-app-content-bg rounded transition-all"
+                        title="查看详情"
+                      >
+                        <RiEyeLine className="w-4 h-4 text-app-text-secondary" />
+                      </button>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded border ${priority.color}`}
-                    >
-                      {priority.label}
-                    </span>
-                    {issue.assignee && (
-                      <div className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                        <span className="text-xs text-white">
-                          {issue.assignee[0]}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Create Issue Modal */}
+      <CreateIssueModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreated={handleCreateIssue}
+      />
+
+      {/* Workflow Issue Detail Modal */}
+      {selectedIssue && selectedIssue.type === "workflow" && (
+        <WorkflowIssueDetail
+          issue={selectedIssue}
+          isOpen={isDetailModalOpen}
+          onClose={handleCloseDetail}
+          onUpdate={handleUpdateIssue}
+        />
+      )}
     </div>
   );
 }

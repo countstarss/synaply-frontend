@@ -1,19 +1,26 @@
-'use client';
+"use client";
 
-import React, { useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { DocsSidebar, DocsEditor, DocsTabs, useDocs } from '@/components/shared/docs';
+import React, { useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import {
+  DocsSidebar,
+  DocsEditor,
+  DocsTabs,
+  useDocs,
+} from "@/components/shared/docs";
+import { Loader2 } from "lucide-react";
 
 export default function PersonalDocDetail() {
   const params = useParams();
   const router = useRouter();
-  const { docs, openDocs, activeDocId, setActiveDocId, openDoc, closeDoc } = useDocs();
-  
+  const { docs, openDocs, activeDocId, setActiveDocId, openDoc, closeDoc } =
+    useDocs();
+
   const docId = params.id as string;
-  const currentDoc = docs.find(d => d.uid === docId);
+  const currentDoc = docs.find((d) => d.uid === docId);
 
   useEffect(() => {
-    if (currentDoc && !openDocs.find(d => d.uid === docId)) {
+    if (currentDoc && !openDocs.find((d) => d.uid === docId)) {
       openDoc(currentDoc);
     }
   }, [currentDoc, docId, openDoc, openDocs]);
@@ -22,9 +29,9 @@ export default function PersonalDocDetail() {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
-          <p className="text-app-text-muted mb-2">文档不存在</p>
-          <button 
-            onClick={() => router.push('/personal/doc')}
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <button
+            onClick={() => router.push("/personal/doc")}
             className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
           >
             返回文档列表
@@ -34,12 +41,12 @@ export default function PersonalDocDetail() {
     );
   }
 
-  const activeDoc = openDocs.find(d => d.uid === activeDocId);
+  const activeDoc = openDocs.find((d) => d.uid === activeDocId);
 
   return (
     <div className="h-full flex bg-app-bg">
       {/* Sidebar */}
-      <DocsSidebar 
+      <DocsSidebar
         docs={docs}
         activeDocId={activeDocId}
         onSelectDoc={(doc) => {
@@ -61,11 +68,11 @@ export default function PersonalDocDetail() {
           onCloseDoc={(uid) => {
             closeDoc(uid);
             if (uid === activeDocId && openDocs.length > 1) {
-              const remainingDocs = openDocs.filter(d => d.uid !== uid);
+              const remainingDocs = openDocs.filter((d) => d.uid !== uid);
               const nextDoc = remainingDocs[remainingDocs.length - 1];
               router.push(`/personal/doc/${nextDoc.uid}`);
             } else if (openDocs.length === 1) {
-              router.push('/personal/doc');
+              router.push("/personal/doc");
             }
           }}
         />

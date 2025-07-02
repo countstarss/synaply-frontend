@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   RiTaskLine,
@@ -10,6 +10,7 @@ import {
   RiAddLine,
   RiArrowRightLine,
 } from "react-icons/ri";
+import { workflowStorage, issueStorage } from "./utils/storage";
 
 interface FeatureCardProps {
   title: string;
@@ -79,6 +80,42 @@ function FeatureCard({
 }
 
 export default function Team() {
+  const [stats, setStats] = useState({
+    totalIssues: 0,
+    inProgressIssues: 0,
+    weeklyCompletedIssues: 0,
+    totalWorkflows: 0,
+    totalProjects: 8,
+    activeProjects: 8,
+  });
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = () => {
+    const issues = issueStorage.getAll();
+    const workflows = workflowStorage.getAll();
+
+    const inProgressIssues = issues.filter(
+      (issue) => issue.status === "in_progress"
+    ).length;
+    const weeklyCompleted = issues.filter((issue) => {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return issue.status === "done" && new Date(issue.updatedAt) > weekAgo;
+    }).length;
+
+    setStats({
+      totalIssues: issues.length,
+      inProgressIssues,
+      weeklyCompletedIssues: weeklyCompleted,
+      totalWorkflows: workflows.length,
+      totalProjects: 8,
+      activeProjects: 8,
+    });
+  };
+
   const teamName = "产品研发团队"; // 这里应该从context或props获取
 
   const features = [
@@ -89,8 +126,8 @@ export default function Team() {
       icon: <RiTaskLine className="w-6 h-6 text-blue-600 dark:text-blue-400" />,
       href: "/team/issues",
       stats: [
-        { label: "进行中", value: 23 },
-        { label: "本周完成", value: 47 },
+        { label: "进行中", value: stats.inProgressIssues },
+        { label: "本周完成", value: stats.weeklyCompletedIssues },
       ],
       primaryAction: {
         label: "新建 Issue",
@@ -105,8 +142,8 @@ export default function Team() {
       ),
       href: "/team/projects",
       stats: [
-        { label: "活跃项目", value: 8 },
-        { label: "总项目数", value: 15 },
+        { label: "活跃项目", value: stats.activeProjects },
+        { label: "总项目数", value: stats.totalProjects },
       ],
       primaryAction: {
         label: "新建项目",
@@ -120,7 +157,7 @@ export default function Team() {
         <RiFlowChart className="w-6 h-6 text-purple-600 dark:text-purple-400" />
       ),
       href: "/team/workflows",
-      stats: [{ label: "工作流模板", value: 5 }],
+      stats: [{ label: "工作流模板", value: stats.totalWorkflows }],
       primaryAction: {
         label: "创建工作流",
         onClick: () => console.log("Create workflow"),
@@ -164,10 +201,10 @@ export default function Team() {
             <p className="text-2xl font-semibold text-app-text-primary">24</p>
           </div>
           <div className="bg-app-content-bg rounded-lg border border-app-border p-4">
-            <p className="text-sm text-app-text-secondary mb-1">
-              本周新增 Issues
+            <p className="text-sm text-app-text-secondary mb-1">总 Issues</p>
+            <p className="text-2xl font-semibold text-app-text-primary">
+              {stats.totalIssues}
             </p>
-            <p className="text-2xl font-semibold text-app-text-primary">18</p>
           </div>
           <div className="bg-app-content-bg rounded-lg border border-app-border p-4">
             <p className="text-sm text-app-text-secondary mb-1">进行中的冲刺</p>

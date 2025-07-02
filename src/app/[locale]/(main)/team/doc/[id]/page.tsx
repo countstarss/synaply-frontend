@@ -1,8 +1,13 @@
-'use client';
+"use client";
 
-import React, { useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { DocsSidebar, DocsEditor, DocsTabs, useDocs } from '@/components/shared/docs';
+import React, { useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import {
+  DocsSidebar,
+  DocsEditor,
+  DocsTabs,
+  useDocs,
+} from "@/components/shared/docs";
 
 export default function DocDetail() {
   const params = useParams();
@@ -22,15 +27,7 @@ export default function DocDetail() {
   if (!currentDoc) {
     return (
       <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-app-text-muted mb-2">文档不存在</p>
-          <button
-            onClick={() => router.push("/team/doc")}
-            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            返回文档列表
-          </button>
-        </div>
+        <div className="text-center"></div>
       </div>
     );
   }
