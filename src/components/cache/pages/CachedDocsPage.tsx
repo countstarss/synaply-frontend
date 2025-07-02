@@ -1,0 +1,203 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { FileText, Search, Folder, Calendar, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { usePageCacheStore } from "@/stores/pageCache";
+
+// 文档接口
+interface Document {
+  id: string;
+  title: string;
+  type: string;
+  lastModified: string;
+  author: string;
+  size: string;
+  folder: string;
+}
+
+// 模拟文档数据
+const MOCK_DOCUMENTS: Document[] = [
+  {
+    id: "1",
+    title: "Project Requirements Document",
+    type: "document",
+    lastModified: "2 hours ago",
+    author: "John Doe",
+    size: "2.3 MB",
+    folder: "Projects",
+  },
+  {
+    id: "2",
+    title: "API Documentation",
+    type: "document",
+    lastModified: "1 day ago",
+    author: "Sarah Wilson",
+    size: "1.8 MB",
+    folder: "Technical",
+  },
+  {
+    id: "3",
+    title: "Team Meeting Notes",
+    type: "document",
+    lastModified: "3 days ago",
+    author: "Team Lead",
+    size: "856 KB",
+    folder: "Meetings",
+  },
+  {
+    id: "4",
+    title: "Design Guidelines",
+    type: "document",
+    lastModified: "1 week ago",
+    author: "Design Team",
+    size: "4.2 MB",
+    folder: "Design",
+  },
+];
+
+export const CachedDocsPage = React.memo(() => {
+  const { getPageState, updatePageData } = usePageCacheStore();
+  const pageState = getPageState("docs");
+
+  // 从缓存中获取状态，或使用默认值
+  const [searchQuery, setSearchQuery] = useState(
+    (pageState?.data?.searchQuery as string) || ""
+  );
+  const [documents] = useState<Document[]>(
+    (pageState?.data?.documents as Document[]) || MOCK_DOCUMENTS
+  );
+
+  // 更新缓存数据
+  useEffect(() => {
+    updatePageData("docs", {
+      searchQuery,
+      documents,
+    });
+  }, [searchQuery, documents, updatePageData]);
+
+  const filteredDocs = documents.filter((doc) =>
+    doc.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleSearchChange = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchQuery(e.target.value);
+    },
+    []
+  );
+
+  return (
+    <div className="p-4 px-2 space-y-2 md:h-full h-[calc(100vh-74px)] overflow-y-auto">
+      {/* 页面头部 */}
+      <div className="flex items-center justify-between flex-col md:flex-row gap-2">
+        {/* 搜索栏 */}
+        <div className="relative md:w-80 w-full">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Input
+            placeholder="Search documents..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            className="pl-10 bg-app-content-bg border-app-border text-white placeholder-gray-400"
+          />
+        </div>
+      </div>
+
+      {/* 文档网格 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto">
+        {filteredDocs.map((doc) => (
+          <div
+            key={doc.id}
+            className="p-4 bg-app-content-bg rounded-lg border border-app-border hover:shadow-md transition-shadow cursor-pointer"
+          >
+            {/* 文档图标和标题 */}
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-10 h-10 bg-blue-900 rounded-lg flex items-center justify-center">
+                <FileText className="w-5 h-5 text-blue-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium truncate">{doc.title}</h3>
+                <p className="text-sm text-gray-400">{doc.size}</p>
+              </div>
+            </div>
+
+            {/* 文档信息 */}
+            <div className="space-y-2 text-xs text-gray-400">
+              <div className="flex items-center gap-2">
+                <Folder className="w-3 h-3" />
+                <span>{doc.folder}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <User className="w-3 h-3" />
+                <span>{doc.author}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-3 h-3" />
+                <span>{doc.lastModified}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 空状态提示 */}
+      {filteredDocs.length === 0 && (
+        <div className="text-center py-12">
+          {searchQuery ? (
+            <>
+              <Search className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <div className="text-gray-400">
+                <p className="text-lg font-medium">No documents found</p>
+                <p className="mt-2">Try adjusting your search query</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <div className="text-gray-400">
+                <p className="text-lg font-medium">No documents yet</p>
+                <p className="mt-2">
+                  Create your first document to get started
+                </p>
+              </div>
+              <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
+                <FileText className="w-4 h-4 mr-2" />
+                Create Document
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* 最近访问 */}
+      {!searchQuery && filteredDocs.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold mb-4">Recently Accessed</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {documents.slice(0, 3).map((doc) => (
+              <div
+                key={`recent-${doc.id}`}
+                className={cn(
+                  "flex items-center gap-3 p-3 bg-app-content-bg rounded-lg border border-app-border hover:bg-app-bg transition-colors cursor-pointer",
+                  "select-none"
+                )}
+              >
+                <FileText className="w-4 h-4 text-gray-400" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium">{doc.title}</h4>
+                  <p className="text-xs text-gray-400">
+                    Last modified {doc.lastModified} by {doc.author}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+
+CachedDocsPage.displayName = "CachedDocsPage";
