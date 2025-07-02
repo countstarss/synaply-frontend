@@ -2,37 +2,34 @@
 
 import Infobar from "@/components/layout/main/Infobar";
 import Sidebar from "@/components/layout/main/Sidebar";
-import { GlobalChat } from "@/components/chat/GlobalChat";
 import { GlobalPageCache } from "@/components/cache/GlobalPageCache";
 import React from "react";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/stores/sidebar";
-import { useChatStore } from "@/stores/chat";
-import { usePageCacheStore } from "@/stores/pageCache";
 import { usePathname } from "next/navigation";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-// 检查是否为缓存页面
+// 检查是否为缓存页面 - 支持tasks页面
 const isCachedPage = (pathname: string) => {
   return (
     pathname.includes("/docs") ||
     pathname.includes("/inbox") ||
     pathname.includes("/settings") ||
-    pathname.includes("/dashboard")
+    pathname.includes("/dashboard") ||
+    pathname.includes("/chat") ||
+    pathname.includes("/tasks")
   );
 };
 
 const Layout = ({ children }: LayoutProps) => {
   const { isOpen: sidebarOpen } = useSidebarStore();
-  const { isVisible: chatVisible } = useChatStore();
-  const { currentVisiblePage } = usePageCacheStore();
   const pathname = usePathname();
 
-  // 判断当前是否显示缓存页面
-  const showCachedPage = isCachedPage(pathname) && currentVisiblePage;
+  // 直接根据路径判断是否显示缓存页面，避免依赖store状态
+  const showCachedPage = isCachedPage(pathname);
 
   return (
     <div className="flex h-screen bg-app-bg overflow-hidden">
@@ -58,12 +55,12 @@ const Layout = ({ children }: LayoutProps) => {
 
         {/* 内容区域 - 相对定位用于切换动画 */}
         <div className="relative flex-1 overflow-hidden">
-          {/* 常规页面内容 */}
+          {/* 常规页面内容 - 正确的从左向右滑动 */}
           <div
             className={cn(
               "absolute inset-0 transition-all duration-300 ease-in-out",
-              chatVisible || showCachedPage
-                ? "opacity-0 translate-x-[-100%] pointer-events-none"
+              showCachedPage
+                ? "opacity-0 translate-x-full pointer-events-none" // 向右退出
                 : "opacity-100 translate-x-0 pointer-events-auto"
             )}
           >
@@ -74,30 +71,13 @@ const Layout = ({ children }: LayoutProps) => {
             </main>
           </div>
 
-          {/* 全局缓存的Chat组件 */}
-          <div
-            className={cn(
-              "absolute inset-0 transition-all duration-300 ease-in-out",
-              chatVisible
-                ? "opacity-100 translate-x-0 pointer-events-auto"
-                : "opacity-0 translate-x-full pointer-events-none"
-            )}
-          >
-            {/* 保持与常规内容相同的结构和间距 */}
-            <div className="flex flex-col h-full">
-              <div className="mx-2 mb-2 bg-app-content-bg h-[calc(100vh-66px)] rounded-lg border border-app-border overflow-hidden">
-                <GlobalChat />
-              </div>
-            </div>
-          </div>
-
-          {/* 全局页面缓存系统 */}
+          {/* 全局页面缓存系统 - 正确的从左向右滑动 */}
           <div
             className={cn(
               "absolute inset-0 transition-all duration-300 ease-in-out",
               showCachedPage
-                ? "opacity-100 translate-x-0 pointer-events-auto"
-                : "opacity-0 translate-x-full pointer-events-none"
+                ? "opacity-100 translate-x-0 pointer-events-auto" // 从左滑入到中央
+                : "opacity-0 translate-x-[-100%] pointer-events-none" // 在左侧待命
             )}
           >
             {/* 保持与常规内容相同的结构和间距 */}

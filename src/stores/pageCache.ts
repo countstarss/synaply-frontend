@@ -1,6 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+// 页面切换动画方向
+export type AnimationDirection =
+  | "left-to-right"
+  | "right-to-left"
+  | "top-to-bottom"
+  | "bottom-to-top";
+
 // 页面缓存配置
 export interface PageCacheConfig {
   id: string;
@@ -94,6 +101,15 @@ export const PAGE_CONFIGS: PageCacheConfig[] = [
     priority: "medium",
     maxAge: 12 * 60 * 60 * 1000, // 12小时
     memoryFootprint: "small",
+    enableMobile: true,
+    enableDesktop: true,
+  },
+  {
+    id: "chat",
+    path: "/chat",
+    priority: "high",
+    maxAge: 12 * 60 * 60 * 1000, // 12小时
+    memoryFootprint: "medium",
     enableMobile: true,
     enableDesktop: true,
   },
@@ -372,17 +388,21 @@ export const usePageCacheStore = create<PageCacheStore>()(
         ),
         configs: state.configs,
       }),
-      version: 1,
+      version: 3, // 升级版本以重置存储
     }
   )
 );
 
-// 初始化页面配置
-if (typeof window !== "undefined") {
+// 初始化页面配置 - 使用标志防止重复初始化
+let isInitialized = false;
+if (typeof window !== "undefined" && !isInitialized) {
+  isInitialized = true;
   setTimeout(() => {
     const store = usePageCacheStore.getState();
+    console.log("🔧 正在初始化页面配置...");
     PAGE_CONFIGS.forEach((config) => {
       store.registerPage(config);
     });
+    console.log("✅ 页面配置初始化完成");
   }, 0);
 }

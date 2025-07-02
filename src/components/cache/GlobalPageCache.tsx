@@ -1,103 +1,288 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
-import { usePageCacheStore } from "@/stores/pageCache";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
 
 // 缓存页面组件
 import { CachedDocsPage } from "./pages/CachedDocsPage";
 import { CachedInboxPage } from "./pages/CachedInboxPage";
 import { CachedSettingsPage } from "./pages/CachedSettingsPage";
-import { CachedDashboardPage } from "./pages/CachedDashboardPage";
+import { CachedChatPage } from "./pages/CachedChatPage";
+import { CachedTasksPage } from "./pages/CachedTasksPage";
 
-// 页面映射
+// MARK: - 页面顺序
+// NOTE:页面映射和顺序定义
 const PAGE_COMPONENTS = {
-  docs: CachedDocsPage,
   inbox: CachedInboxPage,
+  tasks: CachedTasksPage,
+  chat: CachedChatPage,
+  docs: CachedDocsPage,
   settings: CachedSettingsPage,
-  dashboard: CachedDashboardPage,
 } as const;
 
 type PageId = keyof typeof PAGE_COMPONENTS;
 
+// MARK: 页面顺序编号：inbox(1) -> tasks(2) -> chat(3) -> docs(4) -> settings(5)
+const PAGE_ORDER: Record<PageId, number> = {
+  inbox: 1,
+  tasks: 2,
+  chat: 3,
+  docs: 4,
+  settings: 5,
+};
+
 // 路径到页面ID的映射
 const getPageIdFromPath = (pathname: string): PageId | null => {
-  if (pathname.includes("/docs")) return "docs";
   if (pathname.includes("/inbox")) return "inbox";
+  if (pathname.includes("/tasks")) return "tasks";
+  if (pathname.includes("/chat")) return "chat";
+  if (pathname.includes("/docs")) return "docs";
   if (pathname.includes("/settings")) return "settings";
-  if (pathname.includes("/dashboard")) return "dashboard";
   return null;
 };
 
-interface CachedPageRendererProps {
-  pageId: PageId;
+// 页面状态定义
+interface PageState {
+  id: PageId;
+  position: "left" | "center" | "right" | "hidden";
+  isAnimating: boolean;
 }
 
-// 单个缓存页面渲染器
-const CachedPageRenderer = React.memo(({ pageId }: CachedPageRendererProps) => {
-  const { getPageState } = usePageCacheStore();
-  const pageState = getPageState(pageId);
+// 计算页面样式
+const getPageStyle = (state: PageState): React.CSSProperties => {
+  const baseStyle: React.CSSProperties = {
+    position: "absolute",
+    inset: 0,
+    transition: state.isAnimating ? "transform 300ms ease-in-out" : "none",
+  };
 
-  // 如果页面状态不存在，不渲染
-  if (!pageState) {
+  switch (state.position) {
+    case "left":
+      return {
+        ...baseStyle,
+        transform: "translateX(-100%)",
+        zIndex: 5,
+      };
+    case "center":
+      return {
+        ...baseStyle,
+        transform: "translateX(0%)",
+        zIndex: 10,
+      };
+    case "right":
+      return {
+        ...baseStyle,
+        transform: "translateX(100%)",
+        zIndex: 5,
+      };
+    case "hidden":
+    default:
+      return {
+        ...baseStyle,
+        transform: "translateX(-200%)", // 完全隐藏
+        zIndex: 1,
+      };
+  }
+};
+
+// 页面渲染器
+const PageRenderer = React.memo(({ state }: { state: PageState }) => {
+  // 移除对store的依赖，直接渲染页面
+  if (state.position === "hidden") {
     return null;
   }
 
-  const PageComponent = PAGE_COMPONENTS[pageId];
+  const PageComponent = PAGE_COMPONENTS[state.id];
+  const style = getPageStyle(state);
 
   return (
-    <div
-      className="absolute inset-0 transition-all duration-300 ease-in-out"
-      style={{
-        opacity: pageState.isVisible ? 1 : 0,
-        transform: pageState.isVisible ? "translateX(0)" : "translateX(100%)",
-        pointerEvents: pageState.isVisible ? "auto" : "none",
-      }}
-    >
+    <div style={style}>
       <PageComponent />
     </div>
   );
 });
 
-CachedPageRenderer.displayName = "CachedPageRenderer";
+PageRenderer.displayName = "PageRenderer";
 
-// 全局页面缓存管理器
+// MARK: - 页面缓存管理器
 export const GlobalPageCache = React.memo(() => {
-  const { showPage, hidePage, currentVisiblePage } = usePageCacheStore();
   const pathname = usePathname();
+  const [currentPageId, setCurrentPageId] = useState<PageId | null>(() =>
+    getPageIdFromPath(pathname)
+  );
+  const [pageStates, setPageStates] = useState<Record<PageId, PageState>>(
+    () => {
+      const initialPageId = getPageIdFromPath(pathname);
+      const initialStates = {} as Record<PageId, PageState>;
 
-  // 根据路径控制页面显示/隐藏
-  useEffect(() => {
-    const pageId = getPageIdFromPath(pathname);
+      (Object.keys(PAGE_COMPONENTS) as PageId[]).forEach((pageId) => {
+        initialStates[pageId] = {
+          id: pageId,
+          position: pageId === initialPageId ? "center" : "hidden",
+          isAnimating: false,
+        };
+      });
 
-    console.log("🔄 GlobalPageCache路径变化:", {
-      pathname,
-      pageId,
-      currentVisiblePage,
-    });
-
-    if (pageId) {
-      // 隐藏当前显示的页面
-      if (currentVisiblePage && currentVisiblePage !== pageId) {
-        hidePage(currentVisiblePage);
-      }
-      // 显示新页面
-      showPage(pageId);
-    } else {
-      // 如果当前有可见页面且不匹配路径，隐藏它
-      if (currentVisiblePage) {
-        hidePage(currentVisiblePage);
-      }
+      return initialStates;
     }
-  }, [pathname, showPage, hidePage, currentVisiblePage]);
+  );
+
+  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // MARK: - 页面切换动画
+  const performTransition = useCallback(
+    (fromPageId: PageId | null, toPageId: PageId) => {
+      if (fromPageId === toPageId) return;
+
+      console.log(`🔄 页面切换: ${fromPageId} → ${toPageId}`);
+
+      const fromOrder = fromPageId ? PAGE_ORDER[fromPageId] : 0;
+      const toOrder = PAGE_ORDER[toPageId];
+      const isForward = toOrder > fromOrder; // 是否向前切换
+
+      // 清除之前的动画
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+
+      // MARK: - 1. 构建切换堆栈
+      setPageStates((prev) => {
+        const newStates = { ...prev };
+
+        // 隐藏所有其他页面
+        Object.keys(newStates).forEach((id) => {
+          if (id !== fromPageId && id !== toPageId) {
+            newStates[id as PageId] = {
+              ...newStates[id as PageId],
+              position: "hidden",
+              isAnimating: false,
+            };
+          }
+        });
+
+        if (fromPageId) {
+          // 当前页面在中央
+          newStates[fromPageId] = {
+            ...newStates[fromPageId],
+            position: "center",
+            isAnimating: true,
+          };
+        }
+
+        if (isForward) {
+          // 向前：目标页面在右侧
+          newStates[toPageId] = {
+            ...newStates[toPageId],
+            position: "right",
+            isAnimating: true,
+          };
+        } else {
+          // 向后：目标页面在左侧
+          newStates[toPageId] = {
+            ...newStates[toPageId],
+            position: "left",
+            isAnimating: true,
+          };
+        }
+
+        return newStates;
+      });
+
+      // MARK: - 2. 开始动画
+      // NOTE: 同时向目标方向移动
+      setTimeout(() => {
+        setPageStates((prev) => {
+          const newStates = { ...prev };
+
+          if (fromPageId) {
+            if (isForward) {
+              // 向前：当前页面移动到左侧
+              newStates[fromPageId] = {
+                ...newStates[fromPageId],
+                position: "left",
+                isAnimating: true,
+              };
+            } else {
+              // 向后：当前页面移动到右侧
+              newStates[fromPageId] = {
+                ...newStates[fromPageId],
+                position: "right",
+                isAnimating: true,
+              };
+            }
+          }
+
+          // 目标页面移动到中央
+          newStates[toPageId] = {
+            ...newStates[toPageId],
+            position: "center",
+            isAnimating: true,
+          };
+
+          return newStates;
+        });
+
+        // MARK: - 3. 清理堆栈
+        animationTimeoutRef.current = setTimeout(() => {
+          setPageStates((prev) => {
+            const newStates = { ...prev };
+
+            // NOTE: 只保留当前页面，其他页面隐藏
+            Object.keys(newStates).forEach((id) => {
+              if (id === toPageId) {
+                newStates[id as PageId] = {
+                  ...newStates[id as PageId],
+                  position: "center",
+                  isAnimating: false,
+                };
+              } else {
+                newStates[id as PageId] = {
+                  ...newStates[id as PageId],
+                  position: "hidden",
+                  isAnimating: false,
+                };
+              }
+            });
+
+            return newStates;
+          });
+        }, 300); // 等待动画完成
+      }, 16); // 下一帧开始动画
+    },
+    [setPageStates]
+  );
+
+  // MARK: - 监听路径变化
+  // NOTE: 简化逻辑，避免循环
+  useEffect(() => {
+    const newPageId = getPageIdFromPath(pathname);
+
+    if (newPageId && newPageId !== currentPageId) {
+      console.log(`🌟 路径变化触发页面切换: ${pathname} → ${newPageId}`);
+
+      // 执行动画
+      performTransition(currentPageId, newPageId);
+
+      // 更新当前页面ID
+      setCurrentPageId(newPageId);
+    }
+  }, [pathname, currentPageId, performTransition]);
+
+  // MARK: - 清理函数
+  useEffect(() => {
+    return () => {
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <ContextMenuWrapper>
       <div className="relative w-full h-full overflow-hidden">
-        {/* 渲染所有缓存的页面 */}
-        {(Object.keys(PAGE_COMPONENTS) as PageId[]).map((pageId) => (
-          <CachedPageRenderer key={pageId} pageId={pageId} />
+        {Object.values(pageStates).map((state) => (
+          <PageRenderer key={state.id} state={state} />
         ))}
       </div>
     </ContextMenuWrapper>
