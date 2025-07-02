@@ -39,14 +39,14 @@ export const secondaryNavItems = [
 export const workspaceItems = [
   { icon: FolderOpen, label: "Projects", href: "/team/projects" },
   { icon: Eye, label: "Views", href: "/team/views" },
-  { icon: FileText, label: "Docs", href: "/team/docs" },
+  { icon: FileText, label: "Docs", href: "/team/doc" },
 ];
 
 // Personal 子项
 export const personalItems = [
   { icon: FolderOpen, label: "Projects", href: "/personal/projects" },
   { icon: Eye, label: "Views", href: "/personal/views" },
-  { icon: FileText, label: "Docs", href: "/personal/docs" },
+  { icon: FileText, label: "Docs", href: "/personal/doc" },
 ];
 
 // MARK: mobileMenu

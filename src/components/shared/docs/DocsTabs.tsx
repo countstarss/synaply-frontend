@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { RiCloseLine, RiFileTextLine, RiAddLine } from 'react-icons/ri';
-import { Doc } from '../types';
+import { Doc } from './types';
 import DocsSelector from './DocsSelector';
 
 interface DocsTabsProps {

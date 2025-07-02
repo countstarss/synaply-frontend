@@ -11,7 +11,7 @@ interface DocsSelectorProps {
 
 export default function DocsSelector({ onClose }: DocsSelectorProps) {
   const router = useRouter();
-  const { docs, openDocs, openDoc } = useDocs();
+  const { docs, openDocs, openDoc, workspaceType } = useDocs();
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredDocs = docs.filter(doc => 
@@ -20,7 +20,8 @@ export default function DocsSelector({ onClose }: DocsSelectorProps) {
 
   const handleSelectDoc = (doc: typeof docs[0]) => {
     openDoc(doc);
-    router.push(`/team/docs/${doc.id}`);
+    const basePath = workspaceType === 'team' ? '/team/doc' : '/personal/doc';
+    router.push(`${basePath}/${doc.id}`);
     onClose();
   };
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Doc } from '../types';
+import { Doc, WorkspaceType } from './types';
 
 interface DocsContextType {
   docs: Doc[];
@@ -10,12 +10,13 @@ interface DocsContextType {
   setActiveDocId: (id: string | null) => void;
   openDoc: (doc: Doc) => void;
   closeDoc: (docId: string) => void;
+  workspaceType: WorkspaceType;
 }
 
 const DocsContext = createContext<DocsContextType | undefined>(undefined);
 
 // Mock data - 实际项目中应该从 API 获取
-const mockDocs: Doc[] = [
+const mockTeamDocs: Doc[] = [
   {
     id: '1',
     title: '团队规范',
@@ -23,7 +24,8 @@ const mockDocs: Doc[] = [
     parentId: null,
     children: ['2', '3'],
     createdAt: '2024-01-01',
-    updatedAt: '2024-01-15'
+    updatedAt: '2024-01-15',
+    workspace: 'team'
   },
   {
     id: '2',
@@ -32,7 +34,8 @@ const mockDocs: Doc[] = [
     parentId: '1',
     children: [],
     createdAt: '2024-01-02',
-    updatedAt: '2024-01-10'
+    updatedAt: '2024-01-10',
+    workspace: 'team'
   },
   {
     id: '3',
@@ -41,7 +44,8 @@ const mockDocs: Doc[] = [
     parentId: '1',
     children: [],
     createdAt: '2024-01-03',
-    updatedAt: '2024-01-12'
+    updatedAt: '2024-01-12',
+    workspace: 'team'
   },
   {
     id: '4',
@@ -50,7 +54,8 @@ const mockDocs: Doc[] = [
     parentId: null,
     children: ['5'],
     createdAt: '2024-01-05',
-    updatedAt: '2024-01-16'
+    updatedAt: '2024-01-16',
+    workspace: 'team'
   },
   {
     id: '5',
@@ -59,17 +64,66 @@ const mockDocs: Doc[] = [
     parentId: '4',
     children: [],
     createdAt: '2024-01-06',
-    updatedAt: '2024-01-14'
+    updatedAt: '2024-01-14',
+    workspace: 'team'
   }
 ];
 
-// 使用全局存储来保持打开的文档状态
-const STORAGE_KEY = 'synaply-open-docs';
+const mockPersonalDocs: Doc[] = [
+  {
+    id: 'p1',
+    title: '个人笔记',
+    content: '# 个人笔记\n\n我的学习和工作笔记',
+    parentId: null,
+    children: ['p2', 'p3'],
+    createdAt: '2024-01-10',
+    updatedAt: '2024-01-18',
+    workspace: 'personal'
+  },
+  {
+    id: 'p2',
+    title: 'React 学习笔记',
+    content: '## React Hooks\n\n- useState\n- useEffect\n- useContext',
+    parentId: 'p1',
+    children: [],
+    createdAt: '2024-01-11',
+    updatedAt: '2024-01-17',
+    workspace: 'personal'
+  },
+  {
+    id: 'p3',
+    title: 'TypeScript 进阶',
+    content: '## TypeScript 高级类型\n\n- 泛型\n- 类型推断\n- 条件类型',
+    parentId: 'p1',
+    children: [],
+    createdAt: '2024-01-12',
+    updatedAt: '2024-01-16',
+    workspace: 'personal'
+  },
+  {
+    id: 'p4',
+    title: '工作日志',
+    content: '# 工作日志\n\n记录日常工作内容',
+    parentId: null,
+    children: [],
+    createdAt: '2024-01-15',
+    updatedAt: '2024-01-18',
+    workspace: 'personal'
+  }
+];
 
-export default function DocsProvider({ children }: { children: React.ReactNode }) {
-  const [docs] = useState<Doc[]>(mockDocs);
+interface DocsProviderProps {
+  children: React.ReactNode;
+  workspaceType: WorkspaceType;
+}
+
+export default function DocsProvider({ children, workspaceType }: DocsProviderProps) {
+  const [docs] = useState<Doc[]>(workspaceType === 'team' ? mockTeamDocs : mockPersonalDocs);
   const [openDocs, setOpenDocs] = useState<Doc[]>([]);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
+
+  // 使用不同的 storage key 来区分 workspace
+  const STORAGE_KEY = `synaply-open-docs-${workspaceType}`;
 
   // 从 localStorage 恢复打开的文档
   useEffect(() => {
@@ -89,13 +143,13 @@ export default function DocsProvider({ children }: { children: React.ReactNode }
         console.error('Failed to restore open docs:', e);
       }
     }
-  }, [docs]);
+  }, [docs, STORAGE_KEY]);
 
   // 保存打开的文档到 localStorage
   useEffect(() => {
     const openDocIds = openDocs.map(d => d.id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ openDocIds, activeDocId }));
-  }, [openDocs, activeDocId]);
+  }, [openDocs, activeDocId, STORAGE_KEY]);
 
   const openDoc = (doc: Doc) => {
     const isOpen = openDocs.find(d => d.id === doc.id);
@@ -123,7 +177,8 @@ export default function DocsProvider({ children }: { children: React.ReactNode }
       activeDocId,
       setActiveDocId,
       openDoc,
-      closeDoc
+      closeDoc,
+      workspaceType
     }}>
       {children}
     </DocsContext.Provider>

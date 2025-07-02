@@ -49,7 +49,9 @@ function FeatureCard({
         )}
       </div>
 
-      <h3 className="text-lg font-semibold text-app-text-primary mb-2">{title}</h3>
+      <h3 className="text-lg font-semibold text-app-text-primary mb-2">
+        {title}
+      </h3>
       <p className="text-sm text-app-text-secondary mb-4">{description}</p>
 
       {stats && (
@@ -98,7 +100,9 @@ export default function Team() {
     {
       title: "Projects",
       description: "组织和管理团队项目，追踪进度和里程碑。",
-      icon: <RiFolderOpenLine className="w-6 h-6 text-green-600 dark:text-green-400" />,
+      icon: (
+        <RiFolderOpenLine className="w-6 h-6 text-green-600 dark:text-green-400" />
+      ),
       href: "/team/projects",
       stats: [
         { label: "活跃项目", value: 8 },
@@ -112,7 +116,9 @@ export default function Team() {
     {
       title: "Workflows",
       description: "设计和管理团队工作流程模板，优化协作效率。",
-      icon: <RiFlowChart className="w-6 h-6 text-purple-600 dark:text-purple-400" />,
+      icon: (
+        <RiFlowChart className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+      ),
       href: "/team/workflows",
       stats: [{ label: "工作流模板", value: 5 }],
       primaryAction: {
@@ -123,8 +129,10 @@ export default function Team() {
     {
       title: "Docs",
       description: "团队知识库和文档管理，包含项目文档和团队规范。",
-      icon: <RiFileTextLine className="w-6 h-6 text-orange-600 dark:text-orange-400" />,
-      href: "/team/docs",
+      icon: (
+        <RiFileTextLine className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+      ),
+      href: "/team/doc",
       stats: [
         { label: "团队文档", value: 42 },
         { label: "项目文档", value: 156 },
@@ -141,8 +149,12 @@ export default function Team() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-app-text-primary mb-2">{teamName}</h1>
-          <p className="text-app-text-secondary">管理团队的任务、项目、工作流和文档</p>
+          <h1 className="text-3xl font-bold text-app-text-primary mb-2">
+            {teamName}
+          </h1>
+          <p className="text-app-text-secondary">
+            管理团队的任务、项目、工作流和文档
+          </p>
         </div>
 
         {/* Quick Stats */}
@@ -152,7 +164,9 @@ export default function Team() {
             <p className="text-2xl font-semibold text-app-text-primary">24</p>
           </div>
           <div className="bg-app-content-bg rounded-lg border border-app-border p-4">
-            <p className="text-sm text-app-text-secondary mb-1">本周新增 Issues</p>
+            <p className="text-sm text-app-text-secondary mb-1">
+              本周新增 Issues
+            </p>
             <p className="text-2xl font-semibold text-app-text-primary">18</p>
           </div>
           <div className="bg-app-content-bg rounded-lg border border-app-border p-4">
@@ -174,7 +188,9 @@ export default function Team() {
 
         {/* Recent Activity */}
         <div className="mt-8">
-          <h2 className="text-xl font-semibold text-app-text-primary mb-4">最近活动</h2>
+          <h2 className="text-xl font-semibold text-app-text-primary mb-4">
+            最近活动
+          </h2>
           <div className="bg-app-content-bg rounded-lg border border-app-border p-6">
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
@@ -189,7 +205,10 @@ export default function Team() {
                     <p className="text-sm text-app-text-primary">
                       <span className="font-medium">张三</span> 创建了新的
                       Issue：
-                      <span className="text-blue-600 dark:text-blue-400"> 优化首页加载性能</span>
+                      <span className="text-blue-600 dark:text-blue-400">
+                        {" "}
+                        优化首页加载性能
+                      </span>
                     </p>
                     <p className="text-xs text-app-text-muted mt-1">2 小时前</p>
                   </div>

@@ -9,7 +9,7 @@ import {
   RiAddLine,
   RiSearchLine 
 } from 'react-icons/ri';
-import { Doc } from '../types';
+import { Doc } from './types';
 
 interface DocsSidebarProps {
   docs: Doc[];
@@ -104,7 +104,7 @@ function TreeNode({ doc, docs, level, activeDocId, onSelectDoc, expandedIds, onT
 
 export default function DocsSidebar({ docs, activeDocId, onSelectDoc }: DocsSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set(['1', '4']));
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set(['1', '4', 'p1']));
 
   const rootDocs = docs.filter(doc => !doc.parentId);
 

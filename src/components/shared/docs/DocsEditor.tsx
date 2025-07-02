@@ -15,7 +15,7 @@ import {
   RiImageLine,
   RiMore2Fill
 } from 'react-icons/ri';
-import { Doc } from '../types';
+import { Doc } from './types';
 
 interface DocsEditorProps {
   doc: Doc;
