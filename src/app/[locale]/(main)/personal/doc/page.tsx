@@ -10,7 +10,7 @@ export default function PersonalDocs() {
   const handleSelectDoc = (doc: (typeof docs)[0]) => {
     openDoc(doc);
     // 使用 window.location 进行导航以确保路由更新
-    window.location.href = `/personal/doc/${doc.id}`;
+    window.location.href = `/personal/doc/${doc.uid}`;
   };
 
   // 获取根文档和最近更新的文档
@@ -77,10 +77,10 @@ export default function PersonalDocs() {
             <h2 className="text-xl font-semibold text-app-text-primary mb-4">文档分类</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {rootDocs.map(doc => {
-                const childCount = doc.children.length;
+                const childCount = docs.filter(d => d.parentId === doc.uid).length;
                 return (
                   <div
-                    key={doc.id}
+                    key={doc.uid}
                     onClick={() => handleSelectDoc(doc)}
                     className="p-4 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
                   >
@@ -105,7 +105,7 @@ export default function PersonalDocs() {
             <div className="space-y-2">
               {recentDocs.map(doc => (
                 <div
-                  key={doc.id}
+                  key={doc.uid}
                   onClick={() => handleSelectDoc(doc)}
                   className="flex items-center gap-3 p-3 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
                 >
@@ -118,7 +118,7 @@ export default function PersonalDocs() {
                   </div>
                   {doc.parentId && (
                     <span className="text-xs text-app-text-secondary bg-app-button-hover px-2 py-1 rounded">
-                      {docs.find(d => d.id === doc.parentId)?.title}
+                      {docs.find(d => d.uid === doc.parentId)?.title}
                     </span>
                   )}
                 </div>

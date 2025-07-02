@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Menu, PanelLeft } from "lucide-react";
+import { Menu, PanelLeft, PanelRight } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { mainNavItems } from "@/lib/data/constant";
 import Link from "next/link";
@@ -61,13 +61,23 @@ const InfoBar = ({ showViewToggle = true, className }: InfoBarProps) => {
               title={isOpen ? "隐藏侧边栏" : "显示侧边栏"}
               disabled={false}
             >
-              <PanelLeft
-                className={cn(
-                  "h-5 w-5 transition-transform duration-200",
-                  !isOpen && "",
-                  "group-hover:scale-110 group-hover:rotate-180"
-                )}
-              />
+              {isOpen ? (
+                <PanelLeft
+                  className={cn(
+                    "h-5 w-5 transition-transform duration-200",
+                    !isOpen && "",
+                    "group-hover:scale-110 group-hover:rotate-180"
+                  )}
+                />
+              ) : (
+                <PanelRight
+                  className={cn(
+                    "h-5 w-5 transition-transform duration-200",
+                    !isOpen && "",
+                    "group-hover:scale-110 group-hover:rotate-180"
+                  )}
+                />
+              )}
             </button>
 
             {/* PC端：侧边栏隐藏时显示TabList */}

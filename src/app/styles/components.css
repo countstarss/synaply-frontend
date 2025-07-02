@@ -96,6 +96,10 @@
     @apply hidden md:block;
   }
 
+  .scrollbar-hidden {
+    scrollbar-width: none;
+  }
+
   /* 滚动条样式 */
   .scrollbar-thin {
     scrollbar-width: thin;

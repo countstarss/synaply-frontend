@@ -11,10 +11,10 @@ export default function DocDetail() {
     useDocs();
 
   const docId = params.id as string;
-  const currentDoc = docs.find((d) => d.id === docId);
+  const currentDoc = docs.find((d) => d.uid === docId);
 
   useEffect(() => {
-    if (currentDoc && !openDocs.find((d) => d.id === docId)) {
+    if (currentDoc && !openDocs.find((d) => d.uid === docId)) {
       openDoc(currentDoc);
     }
   }, [currentDoc, docId, openDoc, openDocs]);
@@ -35,7 +35,7 @@ export default function DocDetail() {
     );
   }
 
-  const activeDoc = openDocs.find((d) => d.id === activeDocId);
+  const activeDoc = openDocs.find((d) => d.uid === activeDocId);
 
   return (
     <div className="h-full flex bg-app-bg">
@@ -45,7 +45,7 @@ export default function DocDetail() {
         activeDocId={activeDocId}
         onSelectDoc={(doc) => {
           openDoc(doc);
-          router.push(`/team/doc/${doc.id}`);
+          router.push(`/team/doc/${doc.uid}`);
         }}
       />
 
@@ -56,15 +56,15 @@ export default function DocDetail() {
           openDocs={openDocs}
           activeDocId={activeDocId}
           onSelectDoc={(doc) => {
-            setActiveDocId(doc.id);
-            router.push(`/team/doc/${doc.id}`);
+            setActiveDocId(doc.uid);
+            router.push(`/team/doc/${doc.uid}`);
           }}
-          onCloseDoc={(id) => {
-            closeDoc(id);
-            if (id === activeDocId && openDocs.length > 1) {
-              const remainingDocs = openDocs.filter((d) => d.id !== id);
+          onCloseDoc={(uid) => {
+            closeDoc(uid);
+            if (uid === activeDocId && openDocs.length > 1) {
+              const remainingDocs = openDocs.filter((d) => d.uid !== uid);
               const nextDoc = remainingDocs[remainingDocs.length - 1];
-              router.push(`/team/doc/${nextDoc.id}`);
+              router.push(`/team/doc/${nextDoc.uid}`);
             } else if (openDocs.length === 1) {
               router.push("/team/doc");
             }
