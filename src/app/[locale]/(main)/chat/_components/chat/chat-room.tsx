@@ -249,7 +249,7 @@ export function ChatRoom({ channelId, type, channel }: ChatRoomProps) {
     // 如果没有消息显示空状态
     if (displayMessages.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] text-muted-foreground">
           <p className="text-lg font-medium">暂无消息</p>
           <p className="text-sm">来发送第一条消息吧！</p>
         </div>

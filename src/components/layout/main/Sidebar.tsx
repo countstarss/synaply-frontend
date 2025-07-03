@@ -67,7 +67,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
             </div>
 
             {/* WorkSpace 部分 */}
-            <SidebarSection title="WorkSpace">
+            <SidebarSection title="Team">
               {workspaceItems.map((item) => (
                 <SidebarNavItem
                   key={item.href}

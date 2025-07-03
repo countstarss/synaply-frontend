@@ -97,26 +97,26 @@ SupabaseChatRoomProps) {
   }, [chatId, supabase, localDb]);
 
   interface SupabaseMessage {
-  id: string;
-  chat_id: string;
-  sender_id: string;
-  sender_name?: string; // 假设 Supabase 消息有 sender_name
-  content: string;
-  created_at: string; // Supabase 返回的是 ISO 格式的字符串
-  type?: 'text' | 'image' | 'file'; // 假设 Supabase 消息有 type
-  // ... 其他 Supabase 消息字段
-}
+    id: string;
+    chat_id: string;
+    sender_id: string;
+    sender_name?: string; // 假设 Supabase 消息有 sender_name
+    content: string;
+    created_at: string; // Supabase 返回的是 ISO 格式的字符串
+    type?: "text" | "image" | "file"; // 假设 Supabase 消息有 type
+    // ... 其他 Supabase 消息字段
+  }
 
-// MARK: Supabase Realtime 订阅
+  // MARK: Supabase Realtime 订阅
   useEffect(() => {
     const channel = supabase
       .channel(`chat:${chatId}`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*', // 监听所有事件 (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'messages',
+          event: "*", // 监听所有事件 (INSERT, UPDATE, DELETE)
+          schema: "public",
+          table: "messages",
           filter: `chat_id=eq.${chatId}`,
         },
         async (payload) => {
@@ -302,7 +302,7 @@ SupabaseChatRoomProps) {
 
     if (!messages || messages.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] text-muted-foreground">
           <p className="text-lg font-medium">暂无消息</p>
           <p className="text-sm">来发送第一条消息吧！</p>
         </div>

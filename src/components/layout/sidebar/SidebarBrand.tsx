@@ -55,9 +55,12 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
   // 加载状态
   if (loading || !currentWorkspace) {
     return (
-      <div className={cn("flex items-center gap-3 px-4 py-3", className)}>
-        <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" />
-        <div className="h-4 bg-gray-200 rounded animate-pulse flex-1" />
+      <div className={cn("flex items-center gap-3 p-4", className)}>
+        <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse" />
+        <div className="flex-1 flex items-center gap-4 pr-1">
+          <div className="h-8 bg-gray-200 rounded animate-pulse flex-1 " />
+          <ChevronDown className="h-4 w-4 text-muted-foreground animate-pulse" />
+        </div>
       </div>
     );
   }

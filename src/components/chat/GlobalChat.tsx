@@ -97,25 +97,31 @@ const ChatContent = React.memo(() => {
 
   // 判断是否为 Supabase 聊天路由 (例如 /chat/some-chat-id)
   // 路径长度为 3 (/, chat, chatId) 且不包含 /public
-  const isSupabaseChatRoute = pathname.startsWith('/chat/') && pathname.split('/').length === 3 && !pathname.includes('/public');
-  const supabaseChatId = isSupabaseChatRoute ? pathname.split('/').pop() : undefined;
+  const isSupabaseChatRoute = pathname.includes("/chat/");
+  const supabaseChatId = isSupabaseChatRoute
+    ? pathname.split("/").pop()
+    : undefined;
 
   // 判断是否为 Convex 公共聊天路由 (/chat/public)
-  const isConvexPublicChatRoute = pathname.includes('/chat/public');
+  const isConvexPublicChatRoute = pathname.includes("/chat/public");
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {isSupabaseChatRoute && supabaseChatId ? (
-        <SupabaseChatRoom chatId={supabaseChatId} type="group" chatName="Supabase Chat" /> // 暂时写死 type 和 chatName
+        <SupabaseChatRoom
+          chatId={supabaseChatId}
+          type="group"
+          chatName="Supabase Chat"
+        /> // 暂时写死 type 和 chatName
       ) : isConvexPublicChatRoute ? (
         <ChatRoom
           channelId={currentChannelId}
           type="public"
           // 传递一个简单的channel对象
           channel={{
-            _id: currentChannelId as Id<'channels'>,
-            name: 'Public',
-            type: 'text',
+            _id: currentChannelId as Id<"channels">,
+            name: "Public",
+            type: "text",
             isOfficial: true,
             createdAt: Date.now(),
           }}
