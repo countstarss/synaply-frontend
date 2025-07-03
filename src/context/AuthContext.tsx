@@ -65,6 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setSession(session);
           setUser(session?.user || null);
+          // FIXME: 临时输出用来测试
+          if (session?.access_token) {
+            console.log("Supabase Access Token:", session.access_token);
+            console.log("Supabase Refresh Token:", session.user);
+          }
         }
       } catch (err) {
         if (!mounted) return;
