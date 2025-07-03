@@ -1,15 +1,18 @@
 'use client';
 
+'use client';
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Doc } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
+import { useDocStore } from '@/stores/doc-store'; // 导入 Zustand store
 
 interface DocsContextType {
   docs: Doc[];
   openDocs: Doc[];
   activeDocId: string | null;
-  setActiveDocId: (id: string | null) => void;
+  // setActiveDocId: (id: string | null) => void; // 由 Zustand 管理
   openDoc: (doc: Doc) => void;
   closeDoc: (uid: string) => void;
   createDoc: (title: string, parentId: string | null) => Promise<Doc>;
@@ -35,8 +38,11 @@ interface DocsProviderProps {
 
 export default function DocsProvider({ children, workspaceType }: DocsProviderProps) {
   const [openDocs, setOpenDocs] = useState<Doc[]>([]);
-  const [activeDocId, setActiveDocId] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
+
+  // 从 Zustand store 获取 activeDocId 和 setActiveDocId
+  const activeDocId = useDocStore((state) => state.activeDocId);
+  const setActiveDocId = useDocStore((state) => state.setActiveDocId);
 
   // 使用 Dexie 查询数据库中的文档
   const docs = useLiveQuery(
@@ -249,7 +255,7 @@ export default function DocsProvider({ children, workspaceType }: DocsProviderPr
         docs,
         openDocs,
         activeDocId,
-        setActiveDocId,
+        // setActiveDocId, // 由 Zustand 管理
         openDoc,
         closeDoc,
         createDoc,

@@ -1,34 +1,36 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React, { useEffect } from "react";
 import { RiFileTextLine, RiFolder3Line, RiAddLine } from 'react-icons/ri';
-import { DocsSidebar, useDocs } from '@/components/shared/docs';
+import { useDocs } from "@/components/shared/docs";
+import DocsEditor from "@/components/shared/docs/DocsEditor";
 
-export default function PersonalDocs() {
-  const { docs, activeDocId, openDoc } = useDocs();
+export default function PersonalDocPage() {
+  const { docs, activeDocId, openDoc, createDoc } = useDocs();
+
+  // 根据 activeDocId 查找当前激活的文档
+  const activeDoc = docs.find((d) => d.uid === activeDocId);
+
+  // 获取根文档和最近更新的文档
+  const rootDocs = docs.filter((doc) => !doc.parentId);
+  const recentDocs = [...docs]
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    )
+    .slice(0, 5);
 
   const handleSelectDoc = (doc: (typeof docs)[0]) => {
     openDoc(doc);
-    // 使用 window.location 进行导航以确保路由更新
-    window.location.href = `/personal/doc/${doc.uid}`;
   };
 
-  // 获取根文档和最近更新的文档
-  const rootDocs = docs.filter(doc => !doc.parentId);
-  const recentDocs = [...docs].sort((a, b) => 
-    new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-  ).slice(0, 5);
+  const handleCreateNewDoc = async () => {
+    await createDoc("新文档", null);
+  };
 
-  return (
-    <div className="h-full flex bg-app-bg">
-      {/* Sidebar */}
-      <DocsSidebar
-        docs={docs}
-        activeDocId={activeDocId}
-        onSelectDoc={handleSelectDoc}
-      />
-
-      {/* Main Content */}
+  // 如果没有激活的文档，显示概览页面
+  if (!activeDoc) {
+    return (
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto p-8">
           {/* Header */}
@@ -41,7 +43,7 @@ export default function PersonalDocs() {
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <button className="p-4 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow text-left">
+            <div className="p-4 bg-app-content-bg border border-app-border rounded-lg text-left">
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded">
                   <RiFileTextLine className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -49,9 +51,9 @@ export default function PersonalDocs() {
                 <span className="text-2xl font-semibold text-app-text-primary">{docs.length}</span>
               </div>
               <p className="text-sm text-app-text-secondary">个人文档数</p>
-            </button>
+            </div>
 
-            <button className="p-4 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow text-left">
+            <div className="p-4 bg-app-content-bg border border-app-border rounded-lg text-left">
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded">
                   <RiFolder3Line className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -59,9 +61,12 @@ export default function PersonalDocs() {
                 <span className="text-2xl font-semibold text-app-text-primary">{rootDocs.length}</span>
               </div>
               <p className="text-sm text-app-text-secondary">文档分类</p>
-            </button>
+            </div>
 
-            <button className="p-4 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow text-left">
+            <button
+              onClick={handleCreateNewDoc}
+              className="p-4 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow text-left"
+            >
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded">
                   <RiAddLine className="w-5 h-5 text-purple-600 dark:text-purple-400" />
@@ -76,8 +81,8 @@ export default function PersonalDocs() {
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-app-text-primary mb-4">文档分类</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {rootDocs.map(doc => {
-                const childCount = docs.filter(d => d.parentId === doc.uid).length;
+              {rootDocs.map((doc) => {
+                const childCount = docs.filter((d) => d.parentId === doc.uid).length;
                 return (
                   <div
                     key={doc.uid}
@@ -103,7 +108,7 @@ export default function PersonalDocs() {
           <div>
             <h2 className="text-xl font-semibold text-app-text-primary mb-4">最近更新</h2>
             <div className="space-y-2">
-              {recentDocs.map(doc => (
+              {recentDocs.map((doc) => (
                 <div
                   key={doc.uid}
                   onClick={() => handleSelectDoc(doc)}
@@ -118,7 +123,7 @@ export default function PersonalDocs() {
                   </div>
                   {doc.parentId && (
                     <span className="text-xs text-app-text-secondary bg-app-button-hover px-2 py-1 rounded">
-                      {docs.find(d => d.uid === doc.parentId)?.title}
+                      {docs.find((d) => d.uid === doc.parentId)?.title}
                     </span>
                   )}
                 </div>
@@ -127,6 +132,9 @@ export default function PersonalDocs() {
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // 如果有激活的文档，渲染 DocsEditor
+  return <DocsEditor doc={activeDoc} />;
 }

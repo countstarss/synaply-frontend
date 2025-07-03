@@ -22,7 +22,9 @@ export default function BlockNoteEditorComponent({
   workspaceType,
 }: BlockNoteEditorProps) {
   const [isConnected, setIsConnected] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">(
+    typeof document !== 'undefined' && document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+  );
 
   // 监听主题变化
   useEffect(() => {
