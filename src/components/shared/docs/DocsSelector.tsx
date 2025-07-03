@@ -82,7 +82,7 @@ export default function DocsSelector({ onClose }: DocsSelectorProps) {
                     </p>
                     {doc.parentId && (
                       <p className="text-xs text-app-text-muted truncate">
-                        {docs.find(d => d.id === doc.parentId)?.title}
+                        {docs.find(d => d.uid === doc.parentId)?.title}
                       </p>
                     )}
                   </div>

@@ -192,7 +192,7 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
     <div className="w-full flex flex-col gap-4">
       {/* Workflow Info Form */}
       <div className="bg-app-content-bg rounded-lg border border-app-border p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-row gap-4">
           <div>
             <label className="block text-sm font-medium text-app-text-primary mb-2">
               工作流名称
@@ -217,23 +217,23 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
               className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-        </div>
-        <div className="flex justify-end gap-2 mt-4">
-          {onCancel && (
+          <div className="flex justify-end gap-2 mt-4">
+            {onCancel && (
+              <button
+                onClick={onCancel}
+                className="px-4 py-2 text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors"
+              >
+                取消
+              </button>
+            )}
             <button
-              onClick={onCancel}
-              className="px-4 py-2 text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors"
+              onClick={handleSave}
+              disabled={isSaving || !workflowName.trim()}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
             >
-              取消
+              {isSaving ? "保存中..." : "保存工作流"}
             </button>
-          )}
-          <button
-            onClick={handleSave}
-            disabled={isSaving || !workflowName.trim()}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
-          >
-            {isSaving ? "保存中..." : "保存工作流"}
-          </button>
+          </div>
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { hasLocale } from "next-intl";
 import { routing } from "@/i18n/routing";
 import "@/app/globals.css";
 import AppProvider from "@/providers/app-provider";
+import { Toaster } from "@/components/ui/sonner"; // 导入 Toaster
 
 export default async function LocaleLayout({
   children,
@@ -35,6 +36,7 @@ export default async function LocaleLayout({
       </head>
       <body>
         <AppProvider>{children}</AppProvider>
+        <Toaster /> {/* 添加 Toaster 组件 */}
       </body>
     </html>
   );
