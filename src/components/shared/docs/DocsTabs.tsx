@@ -23,7 +23,7 @@ export default function DocsTabs({
 
   return (
     <div className="flex items-center border-b border-app-border bg-app-content-bg">
-      <div className="flex items-center overflow-x-auto scrollbar-hidden">
+      <div className="flex items-center overflow-x-auto scrollbar-hidden select-none">
         {openDocs.map((doc) => {
           const isActive = doc.uid === activeDocId;
 
