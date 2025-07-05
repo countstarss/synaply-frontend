@@ -19,13 +19,16 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import CustomNode from "./CustomNode";
 import NodePanel, { NodeType } from "./NodePanel";
-import { initialNodes, initialEdges } from "./initialElements";
 import {
   Workflow,
   WorkflowNode,
   WorkflowEdge,
 } from "../../../../../types/team";
 import { generateId } from "../utils/storage";
+import NodeSettingsModal from "./NodeSettingsModal";
+import { nodeStorage } from "../utils/node-storage";
+import WorkflowEditorToolbar from "./WorkflowEditorToolbar";
+import { getColorClasses } from "./SimpleColorPicker";
 
 const nodeTypes = {
   custom: CustomNode,
@@ -42,31 +45,46 @@ interface WorkflowEditorProps {
 
 function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState(
-    workflow?.nodes || initialNodes
-  );
-  const [edges, setEdges, onEdgesChange] = useEdgesState(
-    workflow?.edges || initialEdges
-  );
+  const [nodes, setNodes, onNodesChange] = useNodesState(workflow?.nodes || []);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(workflow?.edges || []);
   const [workflowName, setWorkflowName] = useState(workflow?.name || "");
   const [workflowDescription, setWorkflowDescription] = useState(
     workflow?.description || ""
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [isNodePanelCollapsed, setIsNodePanelCollapsed] = useState(false);
+  const [isNodeSettingsModalOpen, setIsNodeSettingsModalOpen] = useState(false);
+  const [customNodeTypes, setCustomNodeTypes] = useState<NodeType[]>([]);
+  const [isDraft, setIsDraft] = useState(workflow?.isDraft || false);
   const { project } = useReactFlow();
+
+  // Load custom node types
+  useEffect(() => {
+    setCustomNodeTypes(nodeStorage.getAll());
+  }, []);
+
+  const toggleNodePanelCollapse = () => {
+    setIsNodePanelCollapsed(!isNodePanelCollapsed);
+  };
+
+  const handleCustomNodesSave = (nodes: NodeType[]) => {
+    setCustomNodeTypes(nodes);
+  };
 
   // Update nodes and edges when workflow prop changes
   useEffect(() => {
     if (workflow) {
-      setNodes(workflow.nodes || initialNodes);
-      setEdges(workflow.edges || initialEdges);
-      setWorkflowName(workflow.name);
-      setWorkflowDescription(workflow.description);
+      setNodes(workflow.nodes || []);
+      setEdges(workflow.edges || []);
+      setWorkflowName(workflow.name || "");
+      setWorkflowDescription(workflow.description || "");
+      setIsDraft(workflow.isDraft || false);
     } else {
-      setNodes(initialNodes);
-      setEdges(initialEdges);
+      setNodes([]);
+      setEdges([]);
       setWorkflowName("");
       setWorkflowDescription("");
+      setIsDraft(true);
     }
   }, [workflow, setNodes, setEdges]);
 
@@ -113,7 +131,11 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
         data: {
           label: nodeType.label,
           role: nodeType.role,
-          color: nodeType.color,
+          color: nodeType.color.includes(" ")
+            ? nodeType.color
+            : getColorClasses(nodeType.color),
+          icon: nodeType.icon,
+          assignee: undefined,
         },
       };
 
@@ -142,34 +164,14 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
     [setNodes]
   );
 
-  const onAddNode = useCallback(
-    (nodeType: NodeType) => {
-      const newNode: Node = {
-        id: getId(),
-        type: "custom",
-        position: { x: Math.random() * 500, y: Math.random() * 300 },
-        data: {
-          label: nodeType.label,
-          role: nodeType.role,
-          color: nodeType.color,
-        },
-      };
-      setNodes((nds) => nds.concat(newNode));
-    },
-    [setNodes]
-  );
-
-  const handleSave = async () => {
-    if (!workflowName.trim()) {
-      alert("请输入工作流名称");
-      return;
-    }
-
+  const handleSave = async (saveAsDraft = false) => {
     setIsSaving(true);
+
+    const finalName = workflowName.trim() || "未命名工作流";
 
     const workflowData: Workflow = {
       id: workflow?.id || generateId(),
-      name: workflowName.trim(),
+      name: finalName,
       description: workflowDescription.trim(),
       nodes: nodes as WorkflowNode[],
       edges: edges as WorkflowEdge[],
@@ -177,94 +179,75 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
       updatedAt: new Date().toISOString(),
       createdBy: workflow?.createdBy || "当前用户", // 这里应该从用户上下文获取
       tags: workflow?.tags || [],
+      isDraft: saveAsDraft,
     };
 
     if (onSave) {
       onSave(workflowData);
     }
 
+    setIsDraft(saveAsDraft);
     setIsSaving(false);
   };
+
+  const handleSaveWorkflow = () => handleSave(false);
+  const handleSaveAsDraft = () => handleSave(true);
 
   const proOptions = { hideAttribution: true };
 
   return (
-    <div className="w-full flex flex-col gap-4">
-      {/* Workflow Info Form */}
-      <div className="bg-app-content-bg rounded-lg border border-app-border p-4">
-        <div className="flex flex-row gap-4">
-          <div>
-            <label className="block text-sm font-medium text-app-text-primary mb-2">
-              工作流名称
-            </label>
-            <input
-              type="text"
-              value={workflowName}
-              onChange={(e) => setWorkflowName(e.target.value)}
-              placeholder="输入工作流名称..."
-              className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-app-text-primary mb-2">
-              描述
-            </label>
-            <input
-              type="text"
-              value={workflowDescription}
-              onChange={(e) => setWorkflowDescription(e.target.value)}
-              placeholder="输入工作流描述..."
-              className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div className="flex justify-end gap-2 mt-4">
-            {onCancel && (
-              <button
-                onClick={onCancel}
-                className="px-4 py-2 text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors"
-              >
-                取消
-              </button>
-            )}
-            <button
-              onClick={handleSave}
-              disabled={isSaving || !workflowName.trim()}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
-            >
-              {isSaving ? "保存中..." : "保存工作流"}
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="w-full h-full relative">
+      {/* Workflow Editor Toolbar */}
+      <WorkflowEditorToolbar
+        workflowName={workflowName || "未命名工作流"}
+        isDraft={isDraft}
+        isSaving={isSaving}
+        onSave={handleSaveWorkflow}
+        onSaveAsDraft={handleSaveAsDraft}
+        onGoBack={onCancel || (() => {})}
+        disabled={false}
+      />
+
+      {/* Node Panel */}
+      <NodePanel
+        isCollapsed={isNodePanelCollapsed}
+        onToggleCollapse={toggleNodePanelCollapse}
+        onManageNodes={() => setIsNodeSettingsModalOpen(true)}
+        customNodeTypes={customNodeTypes}
+      />
 
       {/* ReactFlow Editor */}
-      <div className="w-full h-[calc(100vh-300px)] bg-app-button-hover dark:bg-app-content-bg rounded-lg border border-app-border relative">
-        <NodePanel onAddNode={onAddNode} />
-        <div className="w-full h-full" ref={reactFlowWrapper}>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeDoubleClick={onNodeDoubleClick}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            nodeTypes={nodeTypes}
-            fitView
-            proOptions={proOptions}
-          >
-            <Controls className="!bg-app-content-bg !border-app-border" />
-            <MiniMap className="!bg-app-content-bg !border-app-border" />
-            <Background
-              variant={BackgroundVariant.Dots}
-              gap={12}
-              size={1}
-              className="!bg-transparent"
-            />
-          </ReactFlow>
-        </div>
+      <div className="w-full h-full bg-app-bg" ref={reactFlowWrapper}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onNodeDoubleClick={onNodeDoubleClick}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          nodeTypes={nodeTypes}
+          fitView
+          proOptions={proOptions}
+        >
+          <Controls className="!bg-app-content-bg !border-app-border" />
+          <MiniMap className="!bg-app-content-bg !border-app-border" />
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={12}
+            size={1}
+            className="!bg-transparent"
+          />
+        </ReactFlow>
       </div>
+
+      {/* Modals */}
+      <NodeSettingsModal
+        isOpen={isNodeSettingsModalOpen}
+        onClose={() => setIsNodeSettingsModalOpen(false)}
+        onSave={handleCustomNodesSave}
+      />
     </div>
   );
 }

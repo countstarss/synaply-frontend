@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { RiFileTextLine, RiFolder3Line, RiAddLine } from 'react-icons/ri';
 import { useDocs } from "@/components/shared/docs";
 import DocsEditor from "@/components/shared/docs/DocsEditor";

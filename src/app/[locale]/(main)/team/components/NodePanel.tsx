@@ -1,14 +1,23 @@
 import React from "react";
+import {
+  RiArrowLeftSLine,
+  RiArrowRightSLine,
+  RiSettings3Line,
+} from "react-icons/ri";
+import { getColorClasses } from "./SimpleColorPicker";
 
 export interface NodeType {
+  id: string; // 新增 ID 字段
   role: string;
   label: string;
   color: string;
   icon: string;
+  tags?: string[]; // 新增 tags 字段
 }
 
-const nodeTypes: NodeType[] = [
+const defaultNodeTypes: NodeType[] = [
   {
+    id: "product",
     role: "product",
     label: "产品经理",
     color:
@@ -16,6 +25,7 @@ const nodeTypes: NodeType[] = [
     icon: "📋",
   },
   {
+    id: "ui",
     role: "ui",
     label: "UI设计师",
     color:
@@ -23,6 +33,7 @@ const nodeTypes: NodeType[] = [
     icon: "🎨",
   },
   {
+    id: "frontend",
     role: "frontend",
     label: "前端开发",
     color:
@@ -30,6 +41,7 @@ const nodeTypes: NodeType[] = [
     icon: "💻",
   },
   {
+    id: "backend",
     role: "backend",
     label: "后端开发",
     color:
@@ -37,6 +49,7 @@ const nodeTypes: NodeType[] = [
     icon: "⚙️",
   },
   {
+    id: "test",
     role: "test",
     label: "测试工程师",
     color:
@@ -44,6 +57,7 @@ const nodeTypes: NodeType[] = [
     icon: "🧪",
   },
   {
+    id: "devops",
     role: "devops",
     label: "DevOps",
     color:
@@ -53,11 +67,20 @@ const nodeTypes: NodeType[] = [
 ];
 
 interface NodePanelProps {
-  onAddNode?: (nodeType: NodeType) => void;
+  // onAddNode?: (nodeType: NodeType) => void; // Removed as it's not directly used here
+  isCollapsed: boolean; // New prop for controlled collapse
+  onToggleCollapse: () => void; // New prop for toggling collapse
+  onManageNodes: () => void; // New prop to open settings modal
+  customNodeTypes: NodeType[]; // New prop to pass custom nodes
 }
 
-export default function NodePanel({}: // onAddNode
-NodePanelProps) {
+export default function NodePanel({
+  // onAddNode, // Removed from destructuring
+  isCollapsed,
+  onToggleCollapse,
+  onManageNodes,
+  customNodeTypes,
+}: NodePanelProps) {
   const onDragStart = (event: React.DragEvent, nodeType: NodeType) => {
     event.dataTransfer.setData(
       "application/reactflow",
@@ -66,24 +89,60 @@ NodePanelProps) {
     event.dataTransfer.effectAllowed = "move";
   };
 
+  const nodesToDisplay =
+    customNodeTypes.length > 0 ? customNodeTypes : defaultNodeTypes;
+
   return (
-    <div className="absolute top-4 left-4 bg-app-content-bg rounded-lg shadow-lg dark:shadow-black/20 p-4 z-10 border border-app-border">
-      <h3 className="text-sm font-semibold mb-3 text-app-text-primary">
-        节点类型
-      </h3>
-      <div className="space-y-2">
-        {nodeTypes.map((nodeType) => (
-          <div
-            key={nodeType.role}
-            className={`${nodeType.color} border-2 px-3 py-2 rounded-lg cursor-move flex items-center gap-2 hover:shadow-md dark:hover:shadow-black/10 transition-shadow`}
-            onDragStart={(event) => onDragStart(event, nodeType)}
-            draggable
-          >
-            <span>{nodeType.icon}</span>
-            <span className="text-sm font-medium">{nodeType.label}</span>
+    <div
+      className={`absolute top-4 left-4 bg-app-content-bg rounded-lg shadow-lg dark:shadow-black/20 p-4 z-10 border border-app-border transition-all duration-300
+        ${isCollapsed ? "w-12 overflow-hidden" : "w-64"}`} // Adjust width based on collapse state
+    >
+      <button
+        onClick={onToggleCollapse}
+        className="absolute top-2 right-2 p-1 rounded-full hover:bg-app-button-hover transition-colors text-app-text-secondary"
+        title={isCollapsed ? "展开节点面板" : "折叠节点面板"}
+      >
+        {isCollapsed ? (
+          <RiArrowRightSLine className="w-5 h-5" />
+        ) : (
+          <RiArrowLeftSLine className="w-5 h-5" />
+        )}
+      </button>
+
+      {!isCollapsed && ( // Only show content when not collapsed
+        <>
+          <h3 className="text-sm font-semibold mb-3 text-app-text-primary">
+            节点类型
+          </h3>
+          <div className="space-y-2">
+            {nodesToDisplay.map((nodeType) => {
+              // 如果颜色是简单的颜色值（如 "blue"），则使用 getColorClasses 转换
+              const colorClass = nodeType.color.includes(" ")
+                ? nodeType.color // 已经是完整的类名
+                : getColorClasses(nodeType.color); // 简单颜色值，需要转换
+
+              return (
+                <div
+                  key={nodeType.id}
+                  className={`${colorClass} border-2 px-3 py-2 rounded-lg cursor-move flex items-center gap-2 hover:shadow-md dark:hover:shadow-black/10 transition-shadow`}
+                  onDragStart={(event) => onDragStart(event, nodeType)}
+                  draggable
+                >
+                  <span>{nodeType.icon}</span>
+                  <span className="text-sm font-medium">{nodeType.label}</span>
+                </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
+          <button
+            onClick={onManageNodes}
+            className="mt-4 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors"
+          >
+            <RiSettings3Line className="w-4 h-4" />
+            管理节点类型
+          </button>
+        </>
+      )}
     </div>
   );
 }

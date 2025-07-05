@@ -35,6 +35,7 @@ export interface Workflow {
   updatedAt: string;
   createdBy: string;
   tags?: string[];
+  isDraft?: boolean;
 }
 
 export interface WorkflowIssue {

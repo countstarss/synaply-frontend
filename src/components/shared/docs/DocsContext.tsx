@@ -45,13 +45,15 @@ export default function DocsProvider({ children, workspaceType }: DocsProviderPr
   const setActiveDocId = useDocStore((state) => state.setActiveDocId);
 
   // 使用 Dexie 查询数据库中的文档
-  const docs = useLiveQuery(
-    () => db.docs
-      .where('workspaceType')
-      .equals(workspaceType)
-      .toArray(),
-    [workspaceType]
-  ) || [];
+  const docs = useMemo(() => {
+    return useLiveQuery(
+      () => db.docs
+        .where('workspaceType')
+        .equals(workspaceType)
+        .toArray(),
+      [workspaceType]
+    ) || [];
+  }, [workspaceType]);
 
   // 初始化示例文档
   useEffect(() => {
@@ -181,7 +183,7 @@ export default function DocsProvider({ children, workspaceType }: DocsProviderPr
         console.error('Failed to restore open docs:', error);
       }
     }
-  }, [docs, workspaceType]);
+  }, [docs, workspaceType, setActiveDocId]);
 
   // 保存打开的文档到 localStorage
   useEffect(() => {

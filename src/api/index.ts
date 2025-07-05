@@ -10,22 +10,6 @@
  * ---------------------------------------------------------------
  */
 
-export interface CreateTeamDto {
-  /**
-   * The name of the team
-   * @example "Team 1"
-   */
-  name: string;
-}
-
-export interface InviteMemberDto {
-  /**
-   * The email of the member to invite
-   * @example "luke@wizlab.org"
-   */
-  email: string;
-}
-
 export interface CreateWorkflowDto {
   /**
    * The name of the workflow
@@ -118,6 +102,78 @@ export interface UpdateProjectDto {
   name?: string;
   /** The description of the project */
   description?: string;
+}
+
+export interface CreateGroupChatDto {
+  /**
+   * 群聊名称
+   * @example "产品设计讨论组"
+   */
+  name: string;
+  /**
+   * 群聊描述
+   * @example "关于V2版本UI/UX的讨论"
+   */
+  description?: string;
+  /**
+   * 群聊成员的TeamMember ID列表
+   * @example ["uuid-of-member-1","uuid-of-member-2"]
+   */
+  memberIds: string[];
+}
+
+export interface CreatePrivateChatDto {
+  /**
+   * 私聊对象的TeamMember ID
+   * @example "uuid-of-target-member"
+   */
+  targetMemberId: string;
+}
+
+export type UpdateChatDto = object;
+
+export interface AddChatMembersDto {
+  /**
+   * 要添加到群聊的TeamMember ID列表
+   * @example ["uuid-of-new-member-1","uuid-of-new-member-2"]
+   */
+  memberIds: string[];
+}
+
+export interface CreateMessageDto {
+  /**
+   * 消息内容
+   * @example "你好，明天会议时间不变。"
+   */
+  content: string;
+  /**
+   * 消息类型
+   * @example "TEXT"
+   */
+  type: "TEXT" | "IMAGE" | "FILE" | "SYSTEM";
+  /**
+   * 回复的消息ID
+   * @example "uuid-of-message-to-reply"
+   */
+  repliedToMessageId?: string;
+}
+
+export interface UpdateMessageDto {
+  /**
+   * 要更新的消息内容
+   * @example "你好，明天会议时间不变。"
+   */
+  content?: string;
+  /**
+   * 消息类型
+   * @example "TEXT"
+   */
+  type?: "TEXT" | "IMAGE" | "FILE" | "SYSTEM";
+  /**
+   * 回复的消息ID
+   * @example "uuid-of-message-to-reply"
+   */
+  repliedToMessageId?: string;
 }
 
 export type QueryParamsType = Record<string | number, any>;
@@ -431,107 +487,6 @@ export class Api<
         ...params,
       }),
   };
-  teams = {
-    /**
-     * No description
-     *
-     * @tags Team
-     * @name TeamControllerCreate
-     * @request POST:/teams
-     */
-    teamControllerCreate: (data: CreateTeamDto, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/teams`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Team
-     * @name TeamControllerGetUserTeams
-     * @request GET:/teams
-     */
-    teamControllerGetUserTeams: (params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/teams`,
-        method: "GET",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Team
-     * @name TeamControllerInvite
-     * @request POST:/teams/{teamId}/invite
-     */
-    teamControllerInvite: (
-      teamId: string,
-      data: InviteMemberDto,
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/teams/${teamId}/invite`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Team
-     * @name TeamControllerGetTeam
-     * @request GET:/teams/{teamId}
-     */
-    teamControllerGetTeam: (teamId: string, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/teams/${teamId}`,
-        method: "GET",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Team
-     * @name TeamControllerUpdateMemberRole
-     * @request PATCH:/teams/{teamId}/members/{memberId}/role
-     */
-    teamControllerUpdateMemberRole: (
-      teamId: string,
-      memberId: string,
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/teams/${teamId}/members/${memberId}/role`,
-        method: "PATCH",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Team
-     * @name TeamControllerRemoveMember
-     * @request DELETE:/teams/{teamId}/members/{memberId}
-     */
-    teamControllerRemoveMember: (
-      teamId: string,
-      memberId: string,
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/teams/${teamId}/members/${memberId}`,
-        method: "DELETE",
-        ...params,
-      }),
-  };
   workspaces = {
     /**
      * No description
@@ -567,11 +522,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Workflows
-     * @name WorkflowsControllerCreate
+     * @tags Workflow
+     * @name WorkflowControllerCreate
      * @request POST:/workspaces/{workspaceId}/workflows
      */
-    workflowsControllerCreate: (
+    workflowControllerCreate: (
       workspaceId: string,
       data: CreateWorkflowDto,
       params: RequestParams = {},
@@ -587,11 +542,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Workflows
-     * @name WorkflowsControllerFindAll
+     * @tags Workflow
+     * @name WorkflowControllerFindAll
      * @request GET:/workspaces/{workspaceId}/workflows
      */
-    workflowsControllerFindAll: (
+    workflowControllerFindAll: (
       workspaceId: string,
       params: RequestParams = {},
     ) =>
@@ -604,11 +559,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Workflows
-     * @name WorkflowsControllerFindOne
+     * @tags Workflow
+     * @name WorkflowControllerFindOne
      * @request GET:/workspaces/{workspaceId}/workflows/{id}
      */
-    workflowsControllerFindOne: (
+    workflowControllerFindOne: (
       id: string,
       workspaceId: string,
       params: RequestParams = {},
@@ -622,11 +577,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Workflows
-     * @name WorkflowsControllerUpdate
+     * @tags Workflow
+     * @name WorkflowControllerUpdate
      * @request PATCH:/workspaces/{workspaceId}/workflows/{id}
      */
-    workflowsControllerUpdate: (
+    workflowControllerUpdate: (
       id: string,
       workspaceId: string,
       data: UpdateWorkflowDto,
@@ -643,11 +598,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Workflows
-     * @name WorkflowsControllerRemove
+     * @tags Workflow
+     * @name WorkflowControllerRemove
      * @request DELETE:/workspaces/{workspaceId}/workflows/{id}
      */
-    workflowsControllerRemove: (
+    workflowControllerRemove: (
       id: string,
       workspaceId: string,
       params: RequestParams = {},
@@ -661,11 +616,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Workflows
-     * @name WorkflowsControllerPublish
+     * @tags Workflow
+     * @name WorkflowControllerPublish
      * @request POST:/workspaces/{workspaceId}/workflows/{id}/publish
      */
-    workflowsControllerPublish: (
+    workflowControllerPublish: (
       id: string,
       workspaceId: string,
       params: RequestParams = {},
@@ -679,11 +634,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Issues
-     * @name IssuesControllerCreate
+     * @tags Issue
+     * @name IssueControllerCreate
      * @request POST:/workspaces/{workspaceId}/issues
      */
-    issuesControllerCreate: (
+    issueControllerCreate: (
       workspaceId: string,
       data: CreateIssueDto,
       params: RequestParams = {},
@@ -699,11 +654,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Issues
-     * @name IssuesControllerFindAll
+     * @tags Issue
+     * @name IssueControllerFindAll
      * @request GET:/workspaces/{workspaceId}/issues
      */
-    issuesControllerFindAll: (
+    issueControllerFindAll: (
       workspaceId: string,
       query: {
         projectId: string;
@@ -720,11 +675,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Issues
-     * @name IssuesControllerFindOne
+     * @tags Issue
+     * @name IssueControllerFindOne
      * @request GET:/workspaces/{workspaceId}/issues/{id}
      */
-    issuesControllerFindOne: (
+    issueControllerFindOne: (
       id: string,
       workspaceId: string,
       params: RequestParams = {},
@@ -738,11 +693,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Issues
-     * @name IssuesControllerUpdate
+     * @tags Issue
+     * @name IssueControllerUpdate
      * @request PATCH:/workspaces/{workspaceId}/issues/{id}
      */
-    issuesControllerUpdate: (
+    issueControllerUpdate: (
       id: string,
       workspaceId: string,
       data: UpdateIssueDto,
@@ -759,11 +714,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Issues
-     * @name IssuesControllerRemove
+     * @tags Issue
+     * @name IssueControllerRemove
      * @request DELETE:/workspaces/{workspaceId}/issues/{id}
      */
-    issuesControllerRemove: (
+    issueControllerRemove: (
       id: string,
       workspaceId: string,
       params: RequestParams = {},
@@ -777,11 +732,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Issues
-     * @name IssuesControllerAddComment
+     * @tags Issue
+     * @name IssueControllerAddComment
      * @request POST:/workspaces/{workspaceId}/issues/{issueId}/comments
      */
-    issuesControllerAddComment: (
+    issueControllerAddComment: (
       issueId: string,
       workspaceId: string,
       data: CreateCommentDto,
@@ -798,11 +753,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Issues
-     * @name IssuesControllerAddDependency
+     * @tags Issue
+     * @name IssueControllerAddDependency
      * @request POST:/workspaces/{workspaceId}/issues/{issueId}/dependencies
      */
-    issuesControllerAddDependency: (
+    issueControllerAddDependency: (
       issueId: string,
       workspaceId: string,
       data: CreateIssueDependencyDto,
@@ -819,11 +774,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Issues
-     * @name IssuesControllerRemoveDependency
+     * @tags Issue
+     * @name IssueControllerRemoveDependency
      * @request DELETE:/workspaces/{workspaceId}/issues/{issueId}/dependencies/{dependsOnIssueId}
      */
-    issuesControllerRemoveDependency: (
+    issueControllerRemoveDependency: (
       issueId: string,
       dependsOnIssueId: string,
       workspaceId: string,
@@ -940,6 +895,309 @@ export class Api<
       this.request<void, any>({
         path: `/workspaces/${workspaceId}/projects/${id}`,
         method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+  };
+  chats = {
+    /**
+     * No description
+     *
+     * @tags Chat
+     * @name ChatControllerCreateGroupChat
+     * @summary 创建群聊
+     * @request POST:/chats/group
+     * @secure
+     */
+    chatControllerCreateGroupChat: (
+      data: CreateGroupChatDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/chats/group`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Chat
+     * @name ChatControllerCreatePrivateChat
+     * @summary 创建或获取私聊
+     * @request POST:/chats/private
+     * @secure
+     */
+    chatControllerCreatePrivateChat: (
+      data: CreatePrivateChatDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/chats/private`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Chat
+     * @name ChatControllerFindAllChats
+     * @summary 获取当前用户的所有聊天会话
+     * @request GET:/chats
+     * @secure
+     */
+    chatControllerFindAllChats: (
+      query: {
+        type: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/chats`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Chat
+     * @name ChatControllerFindOneChat
+     * @summary 获取单个聊天会话的详细信息
+     * @request GET:/chats/{chatId}
+     * @secure
+     */
+    chatControllerFindOneChat: (chatId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/chats/${chatId}`,
+        method: "GET",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Chat
+     * @name ChatControllerUpdateChat
+     * @summary 更新群聊信息（仅限管理员）
+     * @request PATCH:/chats/{chatId}
+     * @secure
+     */
+    chatControllerUpdateChat: (
+      chatId: string,
+      data: UpdateChatDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/chats/${chatId}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Chat
+     * @name ChatControllerDeleteChat
+     * @summary 删除聊天会话（仅限创建者）
+     * @request DELETE:/chats/{chatId}
+     * @secure
+     */
+    chatControllerDeleteChat: (chatId: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/chats/${chatId}`,
+        method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Chat
+     * @name ChatControllerAddMembersToGroupChat
+     * @summary 向群聊添加新成员（仅限管理员）
+     * @request POST:/chats/{chatId}/members
+     * @secure
+     */
+    chatControllerAddMembersToGroupChat: (
+      chatId: string,
+      data: AddChatMembersDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/chats/${chatId}/members`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Chat
+     * @name ChatControllerRemoveMemberFromGroupChat
+     * @summary 从群聊移除成员（仅限管理员）
+     * @request DELETE:/chats/{chatId}/members/{teamMemberId}
+     * @secure
+     */
+    chatControllerRemoveMemberFromGroupChat: (
+      chatId: string,
+      teamMemberId: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/chats/${chatId}/members/${teamMemberId}`,
+        method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Chat
+     * @name ChatControllerLeaveGroupChat
+     * @summary 当前用户退出群聊
+     * @request POST:/chats/{chatId}/leave
+     * @secure
+     */
+    chatControllerLeaveGroupChat: (
+      chatId: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/chats/${chatId}/leave`,
+        method: "POST",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Message
+     * @name MessageControllerCreateMessage
+     * @summary 在指定聊天中发送消息
+     * @request POST:/chats/{chatId}/messages
+     * @secure
+     */
+    messageControllerCreateMessage: (
+      chatId: string,
+      data: CreateMessageDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/chats/${chatId}/messages`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Message
+     * @name MessageControllerFindMessagesByChatId
+     * @summary 获取指定聊天的消息列表（分页）
+     * @request GET:/chats/{chatId}/messages
+     * @secure
+     */
+    messageControllerFindMessagesByChatId: (
+      chatId: string,
+      query: {
+        cursor: string;
+        limit: number;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/chats/${chatId}/messages`,
+        method: "GET",
+        query: query,
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Message
+     * @name MessageControllerUpdateMessage
+     * @summary 编辑已发送的消息（仅限发送者）
+     * @request PATCH:/chats/{chatId}/messages/{messageId}
+     * @secure
+     */
+    messageControllerUpdateMessage: (
+      messageId: string,
+      chatId: any,
+      data: UpdateMessageDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/chats/${chatId}/messages/${messageId}`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Message
+     * @name MessageControllerDeleteMessage
+     * @summary 删除已发送的消息（仅限发送者，软删除）
+     * @request DELETE:/chats/{chatId}/messages/{messageId}
+     * @secure
+     */
+    messageControllerDeleteMessage: (
+      messageId: string,
+      chatId: any,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/chats/${chatId}/messages/${messageId}`,
+        method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Message
+     * @name MessageControllerMarkMessageAsRead
+     * @summary 将消息标记为已读
+     * @request POST:/chats/{chatId}/messages/{messageId}/read
+     * @secure
+     */
+    messageControllerMarkMessageAsRead: (
+      chatId: string,
+      messageId: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/chats/${chatId}/messages/${messageId}/read`,
+        method: "POST",
         secure: true,
         ...params,
       }),

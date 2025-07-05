@@ -9,6 +9,7 @@ import {
   RiFlowChart,
 } from "react-icons/ri";
 import WorkflowEditor from "../components/WorkflowEditor";
+import WorkflowSetupModal from "../components/WorkflowSetupModal";
 import { Workflow } from "../../../../../types/team";
 import { workflowStorage } from "../utils/storage";
 
@@ -16,6 +17,8 @@ export default function Workflows() {
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "editor">("list");
+  const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
+  const [showDraftsOnly, setShowDraftsOnly] = useState(false);
 
   useEffect(() => {
     setWorkflows(workflowStorage.getAll());
@@ -23,6 +26,25 @@ export default function Workflows() {
 
   const handleCreateNew = () => {
     setEditingWorkflow(null);
+    setIsSetupModalOpen(true);
+  };
+
+  const handleSetupContinue = (workflowInfo: {
+    name: string;
+    description: string;
+  }) => {
+    setEditingWorkflow({
+      id: `workflow_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: workflowInfo.name,
+      description: workflowInfo.description,
+      nodes: [],
+      edges: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdBy: "当前用户",
+      isDraft: true,
+    });
+    setIsSetupModalOpen(false);
     setViewMode("editor");
   };
 
@@ -53,31 +75,11 @@ export default function Workflows() {
   if (viewMode === "editor") {
     return (
       <div className="h-full w-full">
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-xl font-bold">
-                {editingWorkflow ? "编辑工作流" : "新建工作流"}
-              </h1>
-              <p className="text-app-text-secondary text-sm mt-0.5">
-                {editingWorkflow
-                  ? `编辑 "${editingWorkflow.name}"`
-                  : "创建新的工作流模板"}
-              </p>
-            </div>
-            <button
-              onClick={handleBackToList}
-              className="px-3 py-1.5 text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors text-sm"
-            >
-              返回列表
-            </button>
-          </div>
-          <WorkflowEditor
-            workflow={editingWorkflow}
-            onSave={handleSaveWorkflow}
-            onCancel={handleBackToList}
-          />
-        </div>
+        <WorkflowEditor
+          workflow={editingWorkflow}
+          onSave={handleSaveWorkflow}
+          onCancel={handleBackToList}
+        />
       </div>
     );
   }
@@ -105,11 +107,17 @@ export default function Workflows() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
           <div className="bg-app-content-bg rounded-lg border border-app-border p-3">
             <p className="text-xs text-app-text-secondary mb-1">总工作流</p>
             <p className="text-xl font-semibold text-app-text-primary">
               {workflows.length}
+            </p>
+          </div>
+          <div className="bg-app-content-bg rounded-lg border border-app-border p-3">
+            <p className="text-xs text-app-text-secondary mb-1">草稿</p>
+            <p className="text-xl font-semibold text-app-text-primary">
+              {workflows.filter((w) => w.isDraft).length}
             </p>
           </div>
           <div className="bg-app-content-bg rounded-lg border border-app-border p-3">
@@ -128,10 +136,22 @@ export default function Workflows() {
 
         {/* Workflows List */}
         <div className="bg-app-content-bg rounded-lg border border-app-border">
-          <div className="p-3 border-b border-app-border">
+          <div className="p-3 border-b border-app-border flex justify-between items-center">
             <h2 className="text-base font-semibold text-app-text-primary">
               工作流列表
             </h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowDraftsOnly(!showDraftsOnly)}
+                className={`text-sm px-3 py-1 rounded-md transition-colors ${
+                  showDraftsOnly
+                    ? "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400"
+                    : "text-app-text-secondary hover:text-app-text-primary"
+                }`}
+              >
+                {showDraftsOnly ? "显示所有" : "仅显示草稿"}
+              </button>
+            </div>
           </div>
 
           {workflows.length === 0 ? (
@@ -153,70 +173,84 @@ export default function Workflows() {
             </div>
           ) : (
             <div className="divide-y divide-app-border">
-              {workflows.map((workflow) => (
-                <div
-                  key={workflow.id}
-                  className="p-3 hover:bg-app-button-hover transition-colors"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-base font-semibold text-app-text-primary mb-1 truncate">
-                        {workflow.name}
-                      </h3>
-                      <p className="text-app-text-secondary text-sm mb-2 line-clamp-2">
-                        {workflow.description}
-                      </p>
-                      <div className="flex items-center gap-3 text-xs text-app-text-muted">
-                        <span>节点: {workflow.nodes.length}</span>
-                        <span>创建者: {workflow.createdBy}</span>
-                        <span>
-                          创建时间:{" "}
-                          {new Date(workflow.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      {workflow.tags && workflow.tags.length > 0 && (
-                        <div className="flex gap-1.5 mt-2">
-                          {workflow.tags.map((tag, index) => (
-                            <span
-                              key={index}
-                              className="text-xs px-1.5 py-0.5 bg-app-button-hover text-app-text-secondary rounded"
-                            >
-                              {tag}
+              {workflows
+                .filter((workflow) => !showDraftsOnly || workflow.isDraft)
+                .map((workflow) => (
+                  <div
+                    key={workflow.id}
+                    className="p-3 hover:bg-app-button-hover transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base font-semibold text-app-text-primary mb-1 truncate flex items-center gap-2">
+                          {workflow.name}
+                          {workflow.isDraft && (
+                            <span className="text-xs bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2 py-0.5 rounded">
+                              草稿
                             </span>
-                          ))}
+                          )}
+                        </h3>
+                        <p className="text-app-text-secondary text-sm mb-2 line-clamp-2">
+                          {workflow.description}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs text-app-text-muted">
+                          <span>节点: {workflow.nodes.length}</span>
+                          <span>创建者: {workflow.createdBy}</span>
+                          <span>
+                            创建时间:{" "}
+                            {new Date(workflow.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 ml-3">
-                      <button
-                        onClick={() => handleEditWorkflow(workflow)}
-                        className="p-1.5 text-app-text-secondary hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                        title="查看/编辑"
-                      >
-                        <RiEyeLine className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleEditWorkflow(workflow)}
-                        className="p-1.5 text-app-text-secondary hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
-                        title="编辑"
-                      >
-                        <RiEditLine className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteWorkflow(workflow.id)}
-                        className="p-1.5 text-app-text-secondary hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                        title="删除"
-                      >
-                        <RiDeleteBinLine className="w-4 h-4" />
-                      </button>
+                        {workflow.tags && workflow.tags.length > 0 && (
+                          <div className="flex gap-1.5 mt-2">
+                            {workflow.tags.map((tag, index) => (
+                              <span
+                                key={index}
+                                className="text-xs px-1.5 py-0.5 bg-app-button-hover text-app-text-secondary rounded"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 ml-3">
+                        <button
+                          onClick={() => handleEditWorkflow(workflow)}
+                          className="p-1.5 text-app-text-secondary hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                          title="查看/编辑"
+                        >
+                          <RiEyeLine className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleEditWorkflow(workflow)}
+                          className="p-1.5 text-app-text-secondary hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                          title="编辑"
+                        >
+                          <RiEditLine className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteWorkflow(workflow.id)}
+                          className="p-1.5 text-app-text-secondary hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                          title="删除"
+                        >
+                          <RiDeleteBinLine className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Workflow Setup Modal */}
+      <WorkflowSetupModal
+        isOpen={isSetupModalOpen}
+        onClose={() => setIsSetupModalOpen(false)}
+        onContinue={handleSetupContinue}
+      />
     </div>
   );
 }
