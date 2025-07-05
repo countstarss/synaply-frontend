@@ -204,14 +204,10 @@ function WorkflowIssueDetailFlow({
           ...node.data,
           status: nodeStatus?.status || "todo",
           assignee: nodeStatus?.assignee,
+          isCurrentNode, // 添加当前节点标识
         },
         className: isCurrentNode ? "ring-2 ring-blue-500" : "",
-        style: {
-          backgroundColor: getNodeBackgroundColor(
-            nodeStatus?.status || "todo",
-            isCurrentNode
-          ),
-        },
+        // 移除 style 属性，让 CustomNode 组件自己处理颜色
       };
     });
 
@@ -388,13 +384,13 @@ function WorkflowIssueDetailFlow({
   return (
     <div className="h-full flex flex-col gap-4">
       {/* Issue Info */}
-      <div className="bg-app-content-bg rounded-lg border border-app-border p-4">
+      <div className="bg-app-content-bg rounded-lg border border-app-border p-4 flex-shrink-0">
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-xl font-semibold text-app-text-primary mb-2">
               {issue.title}
             </h2>
-            <p className="text-app-text-secondary mb-2">{issue.description}</p>
+            {/* <p className="text-app-text-secondary mb-2">{issue.description}</p> */}
             <div className="flex items-center gap-4 text-sm text-app-text-muted">
               <span>工作流: {workflowIssue.workflowName}</span>
               <span>优先级: {issue.priority}</span>
@@ -411,15 +407,15 @@ function WorkflowIssueDetailFlow({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="flex-1 gap-4 min-h-0 flex flex-row">
         {/* Workflow Visualization */}
-        <div className="lg:col-span-2 bg-app-content-bg rounded-lg border border-app-border">
-          <div className="p-4 border-b border-app-border">
+        <div className="bg-app-content-bg rounded-lg border border-app-border flex flex-col flex-2">
+          <div className="p-4 border-b border-app-border flex-shrink-0">
             <h3 className="text-lg font-semibold text-app-text-primary">
               工作流进度
             </h3>
           </div>
-          <div className="h-96">
+          <div className="flex-1 min-h-0">
             <ReactFlow
               nodes={flowNodes}
               edges={flowEdges}
@@ -442,7 +438,7 @@ function WorkflowIssueDetailFlow({
         </div>
 
         {/* Current Node Control */}
-        <div>
+        <div className="flex flex-col h-full gap-4 flex-1">
           {currentNode && (
             <NodeStatusUpdate
               nodeId={currentNode.id}
@@ -455,32 +451,60 @@ function WorkflowIssueDetailFlow({
               canPrevious={canPrevious}
             />
           )}
+
+          {/* Workflow History */}
+          <div className="flex-1 bg-app-content-bg rounded-lg border border-app-border flex flex-col">
+            <div className="p-4 border-b border-app-border flex-shrink-0">
+              <h3 className="text-lg font-semibold text-app-text-primary">
+                操作历史
+              </h3>
+            </div>
+            <div className="flex-1 p-4 overflow-y-auto">
+              <div className="space-y-3">
+                {workflowIssue.history
+                  .slice(-10)
+                  .reverse()
+                  .map((entry, index) => (
+                    <div key={index} className="flex items-start gap-3 text-sm">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-app-text-primary">{entry.action}</p>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-app-text-muted">
+                          <span>{entry.fromUser}</span>
+                          <span>•</span>
+                          <span>
+                            {new Date(entry.timestamp).toLocaleString()}
+                          </span>
+                        </div>
+                        {entry.comment && (
+                          <p className="mt-1 text-xs text-app-text-secondary bg-app-button-hover rounded px-2 py-1">
+                            {entry.comment}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                {workflowIssue.history.length === 0 && (
+                  <div className="text-center text-app-text-muted py-8">
+                    暂无操作历史
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function getNodeBackgroundColor(status: string, isCurrent: boolean): string {
-  const baseColors = {
-    todo: "#f3f4f6",
-    in_progress: "#dbeafe",
-    almost: "#fef3c7",
-    done: "#d1fae5",
-  };
-
-  return isCurrent
-    ? "#bfdbfe"
-    : baseColors[status as keyof typeof baseColors] || baseColors.todo;
-}
-
 export default function WorkflowIssueDetail(props: WorkflowIssueDetailProps) {
   if (!props.isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-app-bg rounded-lg shadow-xl w-full max-w-7xl mx-4 h-[90vh] overflow-hidden">
-        <div className="h-full p-6">
+    <div className="fixed inset-0 dark:bg-black/50 bg-white/80 flex items-center justify-center z-50">
+      <div className="bg-app-bg rounded-lg shadow-xl w-[95vw] h-[95vh] overflow-hidden">
+        <div className="h-full p-4">
           <ReactFlowProvider>
             <WorkflowIssueDetailFlow {...props} />
           </ReactFlowProvider>

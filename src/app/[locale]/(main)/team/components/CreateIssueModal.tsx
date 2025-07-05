@@ -167,7 +167,7 @@ export default function CreateIssueModal({
   const selectedWorkflow = workflows.find((w) => w.id === selectedWorkflowId);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 dark:bg-black/50 bg-white/80 flex items-center justify-center z-50">
       <div className="bg-app-content-bg rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-app-border">
           <h2 className="text-xl font-semibold text-app-text-primary">
@@ -233,7 +233,7 @@ export default function CreateIssueModal({
                 ))}
               </select>
               {selectedWorkflow && (
-                <div className="mt-2 p-3 bg-app-button-hover rounded border">
+                <div className="my-2 p-3 bg-app-button-hover rounded-lg border">
                   <div className="flex items-center gap-2 mb-2">
                     <RiFlowChart className="w-4 h-4 text-app-text-secondary" />
                     <span className="text-sm font-medium text-app-text-primary">

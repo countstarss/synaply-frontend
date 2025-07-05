@@ -8,6 +8,8 @@ export interface CustomNodeData {
   color: string;
   icon?: string;
   assignee?: string;
+  status?: "todo" | "in_progress" | "almost" | "done";
+  isCurrentNode?: boolean;
 }
 
 const roleColors: Record<string, { border: string; bg: string; text: string }> =
@@ -72,6 +74,14 @@ function CustomNode({ data, isConnectable }: NodeProps<CustomNodeData>) {
   // 优先使用传入的图标，如果没有则使用基于 role 的预设图标
   const icon = data.icon || roleIcons[data.role] || "👤";
 
+  // 状态颜色映射
+  const statusColors = {
+    todo: "bg-gray-400",
+    in_progress: "bg-blue-500",
+    almost: "bg-yellow-500",
+    done: "bg-green-500",
+  };
+
   const handleAssigneeEdit = () => {
     setTempAssignee(data.assignee || "");
     setIsEditingAssignee(true);
@@ -91,7 +101,9 @@ function CustomNode({ data, isConnectable }: NodeProps<CustomNodeData>) {
 
   return (
     <div
-      className={`group px-4 py-3 rounded-lg border-2 ${colors} min-w-[140px] shadow-sm hover:shadow-md dark:shadow-black/20 transition-shadow`}
+      className={`group px-4 py-3 rounded-lg border-2 ${colors} min-w-[140px] shadow-sm hover:shadow-md dark:shadow-black/20 transition-shadow relative ${
+        data.isCurrentNode ? "ring-2 ring-blue-500 ring-offset-2" : ""
+      }`}
     >
       <Handle
         type="target"
@@ -106,6 +118,16 @@ function CustomNode({ data, isConnectable }: NodeProps<CustomNodeData>) {
         className="w-3 h-3 bg-gray-400 dark:bg-gray-600 border-2 border-white dark:border-app-content-bg"
         id="left"
       />
+
+      {/* 状态指示器 */}
+      {data.status && (
+        <div
+          className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white dark:border-app-content-bg ${
+            statusColors[data.status]
+          }`}
+          title={`状态: ${data.status}`}
+        />
+      )}
 
       {/* 主要内容 */}
       <div className="flex items-center gap-2 mb-2">
