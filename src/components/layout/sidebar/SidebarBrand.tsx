@@ -80,12 +80,14 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
               <Avatar className="h-8 w-8">
                 <AvatarImage src={currentWorkspace.avatarUrl} />
                 <AvatarFallback className="bg-white text-black font-bold text-sm">
-                  {currentWorkspace.name[0]}
+                  {user?.user_metadata.name
+                    ? user?.user_metadata.name.slice(0, 1)
+                    : user?.email?.slice(0, 1).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start select-none">
                 <span className="font-semibold text-lg">
-                  {user?.user_metadata.name}
+                  {user?.user_metadata.name || user?.email?.split("@")[0]}
                 </span>
               </div>
             </div>
@@ -110,7 +112,9 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
             <Avatar className="h-10 w-10">
               <AvatarImage src={currentWorkspace.avatarUrl} />
               <AvatarFallback className="bg-blue-500 text-white font-bold">
-                {user?.user_metadata.name.slice(0, 1)}
+                {user?.user_metadata.name
+                  ? user?.user_metadata.name.slice(0, 1)
+                  : user?.email?.slice(0, 1).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">

@@ -186,7 +186,10 @@ export function ChatRoom({ channelId, type, channel }: ChatRoomProps) {
     await sendMessage({
       content,
       userId: session.user?.id || "",
-      userName: session.user?.email?.split("@")[0] || "Anonymous",
+      userName:
+        session.user?.user_metadata.name ||
+        session.user?.email?.split("@")[0] ||
+        "Anonymous",
       userAvatar:
         session.user?.user_metadata.avatar_url ||
         "https://avatar.vercel.sh/luke",

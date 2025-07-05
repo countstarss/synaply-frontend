@@ -103,17 +103,11 @@ const ChatContent = React.memo(() => {
     : undefined;
 
   // 判断是否为 Convex 公共聊天路由 (/chat/public)
-  const isConvexPublicChatRoute = pathname.includes("/chat/public");
+  const isConvexPublicChatRoute = pathname.includes("/public");
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {isSupabaseChatRoute && supabaseChatId ? (
-        <SupabaseChatRoom
-          chatId={supabaseChatId}
-          type="group"
-          chatName="Supabase Chat"
-        /> // 暂时写死 type 和 chatName
-      ) : isConvexPublicChatRoute ? (
+      {isConvexPublicChatRoute ? (
         <ChatRoom
           channelId={currentChannelId}
           type="public"
@@ -126,6 +120,12 @@ const ChatContent = React.memo(() => {
             createdAt: Date.now(),
           }}
         />
+      ) : isSupabaseChatRoute && supabaseChatId ? (
+        <SupabaseChatRoom
+          chatId={supabaseChatId}
+          type="group"
+          chatName="Supabase Chat"
+        /> // 暂时写死 type 和 chatName
       ) : (
         // 默认显示 Convex 公共聊天，或者可以显示一个欢迎页面
         <div className="flex items-center justify-center h-full text-muted-foreground">
