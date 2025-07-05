@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   RiFileTextLine,
   RiFolder3Line,
@@ -11,6 +11,8 @@ import {
   RiMoreLine,
   RiDeleteBinLine,
   RiEditLine,
+  RiFolderAddLine,
+  RiFileAddLine,
 } from "react-icons/ri";
 import { Doc } from "@/lib/db";
 import { useDocs } from "./DocsContext";
@@ -29,6 +31,8 @@ interface TreeNodeProps {
   onSelectDoc: (doc: Doc) => void;
   expandedIds: Set<string>;
   onToggleExpand: (uid: string) => void;
+  newlyCreatedDocId?: string; // 新创建的文档ID，用于自动进入编辑状态
+  onNewDocCreated?: (docId: string) => void; // 新文档创建后的回调
 }
 
 function TreeNode({
@@ -39,25 +43,128 @@ function TreeNode({
   onSelectDoc,
   expandedIds,
   onToggleExpand,
+  newlyCreatedDocId,
+  onNewDocCreated,
 }: TreeNodeProps) {
-  const { createDoc, deleteDoc, updateDocTitle } = useDocs();
+  const { createDoc, createFolder, deleteDoc, updateDocTitle } = useDocs();
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(doc.title);
   const [showMenu, setShowMenu] = useState(false);
+  const [isHoveringNode, setIsHoveringNode] = useState(false);
+
+  // Refs for click outside and mouse leave detection
+  const nodeRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const childDocs = docs.filter((d) => d.parentId === doc.uid);
   const hasChildren = childDocs.length > 0;
   const isExpanded = expandedIds.has(doc.uid);
   const isActive = activeDocId === doc.uid;
 
+  // 如果这是新创建的文档，自动进入编辑状态
+  useEffect(() => {
+    if (newlyCreatedDocId === doc.uid && doc.type === "document") {
+      setIsEditing(true);
+      setEditTitle(doc.title);
+    }
+  }, [newlyCreatedDocId, doc.uid, doc.title, doc.type]);
+
+  // Close menu when clicking outside or when mouse leaves the node area
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showMenu &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        nodeRef.current &&
+        !nodeRef.current.contains(event.target as Node)
+      ) {
+        setShowMenu(false);
+      }
+    };
+
+    const handleMouseLeave = (event: MouseEvent) => {
+      const target = event.relatedTarget as Node;
+      if (
+        showMenu &&
+        nodeRef.current &&
+        menuRef.current &&
+        target &&
+        !nodeRef.current.contains(target) &&
+        !menuRef.current.contains(target)
+      ) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      const currentNodeRef = nodeRef.current;
+      const currentMenuRef = menuRef.current;
+
+      if (currentNodeRef) {
+        currentNodeRef.addEventListener("mouseleave", handleMouseLeave);
+      }
+      if (currentMenuRef) {
+        currentMenuRef.addEventListener("mouseleave", handleMouseLeave);
+      }
+
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        if (currentNodeRef) {
+          currentNodeRef.removeEventListener("mouseleave", handleMouseLeave);
+        }
+        if (currentMenuRef) {
+          currentMenuRef.removeEventListener("mouseleave", handleMouseLeave);
+        }
+      };
+    }
+  }, [showMenu]);
+
+  // Auto-close menu when mouse leaves and doesn't come back within a short time
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    if (showMenu && !isHoveringNode) {
+      timeoutId = setTimeout(() => {
+        setShowMenu(false);
+      }, 300); // 300ms delay before closing
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [showMenu, isHoveringNode]);
+
   const handleCreateChild = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    await createDoc("新文档", doc.uid);
-    onToggleExpand(doc.uid);
+    setShowMenu(false);
+    const newDoc = await createDoc("新文档", doc.uid);
+    // 确保文件夹是展开状态（而不是切换）
+    if (!isExpanded) {
+      onToggleExpand(doc.uid);
+    }
+    // 通过回调将新创建的文档ID传递给父组件
+    if (onNewDocCreated) {
+      onNewDocCreated(newDoc.uid);
+    }
+  };
+
+  const handleCreateChildFolder = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowMenu(false);
+    await createFolder("新文件夹", doc.uid);
+    // 确保文件夹是展开状态（而不是切换）
+    if (!isExpanded) {
+      onToggleExpand(doc.uid);
+    }
   };
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    setShowMenu(false);
     if (
       confirm(
         `确定要删除"${doc.title}"吗？${
@@ -76,16 +183,28 @@ function TreeNode({
     setIsEditing(false);
   };
 
+  // Close menu when entering edit mode
+  useEffect(() => {
+    if (isEditing) {
+      setShowMenu(false);
+    }
+  }, [isEditing]);
+
   return (
     <div>
       <div
+        ref={nodeRef}
         className={`flex items-center gap-1 px-2 py-1.5 rounded-md cursor-pointer group ${
           isActive
             ? "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
             : "hover:bg-app-button-hover text-app-text-primary"
         }`}
         style={{ paddingLeft: `${level * 12 + 8}px` }}
-        onClick={() => !isEditing && onSelectDoc(doc)}
+        onClick={() =>
+          !isEditing && doc.type === "document" && onSelectDoc(doc)
+        }
+        onMouseEnter={() => setIsHoveringNode(true)}
+        onMouseLeave={() => setIsHoveringNode(false)}
       >
         {hasChildren && (
           <button
@@ -157,7 +276,27 @@ function TreeNode({
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 top-6 bg-app-content-bg border border-app-border rounded-md shadow-lg py-1 z-10 min-w-[120px]">
+              <div
+                ref={menuRef}
+                className="absolute right-0 top-6 bg-app-content-bg border border-app-border rounded-md shadow-lg py-1 z-10 min-w-[140px]"
+                onMouseEnter={() => setIsHoveringNode(true)}
+                onMouseLeave={() => setIsHoveringNode(false)}
+              >
+                <button
+                  onClick={handleCreateChild}
+                  className="flex items-center gap-2 px-3 py-1.5 hover:bg-app-button-hover w-full text-left text-sm"
+                >
+                  <RiAddLine className="w-3.5 h-3.5" />
+                  新建文档
+                </button>
+                <button
+                  onClick={handleCreateChildFolder}
+                  className="flex items-center gap-2 px-3 py-1.5 hover:bg-app-button-hover w-full text-left text-sm"
+                >
+                  <RiFolderAddLine className="w-3.5 h-3.5" />
+                  新建文件夹
+                </button>
+                <hr className="my-1 border-app-border" />
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -194,6 +333,8 @@ function TreeNode({
               onSelectDoc={onSelectDoc}
               expandedIds={expandedIds}
               onToggleExpand={onToggleExpand}
+              newlyCreatedDocId={newlyCreatedDocId}
+              onNewDocCreated={onNewDocCreated}
             />
           ))}
         </div>
@@ -207,9 +348,12 @@ export default function DocsSidebar({
   activeDocId,
   onSelectDoc,
 }: DocsSidebarProps) {
-  const { createDoc } = useDocs();
+  const { createDoc, createFolder } = useDocs();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [newlyCreatedDocId, setNewlyCreatedDocId] = useState<
+    string | undefined
+  >(undefined);
 
   const rootDocs = docs.filter((doc) => !doc.parentId);
 
@@ -224,8 +368,28 @@ export default function DocsSidebar({
   };
 
   const handleCreateRootDoc = async () => {
-    await createDoc("新文档", null);
+    const newDoc = await createDoc("新文档", null);
+    setNewlyCreatedDocId(newDoc.uid);
   };
+
+  const handleCreateRootFolder = async () => {
+    await createFolder("新文件夹", null);
+  };
+
+  const handleNewDocCreated = (docId: string) => {
+    setNewlyCreatedDocId(docId);
+  };
+
+  // 清除新创建文档的状态（例如当用户完成编辑时）
+  useEffect(() => {
+    if (newlyCreatedDocId) {
+      const timer = setTimeout(() => {
+        setNewlyCreatedDocId(undefined);
+      }, 5000); // 5秒后清除状态
+
+      return () => clearTimeout(timer);
+    }
+  }, [newlyCreatedDocId]);
 
   const filteredDocs = searchQuery
     ? docs.filter((doc) =>
@@ -239,13 +403,22 @@ export default function DocsSidebar({
       <div className="p-3 border-b border-app-border">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold text-app-text-primary">文档</h2>
-          <button
-            onClick={handleCreateRootDoc}
-            className="p-1.5 hover:bg-app-button-hover rounded-md text-app-text-secondary"
-            title="新建文档"
-          >
-            <RiAddLine className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleCreateRootDoc}
+              className="p-1.5 hover:bg-app-button-hover rounded-md text-app-text-secondary"
+              title="新建文档"
+            >
+              <RiFileAddLine className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleCreateRootFolder}
+              className="p-1.5 hover:bg-app-button-hover rounded-md text-app-text-secondary"
+              title="新建文件夹"
+            >
+              <RiFolderAddLine className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Search */}
@@ -298,6 +471,8 @@ export default function DocsSidebar({
                   onSelectDoc={onSelectDoc}
                   expandedIds={expandedIds}
                   onToggleExpand={handleToggleExpand}
+                  newlyCreatedDocId={newlyCreatedDocId}
+                  onNewDocCreated={handleNewDocCreated}
                 />
               ))
             )}

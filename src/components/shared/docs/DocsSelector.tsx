@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
-import { RiFileTextLine, RiSearchLine, RiCloseLine } from "react-icons/ri";
+import {
+  RiFileTextLine,
+  RiSearchLine,
+  RiCloseLine,
+  RiFolder3Line,
+} from "react-icons/ri";
 import { useDocs } from "./DocsProvider";
 
 interface DocsSelectorProps {
@@ -74,13 +79,23 @@ export default function DocsSelector({ onClose }: DocsSelectorProps) {
                     isOpen ? "bg-blue-50 dark:bg-blue-900/20" : ""
                   }`}
                 >
-                  <RiFileTextLine
-                    className={`w-4 h-4 flex-shrink-0 ${
-                      isOpen
-                        ? "text-blue-600 dark:text-blue-400"
-                        : "text-app-text-secondary"
-                    }`}
-                  />
+                  {doc.type === "folder" ? (
+                    <RiFolder3Line
+                      className={`w-4 h-4 flex-shrink-0 ${
+                        isOpen
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-app-text-secondary"
+                      }`}
+                    />
+                  ) : (
+                    <RiFileTextLine
+                      className={`w-4 h-4 flex-shrink-0 ${
+                        isOpen
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-app-text-secondary"
+                      }`}
+                    />
+                  )}
                   <div className="flex-1 min-w-0">
                     <p
                       className={`text-sm truncate ${
