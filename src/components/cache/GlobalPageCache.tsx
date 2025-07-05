@@ -10,6 +10,7 @@ import { CachedInboxPage } from "./pages/CachedInboxPage";
 import { CachedSettingsPage } from "./pages/CachedSettingsPage";
 import { CachedChatPage } from "./pages/CachedChatPage";
 import { CachedTasksPage } from "./pages/CachedTasksPage";
+import { CachedDashboardPage } from "./pages/CachedDashboardPage";
 
 // MARK: - 页面顺序
 // NOTE:页面映射和顺序定义
@@ -19,6 +20,7 @@ const PAGE_COMPONENTS = {
   chat: CachedChatPage,
   docs: CachedDocsPage,
   settings: CachedSettingsPage,
+  dashboard: CachedDashboardPage,
 } as const;
 
 type PageId = keyof typeof PAGE_COMPONENTS;
@@ -30,6 +32,7 @@ const PAGE_ORDER: Record<PageId, number> = {
   chat: 3,
   docs: 4,
   settings: 5,
+  dashboard: 6,
 };
 
 // 路径到页面ID的映射
@@ -39,6 +42,7 @@ const getPageIdFromPath = (pathname: string): PageId | null => {
   if (pathname.includes("/chat")) return "chat";
   if (pathname.includes("/docs")) return "docs";
   if (pathname.includes("/settings")) return "settings";
+  if (pathname.includes("/dashboard")) return "dashboard";
   return null;
 };
 

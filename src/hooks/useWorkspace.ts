@@ -18,7 +18,7 @@ const mockWorkspaces: Workspace[] = [
     id: "1",
     name: "InsightLab",
     type: "TEAM",
-    memberCount: 5,
+    memberCount: 1,
     isActive: true,
   },
   {

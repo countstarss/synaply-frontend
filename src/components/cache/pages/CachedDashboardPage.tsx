@@ -120,7 +120,6 @@ export const CachedDashboardPage = React.memo(() => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-gray-400">Last updated: {lastUpdated}</p>
         </div>
         <div className="text-sm text-green-400">🟢 All systems operational</div>
       </div>

@@ -83,9 +83,9 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
                   {currentWorkspace.name[0]}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex flex-col items-start">
+              <div className="flex flex-col items-start select-none">
                 <span className="font-semibold text-lg">
-                  {currentWorkspace.name}
+                  {user?.user_metadata.name}
                 </span>
               </div>
             </div>
@@ -101,16 +101,20 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
         sideOffset={4}
       >
         {/* 当前工作空间信息 */}
+        {/* FIXME: 新注册用户默认只有一个工作区, 私人工作区没有TEAM, 所以这里需要判断 */}
+        {/* FIXME: 组织者可以在自己的账号中创建一个team, 这样的话, 其他用户可以加入这个team, 自然而然就有了这个team的工作区 */}
+        {/* FIXME:  */}
+
         <div className="px-1">
           <div className="flex items-center gap-3 mb-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={currentWorkspace.avatarUrl} />
               <AvatarFallback className="bg-blue-500 text-white font-bold">
-                {currentWorkspace.name[0]}
+                {user?.user_metadata.name.slice(0, 1)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <div className="font-semibold">{currentWorkspace.name}</div>
+              <div className="font-semibold">{user?.user_metadata.name}</div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Users className="h-3 w-3" />
                 <span>{currentWorkspace.memberCount || 1}位成员</span>
@@ -184,7 +188,7 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
 
         {/* 登出 */}
         <DropdownMenuItem
-          className="flex items-center gap-3 px-2 py-2 cursor-pointer text-red-600 focus:text-red-600"
+          className="flex items-center gap-3 px-2 py-2 cursor-pointer"
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />

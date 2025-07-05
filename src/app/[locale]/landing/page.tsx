@@ -1,20 +1,14 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { useEffect } from 'react';
-import { 
-  ArrowRight, 
-  Shield, 
-  Cpu, 
-  Globe,
-  CheckCircle
-} from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { useAuth } from '@/context/AuthContext';
-import { useRouter } from '@/i18n/navigation';
-import { createClientComponentClient } from '@/lib/supabase';
-import Image from 'next/image';
-import logo from '@/assets/icons/logo.png';
+import { motion } from "framer-motion";
+import { useEffect } from "react";
+import { ArrowRight, Shield, Cpu, Globe, CheckCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "@/i18n/navigation";
+import { createClientComponentClient } from "@/lib/supabase";
+import Image from "next/image";
+import logo from "@/assets/icons/logo.png";
 
 export default function HomePage() {
   const { user, loading } = useAuth();
@@ -26,27 +20,29 @@ export default function HomePage() {
   useEffect(() => {
     const handleOAuthCallback = async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-      
+      const code = urlParams.get("code");
+
       if (code) {
         try {
-          console.log('检测到OAuth回调代码，正在处理...');
-          
+          console.log("检测到OAuth回调代码，正在处理...");
+
           // 使用code交换session
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          
+          const { data, error } = await supabase.auth.exchangeCodeForSession(
+            code
+          );
+
           if (error) {
-            console.error('OAuth代码交换失败:', error);
+            console.error("OAuth代码交换失败:", error);
           } else if (data?.session) {
-            console.log('OAuth登录成功！');
+            console.log("OAuth登录成功！");
             // 清除URL中的code参数
             const newUrl = window.location.pathname;
-            window.history.replaceState({}, '', newUrl);
+            window.history.replaceState({}, "", newUrl);
             // 重定向到仪表盘
-            router.push('/dashboard');
+            router.push("/dashboard");
           }
         } catch (err) {
-          console.error('处理OAuth回调时出错:', err);
+          console.error("处理OAuth回调时出错:", err);
         }
       }
     };
@@ -56,59 +52,59 @@ export default function HomePage() {
 
   const handleGetStarted = () => {
     if (user) {
-      router.push('/dashboard');
+      router.push("/dashboard");
     } else {
-      router.push('/auth');
+      router.push("/auth");
     }
   };
 
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
+    transition: { duration: 0.6 },
   };
 
   const staggerContainer = {
     animate: {
       transition: {
-        staggerChildren: 0.1
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
   };
 
   const features = [
     {
       icon: Shield,
-      title: t('home.features.security.title'),
-      description: t('home.features.security.description')
+      title: t("home.features.security.title"),
+      description: t("home.features.security.description"),
     },
     {
       icon: Cpu,
-      title: t('home.features.performance.title'),
-      description: t('home.features.performance.description')
+      title: t("home.features.performance.title"),
+      description: t("home.features.performance.description"),
     },
     {
       icon: Globe,
-      title: t('home.features.design.title'),
-      description: t('home.features.design.description')
-    }
+      title: t("home.features.design.title"),
+      description: t("home.features.design.description"),
+    },
   ];
 
   const featuresList = [
-    t('home.featuresList.secureAuth'),
-    t('home.featuresList.passwordReset'),
-    t('home.featuresList.emailVerification'),
-    t('home.featuresList.modernUI'),
-    t('home.featuresList.responsive'),
-    t('home.featuresList.realTime'),
-    t('home.featuresList.routeProtection'),
-    t('home.featuresList.errorHandling')
+    t("home.featuresList.secureAuth"),
+    t("home.featuresList.passwordReset"),
+    t("home.featuresList.emailVerification"),
+    t("home.featuresList.modernUI"),
+    t("home.featuresList.responsive"),
+    t("home.featuresList.realTime"),
+    t("home.featuresList.routeProtection"),
+    t("home.featuresList.errorHandling"),
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800">
       {/* 导航栏 */}
-      <motion.header 
+      <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative z-10 bg-gray-900/80 backdrop-blur-xl border-b border-gray-700/50"
@@ -117,11 +113,11 @@ export default function HomePage() {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <Image 
-                src={logo} 
-                alt="Synaply" 
-                width={36} 
-                height={36} 
+              <Image
+                src={logo}
+                alt="Synaply"
+                width={36}
+                height={36}
                 className=""
               />
               <h1 className="text-2xl font-bold text-white">Synaply</h1>
@@ -130,34 +126,34 @@ export default function HomePage() {
             {/* 导航菜单 */}
             <div className="flex items-center space-x-4">
               {/* <LanguageSwitcher /> */}
-              
+
               {!loading && (
                 <div>
                   {user ? (
                     <button
                       type="button"
-                      onClick={() => router.push('/dashboard')}
+                      onClick={() => router.push("/dashboard")}
                       className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200"
                     >
-                      {t('nav.dashboard')}
+                      {t("nav.dashboard")}
                     </button>
                   ) : (
-                    <>
+                    <div className="flex items-center gap-3">
                       <button
                         type="button"
-                        onClick={() => router.push('/auth')}
+                        onClick={() => router.push("/auth")}
                         className="text-gray-300 hover:text-white transition-colors"
                       >
-                        {t('nav.login')}
+                        {t("nav.login")}
                       </button>
                       <button
                         type="button"
-                        onClick={() => router.push('/auth')}
+                        onClick={() => router.push("/auth")}
                         className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200"
                       >
-                        {t('nav.register')}
+                        {t("nav.register")}
                       </button>
-                    </>
+                    </div>
                   )}
                 </div>
               )}
@@ -185,29 +181,32 @@ export default function HomePage() {
           <div className="space-y-8">
             <motion.div variants={fadeInUp} className="space-y-4">
               <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight">
-                {t('home.title')}
+                {t("home.title")}
               </h1>
               <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto">
-                {t('home.subtitle')}
+                {t("home.subtitle")}
               </p>
             </motion.div>
 
-            <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center">
+            <motion.div
+              variants={fadeInUp}
+              className="flex flex-col sm:flex-row gap-4 justify-center"
+            >
               <button
                 onClick={handleGetStarted}
                 disabled={loading}
                 type="button"
                 className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-green-500/50 disabled:opacity-50 transition-all duration-200 group"
               >
-                {user ? t('home.enterDashboard') : t('home.getStarted')}
+                {user ? t("home.enterDashboard") : t("home.getStarted")}
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
-              
+
               <button
                 type="button"
                 className="inline-flex items-center px-8 py-4 bg-gray-800/50 text-white font-semibold rounded-lg hover:bg-gray-800/70 focus:outline-none focus:ring-2 focus:ring-gray-500/50 transition-all duration-200 border border-gray-700/50"
               >
-                {t('home.learnMore')}
+                {t("home.learnMore")}
               </button>
             </motion.div>
           </div>
@@ -215,9 +214,9 @@ export default function HomePage() {
           {/* 功能特性 */}
           <motion.div variants={fadeInUp} className="space-y-12">
             <h2 className="text-3xl md:text-4xl font-bold text-white">
-              {t('home.whyChoose')}
+              {t("home.whyChoose")}
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {features.map((feature) => (
                 <motion.div
@@ -229,16 +228,25 @@ export default function HomePage() {
                   <div className="w-16 h-16 bg-gradient-to-br from-green-400/20 to-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto">
                     <feature.icon className="w-8 h-8 text-green-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-white">{feature.title}</h3>
-                  <p className="text-gray-400 leading-relaxed">{feature.description}</p>
+                  <h3 className="text-xl font-semibold text-white">
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-400 leading-relaxed">
+                    {feature.description}
+                  </p>
                 </motion.div>
               ))}
             </div>
           </motion.div>
 
           {/* 特性列表 */}
-          <motion.div variants={fadeInUp} className="bg-gray-900/60 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-8 space-y-6">
-            <h3 className="text-2xl font-bold text-white">{t('home.systemFeatures')}</h3>
+          <motion.div
+            variants={fadeInUp}
+            className="bg-gray-900/60 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-8 space-y-6"
+          >
+            <h3 className="text-2xl font-bold text-white">
+              {t("home.systemFeatures")}
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
               {featuresList.map((feature) => (
                 <div key={feature} className="flex items-center space-x-3">

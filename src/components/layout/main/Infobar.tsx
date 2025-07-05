@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { LogOutIcon, Menu, PanelLeft, PanelRight } from "lucide-react";
+import { Menu, PanelLeft, PanelRight } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { mainNavItems } from "@/lib/data/constant";
 import Link from "next/link";
@@ -14,8 +14,6 @@ import TabList from "../infobar/TabList";
 // import ViewToggle, { defaultViews } from "../infobar/ViewToggle";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/context/AuthContext";
 
 interface InfoBarProps {
   title?: string;
@@ -29,7 +27,6 @@ const InfoBar = ({ showViewToggle = true, className }: InfoBarProps) => {
   const [open, setOpen] = useState(false);
   // const [activeView, setActiveView] = useState("list");
   const { isOpen, toggleSidebar } = useSidebarStore();
-  const { signOut } = useAuth();
 
   const onGetPayment = async () => {};
 
@@ -124,16 +121,6 @@ const InfoBar = ({ showViewToggle = true, className }: InfoBarProps) => {
 
           {/* 右侧区域 */}
           <div className="flex items-center gap-3 shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                signOut();
-              }}
-            >
-              <LogOutIcon />
-              <span>退出</span>
-            </Button>
             <ThemeToggle />
 
             {/* 视图切换 */}
