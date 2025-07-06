@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -18,6 +18,10 @@ import {
   RiArrowRightLine,
   RiArrowLeftLine,
   RiMessageLine,
+  RiSendPlaneLine,
+  RiAtLine,
+  RiFileTextLine,
+  RiHistoryLine,
 } from "react-icons/ri";
 import CustomNode from "./CustomNode";
 import { WorkflowIssue, Issue } from "@/types/team";
@@ -26,10 +30,28 @@ import {
   issueStorage,
   workflowStorage,
 } from "../utils/storage";
+import { useAuth } from "@/context/AuthContext";
 
 const nodeTypes = {
   custom: CustomNode,
 };
+
+interface Comment {
+  id: string;
+  content: string;
+  author: string;
+  authorAvatar?: string;
+  createdAt: string;
+  mentions: string[];
+}
+
+// 模拟团队成员数据
+const teamMembers = [
+  { id: "1", name: "张三", email: "zhangsan@example.com", avatar: "👨‍💻" },
+  { id: "2", name: "李四", email: "lisi@example.com", avatar: "👩‍💼" },
+  { id: "3", name: "王五", email: "wangwu@example.com", avatar: "👨‍🎨" },
+  { id: "4", name: "赵六", email: "zhaoliu@example.com", avatar: "👩‍🔬" },
+];
 
 interface WorkflowIssueDetailProps {
   issue: Issue;
@@ -179,14 +201,111 @@ function WorkflowIssueDetailFlow({
   onClose,
   onUpdate,
 }: WorkflowIssueDetailProps) {
+  const { user } = useAuth();
   const [workflowIssue, setWorkflowIssue] = useState<WorkflowIssue | null>(
     issue.workflowData || null
   );
+  const [activeTab, setActiveTab] = useState<"history" | "discussion">(
+    "history"
+  );
+  const [commentText, setCommentText] = useState("");
+  const [comments, setComments] = useState<Comment[]>([
+    {
+      id: "1",
+      content: "工作流进度看起来不错，继续保持。",
+      author: "张三",
+      authorAvatar: user?.user_metadata.avatar_url as string,
+      createdAt: "2024-01-10T10:30:00Z",
+      mentions: [],
+    },
+    {
+      id: "2",
+      content: "这个节点需要@李四 来确认一下技术方案。",
+      author: "王五",
+      authorAvatar: user?.user_metadata.avatar_url as string,
+      createdAt: "2024-01-10T11:15:00Z",
+      mentions: ["李四"],
+    },
+  ]);
+  const [showMentionList, setShowMentionList] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const commentInputRef = useRef<HTMLTextAreaElement>(null);
 
   const workflow = useMemo(() => {
     if (!workflowIssue) return null;
     return workflowStorage.getById(workflowIssue.workflowId);
   }, [workflowIssue]);
+
+  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const cursorPos = e.target.selectionStart;
+
+    setCommentText(value);
+    setCursorPosition(cursorPos);
+
+    // 检测@符号
+    const atIndex = value.lastIndexOf("@", cursorPos);
+    if (atIndex !== -1 && (atIndex === 0 || value[atIndex - 1] === " ")) {
+      const query = value.substring(atIndex + 1, cursorPos);
+      if (!query.includes(" ")) {
+        setMentionQuery(query);
+        setShowMentionList(true);
+        return;
+      }
+    }
+    setShowMentionList(false);
+  };
+
+  const handleMentionSelect = (member: (typeof teamMembers)[0]) => {
+    const atIndex = commentText.lastIndexOf("@", cursorPosition);
+    const beforeAt = commentText.substring(0, atIndex);
+    const afterCursor = commentText.substring(cursorPosition);
+    const newText = `${beforeAt}@${member.name} ${afterCursor}`;
+
+    setCommentText(newText);
+    setShowMentionList(false);
+    setMentionQuery("");
+
+    // 重新聚焦到输入框
+    setTimeout(() => {
+      if (commentInputRef.current) {
+        const newCursorPos = atIndex + member.name.length + 2;
+        commentInputRef.current.focus();
+        commentInputRef.current.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    }, 0);
+  };
+
+  const handleSendComment = () => {
+    if (!commentText.trim()) return;
+
+    // 提取@提及的用户
+    const mentions =
+      commentText.match(/@(\w+)/g)?.map((mention) => mention.substring(1)) ||
+      [];
+
+    const newComment: Comment = {
+      id: Date.now().toString(),
+      content: commentText,
+      author: user?.user_metadata.name as string,
+      authorAvatar: user?.user_metadata.avatar_url as string,
+      createdAt: new Date().toISOString(),
+      mentions,
+    };
+
+    setComments([...comments, newComment]);
+    setCommentText("");
+    setShowMentionList(false);
+  };
+
+  const filteredMembers = teamMembers.filter((member) =>
+    member.name.toLowerCase().includes(mentionQuery.toLowerCase())
+  );
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString("zh-CN");
+  };
 
   // Convert workflow nodes to ReactFlow nodes with status visualization
   const { nodes, edges } = useMemo(() => {
@@ -388,7 +507,7 @@ function WorkflowIssueDetailFlow({
     workflowIssue.nodeStatuses[workflowIssue.currentNodeId || ""];
 
   return (
-    <div className="h-full flex flex-col gap-4">
+    <div className="h-full flex flex-col gap-2">
       {/* Issue Info */}
       <div className="bg-app-content-bg rounded-lg border border-app-border p-4 flex-shrink-0">
         <div className="flex items-start justify-between">
@@ -413,7 +532,7 @@ function WorkflowIssueDetailFlow({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 gap-4 min-h-0 flex flex-row">
+      <div className="flex-1 gap-2 min-h-0 flex flex-row">
         {/* Workflow Visualization */}
         <div className="bg-app-content-bg rounded-lg border border-app-border flex flex-col flex-2">
           <div className="p-4 border-b border-app-border flex-shrink-0">
@@ -444,7 +563,7 @@ function WorkflowIssueDetailFlow({
         </div>
 
         {/* Current Node Control */}
-        <div className="flex flex-col h-full gap-4 flex-1">
+        <div className="flex flex-col h-full gap-2 flex-1">
           {currentNode && (
             <NodeStatusUpdate
               nodeId={currentNode.id}
@@ -458,44 +577,199 @@ function WorkflowIssueDetailFlow({
             />
           )}
 
-          {/* Workflow History */}
+          {/* Tabs for History and Discussion */}
           <div className="flex-1 bg-app-content-bg rounded-lg border border-app-border flex flex-col">
+            {/* Tab Header */}
             <div className="p-4 border-b border-app-border flex-shrink-0">
-              <h3 className="text-lg font-semibold text-app-text-primary">
-                操作历史
-              </h3>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setActiveTab("history")}
+                  className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-medium transition-colors ${
+                    activeTab === "history"
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                      : "text-app-text-secondary hover:text-app-text-primary hover:bg-app-button-hover"
+                  }`}
+                >
+                  <RiHistoryLine className="w-4 h-4" />
+                  操作历史
+                </button>
+                <button
+                  onClick={() => setActiveTab("discussion")}
+                  className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-medium transition-colors ${
+                    activeTab === "discussion"
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                      : "text-app-text-secondary hover:text-app-text-primary hover:bg-app-button-hover"
+                  }`}
+                >
+                  <RiFileTextLine className="w-4 h-4" />
+                  讨论 ({comments.length})
+                </button>
+              </div>
             </div>
-            <div className="flex-1 p-4 overflow-y-auto">
-              <div className="space-y-3">
-                {workflowIssue.history
-                  .slice(-10)
-                  .reverse()
-                  .map((entry, index) => (
-                    <div key={index} className="flex items-start gap-3 text-sm">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-app-text-primary">{entry.action}</p>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-app-text-muted">
-                          <span>{entry.fromUser}</span>
-                          <span>•</span>
-                          <span>
-                            {new Date(entry.timestamp).toLocaleString()}
-                          </span>
+
+            {/* Tab Content */}
+            <div className="flex-1 overflow-hidden">
+              {activeTab === "history" ? (
+                <div className="h-full p-4 overflow-y-auto">
+                  <div className="space-y-3">
+                    {workflowIssue.history
+                      .slice(-10)
+                      .reverse()
+                      .map((entry, index) => (
+                        <div
+                          key={index}
+                          className="flex items-start gap-3 text-sm"
+                        >
+                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-app-text-primary">
+                              {entry.action}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1 text-xs text-app-text-muted">
+                              <span>{entry.fromUser}</span>
+                              <span>•</span>
+                              <span>
+                                {new Date(entry.timestamp).toLocaleString()}
+                              </span>
+                            </div>
+                            {entry.comment && (
+                              <p className="mt-1 text-xs text-app-text-secondary bg-app-button-hover rounded px-2 py-1">
+                                {entry.comment}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        {entry.comment && (
-                          <p className="mt-1 text-xs text-app-text-secondary bg-app-button-hover rounded px-2 py-1">
-                            {entry.comment}
-                          </p>
-                        )}
+                      ))}
+                    {workflowIssue.history.length === 0 && (
+                      <div className="text-center text-app-text-muted py-8">
+                        暂无操作历史
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full flex flex-col">
+                  {/* Discussion Content */}
+                  <div className="flex-1 overflow-y-auto p-4">
+                    <div className="space-y-4 mb-4">
+                      {comments.map((comment) => (
+                        <div key={comment.id} className="flex gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-sm flex-shrink-0 overflow-hidden">
+                            {comment.authorAvatar ? (
+                              <img
+                                src={comment.authorAvatar}
+                                alt="avatar"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-sm">
+                                {comment.author[0]}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-medium text-app-text-primary">
+                                {comment.author}
+                              </span>
+                              <span className="text-xs text-app-text-muted">
+                                {formatDate(comment.createdAt)}
+                              </span>
+                            </div>
+                            <div className="text-sm text-app-text-secondary">
+                              {comment.content
+                                .split(/(@\w+)/)
+                                .map((part, index) => (
+                                  <span
+                                    key={index}
+                                    className={
+                                      part.startsWith("@")
+                                        ? "text-blue-600 font-medium"
+                                        : ""
+                                    }
+                                  >
+                                    {part}
+                                  </span>
+                                ))}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Comment Input */}
+                  <div className="p-4 border-t border-app-border">
+                    <div className="relative">
+                      <div className="flex gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-sm flex-shrink-0 overflow-hidden">
+                          {user?.user_metadata.avatar_url ? (
+                            <img
+                              src={user?.user_metadata.avatar_url}
+                              alt="avatar"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-sm">
+                              {user?.user_metadata.name?.[0]}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 relative">
+                          <textarea
+                            ref={commentInputRef}
+                            value={commentText}
+                            onChange={handleCommentChange}
+                            placeholder="添加评论... 使用@提及团队成员"
+                            className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                            rows={3}
+                          />
+
+                          {/* @提及列表 */}
+                          {showMentionList && (
+                            <div className="absolute bottom-full left-0 right-0 mt-1 bg-app-content-bg border border-app-border rounded-md shadow-lg z-10 overflow-y-auto">
+                              {filteredMembers.map((member) => (
+                                <button
+                                  key={member.id}
+                                  onClick={() => handleMentionSelect(member)}
+                                  className="w-full px-3 py-2 text-left hover:bg-app-button-hover flex items-center gap-2"
+                                >
+                                  <span className="text-lg">
+                                    {member.avatar}
+                                  </span>
+                                  <div>
+                                    <div className="text-sm font-medium text-app-text-primary">
+                                      {member.name}
+                                    </div>
+                                    <div className="text-xs text-app-text-muted">
+                                      {member.email}
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="flex justify-between items-center mt-2">
+                            <div className="flex items-center gap-2 text-xs text-app-text-muted">
+                              <RiAtLine className="w-3 h-3" />
+                              <span>使用@提及团队成员</span>
+                            </div>
+                            <button
+                              onClick={handleSendComment}
+                              disabled={!commentText.trim()}
+                              className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <RiSendPlaneLine className="w-3 h-3" />
+                              发送
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  ))}
-                {workflowIssue.history.length === 0 && (
-                  <div className="text-center text-app-text-muted py-8">
-                    暂无操作历史
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -508,9 +782,9 @@ export default function WorkflowIssueDetail(props: WorkflowIssueDetailProps) {
   if (!props.isOpen) return null;
 
   return (
-    <div className="fixed inset-0 dark:bg-black/50 bg-white/80 flex items-center justify-center z-50">
-      <div className="bg-app-bg rounded-lg shadow-xl w-[95vw] h-[95vh] overflow-hidden">
-        <div className="h-full p-4">
+    <div className="fixed inset-0 w-full  dark:bg-black/50 bg-white/80 flex items-center justify-center z-50">
+      <div className="bg-app-bg rounded-lg shadow-xl w-full max-w-screen h-[calc(100vh-56px)] overflow-hidden">
+        <div className="h-full p-2">
           <ReactFlowProvider>
             <WorkflowIssueDetailFlow {...props} />
           </ReactFlowProvider>

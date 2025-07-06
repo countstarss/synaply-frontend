@@ -13,6 +13,7 @@ import {
   RiEyeLine,
 } from "react-icons/ri";
 import CreateIssueModal from "../../../../../../components/shared/issue/CreateIssueModal";
+import NormalIssueDetail from "../../../../../../components/shared/issue/NormalIssueDetail";
 import WorkflowIssueDetail from "../components/WorkflowIssueDetail";
 import { Issue } from "@/types/team";
 import { issueStorage } from "../utils/storage";
@@ -70,6 +71,7 @@ export default function Issues() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isNormalDetailOpen, setIsNormalDetailOpen] = useState(false);
 
   useEffect(() => {
     loadIssues();
@@ -85,13 +87,11 @@ export default function Issues() {
   };
 
   const handleViewIssue = (issue: Issue) => {
+    setSelectedIssue(issue);
     if (issue.type === "workflow") {
-      setSelectedIssue(issue);
       setIsDetailModalOpen(true);
     } else {
-      // Navigate to normal issue detail page
-      console.log("Open normal issue detail:", issue);
-      // TODO: Implement navigation to normal issue detail
+      setIsNormalDetailOpen(true);
     }
   };
 
@@ -100,7 +100,27 @@ export default function Issues() {
     setIsDetailModalOpen(false);
   };
 
-  const handleUpdateIssue = () => {
+  const handleCloseNormalDetail = () => {
+    setSelectedIssue(null);
+    setIsNormalDetailOpen(false);
+  };
+
+  const handleUpdateNormalIssue = (updatedIssue: Issue) => {
+    // 更新本地状态
+    setIssues(
+      issues.map((issue) =>
+        issue.id === updatedIssue.id ? updatedIssue : issue
+      )
+    );
+
+    // 更新存储
+    issueStorage.save(updatedIssue);
+
+    // 重新加载以确保数据同步
+    loadIssues();
+  };
+
+  const handleUpdateWorkflowIssue = () => {
     loadIssues(); // Reload issues when workflow issue is updated
   };
 
@@ -279,7 +299,17 @@ export default function Issues() {
           issue={selectedIssue}
           isOpen={isDetailModalOpen}
           onClose={handleCloseDetail}
-          onUpdate={handleUpdateIssue}
+          onUpdate={handleUpdateWorkflowIssue}
+        />
+      )}
+
+      {/* Normal Issue Detail Modal */}
+      {selectedIssue && selectedIssue.type !== "workflow" && (
+        <NormalIssueDetail
+          issue={selectedIssue}
+          isOpen={isNormalDetailOpen}
+          onClose={handleCloseNormalDetail}
+          onUpdate={handleUpdateNormalIssue}
         />
       )}
     </div>

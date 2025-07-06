@@ -85,11 +85,11 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div className="w-full p-2">
+        <div className="w-full px-2 pt-2">
           <Button
             variant="ghost"
             className={cn(
-              "w-full justify-between px-4 py-3 h-auto hover:bg-app-button-hover",
+              "w-full justify-between px-4 py-2 h-auto hover:bg-app-button-hover",
               className
             )}
           >

@@ -27,6 +27,7 @@ export const mainNavItems = [
   { icon: ListCheck, label: "My Task", href: "/tasks" },
   { icon: MessageSquareCode, label: "Chat", href: "/chat" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
+  { icon: Bug, label: "Issues", href: "/team/issues" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 export const secondaryNavItems = [
