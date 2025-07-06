@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,10 +12,15 @@ import SidebarFooter from "../sidebar/SidebarFooter";
 import { useSidebarStore } from "@/stores/sidebar";
 import { useSidebarMode } from "@/hooks/useSidebarMode";
 import { useRouter } from "@/i18n/navigation";
-import { mainNavItems, personalItems } from "@/lib/data/constant";
+import {
+  mainNavItems,
+  personalItems,
+  personalNavItems,
+} from "@/lib/data/constant";
 import { settingMockData } from "@/lib/data/settingData";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
 import { useTeam } from "@/hooks/useTeam";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { CreateTeamDialog } from "@/components/dialogs/CreateTeamDialog";
 import { Plus } from "lucide-react";
 
@@ -28,6 +33,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
   const { mode, switchToMain } = useSidebarMode();
   const router = useRouter();
   const { hasOnlyOneTeam, currentTeam } = useTeam();
+  const { currentWorkspace } = useWorkspace();
 
   const handleBackToMain = useCallback(() => {
     router.back();
@@ -56,56 +62,77 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
               mode === "settings" ? "-translate-x-full" : "translate-x-0"
             )}
           >
+            {/* MARK: Personal导航
+             */}
             <div className="h-full overflow-y-auto">
-              <div className="space-y-1 py-2">
-                {mainNavItems.map((item) => (
-                  <SidebarNavItem
-                    key={item.href}
-                    icon={item.icon}
-                    label={item.label}
-                    href={item.href}
-                  />
-                ))}
-              </div>
-
-              {/* WorkSpace 部分 */}
-              {hasOnlyOneTeam && currentTeam ? (
-                <SidebarSection title={currentTeam.name}>
-                  {/* 这里将来会显示与team workspace相关的内容 */}
-                  <div className="px-3 py-2 text-sm text-gray-500">
-                    {currentTeam.workspace.name}
-                  </div>
-                </SidebarSection>
+              {currentWorkspace?.type === "PERSONAL" ? (
+                /* PERSONAL空间的简化导航 */
+                <div className="space-y-1 py-2">
+                  {personalNavItems.map((item) => (
+                    <SidebarNavItem
+                      key={item.href}
+                      icon={item.icon}
+                      label={item.label}
+                      href={item.href}
+                    />
+                  ))}
+                </div>
               ) : (
-                <SidebarSection title="Team">
-                  <CreateTeamDialog>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex items-center gap-2 text-sm w-full justify-start px-3 py-2"
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span>创建团队</span>
-                    </Button>
-                  </CreateTeamDialog>
-                </SidebarSection>
-              )}
+                /* MARK: TEAM 导航
+                 */
+                <>
+                  <div className="space-y-1 py-2">
+                    {mainNavItems.map((item) => (
+                      <SidebarNavItem
+                        key={item.href}
+                        icon={item.icon}
+                        label={item.label}
+                        href={item.href}
+                      />
+                    ))}
+                  </div>
 
-              {/* Personal 部分 */}
-              <SidebarSection title="Personal">
-                {personalItems.map((item) => (
-                  <SidebarNavItem
-                    key={item.href}
-                    icon={item.icon}
-                    label={item.label}
-                    href={item.href}
-                  />
-                ))}
-              </SidebarSection>
+                  {/* WorkSpace 部分 */}
+                  {hasOnlyOneTeam && currentTeam ? (
+                    <SidebarSection title={currentTeam.name}>
+                      {/* 这里将来会显示与team workspace相关的内容 */}
+                      <div className="px-3 py-2 text-sm text-gray-500">
+                        {currentTeam.workspace.name}
+                      </div>
+                    </SidebarSection>
+                  ) : (
+                    <SidebarSection title="Team">
+                      <CreateTeamDialog>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="flex items-center gap-2 text-sm w-full justify-start px-3 py-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          <span>创建团队</span>
+                        </Button>
+                      </CreateTeamDialog>
+                    </SidebarSection>
+                  )}
+
+                  {/* Personal 部分 */}
+                  <SidebarSection title="Personal">
+                    {personalItems.map((item) => (
+                      <SidebarNavItem
+                        key={item.href}
+                        icon={item.icon}
+                        label={item.label}
+                        href={item.href}
+                      />
+                    ))}
+                  </SidebarSection>
+                </>
+              )}
             </div>
           </div>
 
-          {/* 设置导航内容 */}
+          {/* MARK: 设置菜单内容
+           */}
           <div
             className={cn(
               "absolute inset-0 transition-transform duration-300 ease-in-out",

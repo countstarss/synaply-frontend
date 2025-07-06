@@ -52,6 +52,22 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
     router.push("/settings");
   };
 
+  // 包装switchWorkspace函数，添加日志记录并刷新页面
+  const handleSwitchWorkspace = (workspaceId: string) => {
+    const targetWorkspace = workspaces.find((w) => w.id === workspaceId);
+    const currentType = currentWorkspace?.type;
+    const targetType = targetWorkspace?.type;
+    // 执行切换
+    switchWorkspace(workspaceId);
+
+    // 如果工作区类型发生变化，直接刷新浏览器
+    if (currentType !== targetType) {
+      setTimeout(() => {
+        window.location.reload();
+      }, 200);
+    }
+  };
+
   // 加载状态
   if (loading || !currentWorkspace) {
     return (
@@ -160,7 +176,7 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
             <DropdownMenuItem
               key={workspace.id}
               className="flex items-center gap-3 px-2 py-2 cursor-pointer"
-              onClick={() => switchWorkspace(workspace.id)}
+              onClick={() => handleSwitchWorkspace(workspace.id)}
             >
               <Avatar className="h-6 w-6">
                 <AvatarImage src={workspace.avatarUrl} />

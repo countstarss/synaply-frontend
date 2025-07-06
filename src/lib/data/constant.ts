@@ -21,14 +21,20 @@ export const clients = [...new Array(10)].map((_, index) => ({
   href: `/${index + 1}.png`,
 }));
 
-/*
-MARK: - menuOptions
-*/
-
+// MARK: - TEAM导航
 export const mainNavItems = [
   { icon: Inbox, label: "Inbox", href: "/inbox" },
   { icon: ListCheck, label: "My Task", href: "/tasks" },
   { icon: MessageSquareCode, label: "Chat", href: "/chat" },
+  { icon: BookAIcon, label: "Docs", href: "/docs" },
+  { icon: Settings, label: "Settings", href: "/settings" },
+];
+
+// MARK: - PERSONAL导航
+export const personalNavItems = [
+  { icon: Inbox, label: "Inbox", href: "/inbox" },
+  { icon: ListCheck, label: "Tasks", href: "/tasks" },
+  { icon: FolderOpen, label: "Projects", href: "/projects" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];

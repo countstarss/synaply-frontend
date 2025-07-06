@@ -1,201 +1,236 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { FileText, Search, Folder, Calendar, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { usePageCacheStore } from "@/stores/pageCache";
+import React, { useState } from "react";
+import { RiFileTextLine, RiFolder3Line, RiAddLine } from "react-icons/ri";
+import { useDocs } from "@/components/shared/docs";
+import { DocsProvider, DocsSidebar, DocsTabs } from "@/components/shared/docs";
+import DocsEditor from "@/components/shared/docs/DocsEditor";
+import FolderIntro from "@/components/shared/docs/FolderIntro";
+import { DocsExpandContext } from "@/hooks/useDocsExpand";
 
-// 文档接口
-interface Document {
-  id: string;
-  title: string;
-  type: string;
-  lastModified: string;
-  author: string;
-  size: string;
-  folder: string;
-}
+// 文档内容组件
+function DocsContent({ children }: { children: React.ReactNode }) {
+  const { docs, openDocs, activeDocId, openDoc, closeDoc } = useDocs();
+  const [isExpanded, setIsExpanded] = useState(false);
 
-// 模拟文档数据
-const MOCK_DOCUMENTS: Document[] = [
-  {
-    id: "1",
-    title: "Project Requirements Document",
-    type: "document",
-    lastModified: "2 hours ago",
-    author: "John Doe",
-    size: "2.3 MB",
-    folder: "Projects",
-  },
-  {
-    id: "2",
-    title: "API Documentation",
-    type: "document",
-    lastModified: "1 day ago",
-    author: "Sarah Wilson",
-    size: "1.8 MB",
-    folder: "Technical",
-  },
-  {
-    id: "3",
-    title: "Team Meeting Notes",
-    type: "document",
-    lastModified: "3 days ago",
-    author: "Team Lead",
-    size: "856 KB",
-    folder: "Meetings",
-  },
-  {
-    id: "4",
-    title: "Design Guidelines",
-    type: "document",
-    lastModified: "1 week ago",
-    author: "Design Team",
-    size: "4.2 MB",
-    folder: "Design",
-  },
-];
-
-export const CachedDocsPage = React.memo(() => {
-  const { getPageState, updatePageData } = usePageCacheStore();
-  const pageState = getPageState("docs");
-
-  // 从缓存中获取状态，或使用默认值
-  const [searchQuery, setSearchQuery] = useState(
-    (pageState?.data?.searchQuery as string) || ""
-  );
-  const [documents] = useState<Document[]>(
-    (pageState?.data?.documents as Document[]) || MOCK_DOCUMENTS
-  );
-
-  // 更新缓存数据
-  useEffect(() => {
-    updatePageData("docs", {
-      searchQuery,
-      documents,
-    });
-  }, [searchQuery, documents, updatePageData]);
-
-  const filteredDocs = documents.filter((doc) =>
-    doc.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleSearchChange = React.useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchQuery(e.target.value);
-    },
-    []
-  );
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
 
   return (
-    <div className="p-4 px-2 space-y-2 md:h-full h-[calc(100vh-74px)] overflow-y-auto">
-      {/* 页面头部 */}
-      <div className="flex items-center justify-between flex-col md:flex-row gap-2">
-        {/* 搜索栏 */}
-        <div className="relative md:w-80 w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Search documents..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            className="pl-10 bg-app-content-bg border-app-border text-white placeholder-gray-400"
+    <DocsExpandContext.Provider
+      value={{ isExpanded, onToggleExpand: toggleExpanded }}
+    >
+      <div className="flex h-full">
+        {!isExpanded && (
+          <DocsSidebar
+            docs={docs}
+            activeDocId={activeDocId}
+            onSelectDoc={openDoc}
           />
-        </div>
-      </div>
-
-      {/* 文档网格 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto">
-        {filteredDocs.map((doc) => (
-          <div
-            key={doc.id}
-            className="p-4 bg-app-content-bg rounded-lg border border-app-border hover:shadow-md transition-shadow cursor-pointer"
-          >
-            {/* 文档图标和标题 */}
-            <div className="flex items-start gap-3 mb-3">
-              <div className="w-10 h-10 bg-blue-900 rounded-lg flex items-center justify-center">
-                <FileText className="w-5 h-5 text-blue-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium truncate">{doc.title}</h3>
-                <p className="text-sm text-gray-400">{doc.size}</p>
-              </div>
-            </div>
-
-            {/* 文档信息 */}
-            <div className="space-y-2 text-xs text-gray-400">
-              <div className="flex items-center gap-2">
-                <Folder className="w-3 h-3" />
-                <span>{doc.folder}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <User className="w-3 h-3" />
-                <span>{doc.author}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-3 h-3" />
-                <span>{doc.lastModified}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* 空状态提示 */}
-      {filteredDocs.length === 0 && (
-        <div className="text-center py-12">
-          {searchQuery ? (
-            <>
-              <Search className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <div className="text-gray-400">
-                <p className="text-lg font-medium">No documents found</p>
-                <p className="mt-2">Try adjusting your search query</p>
-              </div>
-            </>
-          ) : (
-            <>
-              <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <div className="text-gray-400">
-                <p className="text-lg font-medium">No documents yet</p>
-                <p className="mt-2">
-                  Create your first document to get started
-                </p>
-              </div>
-              <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
-                <FileText className="w-4 h-4 mr-2" />
-                Create Document
-              </Button>
-            </>
+        )}
+        <div className="flex flex-col flex-1">
+          {!isExpanded && (
+            <DocsTabs
+              openDocs={openDocs}
+              activeDocId={activeDocId}
+              onSelectDoc={openDoc}
+              onCloseDoc={closeDoc}
+            />
           )}
+          <div className="flex-1 overflow-hidden">{children}</div>
         </div>
-      )}
+      </div>
+    </DocsExpandContext.Provider>
+  );
+}
 
-      {/* 最近访问 */}
-      {!searchQuery && filteredDocs.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold mb-4">Recently Accessed</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {documents.slice(0, 3).map((doc) => (
-              <div
-                key={`recent-${doc.id}`}
-                className={cn(
-                  "flex items-center gap-3 p-3 bg-app-content-bg rounded-lg border border-app-border hover:bg-app-bg transition-colors cursor-pointer",
-                  "select-none"
-                )}
-              >
-                <FileText className="w-4 h-4 text-gray-400" />
-                <div className="flex-1">
-                  <h4 className="text-sm font-medium">{doc.title}</h4>
-                  <p className="text-xs text-gray-400">
-                    Last modified {doc.lastModified} by {doc.author}
-                  </p>
+// 主文档页面组件
+function DocsPageContent() {
+  const { docs, activeDocId, openDoc, createDoc } = useDocs();
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const toggleExpanded = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  // 根据 activeDocId 查找当前激活的文档
+  const activeDoc = docs.find((d) => d.uid === activeDocId);
+
+  // 获取根文档和最近更新的文档
+  const rootDocs = docs.filter((doc) => !doc.parentId);
+  const recentDocs = [...docs]
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    )
+    .slice(0, 5);
+
+  const handleSelectDoc = (doc: (typeof docs)[0]) => {
+    openDoc(doc);
+  };
+
+  const handleCreateNewDoc = async () => {
+    await createDoc("新文档", null);
+  };
+
+  // 如果没有激活的文档，显示概览页面
+  if (!activeDoc) {
+    return (
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-4xl mx-auto p-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-app-text-primary mb-2">
+              我的文档
+            </h1>
+            <p className="text-app-text-secondary">
+              共有{" "}
+              <span className="font-semibold text-app-text-primary">
+                {docs.length}
+              </span>{" "}
+              个个人文档
+            </p>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="p-4 bg-app-content-bg border border-app-border rounded-lg text-left">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded">
+                  <RiFileTextLine className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
+                <span className="text-2xl font-semibold text-app-text-primary">
+                  {docs.length}
+                </span>
               </div>
-            ))}
+              <p className="text-sm text-app-text-secondary">个人文档数</p>
+            </div>
+
+            <div className="p-4 bg-app-content-bg border border-app-border rounded-lg text-left">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded">
+                  <RiFolder3Line className="w-5 h-5 text-green-600 dark:text-green-400" />
+                </div>
+                <span className="text-2xl font-semibold text-app-text-primary">
+                  {rootDocs.length}
+                </span>
+              </div>
+              <p className="text-sm text-app-text-secondary">文档分类</p>
+            </div>
+
+            <button
+              onClick={handleCreateNewDoc}
+              className="p-4 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow text-left cursor-pointer"
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded">
+                  <RiAddLine className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <span className="text-lg font-semibold text-app-text-primary">
+                  新建文档
+                </span>
+              </div>
+              <p className="text-sm text-app-text-secondary">
+                创建新的个人文档
+              </p>
+            </button>
+          </div>
+
+          {/* Document Categories */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-app-text-primary mb-4">
+              文档分类
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {rootDocs.map((doc) => {
+                const childCount = docs.filter(
+                  (d) => d.parentId === doc.uid
+                ).length;
+                return (
+                  <div
+                    key={doc.uid}
+                    onClick={() => handleSelectDoc(doc)}
+                    className="p-4 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                  >
+                    <div className="flex items-start gap-3">
+                      <RiFolder3Line className="w-5 h-5 text-app-text-secondary mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="font-medium text-app-text-primary mb-1">
+                          {doc.title}
+                        </h3>
+                        <p className="text-sm text-app-text-secondary">
+                          {childCount > 0
+                            ? `包含 ${childCount} 个文档`
+                            : "空文件夹"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Recent Documents */}
+          <div>
+            <h2 className="text-xl font-semibold text-app-text-primary mb-4">
+              最近更新
+            </h2>
+            <div className="space-y-2">
+              {recentDocs.map((doc) => (
+                <div
+                  key={doc.uid}
+                  onClick={() => handleSelectDoc(doc)}
+                  className="flex items-center gap-3 p-3 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                >
+                  <RiFileTextLine className="w-4 h-4 text-app-text-secondary" />
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-app-text-primary">
+                      {doc.title}
+                    </h4>
+                    <p className="text-xs text-app-text-muted">
+                      更新于{" "}
+                      {new Date(doc.updatedAt).toLocaleDateString("zh-CN")}
+                    </p>
+                  </div>
+                  {doc.parentId && (
+                    <span className="text-xs text-app-text-secondary bg-app-button-hover px-2 py-1 rounded">
+                      {docs.find((d) => d.uid === doc.parentId)?.title}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  // 如果有激活的文档，根据类型渲染 DocsEditor 或 FolderIntro
+  if (activeDoc.type === "folder") {
+    return <FolderIntro folder={activeDoc} />;
+  }
+
+  return (
+    <DocsEditor
+      doc={activeDoc}
+      isExpanded={isExpanded}
+      onToggleExpand={toggleExpanded}
+    />
+  );
+}
+
+// 主导出组件
+export const CachedDocsPage = React.memo(() => {
+  return (
+    <div className="h-full">
+      <DocsProvider workspaceType="personal">
+        <DocsContent>
+          <DocsPageContent />
+        </DocsContent>
+      </DocsProvider>
     </div>
   );
 });
