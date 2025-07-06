@@ -38,8 +38,6 @@ export const useTeam = () => {
   const hasOnlyOneTeam = teams && teams.length === 1;
   const currentTeam = hasOnlyOneTeam ? teams[0] : null;
 
-  console.log("currentTeam", currentTeam);
-
   // MARK: -获取当前团队成员信息;
   // const currentTeamMember =
   //   currentTeam && session?.user?.id

@@ -49,9 +49,7 @@ export const personalNavItems = [
 export const workspaceItems = [
   { icon: FolderOpen, label: "Projects", href: "/team/projects" },
   { icon: Eye, label: "Views", href: "/team/views" },
-  { icon: FileText, label: "Docs", href: "/team/doc" },
   { icon: Workflow, label: "Workflows", href: "/team/workflows" },
-  { icon: Bug, label: "Issues", href: "/team/issues" },
 ];
 
 // Personal 子项

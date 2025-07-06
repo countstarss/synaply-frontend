@@ -4,24 +4,11 @@ import React, { useState } from "react"; // 导入 useState
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import {
-  Users,
-  Hash,
-  Plus,
-  Mic,
-  Video,
-  MessageCircle,
-  Group,
-} from "lucide-react";
+import { Hash, Plus, Mic, Video, MessageCircle, Group } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { ServerChannel } from "../server/server-channel";
-import { UserListItem } from "../common/UserListItem";
-import {
-  FIXED_CHANNELS,
-  MOCK_RECENT_USERS,
-  PUBLIC_CHANNEL,
-} from "../common/ChatConstants";
+import { FIXED_CHANNELS, PUBLIC_CHANNEL } from "../common/ChatConstants";
 import { ChannelType } from "@/types/convex/channel";
 import { Id } from "@/convex/_generated/dataModel";
 import Link from "next/link";
@@ -38,12 +25,6 @@ export const ChatSidebar = React.memo(({ className }: ChatSidebarProps) => {
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false); // 控制创建群聊模态框的显示
   const [isStartPrivateChatModalOpen, setIsStartPrivateChatModalOpen] =
     useState(false); // 控制私聊模态框的显示
-
-  const handleUserClick = React.useCallback((username: string) => {
-    console.log("点击用户:", username);
-    // TODO: 实现私聊功能，跳转到 Supabase 私聊路由
-    // router.push(`/chat/supabase/${privateChatId}`);
-  }, []);
 
   const handleAddChannel = React.useCallback(() => {
     console.log("添加频道");
@@ -116,7 +97,10 @@ export const ChatSidebar = React.memo(({ className }: ChatSidebarProps) => {
 
           {/* 其他 Convex 频道 */}
           {FIXED_CHANNELS.map((channel) => (
-            <Link key={channel._id} href={`/chat/public/channels/${channel._id}`}>
+            <Link
+              key={channel._id}
+              href={`/chat/public/channels/${channel._id}`}
+            >
               <ServerChannel
                 channel={{
                   _id: channel._id as Id<"channels">,
@@ -216,34 +200,6 @@ export const ChatSidebar = React.memo(({ className }: ChatSidebarProps) => {
         </div>
 
         <Separator className="my-2 bg-zinc-200 dark:bg-zinc-700" />
-
-        {/* 最近聊天部分 (Convex) - 保持不变或根据需求调整 */}
-        <div className="mt-2">
-          <div className="flex items-center justify-between py-2">
-            <span className="text-xs uppercase font-semibold text-zinc-500 dark:text-zinc-400">
-              最近聊天 (Convex)
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-4 w-4"
-              // onClick={handleAddUser} // 保持原有逻辑
-            >
-              <Users className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* 用户列表 */}
-          {MOCK_RECENT_USERS.map((user) => (
-            <UserListItem
-              key={user.id}
-              username={user.username}
-              avatarUrl={user.avatarUrl}
-              isOnline={user.isOnline}
-              onClick={() => handleUserClick(user.username)}
-            />
-          ))}
-        </div>
       </ScrollArea>
 
       {/* 创建群聊模态框 */}

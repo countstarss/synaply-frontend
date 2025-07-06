@@ -16,6 +16,7 @@ import {
   mainNavItems,
   personalItems,
   personalNavItems,
+  workspaceItems,
 } from "@/lib/data/constant";
 import { settingMockData } from "@/lib/data/settingData";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
@@ -92,13 +93,17 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
                     ))}
                   </div>
 
-                  {/* WorkSpace 部分 */}
+                  {/* Team 部分 */}
                   {hasOnlyOneTeam && currentTeam ? (
                     <SidebarSection title={currentTeam.name}>
-                      {/* 这里将来会显示与team workspace相关的内容 */}
-                      <div className="px-3 py-2 text-sm text-gray-500">
-                        {currentTeam.workspace.name}
-                      </div>
+                      {workspaceItems.map((item) => (
+                        <SidebarNavItem
+                          key={item.href}
+                          icon={item.icon}
+                          label={item.label}
+                          href={item.href}
+                        />
+                      ))}
                     </SidebarSection>
                   ) : (
                     <SidebarSection title="Team">
