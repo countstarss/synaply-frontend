@@ -1,3 +1,5 @@
+import { VisibilityType } from "../types/visibility";
+
 // Team相关的API fetchers
 export interface Team {
   id: string;
@@ -21,6 +23,73 @@ export interface Team {
 
 export interface CreateTeamData {
   name: string;
+}
+
+// 项目相关接口
+export interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  workspaceId: string;
+  creatorId: string;
+  visibility: VisibilityType;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateProjectData {
+  name: string;
+  description?: string;
+  visibility: VisibilityType;
+}
+
+// 工作流相关接口
+export interface Workflow {
+  id: string;
+  name: string;
+  status: "DRAFT" | "PUBLISHED";
+  workspaceId: string;
+  creatorId: string;
+  visibility: VisibilityType;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateWorkflowData {
+  name: string;
+  visibility: VisibilityType;
+}
+
+// 任务相关接口
+export interface Issue {
+  id: string;
+  title: string;
+  description?: string;
+  status: "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
+  priority: "LOW" | "NORMAL" | "HIGH" | "URGENT";
+  workspaceId: string;
+  creatorId: string;
+  visibility: VisibilityType;
+  projectId?: string;
+  workflowId?: string;
+  currentStepId?: string;
+  directAssigneeId?: string;
+  dueDate?: string;
+  startDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateIssueData {
+  title: string;
+  description?: string;
+  priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT";
+  visibility: VisibilityType;
+  projectId?: string;
+  workflowId?: string;
+  directAssigneeId?: string;
+  dueDate?: string;
+  startDate?: string;
 }
 
 const API_BASE_URL =
@@ -66,4 +135,91 @@ export const createTeam = async (
   }
 
   return response.json();
+};
+
+/**
+ * MARK: - 项目相关API
+ */
+export const fetchProjects = async (
+  workspaceId: string,
+  token: string
+): Promise<Project[]> => {
+  const response = await fetch(
+    `${API_BASE_URL}/workspaces/${workspaceId}/projects`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("获取项目列表失败");
+  }
+
+  return response.json();
+};
+
+export const createProject = async (
+  workspaceId: string,
+  data: CreateProjectData,
+  token: string
+): Promise<Project> => {
+  const response = await fetch(
+    `${API_BASE_URL}/workspaces/${workspaceId}/projects`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("创建项目失败");
+  }
+
+  return response.json();
+};
+
+export const updateProject = async (
+  projectId: string,
+  data: Partial<CreateProjectData>,
+  token: string
+): Promise<Project> => {
+  const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error("更新项目失败");
+  }
+
+  return response.json();
+};
+
+export const deleteProject = async (
+  projectId: string,
+  token: string
+): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("删除项目失败");
+  }
 };
