@@ -80,7 +80,7 @@ const InfoBar = ({ showViewToggle = true, className }: InfoBarProps) => {
               )}
             </button>
 
-            {/* PC端：侧边栏隐藏时显示TabList */}
+            {/* NOTE: PC端：侧边栏隐藏时显示TabList */}
             <div
               className={cn(
                 "hidden md:block transition-all duration-300",

@@ -29,6 +29,10 @@ export const mainNavItems = [
   { icon: BookAIcon, label: "Docs", href: "/docs" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
+export const secondaryNavItems = [
+  { icon: Layers, label: "Team", href: "/team" },
+  { icon: User, label: "Personal", href: "/personal" },
+];
 
 // MARK: - PERSONAL导航
 export const personalNavItems = [
@@ -37,10 +41,6 @@ export const personalNavItems = [
   { icon: FolderOpen, label: "Projects", href: "/projects" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
   { icon: Settings, label: "Settings", href: "/settings" },
-];
-export const secondaryNavItems = [
-  { icon: Layers, label: "Team", href: "/team" },
-  { icon: User, label: "Personal", href: "/personal" },
 ];
 
 // WorkSpace 子项
