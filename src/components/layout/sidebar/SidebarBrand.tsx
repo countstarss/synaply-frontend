@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useRouter } from "@/i18n/navigation";
+import { InviteMemberDialog } from "@/components/dialogs/InviteMemberDialog";
 
 interface SidebarBrandProps {
   className?: string;
@@ -32,14 +33,14 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
   const router = useRouter();
   const { workspaces, currentWorkspace, loading, switchWorkspace } =
     useWorkspace();
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
   };
 
   const handleInviteMember = () => {
-    // TODO: 打开邀请成员对话框
-    console.log("邀请新成员到工作空间:", currentWorkspace?.name);
+    setShowInviteDialog(true);
   };
 
   const handleCreateWorkspace = () => {
@@ -231,6 +232,16 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
           <span>Logout</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
+
+      {/* 邀请成员对话框 */}
+      {currentWorkspace?.type === "TEAM" && (
+        <InviteMemberDialog
+          open={showInviteDialog}
+          onOpenChange={setShowInviteDialog}
+          teamId={currentWorkspace.teamId || ""}
+          teamName={currentWorkspace.name}
+        />
+      )}
     </DropdownMenu>
   );
 };

@@ -26,22 +26,6 @@ export interface CreateTeamData {
 }
 
 // 项目相关接口
-export interface Project {
-  id: string;
-  name: string;
-  description?: string;
-  workspaceId: string;
-  creatorId: string;
-  visibility: VisibilityType;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateProjectData {
-  name: string;
-  description?: string;
-  visibility: VisibilityType;
-}
 
 // 工作流相关接口
 export interface Workflow {
@@ -138,61 +122,19 @@ export const createTeam = async (
 };
 
 /**
- * MARK: - 项目相关API
+ * MARK: - 邀请团队成员
  */
-export const fetchProjects = async (
-  workspaceId: string,
+export interface InviteMemberData {
+  email: string;
+}
+
+export const inviteTeamMember = async (
+  teamId: string,
+  data: InviteMemberData,
   token: string
-): Promise<Project[]> => {
-  const response = await fetch(
-    `${API_BASE_URL}/workspaces/${workspaceId}/projects`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("获取项目列表失败");
-  }
-
-  return response.json();
-};
-
-export const createProject = async (
-  workspaceId: string,
-  data: CreateProjectData,
-  token: string
-): Promise<Project> => {
-  const response = await fetch(
-    `${API_BASE_URL}/workspaces/${workspaceId}/projects`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("创建项目失败");
-  }
-
-  return response.json();
-};
-
-export const updateProject = async (
-  projectId: string,
-  data: Partial<CreateProjectData>,
-  token: string
-): Promise<Project> => {
-  const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
-    method: "PUT",
+): Promise<{ message: string }> => {
+  const response = await fetch(`${API_BASE_URL}/teams/${teamId}/invite`, {
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
@@ -201,25 +143,9 @@ export const updateProject = async (
   });
 
   if (!response.ok) {
-    throw new Error("更新项目失败");
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.message || "邀请成员失败");
   }
 
   return response.json();
-};
-
-export const deleteProject = async (
-  projectId: string,
-  token: string
-): Promise<void> => {
-  const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("删除项目失败");
-  }
 };
