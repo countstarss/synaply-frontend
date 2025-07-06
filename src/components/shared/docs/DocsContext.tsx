@@ -181,6 +181,7 @@ export default function DocsProvider({
   }, [workspaceType, initialized]);
 
   // 从 localStorage 恢复打开的文档 - 只在初始化时执行
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!initialized || docs.length === 0 || docsRestored) return;
 
