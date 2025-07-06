@@ -12,13 +12,12 @@ import SidebarFooter from "../sidebar/SidebarFooter";
 import { useSidebarStore } from "@/stores/sidebar";
 import { useSidebarMode } from "@/hooks/useSidebarMode";
 import { useRouter } from "@/i18n/navigation";
-import {
-  mainNavItems,
-  personalItems,
-  workspaceItems,
-} from "@/lib/data/constant";
+import { mainNavItems, personalItems } from "@/lib/data/constant";
 import { settingMockData } from "@/lib/data/settingData";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
+import { useTeam } from "@/hooks/useTeam";
+import { CreateTeamDialog } from "@/components/dialogs/CreateTeamDialog";
+import { Plus } from "lucide-react";
 
 interface SidebarProps {
   className?: string;
@@ -28,6 +27,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
   const { isOpen: sidebarOpen } = useSidebarStore();
   const { mode, switchToMain } = useSidebarMode();
   const router = useRouter();
+  const { hasOnlyOneTeam, currentTeam } = useTeam();
 
   const handleBackToMain = useCallback(() => {
     router.back();
@@ -69,16 +69,27 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
               </div>
 
               {/* WorkSpace 部分 */}
-              <SidebarSection title="Team">
-                {workspaceItems.map((item) => (
-                  <SidebarNavItem
-                    key={item.href}
-                    icon={item.icon}
-                    label={item.label}
-                    href={item.href}
-                  />
-                ))}
-              </SidebarSection>
+              {hasOnlyOneTeam && currentTeam ? (
+                <SidebarSection title={currentTeam.name}>
+                  {/* 这里将来会显示与team workspace相关的内容 */}
+                  <div className="px-3 py-2 text-sm text-gray-500">
+                    {currentTeam.workspace.name}
+                  </div>
+                </SidebarSection>
+              ) : (
+                <SidebarSection title="Team">
+                  <CreateTeamDialog>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex items-center gap-2 text-sm w-full justify-start px-3 py-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>创建团队</span>
+                    </Button>
+                  </CreateTeamDialog>
+                </SidebarSection>
+              )}
 
               {/* Personal 部分 */}
               <SidebarSection title="Personal">
