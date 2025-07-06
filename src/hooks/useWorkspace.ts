@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
+import {
+  fetchUserWorkspaces,
+  Workspace as APIWorkspace,
+} from "@/lib/fetchers/workspace";
 
 export interface Workspace {
   id: string;
@@ -10,58 +15,68 @@ export interface Workspace {
   memberCount?: number;
   isActive: boolean;
   avatarUrl?: string;
+  teamId?: string;
+  userId?: string;
 }
 
-// 模拟工作空间数据 - 稍后可以替换为API调用
-const mockWorkspaces: Workspace[] = [
-  {
-    id: "1",
-    name: "InsightLab",
-    type: "TEAM",
-    memberCount: 1,
-    isActive: true,
-  },
-  {
-    id: "2",
-    name: "wiz Lab",
-    type: "TEAM",
-    memberCount: 3,
-    isActive: false,
-  },
-];
-
 export function useWorkspace() {
-  const { user } = useAuth();
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+  const [currentWorkspaceId, setCurrentWorkspaceId] = useState<string | null>(
     null
   );
-  const [loading, setLoading] = useState(true);
 
-  // 初始化工作空间数据
+  // 获取用户所有工作空间
+  const {
+    data: apiWorkspaces,
+    isLoading: loading,
+    error,
+  } = useQuery({
+    queryKey: ["workspaces"],
+    queryFn: () => fetchUserWorkspaces(session!.access_token),
+    enabled: !!session?.access_token,
+  });
+
+  // 转换API数据为前端格式
+  const workspaces: Workspace[] = (apiWorkspaces || []).map(
+    (workspace: APIWorkspace) => ({
+      id: workspace.id,
+      name: workspace.name,
+      type: workspace.type,
+      memberCount: workspace.team?.members?.length || 1,
+      isActive: workspace.id === currentWorkspaceId,
+      avatarUrl: undefined,
+      teamId: workspace.teamId,
+      userId: workspace.userId,
+    })
+  );
+
+  // 初始化当前工作空间
   useEffect(() => {
-    if (user) {
-      // TODO: 从API获取用户的工作空间列表
-      setWorkspaces(mockWorkspaces);
-      setCurrentWorkspace(mockWorkspaces[0]);
+    if (workspaces.length > 0 && !currentWorkspaceId) {
+      // 尝试从本地存储获取上次选择的工作空间
+      const savedWorkspaceId = localStorage.getItem("currentWorkspaceId");
+      const savedWorkspace = workspaces.find((w) => w.id === savedWorkspaceId);
+
+      if (savedWorkspace) {
+        setCurrentWorkspaceId(savedWorkspaceId);
+      } else {
+        // 优先选择个人工作空间，如果没有则选择第一个
+        const personalWorkspace = workspaces.find((w) => w.type === "PERSONAL");
+        setCurrentWorkspaceId(personalWorkspace?.id || workspaces[0].id);
+      }
     }
-    setLoading(false);
-  }, [user]);
+  }, [workspaces, currentWorkspaceId]);
+
+  // 获取当前工作空间
+  const currentWorkspace =
+    workspaces.find((w) => w.id === currentWorkspaceId) || null;
 
   // 切换工作空间
   const switchWorkspace = (workspaceId: string) => {
     const workspace = workspaces.find((w) => w.id === workspaceId);
     if (workspace) {
-      // 更新当前活跃状态
-      const updatedWorkspaces = workspaces.map((w) => ({
-        ...w,
-        isActive: w.id === workspaceId,
-      }));
-
-      setWorkspaces(updatedWorkspaces);
-      setCurrentWorkspace(workspace);
-
-      // TODO: 更新本地存储或发送API请求
+      setCurrentWorkspaceId(workspaceId);
       localStorage.setItem("currentWorkspaceId", workspaceId);
     }
   };
@@ -77,7 +92,8 @@ export function useWorkspace() {
       isActive: false,
     };
 
-    setWorkspaces((prev) => [...prev, newWorkspace]);
+    // 这里需要调用API创建工作空间后再刷新数据
+    queryClient.invalidateQueries({ queryKey: ["workspaces"] });
     return newWorkspace;
   };
 
@@ -91,6 +107,7 @@ export function useWorkspace() {
     workspaces,
     currentWorkspace,
     loading,
+    error,
     switchWorkspace,
     createWorkspace,
     inviteMember,

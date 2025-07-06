@@ -80,14 +80,22 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
               <Avatar className="h-8 w-8">
                 <AvatarImage src={currentWorkspace.avatarUrl} />
                 <AvatarFallback className="bg-white text-black font-bold text-sm">
-                  {user?.user_metadata.name
-                    ? user?.user_metadata.name.slice(0, 1)
-                    : user?.email?.slice(0, 1).toUpperCase()}
+                  {currentWorkspace.type === "PERSONAL"
+                    ? user?.user_metadata.name?.slice(0, 1) ||
+                      user?.email?.slice(0, 1).toUpperCase()
+                    : currentWorkspace.name.slice(0, 1).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start select-none">
-                <span className="font-semibold text-lg">
-                  {user?.user_metadata.name || user?.email?.split("@")[0]}
+                <span className="font-semibold text-lg truncate">
+                  {currentWorkspace.type === "PERSONAL"
+                    ? user?.user_metadata.name || user?.email?.split("@")[0]
+                    : currentWorkspace.name.split(" ")[0]}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {currentWorkspace.type === "PERSONAL"
+                    ? "个人空间"
+                    : "团队空间"}
                 </span>
               </div>
             </div>
@@ -103,33 +111,33 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
         sideOffset={4}
       >
         {/* 当前工作空间信息 */}
-        {/* FIXME: 新注册用户默认只有一个工作区, 私人工作区没有TEAM, 所以这里需要判断 */}
-        {/* FIXME: 组织者可以在自己的账号中创建一个team, 这样的话, 其他用户可以加入这个team, 自然而然就有了这个team的工作区 */}
-        {/* FIXME:  */}
 
         <div className="px-1">
           <div className="flex items-center gap-3 mb-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={currentWorkspace.avatarUrl} />
               <AvatarFallback className="bg-blue-500 text-white font-bold">
-                {user?.user_metadata.name
-                  ? user?.user_metadata.name.slice(0, 1)
-                  : user?.email?.slice(0, 1).toUpperCase()}
+                {currentWorkspace.type === "PERSONAL"
+                  ? user?.user_metadata.name?.slice(0, 1) ||
+                    user?.email?.slice(0, 1).toUpperCase()
+                  : currentWorkspace.name.slice(0, 1).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <div className="font-semibold">{user?.user_metadata.name}</div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="font-semibold">{currentWorkspace.name}</div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
                 <Users className="h-3 w-3" />
                 <span>{currentWorkspace.memberCount || 1}位成员</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-6 px-2 py-0 text-xs"
-                  onClick={handleInviteMember}
-                >
-                  邀请新成员
-                </Button>
+                {currentWorkspace.type === "TEAM" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 py-0 text-xs"
+                    onClick={handleInviteMember}
+                  >
+                    邀请新成员
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -157,10 +165,18 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
               <Avatar className="h-6 w-6">
                 <AvatarImage src={workspace.avatarUrl} />
                 <AvatarFallback className="bg-gray-500 text-white text-xs">
-                  {workspace.name[0]}
+                  {workspace.type === "PERSONAL"
+                    ? user?.user_metadata.name?.slice(0, 1) ||
+                      user?.email?.slice(0, 1).toUpperCase()
+                    : workspace.name.slice(0, 1).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="flex-1">{workspace.name}</span>
+              <div className="flex-1">
+                <div className="font-medium text-sm">{workspace.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {workspace.type === "PERSONAL" ? "个人空间" : "团队空间"}
+                </div>
+              </div>
               {workspace.isActive && (
                 <Check className="h-4 w-4 text-blue-500" />
               )}
