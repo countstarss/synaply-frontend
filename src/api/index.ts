@@ -10,12 +10,163 @@
  * ---------------------------------------------------------------
  */
 
+export interface CreateTeamDto {
+  /**
+   * The name of the team
+   * @example "Team 1"
+   */
+  name: string;
+}
+
+export interface UserDto {
+  /** 用户ID */
+  id: string;
+  /** 用户邮箱 */
+  email: string;
+  /** 用户名称 */
+  name: string | null;
+  /** 用户头像URL */
+  avatarUrl: string | null;
+  /**
+   * 创建时间
+   * @format date-time
+   */
+  createdAt: string;
+  /**
+   * 更新时间
+   * @format date-time
+   */
+  updatedAt: string;
+}
+
+export interface TeamMemberDto {
+  /** 团队成员ID */
+  id: string;
+  /** 团队ID */
+  teamId: string;
+  /** 用户ID */
+  userId: string;
+  /** 成员角色 */
+  role: "OWNER" | "ADMIN" | "MEMBER";
+  /** 用户信息 */
+  user: UserDto;
+  /**
+   * 创建时间
+   * @format date-time
+   */
+  createdAt: string;
+  /**
+   * 更新时间
+   * @format date-time
+   */
+  updatedAt: string;
+}
+
+export interface WorkspaceUserDto {
+  /** 用户ID */
+  id: string;
+  /** 用户邮箱 */
+  email: string;
+  /** 用户名称 */
+  name: string | null;
+  /** 用户头像URL */
+  avatarUrl: string | null;
+}
+
+export interface WorkspaceTeamDto {
+  /** 团队ID */
+  id: string;
+  /** 团队名称 */
+  name: string;
+  /**
+   * 创建时间
+   * @format date-time
+   */
+  createdAt: string;
+  /**
+   * 更新时间
+   * @format date-time
+   */
+  updatedAt: string;
+}
+
+export interface WorkspaceDto {
+  /** 工作空间ID */
+  id: string;
+  /** 工作空间名称 */
+  name: string;
+  /** 工作空间类型 */
+  type: "PERSONAL" | "TEAM";
+  /** 个人工作空间所属用户ID */
+  userId: string | null;
+  /** 团队工作空间所属团队ID */
+  teamId: string | null;
+  /** 所属用户信息（个人工作空间） */
+  user: WorkspaceUserDto | null;
+  /** 所属团队信息（团队工作空间） */
+  team: WorkspaceTeamDto | null;
+  /**
+   * 创建时间
+   * @format date-time
+   */
+  createdAt: string;
+  /**
+   * 更新时间
+   * @format date-time
+   */
+  updatedAt: string;
+}
+
+export interface TeamDto {
+  /** 团队ID */
+  id: string;
+  /** 团队名称 */
+  name: string;
+  /** 团队成员列表 */
+  members: TeamMemberDto[];
+  /** 团队工作空间 */
+  workspace: WorkspaceDto | null;
+  /**
+   * 创建时间
+   * @format date-time
+   */
+  createdAt: string;
+  /**
+   * 更新时间
+   * @format date-time
+   */
+  updatedAt: string;
+}
+
+export interface InviteMemberDto {
+  /**
+   * The email of the member to invite
+   * @example "luke@wizlab.org"
+   */
+  email: string;
+}
+
+export interface InviteResultDto {
+  /** 邀请结果信息 */
+  message: string;
+}
+
+export interface RemoveMemberResultDto {
+  /** 移除成员结果信息 */
+  message: string;
+}
+
 export interface CreateWorkflowDto {
   /**
    * The name of the workflow
    * @example "Workflow 1"
    */
   name: string;
+  /**
+   * The visibility of the workflow
+   * @default "PRIVATE"
+   */
+  visibility?: "PRIVATE" | "TEAM_READONLY" | "TEAM_EDITABLE" | "PUBLIC";
 }
 
 export interface UpdateWorkflowDto {
@@ -56,6 +207,11 @@ export interface CreateIssueDto {
   startDate?: string;
   /** The parent task ID of the issue */
   parentTaskId?: string;
+  /**
+   * The visibility of the issue
+   * @default "PRIVATE"
+   */
+  visibility?: "PRIVATE" | "TEAM_READONLY" | "TEAM_EDITABLE" | "PUBLIC";
 }
 
 export interface UpdateIssueDto {
@@ -95,6 +251,11 @@ export interface CreateProjectDto {
   name: string;
   /** The description of the project */
   description?: string;
+  /**
+   * The visibility of the project
+   * @default "PRIVATE"
+   */
+  visibility?: "PRIVATE" | "TEAM_READONLY" | "TEAM_EDITABLE" | "PUBLIC";
 }
 
 export interface UpdateProjectDto {
@@ -102,6 +263,11 @@ export interface UpdateProjectDto {
   name?: string;
   /** The description of the project */
   description?: string;
+  /**
+   * The visibility of the project
+   * @default "PRIVATE"
+   */
+  visibility?: "PRIVATE" | "TEAM_READONLY" | "TEAM_EDITABLE" | "PUBLIC";
 }
 
 export interface CreateGroupChatDto {
@@ -487,44 +653,206 @@ export class Api<
         ...params,
       }),
   };
-  workspaces = {
+  teams = {
     /**
-     * No description
+     * @description 创建新团队，创建者自动成为团队拥有者，并创建对应的团队工作空间
      *
-     * @tags Workspace
-     * @name WorkspaceControllerGetUserWorkspaces
-     * @request GET:/workspaces
+     * @tags teams
+     * @name TeamControllerCreate
+     * @summary 创建团队
+     * @request POST:/teams
+     * @secure
      */
-    workspaceControllerGetUserWorkspaces: (params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/workspaces`,
-        method: "GET",
+    teamControllerCreate: (data: CreateTeamDto, params: RequestParams = {}) =>
+      this.request<TeamDto, void>({
+        path: `/teams`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
         ...params,
       }),
 
     /**
-     * No description
+     * @description 获取当前用户作为成员的所有团队列表
      *
-     * @tags Workspace
+     * @tags teams
+     * @name TeamControllerGetUserTeams
+     * @summary 获取用户所属团队列表
+     * @request GET:/teams
+     * @secure
+     */
+    teamControllerGetUserTeams: (params: RequestParams = {}) =>
+      this.request<TeamDto[], any>({
+        path: `/teams`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description 只有团队的OWNER或ADMIN可以邀请新成员
+     *
+     * @tags teams
+     * @name TeamControllerInvite
+     * @summary 邀请成员加入团队
+     * @request POST:/teams/{teamId}/invite
+     * @secure
+     */
+    teamControllerInvite: (
+      teamId: string,
+      data: InviteMemberDto,
+      params: RequestParams = {},
+    ) =>
+      this.request<InviteResultDto, void>({
+        path: `/teams/${teamId}/invite`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description 获取指定团队的详细信息，包括成员列表和工作空间信息
+     *
+     * @tags teams
+     * @name TeamControllerGetTeam
+     * @summary 获取团队详情
+     * @request GET:/teams/{teamId}
+     * @secure
+     */
+    teamControllerGetTeam: (teamId: string, params: RequestParams = {}) =>
+      this.request<TeamDto, void>({
+        path: `/teams/${teamId}`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description 获取指定团队的所有成员信息
+     *
+     * @tags teams
+     * @name TeamControllerGetTeamMembers
+     * @summary 获取团队成员列表
+     * @request GET:/teams/{teamId}/members
+     * @secure
+     */
+    teamControllerGetTeamMembers: (
+      teamId: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<TeamMemberDto[], any>({
+        path: `/teams/${teamId}/members`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description 只有团队的OWNER或ADMIN可以更新成员角色
+     *
+     * @tags teams
+     * @name TeamControllerUpdateMemberRole
+     * @summary 更新团队成员角色
+     * @request PATCH:/teams/{teamId}/members/{memberId}/role
+     * @secure
+     */
+    teamControllerUpdateMemberRole: (
+      teamId: string,
+      memberId: string,
+      data: {
+        /** 新角色 */
+        role?: "OWNER" | "ADMIN" | "MEMBER";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<TeamMemberDto, void>({
+        path: `/teams/${teamId}/members/${memberId}/role`,
+        method: "PATCH",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description 只有团队的OWNER或ADMIN可以移除成员，不能移除最后一个拥有者
+     *
+     * @tags teams
+     * @name TeamControllerRemoveMember
+     * @summary 移除团队成员
+     * @request DELETE:/teams/{teamId}/members/{memberId}
+     * @secure
+     */
+    teamControllerRemoveMember: (
+      teamId: string,
+      memberId: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<RemoveMemberResultDto, void>({
+        path: `/teams/${teamId}/members/${memberId}`,
+        method: "DELETE",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+  };
+  workspaces = {
+    /**
+     * @description 获取当前用户的所有工作空间，包括个人工作空间和所属团队的工作空间
+     *
+     * @tags workspaces
+     * @name WorkspaceControllerGetUserWorkspaces
+     * @summary 获取用户所有工作空间
+     * @request GET:/workspaces
+     * @secure
+     */
+    workspaceControllerGetUserWorkspaces: (params: RequestParams = {}) =>
+      this.request<WorkspaceDto[], void>({
+        path: `/workspaces`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * @description 根据工作空间ID获取详细信息，包括关联的用户或团队信息
+     *
+     * @tags workspaces
      * @name WorkspaceControllerGetWorkspaceById
+     * @summary 获取工作空间详情
      * @request GET:/workspaces/{workspaceId}
+     * @secure
      */
     workspaceControllerGetWorkspaceById: (
       workspaceId: string,
       params: RequestParams = {},
     ) =>
-      this.request<void, any>({
+      this.request<WorkspaceDto, void>({
         path: `/workspaces/${workspaceId}`,
         method: "GET",
+        secure: true,
+        format: "json",
         ...params,
       }),
 
     /**
      * No description
      *
-     * @tags Workflow
+     * @tags workflows
      * @name WorkflowControllerCreate
+     * @summary 创建工作流
      * @request POST:/workspaces/{workspaceId}/workflows
+     * @secure
      */
     workflowControllerCreate: (
       workspaceId: string,
@@ -535,6 +863,7 @@ export class Api<
         path: `/workspaces/${workspaceId}/workflows`,
         method: "POST",
         body: data,
+        secure: true,
         type: ContentType.Json,
         ...params,
       }),
@@ -542,9 +871,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Workflow
+     * @tags workflows
      * @name WorkflowControllerFindAll
+     * @summary 获取工作流列表
      * @request GET:/workspaces/{workspaceId}/workflows
+     * @secure
      */
     workflowControllerFindAll: (
       workspaceId: string,
@@ -553,15 +884,18 @@ export class Api<
       this.request<void, any>({
         path: `/workspaces/${workspaceId}/workflows`,
         method: "GET",
+        secure: true,
         ...params,
       }),
 
     /**
      * No description
      *
-     * @tags Workflow
+     * @tags workflows
      * @name WorkflowControllerFindOne
+     * @summary 获取工作流详情
      * @request GET:/workspaces/{workspaceId}/workflows/{id}
+     * @secure
      */
     workflowControllerFindOne: (
       id: string,
@@ -571,15 +905,18 @@ export class Api<
       this.request<void, any>({
         path: `/workspaces/${workspaceId}/workflows/${id}`,
         method: "GET",
+        secure: true,
         ...params,
       }),
 
     /**
      * No description
      *
-     * @tags Workflow
+     * @tags workflows
      * @name WorkflowControllerUpdate
+     * @summary 更新工作流
      * @request PATCH:/workspaces/{workspaceId}/workflows/{id}
+     * @secure
      */
     workflowControllerUpdate: (
       id: string,
@@ -591,6 +928,7 @@ export class Api<
         path: `/workspaces/${workspaceId}/workflows/${id}`,
         method: "PATCH",
         body: data,
+        secure: true,
         type: ContentType.Json,
         ...params,
       }),
@@ -598,9 +936,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Workflow
+     * @tags workflows
      * @name WorkflowControllerRemove
+     * @summary 删除工作流
      * @request DELETE:/workspaces/{workspaceId}/workflows/{id}
+     * @secure
      */
     workflowControllerRemove: (
       id: string,
@@ -610,15 +950,18 @@ export class Api<
       this.request<void, any>({
         path: `/workspaces/${workspaceId}/workflows/${id}`,
         method: "DELETE",
+        secure: true,
         ...params,
       }),
 
     /**
      * No description
      *
-     * @tags Workflow
+     * @tags workflows
      * @name WorkflowControllerPublish
+     * @summary 发布工作流
      * @request POST:/workspaces/{workspaceId}/workflows/{id}/publish
+     * @secure
      */
     workflowControllerPublish: (
       id: string,
@@ -628,15 +971,18 @@ export class Api<
       this.request<void, any>({
         path: `/workspaces/${workspaceId}/workflows/${id}/publish`,
         method: "POST",
+        secure: true,
         ...params,
       }),
 
     /**
      * No description
      *
-     * @tags Issue
+     * @tags issues
      * @name IssueControllerCreate
+     * @summary 创建任务
      * @request POST:/workspaces/{workspaceId}/issues
+     * @secure
      */
     issueControllerCreate: (
       workspaceId: string,
@@ -647,6 +993,7 @@ export class Api<
         path: `/workspaces/${workspaceId}/issues`,
         method: "POST",
         body: data,
+        secure: true,
         type: ContentType.Json,
         ...params,
       }),
@@ -654,9 +1001,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Issue
+     * @tags issues
      * @name IssueControllerFindAll
+     * @summary 获取任务列表
      * @request GET:/workspaces/{workspaceId}/issues
+     * @secure
      */
     issueControllerFindAll: (
       workspaceId: string,
@@ -669,15 +1018,18 @@ export class Api<
         path: `/workspaces/${workspaceId}/issues`,
         method: "GET",
         query: query,
+        secure: true,
         ...params,
       }),
 
     /**
      * No description
      *
-     * @tags Issue
+     * @tags issues
      * @name IssueControllerFindOne
+     * @summary 获取任务详情
      * @request GET:/workspaces/{workspaceId}/issues/{id}
+     * @secure
      */
     issueControllerFindOne: (
       id: string,
@@ -687,15 +1039,18 @@ export class Api<
       this.request<void, any>({
         path: `/workspaces/${workspaceId}/issues/${id}`,
         method: "GET",
+        secure: true,
         ...params,
       }),
 
     /**
      * No description
      *
-     * @tags Issue
+     * @tags issues
      * @name IssueControllerUpdate
+     * @summary 更新任务
      * @request PATCH:/workspaces/{workspaceId}/issues/{id}
+     * @secure
      */
     issueControllerUpdate: (
       id: string,
@@ -707,6 +1062,7 @@ export class Api<
         path: `/workspaces/${workspaceId}/issues/${id}`,
         method: "PATCH",
         body: data,
+        secure: true,
         type: ContentType.Json,
         ...params,
       }),
@@ -714,9 +1070,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Issue
+     * @tags issues
      * @name IssueControllerRemove
+     * @summary 删除任务
      * @request DELETE:/workspaces/{workspaceId}/issues/{id}
+     * @secure
      */
     issueControllerRemove: (
       id: string,
@@ -726,15 +1084,18 @@ export class Api<
       this.request<void, any>({
         path: `/workspaces/${workspaceId}/issues/${id}`,
         method: "DELETE",
+        secure: true,
         ...params,
       }),
 
     /**
      * No description
      *
-     * @tags Issue
+     * @tags issues
      * @name IssueControllerAddComment
+     * @summary 添加评论
      * @request POST:/workspaces/{workspaceId}/issues/{issueId}/comments
+     * @secure
      */
     issueControllerAddComment: (
       issueId: string,
@@ -746,6 +1107,7 @@ export class Api<
         path: `/workspaces/${workspaceId}/issues/${issueId}/comments`,
         method: "POST",
         body: data,
+        secure: true,
         type: ContentType.Json,
         ...params,
       }),
@@ -753,9 +1115,11 @@ export class Api<
     /**
      * No description
      *
-     * @tags Issue
+     * @tags issues
      * @name IssueControllerAddDependency
+     * @summary 添加依赖
      * @request POST:/workspaces/{workspaceId}/issues/{issueId}/dependencies
+     * @secure
      */
     issueControllerAddDependency: (
       issueId: string,
@@ -767,26 +1131,8 @@ export class Api<
         path: `/workspaces/${workspaceId}/issues/${issueId}/dependencies`,
         method: "POST",
         body: data,
+        secure: true,
         type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags Issue
-     * @name IssueControllerRemoveDependency
-     * @request DELETE:/workspaces/{workspaceId}/issues/{issueId}/dependencies/{dependsOnIssueId}
-     */
-    issueControllerRemoveDependency: (
-      issueId: string,
-      dependsOnIssueId: string,
-      workspaceId: string,
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/workspaces/${workspaceId}/issues/${issueId}/dependencies/${dependsOnIssueId}`,
-        method: "DELETE",
         ...params,
       }),
 
@@ -913,12 +1259,13 @@ export class Api<
       data: CreateGroupChatDto,
       params: RequestParams = {},
     ) =>
-      this.request<void, any>({
+      this.request<UpdateChatDto, any>({
         path: `/chats/group`,
         method: "POST",
         body: data,
         secure: true,
         type: ContentType.Json,
+        format: "json",
         ...params,
       }),
 
@@ -935,12 +1282,13 @@ export class Api<
       data: CreatePrivateChatDto,
       params: RequestParams = {},
     ) =>
-      this.request<void, any>({
+      this.request<UpdateChatDto, any>({
         path: `/chats/private`,
         method: "POST",
         body: data,
         secure: true,
         type: ContentType.Json,
+        format: "json",
         ...params,
       }),
 
@@ -954,16 +1302,18 @@ export class Api<
      * @secure
      */
     chatControllerFindAllChats: (
-      query: {
-        type: string;
+      query?: {
+        /** 聊天类型 */
+        type?: string;
       },
       params: RequestParams = {},
     ) =>
-      this.request<void, any>({
+      this.request<object[], any>({
         path: `/chats`,
         method: "GET",
         query: query,
         secure: true,
+        format: "json",
         ...params,
       }),
 
@@ -977,10 +1327,11 @@ export class Api<
      * @secure
      */
     chatControllerFindOneChat: (chatId: string, params: RequestParams = {}) =>
-      this.request<void, any>({
+      this.request<UpdateChatDto, any>({
         path: `/chats/${chatId}`,
         method: "GET",
         secure: true,
+        format: "json",
         ...params,
       }),
 
@@ -998,12 +1349,13 @@ export class Api<
       data: UpdateChatDto,
       params: RequestParams = {},
     ) =>
-      this.request<void, any>({
+      this.request<UpdateChatDto, any>({
         path: `/chats/${chatId}`,
         method: "PATCH",
         body: data,
         secure: true,
         type: ContentType.Json,
+        format: "json",
         ...params,
       }),
 
@@ -1017,10 +1369,11 @@ export class Api<
      * @secure
      */
     chatControllerDeleteChat: (chatId: string, params: RequestParams = {}) =>
-      this.request<void, any>({
+      this.request<UpdateChatDto, any>({
         path: `/chats/${chatId}`,
         method: "DELETE",
         secure: true,
+        format: "json",
         ...params,
       }),
 
@@ -1038,12 +1391,13 @@ export class Api<
       data: AddChatMembersDto,
       params: RequestParams = {},
     ) =>
-      this.request<void, any>({
+      this.request<UpdateChatDto, any>({
         path: `/chats/${chatId}/members`,
         method: "POST",
         body: data,
         secure: true,
         type: ContentType.Json,
+        format: "json",
         ...params,
       }),
 
@@ -1061,10 +1415,11 @@ export class Api<
       teamMemberId: string,
       params: RequestParams = {},
     ) =>
-      this.request<void, any>({
+      this.request<UpdateChatDto, any>({
         path: `/chats/${chatId}/members/${teamMemberId}`,
         method: "DELETE",
         secure: true,
+        format: "json",
         ...params,
       }),
 
@@ -1081,10 +1436,11 @@ export class Api<
       chatId: string,
       params: RequestParams = {},
     ) =>
-      this.request<void, any>({
+      this.request<UpdateChatDto, any>({
         path: `/chats/${chatId}/leave`,
         method: "POST",
         secure: true,
+        format: "json",
         ...params,
       }),
 

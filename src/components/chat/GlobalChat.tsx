@@ -17,7 +17,7 @@ import { ChatRoom } from "@/app/[locale]/(main)/chat/_components/chat/chat-room"
 import { SupabaseChatRoom } from "@/app/[locale]/(main)/chat/_components/chat/supabase-chat-room"; // 导入 SupabaseChatRoom
 import { Id } from "@/convex/_generated/dataModel";
 
-// 移动端侧边栏
+// MARK: 移动端侧边栏
 const MobileSidebar = React.memo(() => {
   const { sidebarOpen, setSidebarOpen } = useChatStore();
 
@@ -65,12 +65,12 @@ const MobileSidebar = React.memo(() => {
 
 MobileSidebar.displayName = "MobileSidebar";
 
-// 顶部栏
+// MARK: 顶部栏
 const ChatTopBar = React.memo(() => {
   const { toggleSidebar } = useChatStore();
 
   return (
-    <div className="h-14 border-b flex items-center p-4 justify-between">
+    <div className="h-16 border-b flex items-center p-4 justify-between">
       <div className="flex items-center gap-2">
         <h1 className="font-semibold">Chat Square</h1>
       </div>
@@ -90,7 +90,7 @@ const ChatTopBar = React.memo(() => {
 
 ChatTopBar.displayName = "ChatTopBar";
 
-// 聊天内容组件
+// MARK: 聊天内容组件
 const ChatContent = React.memo(() => {
   const { currentChannelId } = useChatStore();
   const pathname = usePathname();
@@ -138,7 +138,8 @@ const ChatContent = React.memo(() => {
 
 ChatContent.displayName = "ChatContent";
 
-// 全局Chat组件 - 管理显示状态和缓存
+// MARK: 全局Chat组件
+// NOTE: 管理显示状态和缓存
 export const GlobalChat = React.memo(() => {
   const { isVisible, showChat, hideChat, initializeChat, isInitialized } =
     useChatStore();

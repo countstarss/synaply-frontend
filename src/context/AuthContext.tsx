@@ -89,34 +89,88 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
-      // console.log('认证状态变化:', event, session?.user?.email);
+      console.log("认证状态变化:", event, session?.user?.email);
 
       setSession(session);
       setUser(session?.user || null);
       setLoading(false);
       setError(null); // 清除之前的错误
 
-      // 根据认证事件进行重定向
+      // 处理各种认证事件
       if (event === "SIGNED_OUT") {
         // 退出登录后重定向到首页，让用户选择是否重新登录
         router.push("/");
       } else if (event === "SIGNED_IN") {
         // 如果用户已登录且当前在认证页面，则重定向到仪表盘
         if (pathname === "/auth") {
-          router.push("/dashboard");
+          router.push("/tasks");
         }
       } else if (event === "INITIAL_SESSION" && session) {
         // 初始会话存在且当前在认证页面，重定向到仪表盘
         if (pathname === "/auth") {
-          router.push("/dashboard");
+          router.push("/tasks");
         }
+      } else if (event === "TOKEN_REFRESHED") {
+        // Token 刷新成功
+        console.log("Token 刷新成功");
+        if (session?.access_token) {
+          console.log("新的 Access Token:", session.access_token);
+        }
+      } else if (event === "USER_UPDATED") {
+        console.log("用户信息已更新");
       }
     });
+
+    // 设置定期检查和刷新 token
+    const refreshInterval = setInterval(async () => {
+      try {
+        const {
+          data: { session: currentSession },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error("检查会话时出错:", error);
+          return;
+        }
+
+        if (currentSession) {
+          // 检查 token 是否即将过期（提前5分钟刷新）
+          const tokenExp = currentSession.expires_at
+            ? currentSession.expires_at * 1000
+            : 0;
+          const now = Date.now();
+          const fiveMinutes = 5 * 60 * 1000;
+
+          if (tokenExp - now < fiveMinutes) {
+            console.log("Token 即将过期，尝试刷新...");
+            const { data, error: refreshError } =
+              await supabase.auth.refreshSession();
+
+            if (refreshError) {
+              console.error("Token 刷新失败:", refreshError);
+              // 如果刷新失败，清除会话并重定向到登录页
+              setSession(null);
+              setUser(null);
+              setError("会话已过期，请重新登录");
+              router.push("/auth");
+            } else if (data.session) {
+              console.log("Token 刷新成功");
+              setSession(data.session);
+              setUser(data.session.user);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("检查 token 状态时出错:", err);
+      }
+    }, 60000); // 每分钟检查一次
 
     // 清理函数
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      clearInterval(refreshInterval);
     };
   }, [router, pathname, locale, supabase.auth]);
 

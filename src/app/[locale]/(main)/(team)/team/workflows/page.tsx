@@ -10,7 +10,7 @@ import {
 } from "react-icons/ri";
 import WorkflowEditor from "../components/WorkflowEditor";
 import WorkflowSetupModal from "../components/WorkflowSetupModal";
-import { Workflow } from "../../../../../types/team";
+import { Workflow } from "@/types/team";
 import { workflowStorage } from "../utils/storage";
 
 export default function Workflows() {

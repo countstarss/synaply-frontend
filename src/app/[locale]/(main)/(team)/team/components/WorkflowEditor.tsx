@@ -19,11 +19,7 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import CustomNode from "./CustomNode";
 import NodePanel, { NodeType } from "./NodePanel";
-import {
-  Workflow,
-  WorkflowNode,
-  WorkflowEdge,
-} from "../../../../../types/team";
+import { Workflow, WorkflowNode, WorkflowEdge } from "@/types/team";
 import { generateId } from "../utils/storage";
 import NodeSettingsModal from "./NodeSettingsModal";
 import { nodeStorage } from "../utils/node-storage";

@@ -13,41 +13,107 @@ import {
 } from "@/components/ui/context-menu";
 import MessageInput from "./message-input";
 import { cn } from "@/lib/utils";
-// import { ChatHeader } from "./chat-header";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { createClientComponentClient } from "@/lib/supabase";
 import { useLiveQuery } from "dexie-react-hooks";
 import { LocalChatMessage } from "@/lib/local-db";
-import { useLocalDb } from "@/providers/local-db-provider"; // 导入 useLocalDb 和 LocalChatMessage
-import { v4 as uuidv4 } from "uuid"; // 用于生成本地消息ID
+import { useLocalDb } from "@/providers/local-db-provider";
+import { v4 as uuidv4 } from "uuid";
 
 // 消息类型定义
 interface Message extends LocalChatMessage {
-  // Supabase 消息可能包含的额外字段
-  id: string; // Supabase 消息的实际ID
+  id: string;
+  sender?: {
+    id: string;
+    user?: {
+      name?: string;
+      avatar_url?: string;
+    };
+  };
+}
+
+// API响应类型
+interface ApiMessage {
+  id: string;
+  chat_id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+  type?: string;
+  sender?: {
+    id: string;
+    user?: {
+      name?: string;
+      avatar_url?: string;
+    };
+  };
+}
+
+interface RealtimeMessage {
+  id: string;
+  chat_id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+  type?: string;
+}
+
+interface TeamMemberResponse {
+  id: string;
+  user?: {
+    name?: string;
+    avatar_url?: string;
+  };
 }
 
 interface SupabaseChatRoomProps {
-  chatId: string; // 对应 Supabase 的 chat_id
-  type: "private" | "group"; // 聊天类型
-  chatName: string; // 聊天名称 (群聊名称或私聊对方名称)
+  chatId: string;
+  type: "private" | "group";
+  chatName: string;
 }
 
 export function SupabaseChatRoom({
   chatId,
-}: // type,
-// chatName,
-SupabaseChatRoomProps) {
-  const { session } = useAuth();
+  type,
+  chatName,
+}: SupabaseChatRoomProps) {
+  const { session, user } = useAuth();
   const supabase = createClientComponentClient();
-  const localDb = useLocalDb(); // 获取本地数据库实例
+  const localDb = useLocalDb();
 
   const [newMessageContent, setNewMessageContent] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // 获取当前用户的团队成员ID
+  useEffect(() => {
+    const getCurrentUserId = async () => {
+      if (!user?.id) return;
+
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_DEV_URL}/auth/me`,
+          {
+            headers: {
+              Authorization: `Bearer ${session?.access_token}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          const userData = await response.json();
+          setCurrentUserId(userData.teamMemberId);
+        }
+      } catch (error) {
+        console.error("Error getting current user ID:", error);
+      }
+    };
+
+    getCurrentUserId();
+  }, [user?.id, session?.access_token]);
 
   // 从本地数据库实时查询消息
   const messages = useLiveQuery(
@@ -55,111 +121,137 @@ SupabaseChatRoomProps) {
     [chatId, localDb]
   ) as Message[] | undefined;
 
-  // MARK: 初始加载 Supabase 历史消息并存入本地
+  // MARK: 初始加载历史消息
   useEffect(() => {
     const fetchAndCacheMessages = async () => {
-      setIsLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from("messages")
-          .select("*")
-          .eq("chat_id", chatId)
-          .order("created_at", { ascending: true });
+      if (!currentUserId) return;
 
-        if (error) {
-          console.error("Error fetching Supabase messages:", error);
+      // setIsLoading(true);
+      try {
+        const response = await fetch(`/api/chats/${chatId}/messages`, {
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+        });
+
+        if (!response.ok) {
+          console.error("Error fetching messages:", response.statusText);
           return;
         }
 
-        if (data) {
-          const localMessages: LocalChatMessage[] = data.map((msg) => ({
-            id: msg.id,
-            chatId: msg.chat_id,
-            senderId: msg.sender_id,
-            senderName: msg.sender_name || "Unknown", // 假设 Supabase 消息有 sender_name
-            content: msg.content,
-            createdAt: new Date(msg.created_at).getTime(),
-            type: msg.type || "text", // 假设 Supabase 消息有 type
-            status: "sent",
-          }));
+        const data = await response.json();
+
+        if (data && Array.isArray(data)) {
+          const localMessages: LocalChatMessage[] = data.map(
+            (msg: ApiMessage) => ({
+              id: msg.id,
+              chatId: msg.chat_id,
+              senderId: msg.sender_id,
+              senderName: msg.sender?.user?.name || "Unknown User",
+              content: msg.content,
+              createdAt: new Date(msg.created_at).getTime(),
+              type:
+                msg.type === "TEXT" ||
+                msg.type === "IMAGE" ||
+                msg.type === "FILE"
+                  ? (msg.type.toLowerCase() as "text" | "image" | "file")
+                  : "text",
+              status: "sent",
+            })
+          );
+
           // 清除旧的本地消息，然后批量添加新的
           await localDb.messages.where({ chatId }).delete();
           await localDb.messages.bulkAdd(localMessages);
         }
       } catch (error) {
         console.error("Error in fetchAndCacheMessages:", error);
-      } finally {
-        setIsLoading(false);
       }
+      // finally {
+      //   setIsLoading(false);
+      // }
     };
 
     fetchAndCacheMessages();
-  }, [chatId, supabase, localDb]);
-
-  interface SupabaseMessage {
-    id: string;
-    chat_id: string;
-    sender_id: string;
-    sender_name?: string; // 假设 Supabase 消息有 sender_name
-    content: string;
-    created_at: string; // Supabase 返回的是 ISO 格式的字符串
-    type?: "text" | "image" | "file"; // 假设 Supabase 消息有 type
-    // ... 其他 Supabase 消息字段
-  }
+  }, [chatId, session?.access_token, localDb, currentUserId]);
 
   // MARK: Supabase Realtime 订阅
   useEffect(() => {
+    if (!currentUserId) return;
+
     const channel = supabase
       .channel(`chat:${chatId}`)
       .on(
         "postgres_changes",
         {
-          event: "*", // 监听所有事件 (INSERT, UPDATE, DELETE)
+          event: "*",
           schema: "public",
           table: "messages",
           filter: `chat_id=eq.${chatId}`,
         },
         async (payload) => {
-          const newSupabaseMessage = payload.new as SupabaseMessage; // payload.new 包含新数据
-          const oldSupabaseMessage = payload.old as SupabaseMessage; // payload.old 包含旧数据 (for UPDATE/DELETE)
+          console.log("Realtime message event:", payload);
 
           if (payload.eventType === "INSERT") {
+            const newMessage = payload.new as RealtimeMessage;
+
             const localMessage: LocalChatMessage = {
-              id: newSupabaseMessage.id,
-              chatId: newSupabaseMessage.chat_id,
-              senderId: newSupabaseMessage.sender_id,
-              senderName: newSupabaseMessage.sender_name || "Unknown",
-              content: newSupabaseMessage.content,
-              createdAt: new Date(newSupabaseMessage.created_at).getTime(),
-              type: newSupabaseMessage.type || "text",
+              id: newMessage.id,
+              chatId: newMessage.chat_id,
+              senderId: newMessage.sender_id,
+              senderName: "Loading...", // 将通过API获取完整信息
+              content: newMessage.content,
+              createdAt: new Date(newMessage.created_at).getTime(),
+              type:
+                newMessage.type === "TEXT" ||
+                newMessage.type === "IMAGE" ||
+                newMessage.type === "FILE"
+                  ? (newMessage.type.toLowerCase() as "text" | "image" | "file")
+                  : "text",
               status: "sent",
             };
-            // 检查消息是否已存在（乐观更新的消息可能已经存在）
+
+            // 检查消息是否已存在
             const existingMessage = await localDb.messages.get(
               localMessage.id!
             );
             if (!existingMessage) {
               await localDb.messages.add(localMessage);
+
+              // 获取发送者信息
+              try {
+                const response = await fetch(
+                  `/api/team-members/${newMessage.sender_id}`,
+                  {
+                    headers: {
+                      Authorization: `Bearer ${session?.access_token}`,
+                    },
+                  }
+                );
+
+                if (response.ok) {
+                  const senderData: TeamMemberResponse = await response.json();
+                  await localDb.messages.update(localMessage.id!, {
+                    senderName: senderData.user?.name || "Unknown User",
+                  });
+                }
+              } catch (error) {
+                console.error("Error fetching sender info:", error);
+              }
             } else {
-              // 如果存在，更新其状态为 'sent'
               await localDb.messages.update(localMessage.id!, {
                 status: "sent",
               });
             }
           } else if (payload.eventType === "UPDATE") {
-            // 处理消息更新 (例如，状态更新)
-            const updatedLocalMessage: Partial<LocalChatMessage> = {
-              status: "sent", // 假设更新意味着消息已成功处理
-              content: newSupabaseMessage.content, // 更新内容
-              // ... 其他需要更新的字段
-            };
-            await localDb.messages.update(
-              newSupabaseMessage.id,
-              updatedLocalMessage
-            );
+            const updatedMessage = payload.new as RealtimeMessage;
+            await localDb.messages.update(updatedMessage.id, {
+              content: updatedMessage.content,
+              status: "sent",
+            });
           } else if (payload.eventType === "DELETE") {
-            // 处理消息删除 (如果 Supabase 允许删除)
-            await localDb.messages.delete(oldSupabaseMessage.id);
+            const deletedMessage = payload.old as RealtimeMessage;
+            await localDb.messages.delete(deletedMessage.id);
           }
         }
       )
@@ -168,7 +260,7 @@ SupabaseChatRoomProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [chatId, supabase, localDb]);
+  }, [chatId, supabase, localDb, currentUserId, session?.access_token]);
 
   // MARK: scrollToBottom
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
@@ -194,60 +286,50 @@ SupabaseChatRoomProps) {
     }
   }, [messages, scrollToBottom]);
 
-  // MARK: 平滑滚动
-  useEffect(() => {
-    if (messages && messages.length > 0) {
-      scrollToBottom("smooth");
-    }
-  }, [messages, scrollToBottom]);
-
   // MARK: handleSend
   const handleSend = async (content: string) => {
-    if (!session || !content.trim()) return;
+    if (!session || !content.trim() || !currentUserId) return;
 
-    const tempMessageId = uuidv4(); // 生成一个临时ID用于乐观更新
+    const tempMessageId = uuidv4();
 
     // 乐观更新本地消息列表
     const optimisticMessage: LocalChatMessage = {
       id: tempMessageId,
       chatId: chatId,
-      senderId: session.user?.id || "",
+      senderId: currentUserId,
       senderName:
-        session.user?.user_metadata.name ||
-        session.user?.email?.split("@")[0] ||
-        "Anonymous",
+        user?.user_metadata?.name || user?.email?.split("@")[0] || "Me",
       content: content,
       createdAt: Date.now(),
-      type: "text", // 默认为文本消息
-      status: "sending", // 标记为发送中
+      type: "text",
+      status: "sending",
     };
 
     try {
       await localDb.messages.add(optimisticMessage);
 
-      const { data, error } = await supabase
-        .from("messages")
-        .insert({
-          chat_id: chatId,
-          sender_id: session.user?.id || "",
-          sender_name:
-            session.user?.user_metadata.name ||
-            session.user?.email?.split("@")[0] ||
-            "Anonymous",
+      const response = await fetch(`/api/chats/${chatId}/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
           content: content,
-          type: "text",
-        })
-        .select(); // select() 返回插入的数据，包含 Supabase 生成的 ID
+          type: "TEXT",
+        }),
+      });
 
-      if (error) {
-        console.error("Error sending message to Supabase:", error);
-        // 更新本地消息状态为失败
-        await localDb.messages.update(tempMessageId, { status: "failed" });
-      } else if (data && data.length > 0) {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data) {
         // 消息发送成功，更新本地消息的 ID 和状态
-        const sentMessage = data[0];
         await localDb.messages.update(tempMessageId, {
-          id: sentMessage.id, // 更新为 Supabase 生成的实际 ID
+          id: data.id,
           status: "sent",
         });
       }
@@ -286,20 +368,9 @@ SupabaseChatRoomProps) {
         window.removeEventListener("resize", handleScroll);
       };
     }
-  }, [messages]); // 依赖 messages 变化
+  }, [messages]);
 
   const messageList = () => {
-    if (isLoading) {
-      return (
-        <div className="flex items-center justify-center h-full">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">加载消息...</span>
-          </div>
-        </div>
-      );
-    }
-
     if (!messages || messages.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] text-muted-foreground">
@@ -316,15 +387,18 @@ SupabaseChatRoomProps) {
             key={message.id}
             className={cn(
               "flex items-start gap-2 w-full",
-              message.senderId === session?.user?.id
+              message.senderId === currentUserId
                 ? "justify-end"
                 : "justify-start"
             )}
           >
-            {message.senderId !== session?.user?.id && (
+            {message.senderId !== currentUserId && (
               <Avatar>
                 <AvatarImage
-                  src={`https://avatar.vercel.sh/${message.senderName}`}
+                  src={
+                    message.sender?.user?.avatar_url ||
+                    `https://avatar.vercel.sh/${message.senderName}`
+                  }
                 />
                 <AvatarFallback>
                   {message.senderName[0]?.toUpperCase()}
@@ -335,21 +409,21 @@ SupabaseChatRoomProps) {
             <div
               className={cn(
                 "flex flex-col max-w-[70%]",
-                message.senderId === session?.user?.id
-                  ? "items-end"
-                  : "items-start"
+                message.senderId === currentUserId ? "items-end" : "items-start"
               )}
             >
               <div
                 className={cn(
                   "flex items-center gap-2 mb-1",
-                  message.senderId === session?.user?.id
+                  message.senderId === currentUserId
                     ? "flex-row-reverse"
                     : "flex-row"
                 )}
               >
                 <span className="text-sm font-medium">
-                  {message.senderName}
+                  {message.senderId === currentUserId
+                    ? "我"
+                    : message.senderName}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {formatDistanceToNow(message.createdAt, {
@@ -364,11 +438,11 @@ SupabaseChatRoomProps) {
                     className={cn(
                       "rounded-2xl px-4 py-2 break-words",
                       "max-w-full w-fit shadow-sm",
-                      message.senderId === session?.user?.id
+                      message.senderId === currentUserId
                         ? "bg-primary text-primary-foreground rounded-br-md"
                         : "bg-muted rounded-bl-md",
-                      message.status === "sending" && "opacity-70", // 发送中消息半透明
-                      message.status === "failed" && "bg-red-500 text-white" // 发送失败消息红色
+                      message.status === "sending" && "opacity-70",
+                      message.status === "failed" && "bg-red-500 text-white"
                     )}
                   >
                     {message.content}
@@ -381,26 +455,27 @@ SupabaseChatRoomProps) {
                   </div>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
-                  <ContextMenuItem>个人资料</ContextMenuItem>
                   <ContextMenuItem>复制消息</ContextMenuItem>
-                  <ContextMenuItem>举报</ContextMenuItem>
-                  {message.senderId === session?.user?.id && (
-                    <ContextMenuItem
-                      onClick={() => {
-                        /* TODO: 实现本地删除 */
-                      }}
-                    >
-                      本地删除
-                    </ContextMenuItem>
+                  <ContextMenuItem>回复</ContextMenuItem>
+                  {message.senderId === currentUserId && (
+                    <>
+                      <ContextMenuItem>编辑</ContextMenuItem>
+                      <ContextMenuItem className="text-red-600">
+                        删除
+                      </ContextMenuItem>
+                    </>
                   )}
                 </ContextMenuContent>
               </ContextMenu>
             </div>
 
-            {message.senderId === session?.user?.id && (
+            {message.senderId === currentUserId && (
               <Avatar>
                 <AvatarImage
-                  src={`https://avatar.vercel.sh/${message.senderName}`}
+                  src={
+                    user?.user_metadata?.avatar_url ||
+                    `https://avatar.vercel.sh/${message.senderName}`
+                  }
                 />
                 <AvatarFallback>
                   {message.senderName[0]?.toUpperCase()}
@@ -424,7 +499,20 @@ SupabaseChatRoomProps) {
   return (
     <div className="flex flex-col h-full w-full bg-background relative">
       {/* 聊天头部 */}
-      {/* <ChatHeader title={chatName} channel={chatId} /> */}
+      <div className="h-14 border-b flex items-center px-4">
+        <div className="flex items-center gap-3">
+          <Avatar>
+            <AvatarImage src={`https://avatar.vercel.sh/${chatName}`} />
+            <AvatarFallback>{chatName[0]?.toUpperCase()}</AvatarFallback>
+          </Avatar>
+          <div>
+            <h2 className="font-semibold">{chatName}</h2>
+            <p className="text-xs text-muted-foreground">
+              {type === "group" ? "群聊" : "私聊"}
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* 消息区域 */}
       <div className="flex-1 overflow-hidden relative">

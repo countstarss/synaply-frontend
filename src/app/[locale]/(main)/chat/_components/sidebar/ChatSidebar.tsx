@@ -1,220 +1,194 @@
 "use client";
 
-import React, { useState } from "react"; // 导入 useState
+import React, { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
-import { Hash, Plus, Mic, Video, MessageCircle, Group } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-import { ServerChannel } from "../server/server-channel";
-import { FIXED_CHANNELS, PUBLIC_CHANNEL } from "../common/ChatConstants";
-import { ChannelType } from "@/types/convex/channel";
-import { Id } from "@/convex/_generated/dataModel";
-import Link from "next/link";
-// import { useRouter } from "next/navigation";
-import { CreateGroupChatModal } from "../modals/create-group-chat-modal"; // 导入 CreateGroupChatModal
-import { StartPrivateChatModal } from "../modals/start-private-chat-modal"; // 导入 StartPrivateChatModal
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { useCurrentTeam, useTeamMembers } from "@/hooks/useTeam";
+import { TeamMember } from "@/lib/fetchers/team";
+import {
+  useUserChats,
+  useCreateGroupChat,
+  useCreatePrivateChat,
+  ChatResult,
+} from "@/hooks/useChat";
+import { ViewMode } from "./types";
+import { SidebarHeader } from "./SidebarHeader";
+import { ChatList } from "./ChatList";
+import { ContactList } from "./ContactList";
 
-interface ChatSidebarProps {
-  className?: string;
-}
+export function ChatSidebar() {
+  const [viewMode, setViewMode] = useState<ViewMode>("chats");
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [groupName, setGroupName] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-export const ChatSidebar = React.memo(({ className }: ChatSidebarProps) => {
-  // const router = useRouter();
-  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false); // 控制创建群聊模态框的显示
-  const [isStartPrivateChatModalOpen, setIsStartPrivateChatModalOpen] =
-    useState(false); // 控制私聊模态框的显示
+  const router = useRouter();
 
-  const handleAddChannel = React.useCallback(() => {
-    console.log("添加频道");
-    // TODO: 实现添加 Convex 频道功能
-  }, []);
+  // 使用 React Query 获取团队数据
+  const { team: currentTeam } = useCurrentTeam();
+  const {
+    data: teamMembers = [],
+    isLoading: isLoadingMembers,
+    error: membersError,
+  } = useTeamMembers(currentTeam?.id);
 
-  const handleAddSupabaseGroupChat = React.useCallback(() => {
-    console.log("创建 Supabase 群聊");
-    setIsCreateGroupModalOpen(true); // 打开创建群聊模态框
-  }, []);
+  // 使用新的聊天hooks
+  const { data: chats = [], isLoading, error: chatsError } = useUserChats();
+  const createGroupChatMutation = useCreateGroupChat();
+  const createPrivateChatMutation = useCreatePrivateChat();
 
-  const handleAddSupabasePrivateChat = React.useCallback(() => {
-    console.log("发起 Supabase 私聊");
-    setIsStartPrivateChatModalOpen(true); // 打开私聊模态框
-  }, []);
+  // 处理错误
+  useEffect(() => {
+    if (membersError) {
+      console.error("Error fetching team members:", membersError);
+      toast.error("获取团队成员失败");
+    }
+    if (chatsError) {
+      console.error("Error fetching chats:", chatsError);
+      toast.error("获取聊天列表失败");
+    }
+  }, [membersError, chatsError]);
 
-  // 模拟 Supabase 聊天数据
-  const MOCK_SUPABASE_GROUP_CHATS = [
-    { id: "group-chat-1", name: "项目讨论组", type: "group" },
-    { id: "group-chat-2", name: "前端开发组", type: "group" },
-  ];
+  // 处理聊天点击
+  const handleChatClick = (chat: ChatResult) => {
+    router.push(`/chat/${chat.id}`);
+  };
 
-  const MOCK_SUPABASE_PRIVATE_CHATS = [
-    { id: "private-chat-1", name: "张三", type: "private" },
-    { id: "private-chat-2", name: "李四", type: "private" },
-  ];
+  const handlePublicChatClick = () => {
+    router.push("/chat/public");
+  };
+
+  // 切换到联系人视图
+  const handleContactsView = () => {
+    setViewMode("contacts");
+    setIsCreatingGroup(false);
+    setSelectedMembers([]);
+    setGroupName("");
+    setSearchQuery("");
+  };
+
+  // 切换到聊天视图
+  const handleChatsView = () => {
+    setViewMode("chats");
+    setIsCreatingGroup(false);
+    setSelectedMembers([]);
+    setGroupName("");
+    setSearchQuery("");
+  };
+
+  // 双击创建私聊
+  const handleDoubleClick = async (member: TeamMember) => {
+    if (isCreatingGroup) return;
+
+    try {
+      const result = await createPrivateChatMutation.mutateAsync({
+        targetMemberId: member.id,
+      });
+
+      toast.success("已开始私聊");
+      router.push(`/chat/${result.id}`);
+      handleChatsView();
+    } catch (error) {
+      console.error("Error creating private chat:", error);
+      toast.error("创建私聊失败");
+    }
+  };
+
+  // 切换群聊创建模式
+  const handleToggleGroupCreation = () => {
+    setIsCreatingGroup(!isCreatingGroup);
+    setSelectedMembers([]);
+    setGroupName("");
+  };
+
+  // 处理成员选择
+  const handleMemberToggle = (memberId: string) => {
+    if (!isCreatingGroup) return;
+
+    setSelectedMembers((prev) =>
+      prev.includes(memberId)
+        ? prev.filter((id) => id !== memberId)
+        : [...prev, memberId]
+    );
+  };
+
+  // 创建群聊
+  const handleCreateGroup = async () => {
+    if (!groupName.trim()) {
+      toast.error("请输入群聊名称");
+      return;
+    }
+
+    if (selectedMembers.length === 0) {
+      toast.error("请至少选择一个成员");
+      return;
+    }
+
+    try {
+      const result = await createGroupChatMutation.mutateAsync({
+        name: groupName,
+        memberIds: selectedMembers,
+      });
+
+      toast.success("群聊创建成功");
+      router.push(`/chat/${result.id}`);
+      handleChatsView();
+    } catch (error) {
+      console.error("Error creating group chat:", error);
+      toast.error("创建群聊失败");
+    }
+  };
 
   return (
-    <Card
-      className={cn(
-        "hidden md:flex flex-col w-60 rounded-none",
-        "dark:bg-zinc-900 bg-zinc-50 select-none",
-        "pt-0",
-        className
-      )}
-    >
-      {/* 头部 */}
-      <div className="p-3 h-14 flex items-center border-b border-neutral-200 dark:border-neutral-800">
-        <h2 className="font-semibold text-lg">Channels</h2>
-      </div>
+    <Card className="w-80 h-full rounded-none border-r border-l-0 border-t-0 border-b-0 flex flex-col">
+      {/* 侧边栏头部 */}
+      <SidebarHeader
+        viewMode={viewMode}
+        onContactsView={handleContactsView}
+        onChatsView={handleChatsView}
+      />
 
-      <ScrollArea className="flex-1 px-3">
-        <div className="mt-2">
-          {/* 文字频道部分 (Convex) */}
-          <div className="flex items-center justify-between py-2">
-            <span className="text-xs uppercase font-semibold text-zinc-500 dark:text-zinc-400">
-              公共频道 (Convex)
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-4 w-4"
-              onClick={handleAddChannel}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* 公共频道 */}
-          <Link href="/chat/public">
-            <ServerChannel
-              channel={PUBLIC_CHANNEL}
-              icon={Hash}
-              isOfficial={true}
-              isPrivate={false}
-              isGroup={false}
-              isPublic={true}
-            />
-          </Link>
-
-          {/* 其他 Convex 频道 */}
-          {FIXED_CHANNELS.map((channel) => (
-            <Link
-              key={channel._id}
-              href={`/chat/public/channels/${channel._id}`}
-            >
-              <ServerChannel
-                channel={{
-                  _id: channel._id as Id<"channels">,
-                  name: channel.name,
-                  type: channel.type as ChannelType,
-                  isOfficial: true,
-                  createdAt: Date.now(),
-                }}
-                icon={
-                  channel.type === "text"
-                    ? Hash
-                    : channel.type === "voice"
-                    ? Mic
-                    : Video
-                }
-                isOfficial={true}
-                isPrivate={false}
-                isGroup={false}
-                isPublic={true}
-              />
-            </Link>
-          ))}
-        </div>
-
-        <Separator className="my-2 bg-zinc-200 dark:bg-zinc-700" />
-
-        {/* Supabase 群聊部分 */}
-        <div className="mt-2">
-          <div className="flex items-center justify-between py-2">
-            <span className="text-xs uppercase font-semibold text-zinc-500 dark:text-zinc-400">
-              群聊 (Supabase)
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-4 w-4"
-              onClick={handleAddSupabaseGroupChat}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          {MOCK_SUPABASE_GROUP_CHATS.map((chat) => (
-            <Link key={chat.id} href={`/chat/${chat.id}`}>
-              <ServerChannel
-                channel={{
-                  _id: chat.id as Id<"channels">, // 暂时使用 Convex 的 Id 类型，后续需要调整
-                  name: chat.name,
-                  type: "text", // 假设群聊是文本类型
-                  isOfficial: false,
-                  createdAt: Date.now(),
-                }}
-                icon={Group} // 群聊图标
-                isOfficial={false}
-                isPrivate={false}
-                isGroup={true}
-                isPublic={false}
-              />
-            </Link>
-          ))}
-        </div>
-
-        <Separator className="my-2 bg-zinc-200 dark:bg-zinc-700" />
-
-        {/* Supabase 私聊部分 */}
-        <div className="mt-2">
-          <div className="flex items-center justify-between py-2">
-            <span className="text-xs uppercase font-semibold text-zinc-500 dark:text-zinc-400">
-              私聊 (Supabase)
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-4 w-4"
-              onClick={handleAddSupabasePrivateChat}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          {MOCK_SUPABASE_PRIVATE_CHATS.map((chat) => (
-            <Link key={chat.id} href={`/chat/${chat.id}`}>
-              <ServerChannel
-                channel={{
-                  _id: chat.id as Id<"channels">, // 暂时使用 Convex 的 Id 类型，后续需要调整
-                  name: chat.name,
-                  type: "text", // 假设私聊是文本类型
-                  isOfficial: false,
-                  createdAt: Date.now(),
-                }}
-                icon={MessageCircle} // 私聊图标
-                isOfficial={false}
-                isPrivate={true}
-                isGroup={false}
-                isPublic={false}
-              />
-            </Link>
-          ))}
-        </div>
-
-        <Separator className="my-2 bg-zinc-200 dark:bg-zinc-700" />
+      {/* 内容区域 */}
+      <ScrollArea className="flex-1">
+        {viewMode === "chats" ? (
+          <ChatList
+            chats={chats}
+            isLoading={isLoading}
+            onChatClick={handleChatClick}
+            onPublicChatClick={handlePublicChatClick}
+          />
+        ) : (
+          <ContactList
+            teamMembers={teamMembers}
+            isLoadingMembers={isLoadingMembers}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            isCreatingGroup={isCreatingGroup}
+            selectedMembers={selectedMembers}
+            groupName={groupName}
+            onToggleGroupCreation={handleToggleGroupCreation}
+            onMemberToggle={handleMemberToggle}
+            onGroupNameChange={setGroupName}
+            onCreateGroup={handleCreateGroup}
+            onDoubleClick={handleDoubleClick}
+          />
+        )}
       </ScrollArea>
 
-      {/* 创建群聊模态框 */}
-      <CreateGroupChatModal
-        isOpen={isCreateGroupModalOpen}
-        onClose={() => setIsCreateGroupModalOpen(false)}
-      />
-
-      {/* 开始私聊模态框 */}
-      <StartPrivateChatModal
-        isOpen={isStartPrivateChatModalOpen}
-        onClose={() => setIsStartPrivateChatModalOpen(false)}
-      />
+      {/* 底部信息 */}
+      <Separator />
+      <div className="p-4 text-center text-sm text-muted-foreground">
+        {currentTeam && (
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span>当前团队: {currentTeam.name}</span>
+          </div>
+        )}
+      </div>
     </Card>
   );
-});
-
-ChatSidebar.displayName = "ChatSidebar";
+}

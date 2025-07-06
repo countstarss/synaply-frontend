@@ -1,4 +1,4 @@
-import { Workflow, Issue, WorkflowIssue } from "../../../../../types/team";
+import { Workflow, Issue, WorkflowIssue } from "@/types/team";
 
 const STORAGE_KEYS = {
   WORKFLOWS: "team_workflows",

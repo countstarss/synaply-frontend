@@ -36,7 +36,7 @@ export default async function LocaleLayout({
       </head>
       <body>
         <AppProvider>{children}</AppProvider>
-        <Toaster /> {/* 添加 Toaster 组件 */}
+        <Toaster position="top-right" richColors /> {/* 添加 Toaster 组件 */}
       </body>
     </html>
   );

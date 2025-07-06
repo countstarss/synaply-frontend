@@ -149,3 +149,63 @@ export const inviteTeamMember = async (
 
   return response.json();
 };
+
+// 团队成员相关接口
+export interface TeamMember {
+  id: string;
+  teamId: string;
+  userId: string;
+  role: "OWNER" | "ADMIN" | "MEMBER";
+  user: {
+    id: string;
+    name?: string;
+    email: string;
+    avatar_url?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * MARK: - 获取团队成员
+ */
+export const fetchTeamMembers = async (
+  teamId: string,
+  token: string
+): Promise<TeamMember[]> => {
+  const response = await fetch(`${API_BASE_URL}/teams/${teamId}/members`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(response.statusText);
+  }
+
+  return response.json();
+};
+
+/**
+ * MARK: - 获取团队详情
+ */
+export const fetchTeamById = async (
+  teamId: string,
+  token: string
+): Promise<Team> => {
+  const response = await fetch(`${API_BASE_URL}/teams/${teamId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("获取团队详情失败");
+  }
+
+  return response.json();
+};
