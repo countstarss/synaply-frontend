@@ -20,7 +20,7 @@ import {
   RiMessageLine,
 } from "react-icons/ri";
 import CustomNode from "./CustomNode";
-import { WorkflowIssue, Issue } from "../../../../../types/team";
+import { WorkflowIssue, Issue } from "@/types/team";
 import {
   workflowIssueStorage,
   issueStorage,
@@ -194,7 +194,7 @@ function WorkflowIssueDetailFlow({
       return { nodes: [], edges: [] };
     }
 
-    const flowNodes: Node[] = workflow.nodes.map((node) => {
+    const flowNodes: Node[] = workflow.nodes.map((node: Node) => {
       const nodeStatus = workflowIssue.nodeStatuses[node.id];
       const isCurrentNode = workflowIssue.currentNodeId === node.id;
 
@@ -211,7 +211,7 @@ function WorkflowIssueDetailFlow({
       };
     });
 
-    const flowEdges: Edge[] = workflow.edges.map((edge) => ({
+    const flowEdges: Edge[] = workflow.edges.map((edge: Edge) => ({
       ...edge,
       animated: false,
     }));
@@ -230,7 +230,9 @@ function WorkflowIssueDetailFlow({
 
   const currentNode = useMemo(() => {
     if (!workflowIssue || !workflow) return null;
-    return workflow.nodes.find((n) => n.id === workflowIssue.currentNodeId);
+    return workflow.nodes.find(
+      (n: Node) => n.id === workflowIssue.currentNodeId
+    );
   }, [workflow, workflowIssue]);
 
   const handleStatusUpdate = useCallback(
@@ -294,7 +296,9 @@ function WorkflowIssueDetailFlow({
     if (!workflow || !workflowIssue || !currentNode) return;
 
     // Find next node based on edges
-    const nextEdge = workflow.edges.find((e) => e.source === currentNode.id);
+    const nextEdge = workflow.edges.find(
+      (e: Edge) => e.source === currentNode.id
+    );
     if (nextEdge) {
       const updatedIssue = {
         ...workflowIssue,
@@ -329,7 +333,9 @@ function WorkflowIssueDetailFlow({
     if (!workflow || !workflowIssue || !currentNode) return;
 
     // Find previous node based on edges
-    const prevEdge = workflow.edges.find((e) => e.target === currentNode.id);
+    const prevEdge = workflow.edges.find(
+      (e: Edge) => e.target === currentNode.id
+    );
     if (prevEdge) {
       const updatedIssue = {
         ...workflowIssue,
@@ -362,12 +368,12 @@ function WorkflowIssueDetailFlow({
 
   const canNext = useMemo(() => {
     if (!workflow || !currentNode) return false;
-    return workflow.edges.some((e) => e.source === currentNode.id);
+    return workflow.edges.some((e: Edge) => e.source === currentNode.id);
   }, [workflow, currentNode]);
 
   const canPrevious = useMemo(() => {
     if (!workflow || !currentNode) return false;
-    return workflow.edges.some((e) => e.target === currentNode.id);
+    return workflow.edges.some((e: Edge) => e.target === currentNode.id);
   }, [workflow, currentNode]);
 
   if (!workflowIssue || !workflow) {

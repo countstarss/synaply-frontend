@@ -40,6 +40,7 @@ export const personalNavItems = [
   { icon: ListCheck, label: "Tasks", href: "/tasks" },
   { icon: FolderOpen, label: "Projects", href: "/projects" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
+  { icon: Bug, label: "Issues", href: "/issues" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 

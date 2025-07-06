@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import InfoBarTabs from "@/components/layout/infobar/InfoBarTabs";
 
 export default function TasksPage() {
+  // MARK: Task页面
+  // NOTE: 重点在于快速了解自己需要做的工作，以及团队成员的工作
+
   const [activeTab, setActiveTab] = useState("my-task");
   const [tasks] = useState([
     {

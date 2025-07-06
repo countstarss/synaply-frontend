@@ -2,24 +2,26 @@
 
 import React, { useState, useEffect } from "react";
 import { RiCloseLine, RiFlowChart } from "react-icons/ri";
-import { Workflow, Issue, WorkflowIssue } from "../../../../../types/team";
+import { Workflow, Issue, WorkflowIssue } from "@/types/team";
 import {
   workflowStorage,
   issueStorage,
   workflowIssueStorage,
   generateId,
-} from "../utils/storage";
+} from "../../../app/[locale]/(main)/(team)/team/utils/storage";
 
 interface CreateIssueModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreated: (issue: Issue) => void;
+  workspaceType: "PERSONAL" | "TEAM";
 }
 
 export default function CreateIssueModal({
   isOpen,
   onClose,
   onCreated,
+  workspaceType,
 }: CreateIssueModalProps) {
   const [issueType, setIssueType] = useState<"normal" | "workflow">("normal");
   const [title, setTitle] = useState("");
@@ -33,11 +35,17 @@ export default function CreateIssueModal({
   const [selectedWorkflowId, setSelectedWorkflowId] = useState("");
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
 
+  const [tags, setTags] = useState("");
+  const [notes, setNotes] = useState("");
+
   useEffect(() => {
     if (isOpen) {
       setWorkflows(workflowStorage.getAll());
+      if (workspaceType === "PERSONAL") {
+        setIssueType("normal");
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, workspaceType]);
 
   const resetForm = () => {
     setIssueType("normal");
@@ -48,6 +56,8 @@ export default function CreateIssueModal({
     setProject("");
     setDeadline("");
     setSelectedWorkflowId("");
+    setTags("");
+    setNotes("");
   };
 
   const handleClose = () => {
@@ -78,11 +88,17 @@ export default function CreateIssueModal({
         description: description.trim(),
         status: "todo",
         priority,
-        assignee: assignee.trim() || undefined,
+        assignee:
+          workspaceType === "TEAM" ? assignee.trim() || undefined : undefined,
         project: project.trim() || undefined,
         createdAt: currentTime,
         updatedAt: currentTime,
         type: "normal",
+        ...(workspaceType === "PERSONAL" && {
+          deadline: deadline || undefined,
+          tags: tags.trim() || undefined,
+          notes: notes.trim() || undefined,
+        }),
       };
 
       issueStorage.save(newIssue);
@@ -94,7 +110,6 @@ export default function CreateIssueModal({
         return;
       }
 
-      // Initialize node statuses
       const nodeStatuses: Record<
         string,
         {
@@ -105,7 +120,7 @@ export default function CreateIssueModal({
           comments?: string[];
         }
       > = {};
-      workflow.nodes.forEach((node) => {
+      workflow.nodes.forEach((node: { id: string }) => {
         nodeStatuses[node.id] = {
           status: "todo" as const,
           assignee: undefined,
@@ -172,6 +187,9 @@ export default function CreateIssueModal({
         <div className="flex items-center justify-between p-6 border-b border-app-border">
           <h2 className="text-xl font-semibold text-app-text-primary">
             新建 Issue
+            <span className="text-sm font-normal text-app-text-secondary ml-2">
+              ({workspaceType === "PERSONAL" ? "个人空间" : "团队空间"})
+            </span>
           </h2>
           <button
             onClick={handleClose}
@@ -182,39 +200,39 @@ export default function CreateIssueModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Issue Type Selection */}
-          <div>
-            <label className="block text-sm font-medium text-app-text-primary mb-3">
-              Issue 类型
-            </label>
-            <div className="flex gap-4">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="issueType"
-                  value="normal"
-                  checked={issueType === "normal"}
-                  onChange={(e) => setIssueType(e.target.value as "normal")}
-                  className="mr-2"
-                />
-                <span className="text-app-text-secondary">普通 Issue</span>
+          {workspaceType === "TEAM" && (
+            <div>
+              <label className="block text-sm font-medium text-app-text-primary mb-3">
+                Issue 类型
               </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="issueType"
-                  value="workflow"
-                  checked={issueType === "workflow"}
-                  onChange={(e) => setIssueType(e.target.value as "workflow")}
-                  className="mr-2"
-                />
-                <span className="text-app-text-secondary">基于工作流</span>
-              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="issueType"
+                    value="normal"
+                    checked={issueType === "normal"}
+                    onChange={(e) => setIssueType(e.target.value as "normal")}
+                    className="mr-2"
+                  />
+                  <span className="text-app-text-secondary">普通 Issue</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="issueType"
+                    value="workflow"
+                    checked={issueType === "workflow"}
+                    onChange={(e) => setIssueType(e.target.value as "workflow")}
+                    className="mr-2"
+                  />
+                  <span className="text-app-text-secondary">基于工作流</span>
+                </label>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Workflow Selection */}
-          {issueType === "workflow" && (
+          {workspaceType === "TEAM" && issueType === "workflow" && (
             <div>
               <label className="block text-sm font-medium text-app-text-primary mb-2">
                 选择工作流
@@ -251,7 +269,6 @@ export default function CreateIssueModal({
             </div>
           )}
 
-          {/* Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-app-text-primary mb-2">
@@ -300,18 +317,20 @@ export default function CreateIssueModal({
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-app-text-primary mb-2">
-                负责人
-              </label>
-              <input
-                type="text"
-                value={assignee}
-                onChange={(e) => setAssignee(e.target.value)}
-                placeholder="输入负责人..."
-                className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            {workspaceType === "TEAM" && (
+              <div>
+                <label className="block text-sm font-medium text-app-text-primary mb-2">
+                  负责人
+                </label>
+                <input
+                  type="text"
+                  value={assignee}
+                  onChange={(e) => setAssignee(e.target.value)}
+                  placeholder="输入负责人..."
+                  className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-app-text-primary mb-2">
@@ -326,7 +345,9 @@ export default function CreateIssueModal({
               />
             </div>
 
-            {issueType === "workflow" && (
+            {(issueType === "workflow" ||
+              issueType === "normal" ||
+              workspaceType === "PERSONAL") && (
               <div>
                 <label className="block text-sm font-medium text-app-text-primary mb-2">
                   截止时间
@@ -339,9 +360,38 @@ export default function CreateIssueModal({
                 />
               </div>
             )}
+
+            {workspaceType === "PERSONAL" && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-app-text-primary mb-2">
+                    标签
+                  </label>
+                  <input
+                    type="text"
+                    value={tags}
+                    onChange={(e) => setTags(e.target.value)}
+                    placeholder="输入标签，用逗号分隔..."
+                    className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-app-text-primary mb-2">
+                    备注
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="添加个人备注..."
+                    rows={2}
+                    className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </>
+            )}
           </div>
 
-          {/* Actions */}
           <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
             <button
               type="button"

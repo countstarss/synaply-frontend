@@ -12,9 +12,9 @@ import {
   RiFlowChart,
   RiEyeLine,
 } from "react-icons/ri";
-import CreateIssueModal from "../components/CreateIssueModal";
+import CreateIssueModal from "../../../../../../components/shared/issue/CreateIssueModal";
 import WorkflowIssueDetail from "../components/WorkflowIssueDetail";
-import { Issue } from "../../../../../types/team";
+import { Issue } from "@/types/team";
 import { issueStorage } from "../utils/storage";
 
 const statusConfig = {
@@ -270,6 +270,7 @@ export default function Issues() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCreated={handleCreateIssue}
+        workspaceType="TEAM"
       />
 
       {/* Workflow Issue Detail Modal */}
