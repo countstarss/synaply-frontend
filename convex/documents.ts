@@ -18,9 +18,8 @@ import { Doc, Id } from "./_generated/dataModel";
 export const archive = mutation({
   args: { id: v.id("documents") },
   handler: async (ctx, args) => {
-
-    // 
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400"
+    //
+    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
 
     const existingDocument = await ctx.db.get(args.id);
 
@@ -77,8 +76,7 @@ export const getSidebar = query({
     parentDocument: v.optional(v.id("documents")),
   },
   handler: async (ctx, args) => {
-    
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400"
+    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
 
     const documents = await ctx.db
       .query("documents")
@@ -112,10 +110,7 @@ export const create = mutation({
     parentDocument: v.optional(v.id("documents")),
   },
   handler: async (ctx, args) => {
-
-
-    
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400"
+    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
 
     const document = await ctx.db.insert("documents", {
       title: args.title,
@@ -144,11 +139,7 @@ export const create = mutation({
  */
 export const getTrash = query({
   handler: async (ctx) => {
-
-
-
-    
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400"
+    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
 
     const documents = await ctx.db
       .query("documents")
@@ -179,9 +170,7 @@ export const getTrash = query({
 export const restore = mutation({
   args: { id: v.id("documents") },
   handler: async (ctx, args) => {
-
-
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400"
+    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
 
     const existingDocument = await ctx.db.get(args.id);
 
@@ -244,11 +233,7 @@ export const restore = mutation({
 export const remove = mutation({
   args: { id: v.id("documents") },
   handler: async (ctx, args) => {
-
-
-
-    
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400"
+    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
 
     const existingDocument = await ctx.db.get(args.id);
 
@@ -281,11 +266,7 @@ export const remove = mutation({
  */
 export const getSearch = query({
   handler: async (ctx) => {
-
-
-
-    
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400"
+    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
 
     const documents = await ctx.db
       .query("documents")
@@ -326,12 +307,9 @@ export const getById = query({
       return document;
     }
 
-
     return document;
   },
 });
-
-
 
 //MARK: update
 /**
@@ -357,11 +335,7 @@ export const update = mutation({
     isPublished: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-
-
-
-    
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400"
+    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
 
     const { id, ...rest } = args;
 
@@ -376,10 +350,10 @@ export const update = mutation({
     }
 
     const document = await ctx.db.patch(id, rest);
+
+    return document;
   },
 });
-
-
 
 //MARK: removeIcon
 /**
@@ -397,11 +371,7 @@ export const update = mutation({
 export const removeIcon = mutation({
   args: { id: v.id("documents") },
   handler: async (ctx, args) => {
-
-
-
-    
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400"
+    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
 
     const existingDocument = await ctx.db.get(args.id);
 
@@ -419,7 +389,6 @@ export const removeIcon = mutation({
   },
 });
 
-
 //MARK: removeCoverImage
 /**
  * 移除文档封面图片
@@ -434,11 +403,7 @@ export const removeIcon = mutation({
 export const removeCoverImage = mutation({
   args: { id: v.id("documents") },
   handler: async (ctx, args) => {
-
-
-
-    
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400"
+    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
 
     const existingDocument = await ctx.db.get(args.id);
 
