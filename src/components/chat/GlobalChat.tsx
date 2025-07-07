@@ -14,7 +14,6 @@ import { Users } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { DialogTitle } from "@/components/ui/dialog";
 import { ChatRoom } from "@/app/[locale]/(main)/chat/_components/chat/chat-room";
-import { SupabaseChatRoom } from "@/app/[locale]/(main)/chat/_components/chat/supabase-chat-room"; // 导入 SupabaseChatRoom
 import { Id } from "@/convex/_generated/dataModel";
 
 // MARK: 移动端侧边栏
@@ -93,45 +92,21 @@ ChatTopBar.displayName = "ChatTopBar";
 // MARK: 聊天内容组件
 const ChatContent = React.memo(() => {
   const { currentChannelId } = useChatStore();
-  const pathname = usePathname();
-
-  // 判断是否为 Supabase 聊天路由 (例如 /chat/some-chat-id)
-  // 路径长度为 3 (/, chat, chatId) 且不包含 /public
-  const isSupabaseChatRoute = pathname.includes("/chat/");
-  const supabaseChatId = isSupabaseChatRoute
-    ? pathname.split("/").pop()
-    : undefined;
-
-  // 判断是否为 Convex 公共聊天路由 (/chat/public)
-  const isConvexPublicChatRoute = pathname.includes("/public");
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {isConvexPublicChatRoute ? (
-        <ChatRoom
-          channelId={currentChannelId}
-          type="public"
-          // 传递一个简单的channel对象
-          channel={{
-            _id: currentChannelId as Id<"channels">,
-            name: "Public",
-            type: "text",
-            isOfficial: true,
-            createdAt: Date.now(),
-          }}
-        />
-      ) : isSupabaseChatRoute && supabaseChatId ? (
-        <SupabaseChatRoom
-          chatId={supabaseChatId}
-          type="group"
-          chatName="Supabase Chat"
-        /> // 暂时写死 type 和 chatName
-      ) : (
-        // 默认显示 Convex 公共聊天，或者可以显示一个欢迎页面
-        <div className="flex items-center justify-center h-full text-muted-foreground">
-          <p>请选择一个聊天或开始新的聊天</p>
-        </div>
-      )}
+      <ChatRoom
+        channelId={currentChannelId}
+        type="public"
+        // 传递一个简单的channel对象
+        channel={{
+          _id: currentChannelId as Id<"channels">,
+          name: "Public",
+          type: "text",
+          isOfficial: true,
+          createdAt: Date.now(),
+        }}
+      />
     </div>
   );
 });

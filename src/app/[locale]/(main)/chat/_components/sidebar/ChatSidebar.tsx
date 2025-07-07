@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -8,12 +8,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useCurrentTeam, useTeamMembers } from "@/hooks/useTeam";
 import { TeamMember } from "@/lib/fetchers/team";
-import {
-  useUserChats,
-  useCreateGroupChat,
-  useCreatePrivateChat,
-  ChatResult,
-} from "@/hooks/useChat";
 import { ViewMode } from "./types";
 import { SidebarHeader } from "./SidebarHeader";
 import { ChatList } from "./ChatList";
@@ -37,24 +31,12 @@ export function ChatSidebar() {
   } = useTeamMembers(currentTeam?.id);
 
   // 使用新的聊天hooks
-  const { data: chats = [], isLoading, error: chatsError } = useUserChats();
-  const createGroupChatMutation = useCreateGroupChat();
-  const createPrivateChatMutation = useCreatePrivateChat();
-
-  // 处理错误
-  useEffect(() => {
-    if (membersError) {
-      console.error("Error fetching team members:", membersError);
-      toast.error("获取团队成员失败");
-    }
-    if (chatsError) {
-      console.error("Error fetching chats:", chatsError);
-      toast.error("获取聊天列表失败");
-    }
-  }, [membersError, chatsError]);
+  // const { data: chats = [], isLoading, error: chatsError } = useUserChats();
+  // const createGroupChatMutation = useCreateGroupChat();
+  // const createPrivateChatMutation = useCreatePrivateChat();
 
   // 处理聊天点击
-  const handleChatClick = (chat: ChatResult) => {
+  const handleChatClick = (chat: any) => {
     router.push(`/chat/${chat.id}`);
   };
 
@@ -85,12 +67,12 @@ export function ChatSidebar() {
     if (isCreatingGroup) return;
 
     try {
-      const result = await createPrivateChatMutation.mutateAsync({
-        targetMemberId: member.id,
-      });
+      // const result = await createPrivateChatMutation.mutateAsync({
+      //   targetMemberId: member.id,
+      // });
 
       toast.success("已开始私聊");
-      router.push(`/chat/${result.id}`);
+      // router.push(`/chat/${result.id}`);
       handleChatsView();
     } catch (error) {
       console.error("Error creating private chat:", error);
@@ -129,13 +111,13 @@ export function ChatSidebar() {
     }
 
     try {
-      const result = await createGroupChatMutation.mutateAsync({
-        name: groupName,
-        memberIds: selectedMembers,
-      });
+      // const result = await createGroupChatMutation.mutateAsync({
+      //   name: groupName,
+      //   memberIds: selectedMembers,
+      // });
 
       toast.success("群聊创建成功");
-      router.push(`/chat/${result.id}`);
+      // router.push(`/chat/${result.id}`);
       handleChatsView();
     } catch (error) {
       console.error("Error creating group chat:", error);
@@ -156,8 +138,9 @@ export function ChatSidebar() {
       <ScrollArea className="flex-1">
         {viewMode === "chats" ? (
           <ChatList
-            chats={chats}
-            isLoading={isLoading}
+            // TODO: 后续更新chats来源, 全面切换到Convex
+            chats={[]}
+            isLoading={false}
             onChatClick={handleChatClick}
             onPublicChatClick={handlePublicChatClick}
           />

@@ -1,14 +1,13 @@
 import { MessageCircle, Loader2 } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { ChatResult } from "@/hooks/useChat";
 import { ChatAvatar } from "./types";
 import { ChatItem } from "./ChatItem";
 import { PublicChatItem } from "./PublicChatItem";
 
 interface ChatListProps {
-  chats: ChatResult[];
+  chats: any[];
   isLoading: boolean;
-  onChatClick: (chat: ChatResult) => void;
+  onChatClick: (chat: any) => void;
   onPublicChatClick: () => void;
 }
 
@@ -21,7 +20,7 @@ export function ChatList({
   const pathname = usePathname();
 
   // 获取聊天显示名称
-  const getChatDisplayName = (chat: ChatResult) => {
+  const getChatDisplayName = (chat: any) => {
     if (chat.type === "GROUP") {
       return chat.name || "群聊";
     } else {
@@ -31,7 +30,7 @@ export function ChatList({
   };
 
   // 获取聊天头像
-  const getChatAvatar = (chat: ChatResult): ChatAvatar => {
+  const getChatAvatar = (chat: any): ChatAvatar => {
     if (chat.type === "GROUP") {
       return {
         src: `https://avatar.vercel.sh/${chat.name || "group"}`,
