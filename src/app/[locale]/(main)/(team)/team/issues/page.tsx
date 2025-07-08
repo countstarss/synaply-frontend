@@ -14,7 +14,7 @@ import {
 } from "react-icons/ri";
 import CreateIssueModal from "../../../../../../components/shared/issue/CreateIssueModal";
 import NormalIssueDetail from "../../../../../../components/shared/issue/NormalIssueDetail";
-import WorkflowIssueDetail from "../components/WorkflowIssueDetail";
+import WorkflowIssueDetail from "../components/workflow/WorkflowIssueDetail";
 import { Issue } from "@/types/team";
 import { issueStorage } from "../utils/storage";
 

@@ -1,4 +1,4 @@
-import { Workflow, Issue, WorkflowIssue } from "@/types/team";
+import { Issue, Workflow, WorkflowNode, WorkflowIssue } from "@/types/team";
 
 const STORAGE_KEYS = {
   WORKFLOWS: "team_workflows",
@@ -14,28 +14,49 @@ export const workflowStorage = {
     return stored ? JSON.parse(stored) : [];
   },
 
+  getById(id: string): Workflow | null {
+    const workflows = this.getAll();
+    return workflows.find((w) => w.id === id) || null;
+  },
+
   save(workflow: Workflow): void {
     if (typeof window === "undefined") return;
     const workflows = this.getAll();
-    const existingIndex = workflows.findIndex((w) => w.id === workflow.id);
 
-    if (existingIndex >= 0) {
-      workflows[existingIndex] = workflow;
+    // 添加版本号
+    if (!workflow.version) {
+      workflow.version = "v1";
+    }
+
+    // 生成assigneeMap (记录哪些节点有哪些负责人)
+    const assigneeMap: Record<string, string> = {};
+    workflow.nodes.forEach((node: WorkflowNode) => {
+      if (node.data.assignee) {
+        assigneeMap[node.id] = node.data.assignee;
+      }
+    });
+    workflow.assigneeMap = assigneeMap;
+
+    // 计算节点总数
+    workflow.totalSteps = workflow.nodes.length;
+
+    const index = workflows.findIndex((w) => w.id === workflow.id);
+    if (index !== -1) {
+      workflows[index] = workflow;
     } else {
       workflows.push(workflow);
     }
-
     localStorage.setItem(STORAGE_KEYS.WORKFLOWS, JSON.stringify(workflows));
-  },
-
-  getById(id: string): Workflow | null {
-    return this.getAll().find((w) => w.id === id) || null;
   },
 
   delete(id: string): void {
     if (typeof window === "undefined") return;
-    const workflows = this.getAll().filter((w) => w.id !== id);
-    localStorage.setItem(STORAGE_KEYS.WORKFLOWS, JSON.stringify(workflows));
+    const workflows = this.getAll();
+    const filteredWorkflows = workflows.filter((w) => w.id !== id);
+    localStorage.setItem(
+      STORAGE_KEYS.WORKFLOWS,
+      JSON.stringify(filteredWorkflows)
+    );
   },
 };
 

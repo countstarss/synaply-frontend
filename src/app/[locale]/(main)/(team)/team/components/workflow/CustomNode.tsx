@@ -1,6 +1,7 @@
 import React, { memo, useState } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
-import { RiEditLine, RiUserLine } from "react-icons/ri";
+import { RiEditLine, RiInformationLine } from "react-icons/ri";
+import MentionInput from "../MentionInput";
 
 export interface CustomNodeData {
   label: string;
@@ -10,6 +11,9 @@ export interface CustomNodeData {
   assignee?: string;
   status?: "todo" | "in_progress" | "almost" | "done";
   isCurrentNode?: boolean;
+  description?: string;
+  estimatedHours?: number;
+  actualHours?: number;
 }
 
 const roleColors: Record<string, { border: string; bg: string; text: string }> =
@@ -87,17 +91,19 @@ function CustomNode({ data, isConnectable }: NodeProps<CustomNodeData>) {
     setIsEditingAssignee(true);
   };
 
-  const handleAssigneeSave = () => {
-    // 这里需要更新节点数据，在实际应用中应该通过回调函数处理
-    // 暂时使用简单的方式演示
-    data.assignee = tempAssignee;
+  const handleAssigneeChange = (value: string) => {
+    setTempAssignee(value);
+    data.assignee = value; // 直接更新节点数据
     setIsEditingAssignee(false);
   };
 
-  const handleAssigneeCancel = () => {
-    setTempAssignee(data.assignee || "");
-    setIsEditingAssignee(false);
-  };
+  // const handleAssigneeCancel = () => {
+  //   setTempAssignee(data.assignee || "");
+  //   setIsEditingAssignee(false);
+  // };
+
+  // 判断节点是否有详细描述
+  const hasDetails = data.description || data.estimatedHours;
 
   return (
     <div
@@ -129,6 +135,16 @@ function CustomNode({ data, isConnectable }: NodeProps<CustomNodeData>) {
         />
       )}
 
+      {/* 详情指示器 */}
+      {hasDetails && (
+        <div
+          className="absolute -top-1 -left-1 w-4 h-4 text-blue-600 dark:text-blue-400"
+          title="含有详细信息"
+        >
+          <RiInformationLine className="w-4 h-4" />
+        </div>
+      )}
+
       {/* 主要内容 */}
       <div className="flex items-center gap-2 mb-2">
         <span className="text-xl">{icon}</span>
@@ -140,33 +156,22 @@ function CustomNode({ data, isConnectable }: NodeProps<CustomNodeData>) {
 
       {/* 负责人部分 */}
       <div className="flex items-center gap-1 text-xs">
-        <RiUserLine className="w-3 h-3 opacity-70" />
         {isEditingAssignee ? (
-          <div className="flex items-center gap-1 flex-1">
-            <input
-              type="text"
+          <div className="flex flex-row gap-1">
+            <MentionInput
               value={tempAssignee}
-              onChange={(e) => setTempAssignee(e.target.value)}
-              className="flex-1 px-1 py-0.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              placeholder="输入负责人"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleAssigneeSave();
-                if (e.key === "Escape") handleAssigneeCancel();
-              }}
+              onChange={handleAssigneeChange}
+              placeholder="输入@提及负责人"
+              small
             />
-            <button
-              onClick={handleAssigneeSave}
-              className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300"
-            >
-              ✓
-            </button>
-            <button
-              onClick={handleAssigneeCancel}
-              className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-            >
-              ✕
-            </button>
+            {/* <div className="flex justify-end mt-1">
+              <button
+                onClick={handleAssigneeCancel}
+                className="text-xs text-red-600 dark:text-red-400 hover:underline"
+              >
+                取消
+              </button>
+            </div> */}
           </div>
         ) : (
           <div className="flex items-center gap-1 flex-1">
@@ -180,6 +185,13 @@ function CustomNode({ data, isConnectable }: NodeProps<CustomNodeData>) {
           </div>
         )}
       </div>
+
+      {/* 预计工时显示 */}
+      {data.estimatedHours && (
+        <div className="text-xs text-app-text-muted mt-1">
+          预计: {data.estimatedHours}小时
+        </div>
+      )}
 
       <Handle
         type="source"

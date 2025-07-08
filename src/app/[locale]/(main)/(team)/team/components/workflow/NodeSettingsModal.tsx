@@ -6,11 +6,21 @@ import {
   RiSaveLine,
   RiUploadCloudLine,
   RiDownloadCloudLine,
+  RiUserLine,
 } from "react-icons/ri";
 import { NodeType } from "./NodePanel";
-import { nodeStorage } from "../utils/node-storage";
-import { generateId } from "../utils/storage";
-import SimpleColorPicker from "./SimpleColorPicker";
+import { nodeStorage } from "../../utils/node-storage";
+import { generateId } from "../../utils/storage";
+import SimpleColorPicker from "../SimpleColorPicker";
+import { useTeamMembers } from "@/hooks/useTeam";
+import { useCurrentTeam } from "@/hooks/useTeam";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface NodeSettingsModalProps {
   isOpen: boolean;
@@ -25,7 +35,14 @@ export default function NodeSettingsModal({
 }: NodeSettingsModalProps) {
   const [customNodes, setCustomNodes] = useState<NodeType[]>([]);
   const [editingNode, setEditingNode] = useState<NodeType | null>(null);
-  const [newNodeForm, setNewNodeForm] = useState<Partial<NodeType>>({});
+  const [newNodeForm, setNewNodeForm] = useState<
+    Partial<NodeType & { assignee: string }>
+  >({});
+
+  // MARK: 获取团队成员
+  const { team } = useCurrentTeam();
+  const { data: teamMembers = [], isLoading: isLoadingMembers } =
+    useTeamMembers(team?.id);
 
   useEffect(() => {
     if (isOpen) {
@@ -44,12 +61,18 @@ export default function NodeSettingsModal({
     setNewNodeForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleAssigneeChange = (value: string) => {
+    setNewNodeForm((prev) => ({ ...prev, assignee: value }));
+  };
+
+  // MARK: 保存节点
   const handleSaveNode = () => {
     if (
       !newNodeForm.label ||
       !newNodeForm.role ||
       !newNodeForm.color ||
-      !newNodeForm.icon
+      !newNodeForm.icon ||
+      !newNodeForm.assignee
     ) {
       alert("请填写所有必填字段");
       return;
@@ -59,13 +82,19 @@ export default function NodeSettingsModal({
     if (editingNode) {
       updatedNodes = customNodes.map((node) =>
         node.id === editingNode.id
-          ? ({ ...editingNode, ...newNodeForm, id: editingNode.id } as NodeType)
+          ? ({
+              ...editingNode,
+              ...newNodeForm,
+              id: editingNode.id,
+              assignee: newNodeForm.assignee,
+            } as NodeType)
           : node
       );
     } else {
       const newNode: NodeType = {
         id: generateId(),
         ...newNodeForm,
+        assignee: newNodeForm.assignee,
       } as NodeType;
       updatedNodes = [...customNodes, newNode];
     }
@@ -77,11 +106,16 @@ export default function NodeSettingsModal({
     onSave(updatedNodes); // 通知父组件更新
   };
 
+  // MARK: 编辑节点
   const handleEditClick = (node: NodeType) => {
     setEditingNode(node);
-    setNewNodeForm(node);
+    setNewNodeForm({
+      ...node,
+      assignee: node.assignee || "",
+    });
   };
 
+  // MARK: 删除节点
   const handleDeleteNode = (id: string) => {
     if (confirm("确定要删除这个节点类型吗？")) {
       const updatedNodes = customNodes.filter((node) => node.id !== id);
@@ -91,6 +125,7 @@ export default function NodeSettingsModal({
     }
   };
 
+  // MARK: 取消编辑
   const handleCancelEdit = () => {
     setEditingNode(null);
     setNewNodeForm({});
@@ -149,9 +184,17 @@ export default function NodeSettingsModal({
                         <p className="font-medium text-app-text-primary">
                           {node.label}
                         </p>
-                        <p className="text-sm text-app-text-secondary">
-                          {node.role}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-app-text-secondary">
+                            {node.role}
+                          </span>
+                          {node.assignee && (
+                            <span className="text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-full flex items-center gap-1">
+                              <RiUserLine className="w-3 h-3" />
+                              {node.assignee}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -254,6 +297,60 @@ export default function NodeSettingsModal({
                     setNewNodeForm((prev) => ({ ...prev, color: colorValue }))
                   }
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-app-text-primary mb-2">
+                  负责人 *
+                </label>
+                {isLoadingMembers ? (
+                  <div className="text-sm text-app-text-muted">
+                    加载团队成员中...
+                  </div>
+                ) : (
+                  <Select
+                    value={newNodeForm.assignee || ""}
+                    onValueChange={handleAssigneeChange}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="选择负责人" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teamMembers.length > 0 ? (
+                        teamMembers.map((member) => (
+                          <SelectItem
+                            key={member.id}
+                            value={
+                              member.user.name ||
+                              member.user.email.split("@")[0]
+                            }
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs">
+                                {member.user.avatar_url ? (
+                                  <img
+                                    src={member.user.avatar_url}
+                                    alt={member.user.name}
+                                    className="w-full h-full rounded-full"
+                                  />
+                                ) : (
+                                  (member.user.name || member.user.email)[0]
+                                )}
+                              </div>
+                              <span>
+                                {member.user.name ||
+                                  member.user.email.split("@")[0]}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="未找到团队成员" disabled>
+                          未找到团队成员
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-app-text-primary mb-2">

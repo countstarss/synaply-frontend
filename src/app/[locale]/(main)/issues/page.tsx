@@ -17,7 +17,7 @@ import NormalIssueDetail from "@/components/shared/issue/NormalIssueDetail";
 import { Issue } from "@/types/team";
 import { issueStorage } from "@/app/[locale]/(main)/(team)/team/utils/storage";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import WorkflowIssueDetail from "../(team)/team/components/WorkflowIssueDetail";
+import WorkflowIssueDetail from "../(team)/team/components/workflow/WorkflowIssueDetail";
 
 const statusConfig = {
   todo: {

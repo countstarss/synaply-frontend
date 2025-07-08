@@ -12,6 +12,7 @@ export interface WorkflowNode {
     status?: "todo" | "in_progress" | "almost" | "done";
     estimatedHours?: number;
     actualHours?: number;
+    description?: string;
   };
 }
 
@@ -36,6 +37,9 @@ export interface Workflow {
   createdBy: string;
   tags?: string[];
   isDraft?: boolean;
+  version?: string;
+  assigneeMap?: Record<string, string>;
+  totalSteps?: number;
 }
 
 export interface WorkflowIssue {

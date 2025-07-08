@@ -3,8 +3,9 @@ import {
   RiArrowLeftSLine,
   RiArrowRightSLine,
   RiSettings3Line,
+  RiUserLine,
 } from "react-icons/ri";
-import { getColorClasses } from "./SimpleColorPicker";
+import { getColorClasses } from "../SimpleColorPicker";
 
 export interface NodeType {
   id: string; // 新增 ID 字段
@@ -12,6 +13,7 @@ export interface NodeType {
   label: string;
   color: string;
   icon: string;
+  assignee?: string; // 新增 assignee 字段
   tags?: string[]; // 新增 tags 字段
 }
 
@@ -124,12 +126,22 @@ export default function NodePanel({
               return (
                 <div
                   key={nodeType.id}
-                  className={`${colorClass} border-2 px-3 py-2 rounded-lg cursor-move flex items-center gap-2 hover:shadow-md dark:hover:shadow-black/10 transition-shadow`}
+                  className={`${colorClass} border-2 px-3 py-2 rounded-lg cursor-move flex flex-col hover:shadow-md dark:hover:shadow-black/10 transition-shadow`}
                   onDragStart={(event) => onDragStart(event, nodeType)}
                   draggable
                 >
-                  <span>{nodeType.icon}</span>
-                  <span className="text-sm font-medium">{nodeType.label}</span>
+                  <div className="flex items-center gap-2">
+                    <span>{nodeType.icon}</span>
+                    <span className="text-sm font-medium">
+                      {nodeType.label}
+                    </span>
+                  </div>
+                  {nodeType.assignee && (
+                    <div className="flex items-center gap-1 mt-1 text-xs text-app-text-secondary">
+                      <RiUserLine className="w-3 h-3" />
+                      <span className="truncate">{nodeType.assignee}</span>
+                    </div>
+                  )}
                 </div>
               );
             })}

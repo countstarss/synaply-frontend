@@ -8,8 +8,8 @@ import {
   RiEyeLine,
   RiFlowChart,
 } from "react-icons/ri";
-import WorkflowEditor from "../components/WorkflowEditor";
-import WorkflowSetupModal from "../components/WorkflowSetupModal";
+import WorkflowEditor from "../components/workflow/WorkflowEditor";
+import WorkflowSetupModal from "../components/workflow/WorkflowSetupModal";
 import { Workflow } from "@/types/team";
 import { workflowStorage } from "../utils/storage";
 

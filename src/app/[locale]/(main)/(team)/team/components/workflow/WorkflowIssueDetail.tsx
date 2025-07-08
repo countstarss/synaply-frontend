@@ -23,14 +23,15 @@ import {
   RiFileTextLine,
   RiHistoryLine,
 } from "react-icons/ri";
-import CustomNode from "./CustomNode";
+import CustomNode from "../workflow/CustomNode";
 import { WorkflowIssue, Issue } from "@/types/team";
 import {
   workflowIssueStorage,
   issueStorage,
   workflowStorage,
-} from "../utils/storage";
+} from "../../utils/storage";
 import { useAuth } from "@/context/AuthContext";
+import { useCurrentTeam, useTeamMembers } from "@/hooks/useTeam";
 
 const nodeTypes = {
   custom: CustomNode,
@@ -44,14 +45,6 @@ interface Comment {
   createdAt: string;
   mentions: string[];
 }
-
-// 模拟团队成员数据
-const teamMembers = [
-  { id: "1", name: "张三", email: "zhangsan@example.com", avatar: "👨‍💻" },
-  { id: "2", name: "李四", email: "lisi@example.com", avatar: "👩‍💼" },
-  { id: "3", name: "王五", email: "wangwu@example.com", avatar: "👨‍🎨" },
-  { id: "4", name: "赵六", email: "zhaoliu@example.com", avatar: "👩‍🔬" },
-];
 
 interface WorkflowIssueDetailProps {
   issue: Issue;
@@ -201,6 +194,10 @@ function WorkflowIssueDetailFlow({
   onClose,
   onUpdate,
 }: WorkflowIssueDetailProps) {
+  const { team } = useCurrentTeam();
+
+  // 获取团队成员
+  const { data: teamMembers = [] } = useTeamMembers(team?.id);
   const { user } = useAuth();
   const [workflowIssue, setWorkflowIssue] = useState<WorkflowIssue | null>(
     issue.workflowData || null
@@ -244,7 +241,7 @@ function WorkflowIssueDetailFlow({
     setCommentText(value);
     setCursorPosition(cursorPos);
 
-    // 检测@符号
+    // MARK: 检测@符号
     const atIndex = value.lastIndexOf("@", cursorPos);
     if (atIndex !== -1 && (atIndex === 0 || value[atIndex - 1] === " ")) {
       const query = value.substring(atIndex + 1, cursorPos);
@@ -257,11 +254,12 @@ function WorkflowIssueDetailFlow({
     setShowMentionList(false);
   };
 
+  // MARK: @用户选择
   const handleMentionSelect = (member: (typeof teamMembers)[0]) => {
     const atIndex = commentText.lastIndexOf("@", cursorPosition);
     const beforeAt = commentText.substring(0, atIndex);
     const afterCursor = commentText.substring(cursorPosition);
-    const newText = `${beforeAt}@${member.name} ${afterCursor}`;
+    const newText = `${beforeAt}@${member.user?.name} ${afterCursor}`;
 
     setCommentText(newText);
     setShowMentionList(false);
@@ -270,13 +268,14 @@ function WorkflowIssueDetailFlow({
     // 重新聚焦到输入框
     setTimeout(() => {
       if (commentInputRef.current) {
-        const newCursorPos = atIndex + member.name.length + 2;
+        const newCursorPos = atIndex + (member.user?.name?.length || 0) + 2;
         commentInputRef.current.focus();
         commentInputRef.current.setSelectionRange(newCursorPos, newCursorPos);
       }
     }, 0);
   };
 
+  // MARK: 发送评论
   const handleSendComment = () => {
     if (!commentText.trim()) return;
 
@@ -300,7 +299,7 @@ function WorkflowIssueDetailFlow({
   };
 
   const filteredMembers = teamMembers.filter((member) =>
-    member.name.toLowerCase().includes(mentionQuery.toLowerCase())
+    member.user?.name?.toLowerCase().includes(mentionQuery.toLowerCase())
   );
 
   const formatDate = (dateString: string) => {
@@ -354,6 +353,7 @@ function WorkflowIssueDetailFlow({
     );
   }, [workflow, workflowIssue]);
 
+  // MARK: 更新状态
   const handleStatusUpdate = useCallback(
     (nodeId: string, status: string, comment?: string) => {
       if (!workflowIssue) return;
@@ -411,6 +411,7 @@ function WorkflowIssueDetailFlow({
     [workflowIssue, issue, onUpdate]
   );
 
+  // MARK: handleNext
   const handleNext = useCallback(() => {
     if (!workflow || !workflowIssue || !currentNode) return;
 
@@ -448,6 +449,7 @@ function WorkflowIssueDetailFlow({
     }
   }, [workflow, workflowIssue, currentNode, issue, onUpdate]);
 
+  // MARK: handlePrevious
   const handlePrevious = useCallback(() => {
     if (!workflow || !workflowIssue || !currentNode) return;
 
@@ -485,11 +487,13 @@ function WorkflowIssueDetailFlow({
     }
   }, [workflow, workflowIssue, currentNode, issue, onUpdate]);
 
+  // MARK: canNext
   const canNext = useMemo(() => {
     if (!workflow || !currentNode) return false;
     return workflow.edges.some((e: Edge) => e.source === currentNode.id);
   }, [workflow, currentNode]);
 
+  // MARK: canPrevious
   const canPrevious = useMemo(() => {
     if (!workflow || !currentNode) return false;
     return workflow.edges.some((e: Edge) => e.target === currentNode.id);
@@ -549,6 +553,12 @@ function WorkflowIssueDetailFlow({
               nodeTypes={nodeTypes}
               fitView
               proOptions={{ hideAttribution: true }}
+              nodesDraggable={false} // 禁止节点拖动
+              nodesConnectable={false} // 禁止创建新连接
+              elementsSelectable={true} // 允许选择元素，但不允许修改
+              zoomOnDoubleClick={false} // 禁止双击缩放
+              edgesFocusable={false} // 边不可聚焦
+              edgesUpdatable={false} // 边不可更新
             >
               <Controls className="!bg-app-content-bg !border-app-border" />
               <MiniMap className="!bg-app-content-bg !border-app-border" />
@@ -732,14 +742,14 @@ function WorkflowIssueDetailFlow({
                                   className="w-full px-3 py-2 text-left hover:bg-app-button-hover flex items-center gap-2"
                                 >
                                   <span className="text-lg">
-                                    {member.avatar}
+                                    {member.user?.avatar_url}
                                   </span>
                                   <div>
                                     <div className="text-sm font-medium text-app-text-primary">
-                                      {member.name}
+                                      {member.user?.name}
                                     </div>
                                     <div className="text-xs text-app-text-muted">
-                                      {member.email}
+                                      {member.user?.email}
                                     </div>
                                   </div>
                                 </button>

@@ -63,7 +63,7 @@ export const useTeam = () => {
 };
 
 /**
- * 获取当前用户的主团队（第一个团队）
+ * MARK: 获取当前用户的主团队（第一个团队）
  */
 export const useCurrentTeam = () => {
   const { teams, isLoadingTeams, teamsError } = useTeam();
@@ -76,7 +76,7 @@ export const useCurrentTeam = () => {
 };
 
 /**
- * 获取团队成员列表
+ * MARK: 获取团队成员列表
  */
 export const useTeamMembers = (teamId: string | undefined) => {
   const { session } = useAuth();
@@ -91,7 +91,7 @@ export const useTeamMembers = (teamId: string | undefined) => {
 };
 
 /**
- * 获取团队详情
+ * MARK: 获取团队详情
  */
 export const useTeamById = (teamId: string | undefined) => {
   const { session } = useAuth();
