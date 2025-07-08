@@ -1,3 +1,4 @@
+// MARK: - 用户信息
 export interface UserInfo {
   id: string;
   email: string;
@@ -7,29 +8,43 @@ export interface UserInfo {
   updatedAt: string;
 }
 
-interface FetchUserInfoOptions {
-  userId: string;
-  accessToken: string;
+// MARK: - 用户公开信息
+export interface PublicUserInfo {
+  id: string;
+  name: string | null;
+  email: string;
+  avatarUrl: string | null;
+  createdAt: string;
 }
 
-export async function fetchUserInfo({
-  userId,
-  accessToken,
-}: FetchUserInfoOptions): Promise<UserInfo> {
-  const url = `${process.env.NEXT_PUBLIC_BACKEND_DEV_URL}/users/${userId}`;
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
 
-  const response = await fetch(url, {
+/**
+ * 获取用户公开信息
+ */
+export const fetchUserById = async (
+  userId: string,
+  token: string
+): Promise<PublicUserInfo> => {
+  const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
     method: "GET",
     headers: {
-      Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch user info: ${response.statusText}`);
+    throw new Error("获取用户信息失败");
   }
 
-  const data: UserInfo = await response.json();
-  return data;
-}
+  return response.json();
+};
+
+/**
+ * 从邮箱中提取用户名作为fallback
+ */
+export const getUserNameFallback = (email: string): string => {
+  return email.split("@")[0];
+};

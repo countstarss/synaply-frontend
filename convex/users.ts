@@ -37,6 +37,7 @@ export const syncUser = mutation({
         isOnline: true,
         lastSeen: now,
         createdAt: now,
+        updatedAt: now,
       });
     }
   },
@@ -259,6 +260,7 @@ export const syncWorkspaceUsers = mutation({
           isOnline: false,
           lastSeen: now,
           createdAt: now,
+          updatedAt: now,
         });
         results.push(newUserId);
       }

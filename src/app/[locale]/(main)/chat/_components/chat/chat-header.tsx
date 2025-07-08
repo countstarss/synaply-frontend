@@ -14,7 +14,7 @@ interface ChatHeaderProps {
 }
 
 export function ChatHeader({
-  title,
+  // title,
   channel,
   onMembersClick,
   onSettingsClick,
@@ -39,7 +39,7 @@ export function ChatHeader({
           <Hash className="w-4 h-4" />
         </div>
         <div className="flex flex-col">
-          <h1 className="font-semibold text-base leading-none">{title}</h1>
+          {/* <h1 className="font-semibold text-base leading-none">{title}</h1> */}
           {channel.isOfficial && (
             <p className="text-xs text-muted-foreground mt-1">官方频道</p>
           )}

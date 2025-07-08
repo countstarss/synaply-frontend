@@ -611,35 +611,32 @@ function WorkflowIssueDetailFlow({
             <div className="flex-1 overflow-hidden">
               {activeTab === "history" ? (
                 <div className="h-full p-4 overflow-y-auto">
-                  <div className="space-y-3">
-                    {workflowIssue.history
-                      .slice(-10)
-                      .reverse()
-                      .map((entry, index) => (
-                        <div
-                          key={index}
-                          className="flex items-start gap-3 text-sm"
-                        >
-                          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-app-text-primary">
-                              {entry.action}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1 text-xs text-app-text-muted">
-                              <span>{entry.fromUser}</span>
-                              <span>•</span>
-                              <span>
-                                {new Date(entry.timestamp).toLocaleString()}
-                              </span>
-                            </div>
-                            {entry.comment && (
-                              <p className="mt-1 text-xs text-app-text-secondary bg-app-button-hover rounded px-2 py-1">
-                                {entry.comment}
-                              </p>
-                            )}
+                  <div className="space-y-3 h-[calc(700px)] overflow-y-auto">
+                    {workflowIssue.history.map((entry, index) => (
+                      <div
+                        key={index}
+                        className="flex items-start gap-3 text-sm"
+                      >
+                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-app-text-primary">
+                            {entry.action}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1 text-xs text-app-text-muted">
+                            <span>{entry.fromUser}</span>
+                            <span>•</span>
+                            <span>
+                              {new Date(entry.timestamp).toLocaleString()}
+                            </span>
                           </div>
+                          {entry.comment && (
+                            <p className="mt-1 text-xs text-app-text-secondary bg-app-button-hover rounded px-2 py-1">
+                              {entry.comment}
+                            </p>
+                          )}
                         </div>
-                      ))}
+                      </div>
+                    ))}
                     {workflowIssue.history.length === 0 && (
                       <div className="text-center text-app-text-muted py-8">
                         暂无操作历史

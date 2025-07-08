@@ -1,14 +1,76 @@
 import { MessageCircle, Loader2 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { ChatAvatar } from "./types";
-import { ChatItem } from "./ChatItem";
+import { ChatItem, ChatChannel } from "./ChatItem";
 import { PublicChatItem } from "./PublicChatItem";
+import {
+  useUserInfo,
+  getUserDisplayName,
+  getUserAvatar,
+} from "@/hooks/useUser";
 
 interface ChatListProps {
-  chats: any[];
+  chats: ChatChannel[];
   isLoading: boolean;
-  onChatClick: (chat: any) => void;
+  onChatClick: (chat: ChatChannel) => void;
   onPublicChatClick: () => void;
+}
+
+// 单个聊天项组件，支持私聊用户信息获取
+function ChatItemWithUserInfo({
+  chat,
+  isActive,
+  onChatClick,
+}: {
+  chat: ChatChannel;
+  isActive: boolean;
+  onChatClick: (chat: ChatChannel) => void;
+}) {
+  // 对于私聊，获取对方用户信息
+  const { data: otherUser } = useUserInfo(
+    chat.type === "direct" ? chat.otherParticipantId : undefined
+  );
+
+  // 获取聊天显示名称
+  const getChatDisplayName = () => {
+    if (chat.type === "group") {
+      return chat.name || "群聊";
+    } else if (chat.type === "direct") {
+      return getUserDisplayName(otherUser);
+    } else {
+      return chat.name;
+    }
+  };
+
+  // 获取聊天头像
+  const getChatAvatar = (): ChatAvatar => {
+    if (chat.type === "group") {
+      return {
+        src: `https://avatar.vercel.sh/${chat.name || "group"}`,
+        fallback: chat.name?.[0]?.toUpperCase() || "G",
+      };
+    } else if (chat.type === "direct") {
+      return getUserAvatar(otherUser);
+    } else {
+      return {
+        src: `https://avatar.vercel.sh/${chat.name}`,
+        fallback: chat.name?.[0]?.toUpperCase() || "C",
+      };
+    }
+  };
+
+  const displayName = getChatDisplayName();
+  const avatar = getChatAvatar();
+
+  return (
+    <ChatItem
+      chat={chat}
+      displayName={displayName}
+      avatar={avatar}
+      isActive={isActive}
+      onClick={() => onChatClick(chat)}
+    />
+  );
 }
 
 export function ChatList({
@@ -18,32 +80,6 @@ export function ChatList({
   onPublicChatClick,
 }: ChatListProps) {
   const pathname = usePathname();
-
-  // 获取聊天显示名称
-  const getChatDisplayName = (chat: any) => {
-    if (chat.type === "GROUP") {
-      return chat.name || "群聊";
-    } else {
-      // 对于私聊，暂时显示"私聊"，因为当前API返回的聊天列表不包含成员信息
-      return "私聊";
-    }
-  };
-
-  // 获取聊天头像
-  const getChatAvatar = (chat: any): ChatAvatar => {
-    if (chat.type === "GROUP") {
-      return {
-        src: `https://avatar.vercel.sh/${chat.name || "group"}`,
-        fallback: chat.name?.[0]?.toUpperCase() || "G",
-      };
-    } else {
-      // 对于私聊，暂时使用默认头像
-      return {
-        src: `https://avatar.vercel.sh/user`,
-        fallback: "U",
-      };
-    }
-  };
 
   // 判断是否为当前聊天
   const isCurrentChat = (chatId: string) => {
@@ -74,18 +110,14 @@ export function ChatList({
       ) : (
         <div className="p-2 space-y-1">
           {chats.map((chat) => {
-            const displayName = getChatDisplayName(chat);
-            const avatar = getChatAvatar(chat);
-            const isActive = isCurrentChat(chat.id);
+            const isActive = isCurrentChat(chat._id);
 
             return (
-              <ChatItem
-                key={chat.id}
+              <ChatItemWithUserInfo
+                key={chat._id}
                 chat={chat}
-                displayName={displayName}
-                avatar={avatar}
                 isActive={isActive}
-                onClick={() => onChatClick(chat)}
+                onChatClick={onChatClick}
               />
             );
           })}

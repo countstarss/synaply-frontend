@@ -272,6 +272,7 @@ export const createDirectMessage = mutation({
       lastMessageAt: now,
       isArchived: false,
       createdAt: now,
+      updatedAt: now,
     });
 
     return channelId;

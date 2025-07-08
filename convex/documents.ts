@@ -1,422 +1,767 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-import { Doc, Id } from "./_generated/dataModel";
+import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
+import { Doc } from "./_generated/dataModel";
 
-//WARNING: Luke - 当前没有添加验证，使用了固定的userId，需修改
+// ============ 权限检查辅助函数 ============
 
-//MARK: archive
-/**
- * 递归归档文档及其所有子文档
- * 实现方式：
- * 1. 验证用户身份和文档所有权
- * 2. 使用递归函数 recursiveArchive 处理子文档：
- *    - 通过 by_user_parent 索引查询所有子文档
- *    - 递归遍历每个子文档，将其标记为已归档
- * 3. 最后将主文档标记为已归档
- * 关键点：确保文档树的完整性，所有子文档都会被归档
- */
-export const archive = mutation({
-  args: { id: v.id("documents") },
-  handler: async (ctx, args) => {
-    //
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
+// 检查用户是否有权限查看文档
+async function canViewDocument(
+  ctx: QueryCtx | MutationCtx,
+  document: Doc<"documents">,
+  userId: string
+): Promise<boolean> {
+  // 创建者始终可以查看
+  if (document.creatorId === userId) {
+    return true;
+  }
 
-    const existingDocument = await ctx.db.get(args.id);
+  // 根据可见性设置检查权限
+  switch (document.visibility) {
+    case "PRIVATE":
+      // 检查是否在允许用户列表中
+      return document.allowedUsers?.includes(userId) || false;
 
-    if (!existingDocument) {
-      throw new Error("Not found");
-    }
+    case "TEAM_READONLY":
+    case "TEAM_EDITABLE":
+      // TODO: 调用后端API检查用户是否是团队成员
+      // 现在暂时检查允许用户列表
+      return document.allowedUsers?.includes(userId) || true; // 暂时返回true
 
-    if (existingDocument.userId !== userId) {
-      throw new Error("Unauthorized");
-    }
+    case "PUBLIC":
+      return true;
 
-    const recursiveArchive = async (documentId: Id<"documents">) => {
-      const children = await ctx.db
-        .query("documents")
-        .withIndex("by_user_parent", (q) =>
-          q.eq("userId", userId).eq("parentDocument", documentId)
-        )
-        .collect();
+    default:
+      return false;
+  }
+}
 
-      for (const child of children) {
-        await ctx.db.patch(child._id, {
-          isArchived: true,
-        });
+// 检查用户是否有权限编辑文档
+async function canEditDocument(
+  ctx: QueryCtx | MutationCtx,
+  document: Doc<"documents">,
+  userId: string
+): Promise<boolean> {
+  // 创建者始终可以编辑
+  if (document.creatorId === userId) {
+    return true;
+  }
 
-        await recursiveArchive(child._id);
-      }
-    };
+  // 根据可见性设置检查编辑权限
+  switch (document.visibility) {
+    case "PRIVATE":
+      // 检查是否在允许编辑者列表中
+      return document.allowedEditors?.includes(userId) || false;
 
-    const document = await ctx.db.patch(args.id, {
-      isArchived: true,
-    });
+    case "TEAM_READONLY":
+      // 只有创建者可以编辑
+      return false;
 
-    await recursiveArchive(args.id);
+    case "TEAM_EDITABLE":
+      // TODO: 调用后端API检查用户是否是团队成员
+      return document.allowedEditors?.includes(userId) || true; // 暂时返回true
 
-    return document;
-  },
-});
+    case "PUBLIC":
+      // 公开文档的编辑权限由allowedEditors控制
+      return document.allowedEditors?.includes(userId) || false;
 
-//MARK: getSidebar
-/**
- * 获取侧边栏文档列表
- * 实现方式：
- * 1. 接收可选的 parentDocument 参数
- * 2. 使用 by_user_parent 复合索引进行高效查询：
- *    - 匹配用户ID和父文档ID
- *    - 过滤掉已归档的文档
- * 关键点：
- * - 使用复合索引优化查询性能
- * - 只返回未归档的文档
- * - 支持文档层级结构显示
- */
-export const getSidebar = query({
-  args: {
-    parentDocument: v.optional(v.id("documents")),
-  },
-  handler: async (ctx, args) => {
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
+    default:
+      return false;
+  }
+}
 
-    const documents = await ctx.db
-      .query("documents")
-      .withIndex("by_user_parent", (q) =>
-        q.eq("userId", userId!).eq("parentDocument", args.parentDocument)
-      )
-      .filter((q) => q.eq(q.field("isArchived"), false))
-      .collect();
+// ============ 文档管理功能 ============
 
-    return documents;
-  },
-});
-
-//MARK: create
-/**
- * 创建新文档
- * 实现方式：
- * 1. 接收标题和可选的父文档ID
- * 2. 在数据库中插入新文档记录，包含：
- *    - 标题和父文档关联
- *    - 用户ID绑定
- *    - 默认状态(未归档、未发布)
- * 关键点：
- * - 支持文档层级结构
- * - 确保文档所有权
- * - 设置合理的默认值
- */
+// MARK: 创建文档
 export const create = mutation({
   args: {
     title: v.string(),
+    content: v.optional(v.string()),
+    creatorId: v.string(),
+    workspaceId: v.string(),
+    workspaceType: v.union(v.literal("PERSONAL"), v.literal("TEAM")),
+    projectId: v.optional(v.string()), // 后端项目ID引用
     parentDocument: v.optional(v.id("documents")),
+    visibility: v.optional(
+      v.union(
+        v.literal("PRIVATE"),
+        v.literal("TEAM_READONLY"),
+        v.literal("TEAM_EDITABLE"),
+        v.literal("PUBLIC")
+      )
+    ),
+    allowedUsers: v.optional(v.array(v.string())),
+    allowedEditors: v.optional(v.array(v.string())),
+    tags: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
+    const now = Date.now();
 
-    const document = await ctx.db.insert("documents", {
+    // 设置默认权限
+    const visibility =
+      args.visibility ??
+      (args.workspaceType === "PERSONAL" ? "PRIVATE" : "TEAM_READONLY");
+
+    const documentId = await ctx.db.insert("documents", {
       title: args.title,
+      content: args.content,
+      creatorId: args.creatorId,
+      workspaceId: args.workspaceId,
+      workspaceType: args.workspaceType,
+      projectId: args.projectId,
       parentDocument: args.parentDocument,
-      userId: userId!,
+      visibility,
+      allowedUsers: args.allowedUsers,
+      allowedEditors: args.allowedEditors,
       isArchived: false,
       isPublished: false,
+      isFavorite: false,
+      coverImage: undefined,
+      icon: undefined,
+      tags: args.tags,
+      createdAt: now,
+      updatedAt: now,
+      lastAccessedAt: now,
     });
 
-    return document;
+    // 记录文档访问
+    await ctx.db.insert("documentAccess", {
+      documentId,
+      userId: args.creatorId,
+      accessType: "edit",
+      accessedAt: now,
+      source: "direct",
+    });
+
+    return documentId;
   },
 });
 
-//MARK: getTrash
-/**
- * 获取回收站中的文档
- * 实现方式：
- * 1. 使用 by_user 索引查询用户的所有文档
- * 2. 过滤条件：
- *    - 只返回已归档的文档
- *    - 按降序排列（最新归档的在前）
- * 关键点：
- * - 使用索引优化查询
- * - 提供合适的排序顺序
- * - 只显示当前用户的文档
- */
-export const getTrash = query({
-  handler: async (ctx) => {
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
-
-    const documents = await ctx.db
-      .query("documents")
-      .withIndex("by_user", (q) => q.eq("userId", userId!))
-      .filter((q) => q.eq(q.field("isArchived"), true))
-      .order("desc")
-      .collect();
-
-    return documents;
-  },
-});
-
-//MARK: restore
-/**
- * 还原已归档的文档
- * 实现方式：
- * 1. 验证文档所有权
- * 2. 递归处理所有子文档：
- *    - 使用 recursiveRestore 函数遍历子文档树
- *    - 将每个子文档标记为未归档
- * 3. 特殊处理父文档关系：
- *    - 如果父文档仍处于归档状态，断开与父文档的关联
- * 关键点：
- * - 维护文档树的完整性
- * - 处理父文档归档状态
- * - 确保所有相关文档都被正确还原
- */
-export const restore = mutation({
-  args: { id: v.id("documents") },
-  handler: async (ctx, args) => {
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
-
-    const existingDocument = await ctx.db.get(args.id);
-
-    if (!existingDocument) {
-      throw new Error("Not found");
-    }
-
-    if (existingDocument.userId !== userId) {
-      throw new Error("Unauthorized");
-    }
-
-    const recursiveRestore = async (documentId: Id<"documents">) => {
-      const children = await ctx.db
-        .query("documents")
-        .withIndex("by_user_parent", (q) =>
-          q.eq("userId", userId).eq("parentDocument", documentId)
-        )
-        .collect();
-
-      for (const child of children) {
-        await ctx.db.patch(child._id, {
-          isArchived: false,
-        });
-
-        await recursiveRestore(child._id);
-      }
-    };
-
-    const options: Partial<Doc<"documents">> = {
-      isArchived: false,
-    };
-
-    if (existingDocument.parentDocument) {
-      const parent = await ctx.db.get(existingDocument.parentDocument);
-      if (parent?.isArchived) {
-        options.parentDocument = undefined;
-      }
-    }
-
-    const document = await ctx.db.patch(args.id, options);
-
-    await recursiveRestore(args.id);
-
-    return document;
-  },
-});
-
-//MARK: remove
-/**
- * 永久删除文档
- * 实现方式：
- * 1. 严格的权限验证：
- *    - 检查用户认证
- *    - 验证文档所有权
- * 2. 直接从数据库中删除文档
- * 关键点：
- * - 不可逆操作，需要严格的权限控制
- * - 直接删除，不处理子文档（与归档不同）
- */
-export const remove = mutation({
-  args: { id: v.id("documents") },
-  handler: async (ctx, args) => {
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
-
-    const existingDocument = await ctx.db.get(args.id);
-
-    if (!existingDocument) {
-      throw new Error("Not found");
-    }
-
-    if (existingDocument.userId !== userId) {
-      throw new Error("Unauthorized");
-    }
-
-    const document = await ctx.db.delete(args.id);
-
-    return document;
-  },
-});
-
-//MARK: getSearch
-/**
- * 获取可搜索的文档列表
- * 实现方式：
- * 1. 使用 by_user 索引查询用户文档
- * 2. 过滤条件：
- *    - 只包含未归档文档
- *    - 按时间降序排列
- * 关键点：
- * - 优化搜索性能
- * - 确保数据实时性
- * - 只返回活跃文档
- */
-export const getSearch = query({
-  handler: async (ctx) => {
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
-
-    const documents = await ctx.db
-      .query("documents")
-      .withIndex("by_user", (q) => q.eq("userId", userId!))
-      .filter((q) => q.eq(q.field("isArchived"), false))
-      .order("desc")
-      .collect();
-
-    return documents;
-  },
-});
-
-//MARK: getById
-/**
- * 获取单个文档详情
- * 实现方式：
- * 1. 复杂的访问权限控制：
- *    - 已发布且未归档的文档可公开访问
- *    - 私有文档需要验证所有权
- * 2. 多重条件判断：
- *    - 文档存在性检查
- *    - 发布状态检查
- *    - 用户认证和所有权检查
- * 关键点：
- * - 灵活的访问控制
- * - 支持公开和私有文档
- * - 完整的错误处理
- */
+// MARK: 获取文档详情
 export const getById = query({
-  args: { documentId: v.id("documents") },
+  args: {
+    documentId: v.id("documents"),
+    userId: v.string(),
+  },
   handler: async (ctx, args) => {
     const document = await ctx.db.get(args.documentId);
     if (!document) {
-      throw new Error("Not found");
+      return null;
     }
 
-    if (document.isPublished && !document.isArchived) {
-      return document;
+    // 检查权限
+    const hasViewPermission = await canViewDocument(ctx, document, args.userId);
+    if (!hasViewPermission) {
+      return null;
     }
 
-    return document;
+    // 注意：不能在 query 中进行 patch 和 insert 操作
+    // 如果需要记录访问历史，应该在前端调用单独的 mutation
+
+    return {
+      ...document,
+      canEdit: await canEditDocument(ctx, document, args.userId),
+    };
   },
 });
 
-//MARK: update
-/**
- * 更新文档属性
- * 实现方式：
- * 1. 支持多个可选更新字段：
- *    - 标题、内容、封面图片
- *    - 图标、发布状态
- * 2. 严格的权限验证
- * 3. 使用解构赋值分离ID和更新数据
- * 关键点：
- * - 灵活的部分更新
- * - 类型安全的参数处理
- * - 确保数据一致性
- */
+// MARK: 更新文档
 export const update = mutation({
   args: {
     id: v.id("documents"),
+    userId: v.string(),
     title: v.optional(v.string()),
     content: v.optional(v.string()),
     coverImage: v.optional(v.string()),
     icon: v.optional(v.string()),
     isPublished: v.optional(v.boolean()),
+    isFavorite: v.optional(v.boolean()),
+    tags: v.optional(v.array(v.string())),
+    projectId: v.optional(v.string()), // 后端项目ID
+    visibility: v.optional(
+      v.union(
+        v.literal("PRIVATE"),
+        v.literal("TEAM_READONLY"),
+        v.literal("TEAM_EDITABLE"),
+        v.literal("PUBLIC")
+      )
+    ),
+    allowedUsers: v.optional(v.array(v.string())),
+    allowedEditors: v.optional(v.array(v.string())),
+    saveVersion: v.optional(v.boolean()),
+    changeDescription: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
-
-    const { id, ...rest } = args;
+    const { id, userId, saveVersion, changeDescription, ...updateData } = args;
 
     const existingDocument = await ctx.db.get(id);
-
     if (!existingDocument) {
-      throw new Error("Not found");
+      throw new Error("文档不存在");
     }
 
-    if (existingDocument.userId !== userId) {
-      throw new Error("Unauthorized");
+    // 检查编辑权限
+    const hasEditPermission = await canEditDocument(
+      ctx,
+      existingDocument,
+      userId
+    );
+    if (!hasEditPermission) {
+      throw new Error("权限不足");
     }
 
-    const document = await ctx.db.patch(id, rest);
+    const now = Date.now();
 
-    return document;
+    // 如果需要保存版本历史
+    if (
+      saveVersion &&
+      (updateData.content !== undefined || updateData.title !== undefined)
+    ) {
+      // 获取最新版本号
+      const latestVersion = await ctx.db
+        .query("documentVersions")
+        .withIndex("by_document", (q) => q.eq("documentId", id))
+        .order("desc")
+        .first();
+
+      const newVersion = (latestVersion?.version || 0) + 1;
+
+      // 保存版本历史
+      await ctx.db.insert("documentVersions", {
+        documentId: id,
+        version: newVersion,
+        content: updateData.content || existingDocument.content || "",
+        title: updateData.title || existingDocument.title,
+        createdBy: userId,
+        changeDescription: changeDescription,
+        createdAt: now,
+      });
+    }
+
+    // 更新文档
+    await ctx.db.patch(id, {
+      ...updateData,
+      updatedAt: now,
+    });
+
+    // 记录编辑操作
+    await ctx.db.insert("documentAccess", {
+      documentId: id,
+      userId,
+      accessType: "edit",
+      accessedAt: now,
+      source: "direct",
+    });
+
+    return id;
   },
 });
 
-//MARK: removeIcon
-/**
- * 移除文档图标
- * 实现方式：
- * 1. 权限验证流程：
- *    - 用户认证
- *    - 文档所有权验证
- * 2. 通过将图标字段设为 undefined 来移除
- * 关键点：
- * - 简单的字段清除操作
- * - 完整的权限检查
- * - 返回更新后的文档
- */
+// MARK: 获取工作空间文档列表
+export const getByWorkspace = query({
+  args: {
+    workspaceId: v.string(),
+    userId: v.string(),
+    workspaceType: v.optional(
+      v.union(v.literal("PERSONAL"), v.literal("TEAM"))
+    ),
+    projectId: v.optional(v.string()), // 后端项目ID
+    parentDocument: v.optional(v.id("documents")),
+    includeArchived: v.optional(v.boolean()),
+    onlyFavorites: v.optional(v.boolean()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 100;
+
+    // 根据条件构建查询
+    let documents;
+    if (args.workspaceType) {
+      documents = await ctx.db
+        .query("documents")
+        .withIndex("by_workspace_type", (q) =>
+          q
+            .eq("workspaceId", args.workspaceId)
+            .eq("workspaceType", args.workspaceType!)
+        )
+        .collect();
+    } else {
+      documents = await ctx.db
+        .query("documents")
+        .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
+        .collect();
+    }
+
+    // 应用过滤条件
+    if (!args.includeArchived) {
+      documents = documents.filter((doc) => !doc.isArchived);
+    }
+
+    if (args.onlyFavorites) {
+      documents = documents.filter(
+        (doc) => doc.isFavorite && doc.creatorId === args.userId
+      );
+    }
+
+    if (args.parentDocument !== undefined) {
+      documents = documents.filter(
+        (doc) =>
+          (args.parentDocument === null && !doc.parentDocument) ||
+          doc.parentDocument === args.parentDocument
+      );
+    }
+
+    if (args.projectId) {
+      documents = documents.filter((doc) => doc.projectId === args.projectId);
+    }
+
+    // 权限过滤
+    const accessibleDocuments = [];
+    for (const doc of documents) {
+      const hasAccess = await canViewDocument(ctx, doc, args.userId);
+      if (hasAccess) {
+        accessibleDocuments.push({
+          ...doc,
+          canEdit: await canEditDocument(ctx, doc, args.userId),
+        });
+      }
+    }
+
+    // 排序并限制数量
+    const sortedDocs = accessibleDocuments
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, limit);
+
+    return sortedDocs;
+  },
+});
+
+// MARK: 获取用户的文档列表
+export const getByCreator = query({
+  args: {
+    creatorId: v.string(),
+    workspaceId: v.optional(v.string()),
+    includeArchived: v.optional(v.boolean()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 100;
+
+    const query = ctx.db
+      .query("documents")
+      .withIndex("by_creator", (q) => q.eq("creatorId", args.creatorId));
+
+    const documents = await query.collect();
+
+    // 应用过滤条件
+    let filteredDocs = documents;
+
+    if (args.workspaceId) {
+      filteredDocs = filteredDocs.filter(
+        (doc) => doc.workspaceId === args.workspaceId
+      );
+    }
+
+    if (!args.includeArchived) {
+      filteredDocs = filteredDocs.filter((doc) => !doc.isArchived);
+    }
+
+    return filteredDocs
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, limit);
+  },
+});
+
+// MARK: 获取最近访问的文档
+export const getRecentlyAccessed = query({
+  args: {
+    userId: v.string(),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 20;
+
+    // 获取最近访问记录
+    const recentAccesses = await ctx.db
+      .query("documentAccess")
+      .withIndex("by_recent", (q) => q.eq("userId", args.userId))
+      .order("desc")
+      .take(limit * 2); // 多取一些，因为可能有重复文档
+
+    // 去重并获取文档详情
+    const documentIds = [
+      ...new Set(recentAccesses.map((access) => access.documentId)),
+    ];
+    const documents = [];
+
+    for (const docId of documentIds.slice(0, limit)) {
+      const doc = await ctx.db.get(docId);
+      if (doc && !doc.isArchived) {
+        const hasAccess = await canViewDocument(ctx, doc, args.userId);
+        if (hasAccess) {
+          documents.push({
+            ...doc,
+            canEdit: await canEditDocument(ctx, doc, args.userId),
+            lastAccessedAt: recentAccesses.find(
+              (access) => access.documentId === docId
+            )?.accessedAt,
+          });
+        }
+      }
+    }
+
+    return documents;
+  },
+});
+
+// MARK: 搜索文档
+export const search = query({
+  args: {
+    query: v.string(),
+    userId: v.string(),
+    workspaceId: v.optional(v.string()),
+    projectId: v.optional(v.id("projects")),
+    tags: v.optional(v.array(v.string())),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 50;
+    const searchTerm = args.query.toLowerCase();
+
+    // 构建基础查询
+    let documents;
+    if (args.projectId) {
+      documents = await ctx.db
+        .query("documents")
+        .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+        .collect();
+    } else if (args.workspaceId) {
+      documents = await ctx.db
+        .query("documents")
+        .withIndex("by_workspace", (q) =>
+          q.eq("workspaceId", args.workspaceId!)
+        )
+        .collect();
+    } else {
+      // 搜索用户有权限访问的所有文档
+      documents = await ctx.db.query("documents").collect();
+    }
+
+    // 过滤已归档文档
+    documents = documents.filter((doc) => !doc.isArchived);
+
+    // 文本搜索过滤
+    const textFilteredDocs = documents.filter(
+      (doc) =>
+        doc.title.toLowerCase().includes(searchTerm) ||
+        (doc.content && doc.content.toLowerCase().includes(searchTerm)) ||
+        (doc.tags &&
+          doc.tags.some((tag) => tag.toLowerCase().includes(searchTerm)))
+    );
+
+    // 标签过滤
+    let tagFilteredDocs = textFilteredDocs;
+    if (args.tags && args.tags.length > 0) {
+      tagFilteredDocs = textFilteredDocs.filter(
+        (doc) => doc.tags && args.tags!.some((tag) => doc.tags!.includes(tag))
+      );
+    }
+
+    // 权限过滤
+    const accessibleDocuments = [];
+    for (const doc of tagFilteredDocs) {
+      const hasAccess = await canViewDocument(ctx, doc, args.userId);
+      if (hasAccess) {
+        accessibleDocuments.push({
+          ...doc,
+          canEdit: await canEditDocument(ctx, doc, args.userId),
+        });
+      }
+    }
+
+    return accessibleDocuments
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, limit);
+  },
+});
+
+// MARK: 分享文档给指定用户
+export const shareDocument = mutation({
+  args: {
+    documentId: v.id("documents"),
+    sharedBy: v.string(),
+    sharedWith: v.string(),
+    permission: v.union(
+      v.literal("view"),
+      v.literal("edit"),
+      v.literal("comment")
+    ),
+    message: v.optional(v.string()),
+    expiresAt: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const document = await ctx.db.get(args.documentId);
+    if (!document) {
+      throw new Error("文档不存在");
+    }
+
+    // 检查分享者是否有权限
+    const canShare = await canEditDocument(ctx, document, args.sharedBy);
+    if (!canShare && document.creatorId !== args.sharedBy) {
+      throw new Error("权限不足");
+    }
+
+    const now = Date.now();
+
+    // 创建分享记录
+    const shareId = await ctx.db.insert("documentShares", {
+      documentId: args.documentId,
+      sharedBy: args.sharedBy,
+      sharedWith: args.sharedWith,
+      permission: args.permission,
+      sharedAt: now,
+      isActive: true,
+      message: args.message,
+      expiresAt: args.expiresAt,
+    });
+
+    // 创建通知
+    await ctx.db.insert("notifications", {
+      userId: args.sharedWith,
+      type: "document_shared",
+      title: `文档分享`,
+      content: `文档 "${document.title}" 已与你分享`,
+      documentId: args.documentId,
+      isRead: false,
+      createdAt: now,
+    });
+
+    return shareId;
+  },
+});
+
+// MARK: 归档文档
+export const archive = mutation({
+  args: {
+    id: v.id("documents"),
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existingDocument = await ctx.db.get(args.id);
+
+    if (!existingDocument) {
+      throw new Error("文档不存在");
+    }
+
+    // 检查权限
+    const canEdit = await canEditDocument(ctx, existingDocument, args.userId);
+    if (!canEdit) {
+      throw new Error("权限不足");
+    }
+
+    await ctx.db.patch(args.id, {
+      isArchived: true,
+      updatedAt: Date.now(),
+    });
+
+    return args.id;
+  },
+});
+
+// MARK: 恢复文档
+export const restore = mutation({
+  args: {
+    id: v.id("documents"),
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existingDocument = await ctx.db.get(args.id);
+
+    if (!existingDocument) {
+      throw new Error("文档不存在");
+    }
+
+    if (existingDocument.creatorId !== args.userId) {
+      throw new Error("权限不足");
+    }
+
+    await ctx.db.patch(args.id, {
+      isArchived: false,
+      updatedAt: Date.now(),
+    });
+
+    return args.id;
+  },
+});
+
+// MARK: 删除文档
+export const remove = mutation({
+  args: {
+    id: v.id("documents"),
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existingDocument = await ctx.db.get(args.id);
+
+    if (!existingDocument) {
+      throw new Error("文档不存在");
+    }
+
+    if (existingDocument.creatorId !== args.userId) {
+      throw new Error("权限不足");
+    }
+
+    // 删除相关数据
+    const accessRecords = await ctx.db
+      .query("documentAccess")
+      .withIndex("by_document", (q) => q.eq("documentId", args.id))
+      .collect();
+
+    for (const record of accessRecords) {
+      await ctx.db.delete(record._id);
+    }
+
+    const shareRecords = await ctx.db
+      .query("documentShares")
+      .withIndex("by_document", (q) => q.eq("documentId", args.id))
+      .collect();
+
+    for (const record of shareRecords) {
+      await ctx.db.delete(record._id);
+    }
+
+    const versionRecords = await ctx.db
+      .query("documentVersions")
+      .withIndex("by_document", (q) => q.eq("documentId", args.id))
+      .collect();
+
+    for (const record of versionRecords) {
+      await ctx.db.delete(record._id);
+    }
+
+    await ctx.db.delete(args.id);
+
+    return args.id;
+  },
+});
+
+// MARK: 获取回收站文档
+export const getTrash = query({
+  args: {
+    userId: v.string(),
+    workspaceId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const query = ctx.db
+      .query("documents")
+      .withIndex("by_creator_archived", (q) =>
+        q.eq("creatorId", args.userId).eq("isArchived", true)
+      );
+
+    const documents = await query.collect();
+
+    // 如果指定了工作空间，则过滤
+    const filteredDocs = args.workspaceId
+      ? documents.filter((doc) => doc.workspaceId === args.workspaceId)
+      : documents;
+
+    return filteredDocs.sort((a, b) => b.updatedAt - a.updatedAt);
+  },
+});
+
+// MARK: 移除图标
 export const removeIcon = mutation({
-  args: { id: v.id("documents") },
+  args: {
+    id: v.id("documents"),
+    userId: v.string(),
+  },
   handler: async (ctx, args) => {
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
-
     const existingDocument = await ctx.db.get(args.id);
 
     if (!existingDocument) {
-      throw new Error("Not found");
+      throw new Error("文档不存在");
     }
 
-    if (existingDocument.userId !== userId) {
-      throw new Error("Unauthorized");
+    const canEdit = await canEditDocument(ctx, existingDocument, args.userId);
+    if (!canEdit) {
+      throw new Error("权限不足");
     }
 
-    const document = await ctx.db.patch(args.id, { icon: undefined });
+    await ctx.db.patch(args.id, {
+      icon: undefined,
+      updatedAt: Date.now(),
+    });
 
-    return document;
+    return args.id;
   },
 });
 
-//MARK: removeCoverImage
-/**
- * 移除文档封面图片
- * 实现方式：
- * 1. 与 removeIcon 类似的权限验证流程
- * 2. 将 coverImage 字段设为 undefined
- * 关键点：
- * - 权限控制
- * - 字段清除
- * - 文档更新
- */
-export const removeCoverImage = mutation({
-  args: { id: v.id("documents") },
+// MARK: 记录文档访问
+export const recordDocumentAccess = mutation({
+  args: {
+    documentId: v.id("documents"),
+    userId: v.string(),
+    accessType: v.union(
+      v.literal("view"),
+      v.literal("edit"),
+      v.literal("comment")
+    ),
+    source: v.optional(
+      v.union(
+        v.literal("direct"),
+        v.literal("search"),
+        v.literal("share"),
+        v.literal("project")
+      )
+    ),
+  },
   handler: async (ctx, args) => {
-    const userId = "33cf0861-916a-4f3b-b37f-9ed0d15bb400";
+    const document = await ctx.db.get(args.documentId);
+    if (!document) {
+      throw new Error("文档不存在");
+    }
 
+    const now = Date.now();
+
+    // 更新文档最后访问时间
+    await ctx.db.patch(args.documentId, {
+      lastAccessedAt: now,
+    });
+
+    // 记录访问历史
+    await ctx.db.insert("documentAccess", {
+      documentId: args.documentId,
+      userId: args.userId,
+      accessType: args.accessType,
+      accessedAt: now,
+      source: args.source || "direct",
+    });
+
+    return args.documentId;
+  },
+});
+
+// MARK: 移除封面图片
+export const removeCoverImage = mutation({
+  args: {
+    id: v.id("documents"),
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
     const existingDocument = await ctx.db.get(args.id);
 
     if (!existingDocument) {
-      throw new Error("Not found");
+      throw new Error("文档不存在");
     }
 
-    if (existingDocument.userId !== userId) {
-      throw new Error("Unauthorized");
+    const canEdit = await canEditDocument(ctx, existingDocument, args.userId);
+    if (!canEdit) {
+      throw new Error("权限不足");
     }
 
-    const document = await ctx.db.patch(args.id, { coverImage: undefined });
+    await ctx.db.patch(args.id, {
+      coverImage: undefined,
+      updatedAt: Date.now(),
+    });
 
-    return document;
+    return args.id;
   },
 });

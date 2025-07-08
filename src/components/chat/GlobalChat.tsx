@@ -15,6 +15,9 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { DialogTitle } from "@/components/ui/dialog";
 import { ChatRoom } from "@/app/[locale]/(main)/chat/_components/chat/chat-room";
 import { Id } from "@/convex/_generated/dataModel";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useAuth } from "@/context/AuthContext";
 
 // MARK: 移动端侧边栏
 const MobileSidebar = React.memo(() => {
@@ -92,20 +95,67 @@ ChatTopBar.displayName = "ChatTopBar";
 // MARK: 聊天内容组件
 const ChatContent = React.memo(() => {
   const { currentChannelId } = useChatStore();
+  const { session } = useAuth();
+
+  // 获取用户的频道列表
+  const channels = useQuery(
+    api.channels.getUserChannels,
+    session?.user?.id ? { userId: session.user.id } : "skip"
+  );
+
+  // 如果没有有效的频道ID，尝试使用第一个可用频道
+  const validChannelId =
+    currentChannelId && currentChannelId !== "public"
+      ? currentChannelId
+      : channels?.[0]?._id;
+
+  const currentChannel = channels?.find(
+    (ch) => ch && ch._id === validChannelId
+  );
+
+  // 如果正在加载频道列表，显示加载状态
+  if (channels === undefined) {
+    return (
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">加载频道中...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 如果没有找到有效的频道，显示空状态
+  if (!validChannelId || !currentChannel) {
+    return (
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-2">暂无可用频道</h3>
+            <p className="text-muted-foreground">
+              请创建或加入一个频道开始聊天
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 转换为 Channel 类型，添加缺失的属性
+  const channelForComponent = {
+    ...currentChannel,
+    type: currentChannel.chatType as "text" | "voice" | "video",
+    isOfficial:
+      currentChannel.isDefault || currentChannel.type === "team_public",
+  };
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <ChatRoom
-        channelId={currentChannelId}
-        type="public"
-        // 传递一个简单的channel对象
-        channel={{
-          _id: currentChannelId as Id<"channels">,
-          name: "Public",
-          type: "text",
-          isOfficial: true,
-          createdAt: Date.now(),
-        }}
+        channelId={validChannelId as Id<"channels">}
+        channel={channelForComponent}
       />
     </div>
   );

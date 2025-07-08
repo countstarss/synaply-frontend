@@ -25,38 +25,7 @@ export const initializeTeamChat = mutation({
   handler: async (ctx, args) => {
     const now = Date.now();
 
-    // 1. 同步团队信息
-    const existingTeam = await ctx.db
-      .query("teams")
-      .withIndex("by_teamId", (q) => q.eq("teamId", args.teamId))
-      .first();
-
-    if (!existingTeam) {
-      await ctx.db.insert("teams", {
-        teamId: args.teamId,
-        name: args.teamName,
-        workspaceId: args.workspaceId,
-        createdAt: now,
-      });
-    }
-
-    // 2. 同步工作空间信息
-    const existingWorkspace = await ctx.db
-      .query("workspaces")
-      .withIndex("by_workspaceId", (q) => q.eq("workspaceId", args.workspaceId))
-      .first();
-
-    if (!existingWorkspace) {
-      await ctx.db.insert("workspaces", {
-        workspaceId: args.workspaceId,
-        name: args.teamName,
-        type: "TEAM",
-        teamId: args.teamId,
-        createdAt: now,
-      });
-    }
-
-    // 3. 同步用户信息
+    // 1. 同步用户信息到Convex（仅聊天系统需要的字段）
     const userSyncPromises = args.members.map(async (member) => {
       const existingUser = await ctx.db
         .query("users")
@@ -72,6 +41,7 @@ export const initializeTeamChat = mutation({
           isOnline: false,
           lastSeen: now,
           createdAt: now,
+          updatedAt: now,
         });
       } else {
         // 更新用户信息
@@ -87,7 +57,7 @@ export const initializeTeamChat = mutation({
 
     await Promise.all(userSyncPromises);
 
-    // 4. 创建默认的"通用"频道
+    // 2. 创建默认的"通用"频道
     const generalChannelName = "通用";
     const existingGeneralChannel = await ctx.db
       .query("channels")
@@ -115,7 +85,7 @@ export const initializeTeamChat = mutation({
         updatedAt: now,
       });
 
-      // 5. 将所有团队成员添加到默认频道
+      // 3. 将所有团队成员添加到默认频道
       const membershipPromises = args.members.map(async (member) => {
         const role =
           member.role === "OWNER"
@@ -137,7 +107,7 @@ export const initializeTeamChat = mutation({
 
       await Promise.all(membershipPromises);
 
-      // 6. 发送欢迎消息
+      // 4. 发送欢迎消息
       await ctx.db.insert("messages", {
         content: `欢迎来到 ${args.teamName} 团队！这是默认的通用频道，团队成员可以在这里进行日常交流。`,
         userId: "system",
@@ -170,6 +140,7 @@ export const initializeNewMember = mutation({
     name: v.optional(v.string()),
     avatarUrl: v.optional(v.string()),
     teamId: v.string(),
+    workspaceId: v.string(),
     role: v.union(v.literal("OWNER"), v.literal("ADMIN"), v.literal("MEMBER")),
   },
   handler: async (ctx, args) => {
@@ -190,6 +161,7 @@ export const initializeNewMember = mutation({
         isOnline: true,
         lastSeen: now,
         createdAt: now,
+        updatedAt: now,
       });
     } else {
       await ctx.db.patch(existingUser._id, {
@@ -271,22 +243,22 @@ export const getChatSystemStatus = query({
     teamId: v.string(),
   },
   handler: async (ctx, args) => {
-    // 获取团队信息
-    const team = await ctx.db
-      .query("teams")
-      .withIndex("by_teamId", (q) => q.eq("teamId", args.teamId))
-      .first();
-
-    if (!team) {
-      return null;
-    }
-
     // 获取团队的所有频道
     const channels = await ctx.db
       .query("channels")
       .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
       .filter((q) => q.eq(q.field("isArchived"), false))
       .collect();
+
+    if (channels.length === 0) {
+      return {
+        isInitialized: false,
+        channelCount: 0,
+        memberCount: 0,
+        defaultChannels: [],
+        recentActivity: [],
+      };
+    }
 
     // 获取总成员数（通过频道成员去重）
     const allMemberships = await ctx.db.query("channelMembers").collect();
@@ -318,25 +290,172 @@ export const getChatSystemStatus = query({
     }
 
     return {
-      team,
+      isInitialized: true,
       channelCount: channels.length,
       memberCount: teamMemberIds.size,
       defaultChannels: channels.filter((c) => c.isDefault),
       recentActivity: teamRecentMessages.slice(0, 5),
-      isInitialized: channels.length > 0,
     };
   },
 });
 
-// MARK: 重置团队聊天系统（谨慎使用）
-export const resetTeamChatSystem = mutation({
+// MARK: 批量同步团队成员信息
+export const syncTeamMembers = mutation({
+  args: {
+    teamId: v.string(),
+    members: v.array(
+      v.object({
+        userId: v.string(),
+        email: v.string(),
+        name: v.optional(v.string()),
+        avatarUrl: v.optional(v.string()),
+        role: v.union(
+          v.literal("OWNER"),
+          v.literal("ADMIN"),
+          v.literal("MEMBER")
+        ),
+        isActive: v.boolean(), // 是否仍是团队成员
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const results = {
+      synced: 0,
+      removed: 0,
+    };
+
+    // 获取团队的所有频道
+    const teamChannels = await ctx.db
+      .query("channels")
+      .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
+      .collect();
+
+    // 同步活跃成员
+    const activeMemberIds = args.members
+      .filter((m) => m.isActive)
+      .map((m) => m.userId);
+
+    for (const member of args.members) {
+      if (member.isActive) {
+        // 同步用户信息
+        const existingUser = await ctx.db
+          .query("users")
+          .withIndex("by_userId", (q) => q.eq("userId", member.userId))
+          .first();
+
+        if (existingUser) {
+          await ctx.db.patch(existingUser._id, {
+            email: member.email,
+            name: member.name,
+            avatarUrl: member.avatarUrl,
+            lastSeen: now,
+          });
+        } else {
+          await ctx.db.insert("users", {
+            userId: member.userId,
+            email: member.email,
+            name: member.name,
+            avatarUrl: member.avatarUrl,
+            isOnline: false,
+            lastSeen: now,
+            createdAt: now,
+            updatedAt: now,
+          });
+        }
+        results.synced++;
+      }
+    }
+
+    // 移除不再是团队成员的用户
+    for (const channel of teamChannels) {
+      const channelMemberships = await ctx.db
+        .query("channelMembers")
+        .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
+        .collect();
+
+      for (const membership of channelMemberships) {
+        if (!activeMemberIds.includes(membership.userId)) {
+          await ctx.db.delete(membership._id);
+          results.removed++;
+        }
+      }
+    }
+
+    return results;
+  },
+});
+
+// MARK: 获取用户聊天统计信息
+export const getUserChatStats = query({
+  args: {
+    userId: v.string(),
+    teamId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // 获取用户参与的频道
+    let channelMemberships = await ctx.db
+      .query("channelMembers")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .collect();
+
+    // 如果指定了团队，则过滤
+    if (args.teamId) {
+      const teamChannels = await ctx.db
+        .query("channels")
+        .withIndex("by_team", (q) => q.eq("teamId", args.teamId))
+        .collect();
+
+      const teamChannelIds = new Set(teamChannels.map((c) => c._id));
+      channelMemberships = channelMemberships.filter((m) =>
+        teamChannelIds.has(m.channelId)
+      );
+    }
+
+    // 获取用户发送的消息数量
+    const messageCount = await ctx.db
+      .query("messages")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .filter((q) => q.eq(q.field("isDeleted"), false))
+      .collect()
+      .then((messages) => {
+        if (!args.teamId) return messages.length;
+
+        // 如果指定了团队，需要进一步过滤
+        return messages.filter((message) => {
+          const membership = channelMemberships.find(
+            (m) => m.channelId === message.channelId
+          );
+          return !!membership;
+        }).length;
+      });
+
+    // 获取未读通知数量
+    const unreadNotificationCount = await ctx.db
+      .query("notifications")
+      .withIndex("by_user_unread", (q) =>
+        q.eq("userId", args.userId).eq("isRead", false)
+      )
+      .collect()
+      .then((notifications) => notifications.length);
+
+    return {
+      channelCount: channelMemberships.length,
+      messageCount,
+      unreadNotificationCount,
+    };
+  },
+});
+
+// MARK: 清理团队聊天数据（谨慎使用）
+export const cleanupTeamChat = mutation({
   args: {
     teamId: v.string(),
     confirmCode: v.string(), // 安全确认码
   },
   handler: async (ctx, args) => {
     // 安全检查
-    if (args.confirmCode !== "RESET_TEAM_CHAT_SYSTEM") {
+    if (args.confirmCode !== "CLEANUP_TEAM_CHAT_DATA") {
       throw new Error("安全确认码错误");
     }
 
@@ -350,10 +469,35 @@ export const resetTeamChatSystem = mutation({
       deletedChannels: 0,
       deletedMemberships: 0,
       deletedMessages: 0,
+      deletedReactions: 0,
+      deletedNotifications: 0,
     };
 
     // 删除所有相关数据
     for (const channel of teamChannels) {
+      // 删除频道消息和反应
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
+        .collect();
+
+      for (const message of messages) {
+        // 删除消息反应
+        const reactions = await ctx.db
+          .query("messageReactions")
+          .withIndex("by_message", (q) => q.eq("messageId", message._id))
+          .collect();
+
+        for (const reaction of reactions) {
+          await ctx.db.delete(reaction._id);
+          results.deletedReactions++;
+        }
+
+        // 删除消息
+        await ctx.db.delete(message._id);
+        results.deletedMessages++;
+      }
+
       // 删除频道成员关系
       const memberships = await ctx.db
         .query("channelMembers")
@@ -365,20 +509,33 @@ export const resetTeamChatSystem = mutation({
         results.deletedMemberships++;
       }
 
-      // 删除频道消息
-      const messages = await ctx.db
-        .query("messages")
-        .withIndex("by_channel", (q) => q.eq("channelId", channel._id))
-        .collect();
-
-      for (const message of messages) {
-        await ctx.db.delete(message._id);
-        results.deletedMessages++;
-      }
-
       // 删除频道
       await ctx.db.delete(channel._id);
       results.deletedChannels++;
+    }
+
+    // 删除相关通知
+    const notifications = await ctx.db
+      .query("notifications")
+      .filter(
+        (q) =>
+          q.eq(q.field("type"), "channel_invite") ||
+          q.eq(q.field("type"), "team_invite") ||
+          q.eq(q.field("type"), "message") ||
+          q.eq(q.field("type"), "mention")
+      )
+      .collect();
+
+    for (const notification of notifications) {
+      if (notification.channelId) {
+        const isTeamNotification = teamChannels.some(
+          (c) => c._id === notification.channelId
+        );
+        if (isTeamNotification) {
+          await ctx.db.delete(notification._id);
+          results.deletedNotifications++;
+        }
+      }
     }
 
     return results;

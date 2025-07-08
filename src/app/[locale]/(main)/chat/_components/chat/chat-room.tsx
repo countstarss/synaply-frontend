@@ -20,18 +20,32 @@ import { Channel, Message as ConvexMessage } from "@/types/convex/channel";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { Id } from "@/convex/_generated/dataModel";
 
-// 添加消息类型定义
+// 添加消息类型定义 - 匹配新的 Convex schema
 interface Message {
   _id: string;
   content: string;
   userId: string;
   userName: string;
-  userAvatar: string | undefined;
-  createdAt: number; // 时间戳
+  userAvatar?: string;
   channelId: string;
-  type: "public" | "private" | "group";
-  _creationTime?: number; // 添加服务器消息中的字段
+  messageType: "text" | "image" | "file" | "system" | "mention";
+  parentMessageId?: string;
+  mentionedUsers?: string[];
+  attachments?: Array<{
+    url: string;
+    name: string;
+    size: number;
+    type: string;
+  }>;
+  isEdited: boolean;
+  isDeleted: boolean;
+  createdAt: number;
+  updatedAt: number;
+  _creationTime: number;
+  // 从 Convex 查询返回的额外字段
+  reactions?: Record<string, { count: number; users: string[] }>;
 }
 
 // 缓存相关函数
@@ -78,12 +92,11 @@ const updateCachedMessages = (channelId: string, messages: Message[]) => {
 };
 
 interface ChatRoomProps {
-  channelId: string;
-  type: string;
+  channelId: Id<"channels">;
   channel?: Channel;
 }
 
-export function ChatRoom({ channelId, type, channel }: ChatRoomProps) {
+export function ChatRoom({ channelId, channel }: ChatRoomProps) {
   const { session } = useAuth();
   const [newMessage, setNewMessage] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -94,11 +107,11 @@ export function ChatRoom({ channelId, type, channel }: ChatRoomProps) {
   const [isLoadingFromCache, setIsLoadingFromCache] = useState(true);
 
   // 从Convex获取消息
-  const serverMessages = useQuery(api.messages.list, {
+  const serverMessages = useQuery(api.messages.getChannelMessages, {
     channelId: channelId,
     limit: 100,
   });
-  const sendMessage = useMutation(api.messages.send);
+  const sendMessage = useMutation(api.messages.sendMessage);
 
   // 加载缓存消息
   useEffect(() => {
@@ -112,13 +125,13 @@ export function ChatRoom({ channelId, type, channel }: ChatRoomProps) {
   // 当服务器消息更新时，更新缓存和本地状态
   useEffect(() => {
     if (serverMessages?.messages) {
-      // 类型转换确保兼容性
-      const typedMessages = serverMessages.messages.map(
-        (msg: ConvexMessage) => ({
-          ...msg,
-          userAvatar: msg.userAvatar || "https://avatar.vercel.sh/default",
-        })
-      ) as Message[];
+      // 类型转换确保兼容性 - 服务器消息已经包含了正确的结构
+      const typedMessages = serverMessages.messages.map((msg) => ({
+        ...msg,
+        _id: msg._id.toString(), // 确保 ID 为字符串
+        channelId: msg.channelId.toString(), // 确保 channelId 为字符串
+        userAvatar: msg.userAvatar || "https://avatar.vercel.sh/default",
+      })) as Message[];
 
       setLocalMessages(typedMessages);
       updateCachedMessages(channelId, typedMessages);
@@ -174,9 +187,13 @@ export function ChatRoom({ channelId, type, channel }: ChatRoomProps) {
       userAvatar:
         session.user?.user_metadata.avatar_url ||
         "https://avatar.vercel.sh/luke",
-      type: type as "public" | "private" | "group",
+      messageType: "text", // 默认为文本消息
       channelId: channelId,
+      isEdited: false,
+      isDeleted: false,
       createdAt: Date.now(),
+      updatedAt: Date.now(),
+      _creationTime: Date.now(),
     };
 
     // 乐观更新本地消息列表
@@ -193,8 +210,8 @@ export function ChatRoom({ channelId, type, channel }: ChatRoomProps) {
       userAvatar:
         session.user?.user_metadata.avatar_url ||
         "https://avatar.vercel.sh/luke",
-      type: type as "public" | "private" | "group",
       channelId: channelId,
+      messageType: "text", // 新增：指定消息类型
     });
 
     setNewMessage("");
@@ -356,7 +373,7 @@ export function ChatRoom({ channelId, type, channel }: ChatRoomProps) {
   return (
     <div className="flex flex-col h-full w-full bg-background relative">
       {/* 聊天头部 */}
-      {channel && <ChatHeader title={"#" + channel.name} channel={channel} />}
+      {channel && <ChatHeader title={channel.name} channel={channel} />}
 
       {/* 消息区域 */}
       <div className="flex-1 overflow-hidden relative">

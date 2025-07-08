@@ -1,17 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { useAuth } from "@/context/AuthContext";
 import { useCurrentTeam, useTeamMembers } from "@/hooks/useTeam";
 import { TeamMember } from "@/lib/fetchers/team";
 import { ViewMode } from "./types";
 import { SidebarHeader } from "./SidebarHeader";
 import { ChatList } from "./ChatList";
 import { ContactList } from "./ContactList";
+import { ChatChannel } from "./ChatItem";
 
 export function ChatSidebar() {
   const [viewMode, setViewMode] = useState<ViewMode>("chats");
@@ -21,27 +25,82 @@ export function ChatSidebar() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const router = useRouter();
+  const { session } = useAuth();
 
   // 使用 React Query 获取团队数据
   const { team: currentTeam } = useCurrentTeam();
-  const {
-    data: teamMembers = [],
-    isLoading: isLoadingMembers,
-    error: membersError,
-  } = useTeamMembers(currentTeam?.id);
+  const { data: teamMembers = [], isLoading: isLoadingMembers } =
+    useTeamMembers(currentTeam?.id);
 
-  // 使用新的聊天hooks
-  // const { data: chats = [], isLoading, error: chatsError } = useUserChats();
-  // const createGroupChatMutation = useCreateGroupChat();
-  // const createPrivateChatMutation = useCreatePrivateChat();
+  // 获取用户的频道列表
+  const channels = useQuery(
+    api.channels.getUserChannels,
+    session?.user?.id ? { userId: session.user.id } : "skip"
+  );
+
+  // Convex mutations
+  const createDirectMessage = useMutation(api.channels.createDirectMessage);
+  const createGroupChat = useMutation(api.channels.createGroupChat);
+  const syncUser = useMutation(api.users.syncUser);
+
+  // 同步当前用户信息到 Convex
+  useEffect(() => {
+    if (session?.user?.id && session?.user?.email) {
+      syncUser({
+        userId: session.user.id,
+        email: session.user.email,
+        name: session.user.user_metadata?.name || undefined,
+        avatarUrl: session.user.user_metadata?.avatar_url || undefined,
+      }).catch((error) => {
+        console.error("用户信息同步失败:", error);
+      });
+    }
+  }, [
+    session?.user?.id,
+    session?.user?.email,
+    session?.user?.user_metadata?.name,
+    session?.user?.user_metadata?.avatar_url,
+    syncUser,
+  ]);
+
+  // 转换频道数据为 ChatChannel 格式
+  const chats: ChatChannel[] = (channels || [])
+    .filter((channel) => channel !== null)
+    .map((channel) => {
+      let otherParticipantId: string | undefined;
+
+      // 对于私聊，尝试从频道名称中解析出另一个参与者ID
+      if (channel.type === "direct" && session?.user?.id) {
+        // 私聊频道名称格式是 "user1_user2"，需要找到不是当前用户的那个ID
+        const participants = channel.name.split("_");
+        otherParticipantId = participants.find((id) => id !== session.user.id);
+      }
+
+      return {
+        _id: channel._id,
+        name: channel.name,
+        type: channel.type,
+        chatType: channel.chatType,
+        createdAt: channel.createdAt,
+        lastMessage: channel.lastMessage
+          ? {
+              content: channel.lastMessage.content,
+              createdAt: channel.lastMessage.createdAt,
+              userName: channel.lastMessage.userName,
+            }
+          : null,
+        memberCount: channel.memberCount,
+        otherParticipantId,
+      };
+    });
 
   // 处理聊天点击
-  const handleChatClick = (chat: any) => {
-    router.push(`/chat/${chat.id}`);
+  const handleChatClick = (chat: ChatChannel) => {
+    router.push(`/chat?channelId=${chat._id}`);
   };
 
   const handlePublicChatClick = () => {
-    router.push("/chat/public");
+    router.push("/chat");
   };
 
   // 切换到联系人视图
@@ -62,17 +121,34 @@ export function ChatSidebar() {
     setSearchQuery("");
   };
 
+  // 同步团队成员到 Convex
+  const syncTeamMemberToConvex = async (member: TeamMember) => {
+    try {
+      await syncUser({
+        userId: member.userId,
+        email: member.user.email,
+        name: member.user.name || undefined,
+        avatarUrl: member.user.avatar_url || undefined,
+      });
+    } catch (error) {
+      console.error("同步团队成员信息失败:", error);
+    }
+  };
+
   // 双击创建私聊
   const handleDoubleClick = async (member: TeamMember) => {
-    if (isCreatingGroup) return;
+    if (isCreatingGroup || !session?.user?.id) return;
 
     try {
-      // const result = await createPrivateChatMutation.mutateAsync({
-      //   targetMemberId: member.id,
-      // });
+      // 确保团队成员信息已同步到 Convex
+      await syncTeamMemberToConvex(member);
+
+      const channelId = await createDirectMessage({
+        participantIds: [session.user.id, member.userId],
+      });
 
       toast.success("已开始私聊");
-      // router.push(`/chat/${result.id}`);
+      router.push(`/chat?channelId=${channelId}`);
       handleChatsView();
     } catch (error) {
       console.error("Error creating private chat:", error);
@@ -110,14 +186,38 @@ export function ChatSidebar() {
       return;
     }
 
+    if (!session?.user?.id) {
+      toast.error("用户未登录");
+      return;
+    }
+
     try {
-      // const result = await createGroupChatMutation.mutateAsync({
-      //   name: groupName,
-      //   memberIds: selectedMembers,
-      // });
+      // 获取选中的成员并同步到 Convex
+      const selectedTeamMembers = selectedMembers
+        .map((memberId) => teamMembers.find((m) => m.id === memberId))
+        .filter(Boolean) as TeamMember[];
+
+      // 同步所有选中成员的信息到 Convex
+      await Promise.all(
+        selectedTeamMembers.map((member) => syncTeamMemberToConvex(member))
+      );
+
+      // 获取选中成员的用户ID
+      const selectedUserIds = selectedTeamMembers.map(
+        (member) => member.userId
+      );
+
+      const channelId = await createGroupChat({
+        name: groupName,
+        description: `由 ${
+          session.user.user_metadata?.name || session.user.email
+        } 创建的群聊`,
+        creatorId: session.user.id,
+        memberIds: selectedUserIds,
+      });
 
       toast.success("群聊创建成功");
-      // router.push(`/chat/${result.id}`);
+      router.push(`/chat?channelId=${channelId}`);
       handleChatsView();
     } catch (error) {
       console.error("Error creating group chat:", error);
@@ -138,9 +238,8 @@ export function ChatSidebar() {
       <ScrollArea className="flex-1">
         {viewMode === "chats" ? (
           <ChatList
-            // TODO: 后续更新chats来源, 全面切换到Convex
-            chats={[]}
-            isLoading={false}
+            chats={chats}
+            isLoading={channels === undefined}
             onChatClick={handleChatClick}
             onPublicChatClick={handlePublicChatClick}
           />
