@@ -6,6 +6,12 @@ import { api } from "../../../../../convex/_generated/api";
 import { Id } from "../../../../../convex/_generated/dataModel";
 import { useDocStore } from "@/stores/doc-store";
 
+// 定义文档上下文类型
+export type DocumentContext =
+  | "personal" // 个人工作区下的文档
+  | "team" // 团队工作区下的团队文档
+  | "team-personal"; // 团队工作区下的个人文档
+
 // 定义文档类型 (与 Convex schema 匹配)
 export interface ConvexDocument {
   _id: Id<"documents">;
@@ -40,8 +46,16 @@ interface ConvexDocsContextType {
   activeDocId: string | null;
   openDoc: (doc: ConvexDocument) => void;
   closeDoc: (docId: string) => void;
-  createDoc: (title: string, parentId?: string) => Promise<void>;
-  createFolder: (title: string, parentId?: string) => Promise<void>;
+  createDoc: (
+    title: string,
+    parentId?: string,
+    projectId?: string
+  ) => Promise<void>;
+  createFolder: (
+    title: string,
+    parentId?: string,
+    projectId?: string
+  ) => Promise<void>;
   deleteDoc: (docId: string) => Promise<void>;
   updateDocTitle: (docId: string, title: string) => Promise<void>;
   updateDocContent: (docId: string, content: string) => Promise<void>;
@@ -52,6 +66,8 @@ interface ConvexDocsContextType {
   workspaceId: string;
   workspaceType: "PERSONAL" | "TEAM";
   userId: string;
+  context: DocumentContext;
+  projectId?: string;
   isLoading: boolean;
 }
 
@@ -72,6 +88,8 @@ interface ConvexDocsProviderProps {
   workspaceId: string;
   workspaceType: "PERSONAL" | "TEAM";
   userId: string;
+  context: DocumentContext;
+  projectId?: string; // 当在项目内创建文档时传递
 }
 
 export default function ConvexDocsProvider({
@@ -79,6 +97,8 @@ export default function ConvexDocsProvider({
   workspaceId,
   workspaceType,
   userId,
+  context,
+  projectId,
 }: ConvexDocsProviderProps) {
   const [openDocs, setOpenDocs] = useState<ConvexDocument[]>([]);
   const [docsRestored, setDocsRestored] = useState(false);
@@ -87,15 +107,49 @@ export default function ConvexDocsProvider({
   const activeDocId = useDocStore((state) => state.activeDocId);
   const setActiveDocId = useDocStore((state) => state.setActiveDocId);
 
-  // 获取文档树结构
-  const documents =
-    useQuery(api.documents.getDocumentTree, {
+  // 根据上下文获取不同的文档查询参数
+  const getQueryParams = () => {
+    const baseParams = {
       workspaceId,
       userId,
       workspaceType,
-      parentDocument: undefined, // 获取根文档
+      context,
+      parentDocument: undefined,
       includeArchived: false,
-    }) || [];
+    };
+
+    switch (context) {
+      case "personal":
+        // 个人工作区：只查询属于当前用户的文档
+        return {
+          ...baseParams,
+          workspaceType: "PERSONAL" as const,
+        };
+
+      case "team":
+        // 团队工作区：查询团队可见的文档
+        return {
+          ...baseParams,
+          workspaceType: "TEAM" as const,
+          projectId, // 如果有项目ID，只查询该项目的文档
+        };
+
+      case "team-personal":
+        // 团队工作区中的个人文档：查询当前工作区中属于当前用户的私有文档
+        return {
+          ...baseParams,
+          workspaceType: "TEAM" as const,
+          // context 参数会让后端过滤只有当前用户可见的私有文档
+        };
+
+      default:
+        return baseParams;
+    }
+  };
+
+  // 获取文档树结构
+  const documents =
+    useQuery(api.documents.getDocumentTree, getQueryParams()) || [];
 
   // Convex mutations
   const createDocMutation = useMutation(api.documents.create);
@@ -109,11 +163,30 @@ export default function ConvexDocsProvider({
 
   const isLoading = documents === undefined;
 
+  // 根据上下文获取文档的可见性设置
+  const getDocumentVisibility = (): ConvexDocument["visibility"] => {
+    switch (context) {
+      case "personal":
+        return "PRIVATE"; // 个人工作区的文档默认私有
+
+      case "team":
+        return "TEAM_EDITABLE"; // 团队文档默认团队可编辑
+
+      case "team-personal":
+        return "PRIVATE"; // 团队中的个人文档默认私有
+
+      default:
+        return "PRIVATE";
+    }
+  };
+
   // 从 localStorage 恢复打开的文档
   useEffect(() => {
     if (isLoading || docsRestored) return;
 
-    const storageKey = `convex-docs-open-${workspaceId}-${workspaceType}`;
+    const storageKey = `convex-docs-open-${workspaceId}-${workspaceType}-${context}${
+      projectId ? `-${projectId}` : ""
+    }`;
     const stored = localStorage.getItem(storageKey);
     if (stored) {
       try {
@@ -137,6 +210,8 @@ export default function ConvexDocsProvider({
     documents,
     workspaceId,
     workspaceType,
+    context,
+    projectId,
     docsRestored,
     activeDocId,
     setActiveDocId,
@@ -163,10 +238,12 @@ export default function ConvexDocsProvider({
   useEffect(() => {
     if (!docsRestored) return;
 
-    const storageKey = `convex-docs-open-${workspaceId}-${workspaceType}`;
+    const storageKey = `convex-docs-open-${workspaceId}-${workspaceType}-${context}${
+      projectId ? `-${projectId}` : ""
+    }`;
     const openDocIds = openDocs.map((doc) => doc._id);
     localStorage.setItem(storageKey, JSON.stringify(openDocIds));
-  }, [openDocs, workspaceId, workspaceType, docsRestored]);
+  }, [openDocs, workspaceId, workspaceType, context, projectId, docsRestored]);
 
   const openDoc = (doc: ConvexDocument) => {
     if (!openDocs.find((d) => d._id === doc._id)) {
@@ -193,8 +270,13 @@ export default function ConvexDocsProvider({
     }
   };
 
-  const createDoc = async (title: string, parentId?: string) => {
+  const createDoc = async (
+    title: string,
+    parentId?: string,
+    docProjectId?: string
+  ) => {
     const parentDocument = parentId ? (parentId as Id<"documents">) : undefined;
+    const finalProjectId = docProjectId || projectId; // 优先使用传入的项目ID
 
     const docId = await createDocMutation({
       title,
@@ -202,8 +284,9 @@ export default function ConvexDocsProvider({
       creatorId: userId,
       workspaceId,
       workspaceType,
+      projectId: finalProjectId,
       parentDocument,
-      visibility: workspaceType === "PERSONAL" ? "PRIVATE" : "TEAM_READONLY",
+      visibility: getDocumentVisibility(),
       content: JSON.stringify([
         {
           id: "initial",
@@ -229,8 +312,9 @@ export default function ConvexDocsProvider({
       creatorId: userId,
       workspaceId,
       workspaceType,
+      projectId: finalProjectId,
       parentDocument,
-      visibility: workspaceType === "PERSONAL" ? "PRIVATE" : "TEAM_READONLY",
+      visibility: getDocumentVisibility(),
       isArchived: false,
       isPublished: false,
       isFavorite: false,
@@ -243,16 +327,22 @@ export default function ConvexDocsProvider({
     openDoc(newDoc);
   };
 
-  const createFolder = async (title: string, parentId?: string) => {
+  const createFolder = async (
+    title: string,
+    parentId?: string,
+    docProjectId?: string
+  ) => {
     const parentDocument = parentId ? (parentId as Id<"documents">) : undefined;
+    const finalProjectId = docProjectId || projectId; // 优先使用传入的项目ID
 
     await createFolderMutation({
       title,
       creatorId: userId,
       workspaceId,
       workspaceType,
+      projectId: finalProjectId,
       parentDocument,
-      visibility: workspaceType === "PERSONAL" ? "PRIVATE" : "TEAM_READONLY",
+      visibility: getDocumentVisibility(),
       description: "",
       order: documents.length,
     });
@@ -310,6 +400,8 @@ export default function ConvexDocsProvider({
         workspaceId,
         workspaceType,
         userId,
+        context,
+        projectId,
         isLoading,
       }}
     >

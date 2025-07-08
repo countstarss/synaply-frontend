@@ -8,6 +8,8 @@ import {
   ConvexDocument,
 } from "@/components/shared/docs/convex/ConvexDocsContext";
 import ConvexDocsProvider from "@/components/shared/docs/convex/ConvexDocsContext";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { useUserInfo } from "@/hooks/useUser";
 
 // 团队文档概览页面组件
 function TeamDocsOverviewPage() {
@@ -24,11 +26,11 @@ function TeamDocsOverviewPage() {
   };
 
   const handleCreateNewDoc = async () => {
-    await createDoc("新文档");
+    await createDoc("新团队文档");
   };
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto h-[calc(100vh-64px)]">
       <div className="max-w-4xl mx-auto p-8">
         {/* Header */}
         <div className="mb-8">
@@ -204,7 +206,7 @@ function TeamDocsOverviewPage() {
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               <RiAddLine className="w-4 h-4" />
-              创建文档
+              创建团队文档
             </button>
           </div>
         )}
@@ -218,10 +220,14 @@ function TeamDocsPageWithOverview({
   workspaceId,
   workspaceType,
   userId,
+  context,
+  projectId,
 }: {
   workspaceId: string;
   workspaceType: "PERSONAL" | "TEAM";
   userId: string;
+  context: "team";
+  projectId?: string;
 }) {
   const { activeDocId, openDocs } = useConvexDocs();
 
@@ -236,27 +242,38 @@ function TeamDocsPageWithOverview({
       workspaceId={workspaceId}
       workspaceType={workspaceType}
       userId={userId}
+      context={context}
+      projectId={projectId}
     />
   );
 }
 
+// 主导出组件 - 团队文档页面
 export default function TeamDocPage() {
-  // TODO: 从路由或上下文中获取实际的参数
-  const workspaceId = "team-workspace"; // 从团队上下文获取
-  const workspaceType = "TEAM" as const;
-  const userId = "current-user"; // 从认证上下文获取
+  // TODO: 从实际的认证和工作空间上下文中获取这些值
+  const { currentWorkspace } = useWorkspace();
+  const { data: user } = useUserInfo(currentWorkspace?.userId || "");
+
+  const workspaceId = currentWorkspace?.id || ""; // 应该从路由或上下文中获取
+  const workspaceType = currentWorkspace?.type || "TEAM"; // 应该是团队工作空间
+  const userId = user?.id || ""; // 应该从认证上下文中获取
+  const context = "team" as const; // 团队文档上下文
 
   return (
-    <ConvexDocsProvider
-      workspaceId={workspaceId}
-      workspaceType={workspaceType}
-      userId={userId}
-    >
-      <TeamDocsPageWithOverview
+    <div className="h-full">
+      <ConvexDocsProvider
         workspaceId={workspaceId}
         workspaceType={workspaceType}
         userId={userId}
-      />
-    </ConvexDocsProvider>
+        context={context}
+      >
+        <TeamDocsPageWithOverview
+          workspaceId={workspaceId}
+          workspaceType={workspaceType}
+          userId={userId}
+          context={context}
+        />
+      </ConvexDocsProvider>
+    </div>
   );
 }

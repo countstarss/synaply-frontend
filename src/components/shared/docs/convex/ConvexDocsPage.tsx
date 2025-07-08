@@ -4,10 +4,12 @@ import React, { useState } from "react";
 import ConvexDocsProvider, {
   useConvexDocs,
   ConvexDocument,
+  DocumentContext,
 } from "./ConvexDocsContext";
 import ConvexDocsSidebar from "./ConvexDocsSidebar";
 import ConvexDocsTabs from "./ConvexDocsTabs";
 import ConvexDocsEditor from "./ConvexDocsEditor";
+import { useWorkspace } from "@/hooks/useWorkspace";
 // import {
 //   ResizablePanelGroup,
 //   ResizablePanel,
@@ -18,6 +20,8 @@ interface ConvexDocsPageProps {
   workspaceId: string;
   workspaceType: "PERSONAL" | "TEAM";
   userId: string;
+  context?: DocumentContext; // 可选，如果不提供则自动检测
+  projectId?: string;
 }
 
 // 内部文档页面组件
@@ -108,12 +112,27 @@ export default function ConvexDocsPage({
   workspaceId,
   workspaceType,
   userId,
+  context,
+  projectId,
 }: ConvexDocsPageProps) {
+  const { currentWorkspace } = useWorkspace();
+
+  // 如果没有提供 context，则根据工作空间类型自动检测
+  const documentContext: DocumentContext =
+    context ||
+    (currentWorkspace?.type === "PERSONAL"
+      ? "personal"
+      : currentWorkspace?.type === "TEAM"
+      ? "team"
+      : "team-personal");
+
   return (
     <ConvexDocsProvider
+      context={documentContext}
       workspaceId={workspaceId}
       workspaceType={workspaceType}
       userId={userId}
+      projectId={projectId}
     >
       <DocsPageContent />
     </ConvexDocsProvider>

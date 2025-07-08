@@ -8,10 +8,11 @@ import {
   ConvexDocument,
 } from "@/components/shared/docs/convex/ConvexDocsContext";
 import ConvexDocsProvider from "@/components/shared/docs/convex/ConvexDocsContext";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 // 文档概览页面组件
 function DocsOverviewPage() {
-  const { documents, createDoc, openDoc } = useConvexDocs();
+  const { documents, createDoc, openDoc, context } = useConvexDocs();
 
   // 获取根文档和最近更新的文档
   const rootDocs = documents.filter((doc) => !doc.parentDocument);
@@ -27,21 +28,41 @@ function DocsOverviewPage() {
     await createDoc("新文档");
   };
 
+  const getPageTitle = () => {
+    switch (context) {
+      case "personal":
+        return "我的文档";
+      case "team":
+        return "团队文档";
+      case "team-personal":
+        return "我的工作文档";
+      default:
+        return "我的文档";
+    }
+  };
+
+  const getPageDescription = () => {
+    switch (context) {
+      case "personal":
+        return `共有 ${documents.length} 个个人文档`;
+      case "team":
+        return `共有 ${documents.length} 个团队文档`;
+      case "team-personal":
+        return `共有 ${documents.length} 个个人工作文档`;
+      default:
+        return `共有 ${documents.length} 个文档`;
+    }
+  };
+
   return (
     <div className="flex-1 overflow-y-auto h-[calc(100vh-64px)]">
       <div className="max-w-4xl mx-auto p-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-app-text-primary mb-2">
-            我的文档
+            {getPageTitle()}
           </h1>
-          <p className="text-app-text-secondary">
-            共有{" "}
-            <span className="font-semibold text-app-text-primary">
-              {documents.length}
-            </span>{" "}
-            个个人文档
-          </p>
+          <p className="text-app-text-secondary">{getPageDescription()}</p>
         </div>
 
         {/* Quick Actions */}
@@ -55,7 +76,7 @@ function DocsOverviewPage() {
                 {documents.filter((doc) => doc.type === "document").length}
               </span>
             </div>
-            <p className="text-sm text-app-text-secondary">个人文档数</p>
+            <p className="text-sm text-app-text-secondary">文档数</p>
           </div>
 
           <div className="p-4 bg-app-content-bg border border-app-border rounded-lg text-left">
@@ -82,7 +103,13 @@ function DocsOverviewPage() {
                 新建文档
               </span>
             </div>
-            <p className="text-sm text-app-text-secondary">创建新的个人文档</p>
+            <p className="text-sm text-app-text-secondary">
+              {context === "personal"
+                ? "创建新的个人文档"
+                : context === "team"
+                ? "创建新的团队文档"
+                : "创建新的工作文档"}
+            </p>
           </button>
         </div>
 
@@ -218,10 +245,14 @@ function DocsPageWithOverview({
   workspaceId,
   workspaceType,
   userId,
+  context,
+  projectId,
 }: {
   workspaceId: string;
   workspaceType: "PERSONAL" | "TEAM";
   userId: string;
+  context: "personal" | "team" | "team-personal";
+  projectId?: string;
 }) {
   const { activeDocId, openDocs } = useConvexDocs();
 
@@ -236,37 +267,42 @@ function DocsPageWithOverview({
       workspaceId={workspaceId}
       workspaceType={workspaceType}
       userId={userId}
+      context={context}
+      projectId={projectId}
     />
   );
 }
 
 // 主导出组件
-export const CachedDocsPage = React.memo(
-  ({
-    workspaceId = "personal-workspace",
-    workspaceType = "PERSONAL" as const,
-    userId = "current-user",
-  }: {
-    workspaceId?: string;
-    workspaceType?: "PERSONAL" | "TEAM";
-    userId?: string;
-  } = {}) => {
-    return (
-      <div className="h-full">
-        <ConvexDocsProvider
+export const CachedDocsPage = React.memo(() => {
+  const { currentWorkspace } = useWorkspace();
+
+  const workspaceId = currentWorkspace?.id || "";
+  const workspaceType =
+    currentWorkspace?.type === "PERSONAL" ? "PERSONAL" : "TEAM";
+  const userId = currentWorkspace?.userId || "";
+  const context = currentWorkspace?.type === "PERSONAL" ? "personal" : "team";
+  const projectId = "";
+
+  return (
+    <div className="h-full">
+      <ConvexDocsProvider
+        workspaceId={workspaceId}
+        workspaceType={workspaceType}
+        userId={userId}
+        context={context}
+        projectId={projectId}
+      >
+        <DocsPageWithOverview
           workspaceId={workspaceId}
           workspaceType={workspaceType}
           userId={userId}
-        >
-          <DocsPageWithOverview
-            workspaceId={workspaceId}
-            workspaceType={workspaceType}
-            userId={userId}
-          />
-        </ConvexDocsProvider>
-      </div>
-    );
-  }
-);
+          context={context}
+          projectId={projectId}
+        />
+      </ConvexDocsProvider>
+    </div>
+  );
+});
 
 CachedDocsPage.displayName = "CachedDocsPage";

@@ -8,6 +8,8 @@ import {
   ConvexDocument,
 } from "@/components/shared/docs/convex/ConvexDocsContext";
 import ConvexDocsProvider from "@/components/shared/docs/convex/ConvexDocsContext";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { useUserInfo } from "@/hooks/useUser";
 
 // 个人文档概览页面组件
 function PersonalDocsOverviewPage() {
@@ -24,23 +26,23 @@ function PersonalDocsOverviewPage() {
   };
 
   const handleCreateNewDoc = async () => {
-    await createDoc("新文档");
+    await createDoc("新个人文档");
   };
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto h-[calc(100vh-64px)]">
       <div className="max-w-4xl mx-auto p-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-app-text-primary mb-2">
-            我的文档
+            我的工作文档
           </h1>
           <p className="text-app-text-secondary">
             共有{" "}
             <span className="font-semibold text-app-text-primary">
               {documents.length}
             </span>{" "}
-            个个人文档
+            个个人工作文档
           </p>
         </div>
 
@@ -55,7 +57,7 @@ function PersonalDocsOverviewPage() {
                 {documents.filter((doc) => doc.type === "document").length}
               </span>
             </div>
-            <p className="text-sm text-app-text-secondary">个人文档数</p>
+            <p className="text-sm text-app-text-secondary">工作文档数</p>
           </div>
 
           <div className="p-4 bg-app-content-bg border border-app-border rounded-lg text-left">
@@ -82,7 +84,9 @@ function PersonalDocsOverviewPage() {
                 新建文档
               </span>
             </div>
-            <p className="text-sm text-app-text-secondary">创建新的个人文档</p>
+            <p className="text-sm text-app-text-secondary">
+              创建新的个人工作文档
+            </p>
           </button>
         </div>
 
@@ -194,17 +198,17 @@ function PersonalDocsOverviewPage() {
               </svg>
             </div>
             <h3 className="text-lg font-medium text-app-text-primary mb-2">
-              还没有个人文档
+              还没有个人工作文档
             </h3>
             <p className="text-app-text-muted mb-4">
-              创建你的第一个文档开始记录想法
+              在团队工作空间中创建个人文档，只有你可以访问
             </p>
             <button
               onClick={handleCreateNewDoc}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               <RiAddLine className="w-4 h-4" />
-              创建文档
+              创建个人文档
             </button>
           </div>
         )}
@@ -218,10 +222,14 @@ function PersonalDocsPageWithOverview({
   workspaceId,
   workspaceType,
   userId,
+  context,
+  projectId,
 }: {
   workspaceId: string;
   workspaceType: "PERSONAL" | "TEAM";
   userId: string;
+  context: "team-personal";
+  projectId?: string;
 }) {
   const { activeDocId, openDocs } = useConvexDocs();
 
@@ -236,27 +244,38 @@ function PersonalDocsPageWithOverview({
       workspaceId={workspaceId}
       workspaceType={workspaceType}
       userId={userId}
+      context={context}
+      projectId={projectId}
     />
   );
 }
 
+// NOTE: 主导出组件 - 个人文档页面（在团队工作空间中）
 export default function PersonalDocPage() {
-  // TODO: 从路由或上下文中获取实际的参数
-  const workspaceId = "personal-workspace"; // 从个人工作空间获取
-  const workspaceType = "PERSONAL" as const;
-  const userId = "current-user"; // 从认证上下文获取
+  // TODO: 从实际的认证和工作空间上下文中获取这些值
+  const { currentWorkspace } = useWorkspace();
+  const { data: user } = useUserInfo(currentWorkspace?.userId || "");
+
+  const workspaceId = currentWorkspace?.id || ""; // 应该从路由或上下文中获取（注意这是团队工作空间ID）
+  const workspaceType = currentWorkspace?.type || "TEAM"; // 虽然是个人文档，但在团队工作空间中
+  const userId = user?.id || ""; // 应该从认证上下文中获取
+  const context = "team-personal" as const; // 团队工作空间中的个人文档上下文
 
   return (
-    <ConvexDocsProvider
-      workspaceId={workspaceId}
-      workspaceType={workspaceType}
-      userId={userId}
-    >
-      <PersonalDocsPageWithOverview
+    <div className="h-full">
+      <ConvexDocsProvider
         workspaceId={workspaceId}
         workspaceType={workspaceType}
         userId={userId}
-      />
-    </ConvexDocsProvider>
+        context={context}
+      >
+        <PersonalDocsPageWithOverview
+          workspaceId={workspaceId}
+          workspaceType={workspaceType}
+          userId={userId}
+          context={context}
+        />
+      </ConvexDocsProvider>
+    </div>
   );
 }

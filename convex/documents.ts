@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
-import { Doc } from "./_generated/dataModel";
+import { Doc, Id } from "./_generated/dataModel";
 
 // ============ 权限检查辅助函数 ============
 
@@ -159,6 +159,7 @@ export const createFolder = mutation({
     creatorId: v.string(),
     workspaceId: v.string(),
     workspaceType: v.union(v.literal("PERSONAL"), v.literal("TEAM")),
+    projectId: v.optional(v.string()), // 后端项目ID引用
     parentDocument: v.optional(v.id("documents")),
     visibility: v.optional(
       v.union(
@@ -182,6 +183,7 @@ export const createFolder = mutation({
       creatorId: args.creatorId,
       workspaceId: args.workspaceId,
       workspaceType: args.workspaceType,
+      projectId: args.projectId,
       parentDocument: args.parentDocument,
       visibility: defaultVisibility,
       content: undefined,
@@ -260,6 +262,14 @@ export const getDocumentTree = query({
     workspaceType: v.optional(
       v.union(v.literal("PERSONAL"), v.literal("TEAM"))
     ),
+    context: v.optional(
+      v.union(
+        v.literal("personal"),
+        v.literal("team"),
+        v.literal("team-personal")
+      )
+    ),
+    projectId: v.optional(v.string()), // 项目ID过滤
     parentDocument: v.optional(v.id("documents")),
     includeArchived: v.optional(v.boolean()),
   },
@@ -294,6 +304,45 @@ export const getDocumentTree = query({
           (args.parentDocument === null && !doc.parentDocument) ||
           doc.parentDocument === args.parentDocument
       );
+    }
+
+    // 项目ID过滤
+    if (args.projectId) {
+      documents = documents.filter((doc) => doc.projectId === args.projectId);
+    }
+
+    // 根据上下文进行过滤
+    if (args.context) {
+      switch (args.context) {
+        case "personal":
+          // 个人工作区：只显示用户自己创建的文档
+          documents = documents.filter(
+            (doc) =>
+              doc.creatorId === args.userId && doc.workspaceType === "PERSONAL"
+          );
+          break;
+
+        case "team":
+          // 团队工作区的团队文档：显示团队共享的文档
+          documents = documents.filter(
+            (doc) =>
+              doc.workspaceType === "TEAM" &&
+              (doc.visibility === "TEAM_READONLY" ||
+                doc.visibility === "TEAM_EDITABLE" ||
+                doc.visibility === "PUBLIC")
+          );
+          break;
+
+        case "team-personal":
+          // 团队工作区的个人文档：只显示用户自己创建的私有文档
+          documents = documents.filter(
+            (doc) =>
+              doc.creatorId === args.userId &&
+              doc.workspaceType === "TEAM" &&
+              doc.visibility === "PRIVATE"
+          );
+          break;
+      }
     }
 
     // 权限过滤
@@ -626,14 +675,15 @@ export const getRecentlyAccessed = query({
       .take(limit * 2); // 多取一些，因为可能有重复文档
 
     // 去重并获取文档详情
-    const documentIds = [
-      ...new Set(recentAccesses.map((access) => access.documentId)),
-    ];
+    const documentIds: Id<"documents">[] = Array.from(
+      new Set(recentAccesses.map((access) => access.documentId))
+    );
     const documents = [];
 
     for (const docId of documentIds.slice(0, limit)) {
       const doc = await ctx.db.get(docId);
-      if (doc && !doc.isArchived) {
+      if (doc && doc.type && !doc.isArchived) {
+        // 确保是文档类型且有 type 字段
         const hasAccess = await canViewDocument(ctx, doc, args.userId);
         if (hasAccess) {
           documents.push({
