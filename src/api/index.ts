@@ -580,6 +580,23 @@ export class Api<
         secure: true,
         ...params,
       }),
+
+    /**
+     * No description
+     *
+     * @tags users
+     * @name UserControllerGetUserById
+     * @summary 根据用户ID获取公开用户信息
+     * @request GET:/users/{userId}
+     * @secure
+     */
+    userControllerGetUserById: (userId: string, params: RequestParams = {}) =>
+      this.request<void, void>({
+        path: `/users/${userId}`,
+        method: "GET",
+        secure: true,
+        ...params,
+      }),
   };
   teams = {
     /**

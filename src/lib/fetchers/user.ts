@@ -21,7 +21,7 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
 
 /**
- * 获取用户公开信息
+ * MARK: - ✅获取用户公开信息
  */
 export const fetchUserById = async (
   userId: string,

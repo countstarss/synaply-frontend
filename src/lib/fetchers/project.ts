@@ -1,27 +1,10 @@
-import { VisibilityType } from "../types/visibility";
+import { CreateProjectDto } from "@/api";
+import { Project } from "@/types/prisma";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
 
-export interface Project {
-  id: string;
-  name: string;
-  description?: string;
-  workspaceId: string;
-  creatorId: string;
-  visibility: VisibilityType;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateProjectData {
-  name: string;
-  description?: string;
-  visibility: VisibilityType;
-}
-/**
- * MARK: - 项目相关API
- */
+// MARK: 获取项目列表
 export const fetchProjects = async (
   workspaceId: string,
   token: string
@@ -44,9 +27,10 @@ export const fetchProjects = async (
   return response.json();
 };
 
+// MARK: 创建项目
 export const createProject = async (
   workspaceId: string,
-  data: CreateProjectData,
+  data: CreateProjectDto,
   token: string
 ): Promise<Project> => {
   const response = await fetch(
@@ -68,9 +52,10 @@ export const createProject = async (
   return response.json();
 };
 
+// MARK: 更新项目
 export const updateProject = async (
   projectId: string,
-  data: Partial<CreateProjectData>,
+  data: Partial<CreateProjectDto>,
   token: string
 ): Promise<Project> => {
   const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
@@ -89,6 +74,7 @@ export const updateProject = async (
   return response.json();
 };
 
+// MARK: 删除项目
 export const deleteProject = async (
   projectId: string,
   token: string

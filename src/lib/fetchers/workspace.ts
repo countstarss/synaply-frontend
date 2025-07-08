@@ -25,7 +25,7 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
 
 /**
- * 获取用户所有工作空间
+ * MARK: - ✅获取用户所有空间
  */
 export const fetchUserWorkspaces = async (
   token: string
@@ -46,7 +46,7 @@ export const fetchUserWorkspaces = async (
 };
 
 /**
- * 根据ID获取工作空间详情
+ * MARK: 根据ID获取空间详情
  */
 export const fetchWorkspaceById = async (
   workspaceId: string,

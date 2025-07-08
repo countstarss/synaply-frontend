@@ -1,4 +1,4 @@
-import { VisibilityType } from "../types/visibility";
+import { CreateTeamDto, InviteMemberDto } from "@/api";
 
 // Team相关的API fetchers
 export interface Team {
@@ -21,66 +21,11 @@ export interface Team {
   }>;
 }
 
-export interface CreateTeamData {
-  name: string;
-}
-
-// 项目相关接口
-
-// 工作流相关接口
-export interface Workflow {
-  id: string;
-  name: string;
-  status: "DRAFT" | "PUBLISHED";
-  workspaceId: string;
-  creatorId: string;
-  visibility: VisibilityType;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateWorkflowData {
-  name: string;
-  visibility: VisibilityType;
-}
-
-// 任务相关接口
-export interface Issue {
-  id: string;
-  title: string;
-  description?: string;
-  status: "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
-  priority: "LOW" | "NORMAL" | "HIGH" | "URGENT";
-  workspaceId: string;
-  creatorId: string;
-  visibility: VisibilityType;
-  projectId?: string;
-  workflowId?: string;
-  currentStepId?: string;
-  directAssigneeId?: string;
-  dueDate?: string;
-  startDate?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateIssueData {
-  title: string;
-  description?: string;
-  priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT";
-  visibility: VisibilityType;
-  projectId?: string;
-  workflowId?: string;
-  directAssigneeId?: string;
-  dueDate?: string;
-  startDate?: string;
-}
-
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
 
 /**
- * MARK: - 获取用户所有团队
+ * MARK: - ✅获取用户团队
  */
 export const fetchUserTeams = async (token: string): Promise<Team[]> => {
   const response = await fetch(`${API_BASE_URL}/teams`, {
@@ -99,10 +44,10 @@ export const fetchUserTeams = async (token: string): Promise<Team[]> => {
 };
 
 /**
- * MARK: - 创建新团队
+ * MARK: - ✅创建新团队
  */
 export const createTeam = async (
-  data: CreateTeamData,
+  data: CreateTeamDto,
   token: string
 ): Promise<Team> => {
   const response = await fetch(`${API_BASE_URL}/teams`, {
@@ -122,15 +67,12 @@ export const createTeam = async (
 };
 
 /**
- * MARK: - 邀请团队成员
+ * MARK: - ✅邀请团队成员
  */
-export interface InviteMemberData {
-  email: string;
-}
 
 export const inviteTeamMember = async (
   teamId: string,
-  data: InviteMemberData,
+  data: InviteMemberDto,
   token: string
 ): Promise<{ message: string }> => {
   const response = await fetch(`${API_BASE_URL}/teams/${teamId}/invite`, {
@@ -167,7 +109,7 @@ export interface TeamMember {
 }
 
 /**
- * MARK: - 获取团队成员
+ * MARK: - ✅获取团队成员
  */
 export const fetchTeamMembers = async (
   teamId: string,
@@ -189,7 +131,7 @@ export const fetchTeamMembers = async (
 };
 
 /**
- * MARK: - 获取团队详情
+ * MARK: - ✅获取团队详情
  */
 export const fetchTeamById = async (
   teamId: string,
