@@ -4,7 +4,7 @@ import { Doc } from "./_generated/dataModel";
 
 // ============ 权限检查辅助函数 ============
 
-// 检查用户是否有权限查看文档
+// 检查用户是否有权限查看文档/文件夹
 async function canViewDocument(
   ctx: QueryCtx | MutationCtx,
   document: Doc<"documents">,
@@ -35,7 +35,7 @@ async function canViewDocument(
   }
 }
 
-// 检查用户是否有权限编辑文档
+// 检查用户是否有权限编辑文档/文件夹
 async function canEditDocument(
   ctx: QueryCtx | MutationCtx,
   document: Doc<"documents">,
@@ -75,7 +75,9 @@ async function canEditDocument(
 export const create = mutation({
   args: {
     title: v.string(),
+    type: v.optional(v.union(v.literal("document"), v.literal("folder"))),
     content: v.optional(v.string()),
+    description: v.optional(v.string()),
     creatorId: v.string(),
     workspaceId: v.string(),
     workspaceType: v.union(v.literal("PERSONAL"), v.literal("TEAM")),
@@ -92,18 +94,30 @@ export const create = mutation({
     allowedUsers: v.optional(v.array(v.string())),
     allowedEditors: v.optional(v.array(v.string())),
     tags: v.optional(v.array(v.string())),
+    order: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
 
-    // 设置默认权限
+    // 设置默认值
+    const docType = args.type || "document";
     const visibility =
       args.visibility ??
       (args.workspaceType === "PERSONAL" ? "PRIVATE" : "TEAM_READONLY");
 
+    // 验证：文件夹不应该有内容，文档不应该有描述
+    if (docType === "folder" && args.content) {
+      throw new Error("文件夹不能包含内容");
+    }
+    if (docType === "document" && args.description) {
+      throw new Error("文档不能有描述，请使用内容字段");
+    }
+
     const documentId = await ctx.db.insert("documents", {
       title: args.title,
-      content: args.content,
+      type: docType,
+      content: docType === "document" ? args.content : undefined,
+      description: docType === "folder" ? args.description : undefined,
       creatorId: args.creatorId,
       workspaceId: args.workspaceId,
       workspaceType: args.workspaceType,
@@ -118,6 +132,7 @@ export const create = mutation({
       coverImage: undefined,
       icon: undefined,
       tags: args.tags,
+      order: args.order ?? 0,
       createdAt: now,
       updatedAt: now,
       lastAccessedAt: now,
@@ -133,6 +148,82 @@ export const create = mutation({
     });
 
     return documentId;
+  },
+});
+
+// MARK: 创建文件夹 (便捷函数)
+export const createFolder = mutation({
+  args: {
+    title: v.string(),
+    description: v.optional(v.string()),
+    creatorId: v.string(),
+    workspaceId: v.string(),
+    workspaceType: v.union(v.literal("PERSONAL"), v.literal("TEAM")),
+    parentDocument: v.optional(v.id("documents")),
+    visibility: v.optional(
+      v.union(
+        v.literal("PRIVATE"),
+        v.literal("TEAM_READONLY"),
+        v.literal("TEAM_EDITABLE"),
+        v.literal("PUBLIC")
+      )
+    ),
+    order: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const defaultVisibility =
+      args.visibility ??
+      (args.workspaceType === "PERSONAL" ? "PRIVATE" : "TEAM_READONLY");
+
+    return await ctx.db.insert("documents", {
+      title: args.title,
+      type: "folder",
+      description: args.description,
+      creatorId: args.creatorId,
+      workspaceId: args.workspaceId,
+      workspaceType: args.workspaceType,
+      parentDocument: args.parentDocument,
+      visibility: defaultVisibility,
+      content: undefined,
+      isArchived: false,
+      isPublished: false,
+      isFavorite: false,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      order: args.order ?? 0,
+    });
+  },
+});
+
+// MARK: 更新文件夹描述
+export const updateFolderDescription = mutation({
+  args: {
+    id: v.id("documents"),
+    userId: v.string(),
+    description: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const document = await ctx.db.get(args.id);
+    if (!document) {
+      throw new Error("文档不存在");
+    }
+
+    if (document.type !== "folder") {
+      throw new Error("只能更新文件夹的描述");
+    }
+
+    // 检查编辑权限
+    const hasEditPermission = await canEditDocument(ctx, document, args.userId);
+    if (!hasEditPermission) {
+      throw new Error("权限不足");
+    }
+
+    await ctx.db.patch(args.id, {
+      description: args.description,
+      updatedAt: Date.now(),
+    });
+
+    return args.id;
   },
 });
 
@@ -154,13 +245,136 @@ export const getById = query({
       return null;
     }
 
-    // 注意：不能在 query 中进行 patch 和 insert 操作
-    // 如果需要记录访问历史，应该在前端调用单独的 mutation
-
     return {
       ...document,
       canEdit: await canEditDocument(ctx, document, args.userId),
     };
+  },
+});
+
+// MARK: 获取工作空间文档树结构
+export const getDocumentTree = query({
+  args: {
+    workspaceId: v.string(),
+    userId: v.string(),
+    workspaceType: v.optional(
+      v.union(v.literal("PERSONAL"), v.literal("TEAM"))
+    ),
+    parentDocument: v.optional(v.id("documents")),
+    includeArchived: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    // 根据条件构建查询
+    let documents;
+    if (args.workspaceType) {
+      documents = await ctx.db
+        .query("documents")
+        .withIndex("by_workspace_type", (q) =>
+          q
+            .eq("workspaceId", args.workspaceId)
+            .eq("workspaceType", args.workspaceType!)
+        )
+        .collect();
+    } else {
+      documents = await ctx.db
+        .query("documents")
+        .withIndex("by_workspace", (q) => q.eq("workspaceId", args.workspaceId))
+        .collect();
+    }
+
+    // 应用过滤条件
+    if (!args.includeArchived) {
+      documents = documents.filter((doc) => !doc.isArchived);
+    }
+
+    // 过滤父文档
+    if (args.parentDocument !== undefined) {
+      documents = documents.filter(
+        (doc) =>
+          (args.parentDocument === null && !doc.parentDocument) ||
+          doc.parentDocument === args.parentDocument
+      );
+    }
+
+    // 权限过滤
+    const accessibleDocuments = [];
+    for (const doc of documents) {
+      const hasAccess = await canViewDocument(ctx, doc, args.userId);
+      if (hasAccess) {
+        accessibleDocuments.push({
+          ...doc,
+          canEdit: await canEditDocument(ctx, doc, args.userId),
+        });
+      }
+    }
+
+    // 排序：先文件夹，后文档，然后按order和创建时间排序
+    const sortedDocs = accessibleDocuments.sort((a, b) => {
+      // 文件夹优先
+      if (a.type === "folder" && b.type !== "folder") return -1;
+      if (a.type !== "folder" && b.type === "folder") return 1;
+
+      // 按order排序
+      const orderA = a.order ?? 0;
+      const orderB = b.order ?? 0;
+      if (orderA !== orderB) return orderA - orderB;
+
+      // 最后按创建时间排序
+      return a.createdAt - b.createdAt;
+    });
+
+    return sortedDocs;
+  },
+});
+
+// MARK: 获取文件夹子项
+export const getFolderChildren = query({
+  args: {
+    folderId: v.id("documents"),
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const folder = await ctx.db.get(args.folderId);
+    if (!folder || folder.type !== "folder") {
+      throw new Error("文件夹不存在");
+    }
+
+    // 检查权限
+    const hasViewPermission = await canViewDocument(ctx, folder, args.userId);
+    if (!hasViewPermission) {
+      throw new Error("权限不足");
+    }
+
+    const children = await ctx.db
+      .query("documents")
+      .withIndex("by_parent", (q) => q.eq("parentDocument", args.folderId))
+      .filter((q) => q.eq(q.field("isArchived"), false))
+      .collect();
+
+    // 权限过滤和排序
+    const accessibleChildren = [];
+    for (const child of children) {
+      const hasAccess = await canViewDocument(ctx, child, args.userId);
+      if (hasAccess) {
+        accessibleChildren.push({
+          ...child,
+          canEdit: await canEditDocument(ctx, child, args.userId),
+        });
+      }
+    }
+
+    return accessibleChildren.sort((a, b) => {
+      // 文件夹优先
+      if (a.type === "folder" && b.type !== "folder") return -1;
+      if (a.type !== "folder" && b.type === "folder") return 1;
+
+      // 按order排序
+      const orderA = a.order ?? 0;
+      const orderB = b.order ?? 0;
+      if (orderA !== orderB) return orderA - orderB;
+
+      return a.createdAt - b.createdAt;
+    });
   },
 });
 
@@ -171,6 +385,7 @@ export const update = mutation({
     userId: v.string(),
     title: v.optional(v.string()),
     content: v.optional(v.string()),
+    description: v.optional(v.string()),
     coverImage: v.optional(v.string()),
     icon: v.optional(v.string()),
     isPublished: v.optional(v.boolean()),
@@ -189,6 +404,7 @@ export const update = mutation({
     allowedEditors: v.optional(v.array(v.string())),
     saveVersion: v.optional(v.boolean()),
     changeDescription: v.optional(v.string()),
+    order: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const { id, userId, saveVersion, changeDescription, ...updateData } = args;
@@ -208,11 +424,23 @@ export const update = mutation({
       throw new Error("权限不足");
     }
 
+    // 验证更新内容的合法性
+    if (existingDocument.type === "folder" && args.content !== undefined) {
+      throw new Error("文件夹不能包含内容");
+    }
+    if (
+      existingDocument.type === "document" &&
+      args.description !== undefined
+    ) {
+      throw new Error("文档不能有描述");
+    }
+
     const now = Date.now();
 
-    // 如果需要保存版本历史
+    // 如果需要保存版本历史 (仅对文档)
     if (
       saveVersion &&
+      existingDocument.type === "document" &&
       (updateData.content !== undefined || updateData.title !== undefined)
     ) {
       // 获取最新版本号
@@ -255,7 +483,7 @@ export const update = mutation({
   },
 });
 
-// MARK: 获取工作空间文档列表
+// MARK: 获取工作空间文档列表 (兼容原有接口)
 export const getByWorkspace = query({
   args: {
     workspaceId: v.string(),
@@ -327,7 +555,18 @@ export const getByWorkspace = query({
 
     // 排序并限制数量
     const sortedDocs = accessibleDocuments
-      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .sort((a, b) => {
+        // 文件夹优先
+        if (a.type === "folder" && b.type !== "folder") return -1;
+        if (a.type !== "folder" && b.type === "folder") return 1;
+
+        // 按order排序
+        const orderA = a.order ?? 0;
+        const orderB = b.order ?? 0;
+        if (orderA !== orderB) return orderA - orderB;
+
+        return b.updatedAt - a.updatedAt;
+      })
       .slice(0, limit);
 
     return sortedDocs;
@@ -412,14 +651,15 @@ export const getRecentlyAccessed = query({
   },
 });
 
-// MARK: 搜索文档
+// MARK: 搜索文档和文件夹
 export const search = query({
   args: {
     query: v.string(),
     userId: v.string(),
     workspaceId: v.optional(v.string()),
-    projectId: v.optional(v.id("projects")),
+    projectId: v.optional(v.string()),
     tags: v.optional(v.array(v.string())),
+    type: v.optional(v.union(v.literal("document"), v.literal("folder"))),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
@@ -448,11 +688,18 @@ export const search = query({
     // 过滤已归档文档
     documents = documents.filter((doc) => !doc.isArchived);
 
+    // 类型过滤
+    if (args.type) {
+      documents = documents.filter((doc) => doc.type === args.type);
+    }
+
     // 文本搜索过滤
     const textFilteredDocs = documents.filter(
       (doc) =>
         doc.title.toLowerCase().includes(searchTerm) ||
         (doc.content && doc.content.toLowerCase().includes(searchTerm)) ||
+        (doc.description &&
+          doc.description.toLowerCase().includes(searchTerm)) ||
         (doc.tags &&
           doc.tags.some((tag) => tag.toLowerCase().includes(searchTerm)))
     );
@@ -478,7 +725,13 @@ export const search = query({
     }
 
     return accessibleDocuments
-      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .sort((a, b) => {
+        // 文件夹优先
+        if (a.type === "folder" && b.type !== "folder") return -1;
+        if (a.type !== "folder" && b.type === "folder") return 1;
+
+        return b.updatedAt - a.updatedAt;
+      })
       .slice(0, limit);
   },
 });
@@ -538,7 +791,7 @@ export const shareDocument = mutation({
   },
 });
 
-// MARK: 归档文档
+// MARK: 归档文档/文件夹
 export const archive = mutation({
   args: {
     id: v.id("documents"),
@@ -566,7 +819,7 @@ export const archive = mutation({
   },
 });
 
-// MARK: 恢复文档
+// MARK: 恢复文档/文件夹
 export const restore = mutation({
   args: {
     id: v.id("documents"),
@@ -592,11 +845,12 @@ export const restore = mutation({
   },
 });
 
-// MARK: 删除文档
+// MARK: 删除文档/文件夹
 export const remove = mutation({
   args: {
     id: v.id("documents"),
     userId: v.string(),
+    force: v.optional(v.boolean()), // 强制删除，不检查子项
   },
   handler: async (ctx, args) => {
     const existingDocument = await ctx.db.get(args.id);
@@ -607,6 +861,18 @@ export const remove = mutation({
 
     if (existingDocument.creatorId !== args.userId) {
       throw new Error("权限不足");
+    }
+
+    // 如果是文件夹且不是强制删除，检查是否有子项
+    if (existingDocument.type === "folder" && !args.force) {
+      const children = await ctx.db
+        .query("documents")
+        .withIndex("by_parent", (q) => q.eq("parentDocument", args.id))
+        .collect();
+
+      if (children.length > 0) {
+        throw new Error("文件夹不为空，无法删除");
+      }
     }
 
     // 删除相关数据

@@ -14,44 +14,44 @@ import {
   RiFolderAddLine,
   RiFileAddLine,
 } from "react-icons/ri";
-import { Doc } from "@/lib/db";
-import { useDocs } from "./DocsContext";
+import { useConvexDocs, ConvexDocument } from "./ConvexDocsContext";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
+import { useQuery } from "convex/react";
+import { api } from "../../../../../convex/_generated/api";
 
-interface DocsSidebarProps {
-  docs: Doc[];
-  activeDocId: string | null;
-  onSelectDoc: (doc: Doc) => void;
-  openDoc: (doc: Doc) => void;
+interface ConvexDocsSidebarProps {
+  onSelectDoc: (doc: ConvexDocument) => void;
 }
 
 interface TreeNodeProps {
-  doc: Doc;
-  docs: Doc[];
+  doc: ConvexDocument;
   level: number;
-  activeDocId: string | null;
-  openDoc: (doc: Doc) => void;
-  onSelectDoc: (doc: Doc) => void;
+  onSelectDoc: (doc: ConvexDocument) => void;
   expandedIds: Set<string>;
   onToggleExpand: (uid: string) => void;
-  newlyCreatedDocId?: string; // 新创建的文档ID，用于自动进入编辑状态
-  onNewDocCreated?: (docId: string) => void; // 新文档创建后的回调
+  newlyCreatedDocId?: string;
+  onNewDocCreated?: (docId: string) => void;
 }
 
 // MARK: 文档树节点
 function TreeNode({
   doc,
-  docs,
   level,
-  activeDocId,
-  openDoc,
   onSelectDoc,
   expandedIds,
   onToggleExpand,
   newlyCreatedDocId,
   onNewDocCreated,
 }: TreeNodeProps) {
-  const { createDoc, createFolder, deleteDoc, updateDocTitle } = useDocs();
+  const {
+    createDoc,
+    createFolder,
+    deleteDoc,
+    updateDocTitle,
+    openDoc,
+    activeDocId,
+    userId,
+  } = useConvexDocs();
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(doc.title);
   const [showMenu, setShowMenu] = useState(false);
@@ -61,18 +61,29 @@ function TreeNode({
   const nodeRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const childDocs = docs.filter((d) => d.parentId === doc.uid);
+  // 获取子文档
+  const childDocs =
+    useQuery(
+      api.documents.getFolderChildren,
+      doc.type === "folder"
+        ? {
+            folderId: doc._id,
+            userId,
+          }
+        : "skip"
+    ) || [];
+
   const hasChildren = childDocs.length > 0;
-  const isExpanded = expandedIds.has(doc.uid);
-  const isActive = activeDocId === doc.uid;
+  const isExpanded = expandedIds.has(doc._id);
+  const isActive = activeDocId === doc._id;
 
   // 如果这是新创建的文档，自动进入编辑状态
   useEffect(() => {
-    if (newlyCreatedDocId === doc.uid && doc.type === "document") {
+    if (newlyCreatedDocId === doc._id && doc.type === "document") {
       setIsEditing(true);
       setEditTitle(doc.title);
     }
-  }, [newlyCreatedDocId, doc.uid, doc.title, doc.type]);
+  }, [newlyCreatedDocId, doc._id, doc.title, doc.type]);
 
   // Close menu when clicking outside or when mouse leaves the node area
   useEffect(() => {
@@ -146,24 +157,20 @@ function TreeNode({
   const handleCreateChild = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowMenu(false);
-    const newDoc = await createDoc("新文档", doc.uid);
-    // 确保文件夹是展开状态（而不是切换）
+    await createDoc("新文档", doc._id);
+    // 确保文件夹是展开状态
     if (!isExpanded) {
-      onToggleExpand(doc.uid);
-    }
-    // 通过回调将新创建的文档ID传递给父组件
-    if (onNewDocCreated) {
-      onNewDocCreated(newDoc.uid);
+      onToggleExpand(doc._id);
     }
   };
 
   const handleCreateChildFolder = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowMenu(false);
-    await createFolder("新文件夹", doc.uid);
-    // 确保文件夹是展开状态（而不是切换）
+    await createFolder("新文件夹", doc._id);
+    // 确保文件夹是展开状态
     if (!isExpanded) {
-      onToggleExpand(doc.uid);
+      onToggleExpand(doc._id);
     }
   };
 
@@ -177,13 +184,13 @@ function TreeNode({
         }`
       )
     ) {
-      await deleteDoc(doc.uid);
+      await deleteDoc(doc._id);
     }
   };
 
   const handleRename = async () => {
     if (editTitle.trim() && editTitle !== doc.title) {
-      await updateDocTitle(doc.uid, editTitle.trim());
+      await updateDocTitle(doc._id, editTitle.trim());
     }
     setIsEditing(false);
   };
@@ -218,7 +225,7 @@ function TreeNode({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onToggleExpand(doc.uid);
+                onToggleExpand(doc._id);
               }}
               className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
             >
@@ -264,13 +271,15 @@ function TreeNode({
           )}
 
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
-            <button
-              onClick={handleCreateChild}
-              className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-              title="新建子文档"
-            >
-              <RiAddLine className="w-3.5 h-3.5" />
-            </button>
+            {doc.type === "folder" && (
+              <button
+                onClick={handleCreateChild}
+                className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                title="新建子文档"
+              >
+                <RiAddLine className="w-3.5 h-3.5" />
+              </button>
+            )}
 
             <div className="relative">
               <button
@@ -333,12 +342,9 @@ function TreeNode({
           <div>
             {childDocs.map((child) => (
               <TreeNode
-                key={child.uid}
+                key={child._id}
                 doc={child}
-                docs={docs}
                 level={level + 1}
-                activeDocId={activeDocId}
-                openDoc={openDoc}
                 onSelectDoc={onSelectDoc}
                 expandedIds={expandedIds}
                 onToggleExpand={onToggleExpand}
@@ -353,20 +359,15 @@ function TreeNode({
   );
 }
 
-export default function DocsSidebar({
-  docs,
-  activeDocId,
+export default function ConvexDocsSidebar({
   onSelectDoc,
-  openDoc,
-}: DocsSidebarProps) {
-  const { createDoc, createFolder } = useDocs();
+}: ConvexDocsSidebarProps) {
+  const { documents, createDoc, createFolder, isLoading } = useConvexDocs();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [newlyCreatedDocId, setNewlyCreatedDocId] = useState<
     string | undefined
   >(undefined);
-
-  const rootDocs = docs.filter((doc) => !doc.parentId);
 
   const handleToggleExpand = (uid: string) => {
     const newExpanded = new Set(expandedIds);
@@ -379,34 +380,47 @@ export default function DocsSidebar({
   };
 
   const handleCreateRootDoc = async () => {
-    const newDoc = await createDoc("新文档", null);
-    setNewlyCreatedDocId(newDoc.uid);
+    await createDoc("新文档");
   };
 
   const handleCreateRootFolder = async () => {
-    await createFolder("新文件夹", null);
+    await createFolder("新文件夹");
   };
 
   const handleNewDocCreated = (docId: string) => {
     setNewlyCreatedDocId(docId);
   };
 
-  // 清除新创建文档的状态（例如当用户完成编辑时）
+  // 清除新创建文档的状态
   useEffect(() => {
     if (newlyCreatedDocId) {
       const timer = setTimeout(() => {
         setNewlyCreatedDocId(undefined);
-      }, 5000); // 5秒后清除状态
+      }, 5000);
 
       return () => clearTimeout(timer);
     }
   }, [newlyCreatedDocId]);
 
+  // 搜索过滤
   const filteredDocs = searchQuery
-    ? docs.filter((doc) =>
+    ? documents.filter((doc) =>
         doc.title.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : null;
+
+  if (isLoading) {
+    return (
+      <div className="h-full w-64 flex flex-col bg-app-content-bg border-r border-app-border">
+        <div className="p-3 border-b border-app-border">
+          <h2 className="font-semibold text-app-text-primary">文档</h2>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-app-text-muted">加载中...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ContextMenuWrapper>
@@ -447,40 +461,42 @@ export default function DocsSidebar({
         </div>
 
         {/* Document Tree */}
-        <div className="flex-1 h-[calc(100vh-160px)] p-2 z-20">
+        <div className="flex-1 overflow-y-auto p-2">
           {filteredDocs ? (
             <div className="space-y-1">
               {filteredDocs.map((doc) => (
                 <div
-                  key={doc.uid}
-                  className={`flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer ${
-                    activeDocId === doc.uid
-                      ? "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
-                      : "hover:bg-app-button-hover text-app-text-primary"
-                  }`}
+                  key={doc._id}
+                  className={`flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer ${"hover:bg-app-button-hover text-app-text-primary"}`}
                   onClick={() => onSelectDoc(doc)}
                 >
-                  <RiFileTextLine className="w-4 h-4" />
+                  {doc.type === "folder" ? (
+                    <RiFolder3Line className="w-4 h-4" />
+                  ) : (
+                    <RiFileTextLine className="w-4 h-4" />
+                  )}
                   <span className="text-sm truncate">{doc.title}</span>
                 </div>
               ))}
+              {filteredDocs.length === 0 && (
+                <div className="text-center py-8 text-app-text-muted text-sm">
+                  <p>未找到匹配的文档</p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-1">
-              {rootDocs.length === 0 ? (
+              {documents.length === 0 ? (
                 <div className="text-center py-8 text-app-text-muted text-sm">
                   <p>还没有文档</p>
                   <p className="mt-2">点击上方 + 按钮创建</p>
                 </div>
               ) : (
-                rootDocs.map((doc) => (
+                documents.map((doc) => (
                   <TreeNode
-                    key={doc.uid}
+                    key={doc._id}
                     doc={doc}
-                    docs={docs}
                     level={0}
-                    activeDocId={activeDocId}
-                    openDoc={openDoc}
                     onSelectDoc={onSelectDoc}
                     expandedIds={expandedIds}
                     onToggleExpand={handleToggleExpand}

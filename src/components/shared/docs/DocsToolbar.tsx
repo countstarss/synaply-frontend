@@ -13,7 +13,7 @@ export default function DocsToolbar({
   onToggleExpand,
 }: DocsToolbarProps) {
   return (
-    <div className="absolute top-4 right-4 z-10">
+    <div className="absolute top-32 right-4 z-10">
       <div className="bg-app-content-bg border border-app-border rounded-lg shadow-lg dark:shadow-black/20 p-1">
         <button
           onClick={onToggleExpand}

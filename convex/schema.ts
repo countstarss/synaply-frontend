@@ -19,7 +19,8 @@ export default defineSchema({
     .index("by_email", ["email"])
     .index("by_online", ["isOnline"]),
 
-  // 频道表 - 支持多种类型的聊天
+  // MARK: 频道表
+  // NOTE: - 支持多种类型的聊天
   channels: defineTable({
     name: v.string(),
     description: v.optional(v.string()),
@@ -50,7 +51,8 @@ export default defineSchema({
     .index("by_default", ["isDefault"])
     .index("by_archived", ["isArchived"]),
 
-  // 频道成员表 - 管理用户与频道的关系
+  // MARK: 频道成员表
+  // NOTE: - 管理用户与频道的关系
   channelMembers: defineTable({
     channelId: v.id("channels"),
     userId: v.string(), // 对应后端 User.id
@@ -69,7 +71,8 @@ export default defineSchema({
     .index("by_channel_user", ["channelId", "userId"])
     .index("by_role", ["role"]),
 
-  // 消息表 - 支持多种消息类型
+  // MARK: 消息表
+  // NOTE: - 支持多种消息类型
   messages: defineTable({
     content: v.string(),
     userId: v.string(), // 对应后端 User.id
@@ -106,7 +109,7 @@ export default defineSchema({
     .index("by_type", ["messageType"])
     .index("by_deleted", ["isDeleted"]),
 
-  // 消息反应表
+  // MARK: 消息反应表
   messageReactions: defineTable({
     messageId: v.id("messages"),
     userId: v.string(), // 对应后端 User.id
@@ -117,7 +120,7 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_message_user", ["messageId", "userId"]),
 
-  // 私聊会话表
+  // MARK: 私聊会话表
   directConversations: defineTable({
     participants: v.array(v.string()), // 两个参与者的后端User.id
     lastMessageAt: v.number(),
@@ -129,7 +132,7 @@ export default defineSchema({
     .index("by_lastMessage", ["lastMessageAt"])
     .index("by_archived", ["isArchived"]),
 
-  // 通知表
+  // MARK: 通知表
   notifications: defineTable({
     userId: v.string(), // 对应后端 User.id
     type: v.union(
@@ -161,16 +164,28 @@ export default defineSchema({
 
   // ============ 文档系统相关表 ============
 
-  // 文档表 - 增强版，与后端项目系统集成
+  // MARK: 文档表
+  // NOTE: - 增强版，与后端项目系统集成，支持文件夹和文档层级结构
   documents: defineTable({
     title: v.string(),
-    content: v.optional(v.string()), // JSON格式内容，存储为string
+
+    // 文档类型：document(文档) 或 folder(文件夹)
+    type: v.union(v.literal("document"), v.literal("folder")),
+
+    // 文档内容 (仅document类型使用，JSON格式内容，存储为string)
+    content: v.optional(v.string()),
+
+    // 文件夹描述 (仅folder类型使用)
+    description: v.optional(v.string()),
+
     creatorId: v.string(), // 对应后端 User.id
 
     // 关联后端资源（不重复存储详细信息）
     workspaceId: v.string(), // 对应后端 Workspace.id
     workspaceType: v.union(v.literal("PERSONAL"), v.literal("TEAM")), // 与后端 WorkspaceType 一致
     projectId: v.optional(v.string()), // 对应后端 Project.id
+
+    // 父文档关系 - 支持文件夹嵌套
     parentDocument: v.optional(v.id("documents")),
 
     // 权限控制 - 与后端 VisibilityType 对应
@@ -194,6 +209,9 @@ export default defineSchema({
     icon: v.optional(v.string()),
     tags: v.optional(v.array(v.string())),
 
+    // 显示顺序 (用于文件夹内的排序)
+    order: v.optional(v.number()),
+
     // 时间戳 - 统一使用数字时间戳
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -208,9 +226,13 @@ export default defineSchema({
     .index("by_creator_archived", ["creatorId", "isArchived"])
     .index("by_visibility", ["visibility"])
     .index("by_published", ["isPublished"])
-    .index("by_favorite", ["creatorId", "isFavorite"]),
+    .index("by_favorite", ["creatorId", "isFavorite"])
+    .index("by_type", ["type"])
+    .index("by_parent", ["parentDocument"])
+    .index("by_workspace_parent", ["workspaceId", "parentDocument"]),
 
-  // 文档访问记录表 - 记录用户访问文档的历史
+  // MARK: 文档访问记录表
+  // NOTE: - 记录用户访问文档的历史
   documentAccess: defineTable({
     documentId: v.id("documents"),
     userId: v.string(), // 对应后端 User.id
@@ -236,7 +258,7 @@ export default defineSchema({
     .index("by_recent", ["userId", "accessedAt"])
     .index("by_access_type", ["accessType"]),
 
-  // 文档分享记录表
+  // MARK: 文档分享记录表
   documentShares: defineTable({
     documentId: v.id("documents"),
     sharedBy: v.string(), // 分享者 User.id
@@ -260,7 +282,7 @@ export default defineSchema({
     .index("by_active", ["isActive"])
     .index("by_expires", ["expiresAt"]),
 
-  // 文档版本历史表
+  // MARK: 文档版本历史表
   documentVersions: defineTable({
     documentId: v.id("documents"),
     version: v.number(), // 版本号
@@ -278,7 +300,8 @@ export default defineSchema({
 
   // ============ 后端数据同步记录表 ============
 
-  // 同步状态表 - 记录与后端数据的同步状态
+  // MARK: 同步状态表
+  // NOTE: - 记录与后端数据的同步状态
   syncStatus: defineTable({
     resourceType: v.union(
       v.literal("user"),
