@@ -1,76 +1,233 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   RiAddLine,
   RiDeleteBinLine,
   RiEditLine,
   RiEyeLine,
   RiFlowChart,
+  RiLoader4Line,
+  RiSettings3Line,
 } from "react-icons/ri";
 import WorkflowEditor from "../components/workflow/WorkflowEditor";
 import WorkflowSetupModal from "../components/workflow/WorkflowSetupModal";
+import WorkflowSettingsModal from "../components/workflow/WorkflowSettingsModal";
 import { Workflow } from "@/types/team";
-import { workflowStorage } from "../utils/storage";
+import {
+  useWorkflows,
+  useCreateWorkflow,
+  useDeleteWorkflow,
+  useWorkflowStats,
+  useUpdateWorkflowJson,
+} from "@/hooks/useWorkflowApi";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { toast } from "sonner";
+import { WorkflowResponse } from "@/lib/fetchers/workflow";
 
 export default function Workflows() {
-  const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "editor">("list");
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [selectedWorkflow, setSelectedWorkflow] =
+    useState<WorkflowResponse | null>(null);
   const [showDraftsOnly, setShowDraftsOnly] = useState(false);
 
-  useEffect(() => {
-    setWorkflows(workflowStorage.getAll());
-  }, []);
+  // 获取当前工作空间
+  const { currentWorkspace } = useWorkspace();
+
+  // 获取工作流数据
+  const {
+    data: workflows = [],
+    isLoading,
+    error,
+  } = useWorkflows(currentWorkspace?.id);
+  const { stats } = useWorkflowStats(currentWorkspace?.id);
+
+  // 变更操作
+  const createWorkflowMutation = useCreateWorkflow();
+  const deleteWorkflowMutation = useDeleteWorkflow();
+  const updateWorkflowJsonMutation = useUpdateWorkflowJson();
 
   const handleCreateNew = () => {
     setEditingWorkflow(null);
     setIsSetupModalOpen(true);
   };
 
-  const handleSetupContinue = (workflowInfo: {
+  const handleSetupContinue = async (workflowInfo: {
     name: string;
     description: string;
   }) => {
-    setEditingWorkflow({
-      id: `workflow_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: workflowInfo.name,
-      description: workflowInfo.description,
-      nodes: [],
-      edges: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdBy: "当前用户",
-      isDraft: true,
-    });
-    setIsSetupModalOpen(false);
-    setViewMode("editor");
+    if (!currentWorkspace?.id) {
+      toast.error("工作空间信息不完整");
+      return;
+    }
+
+    try {
+      const newWorkflow = await createWorkflowMutation.mutateAsync({
+        workspaceId: currentWorkspace.id,
+        data: {
+          name: workflowInfo.name,
+          visibility: "PRIVATE",
+        },
+      });
+
+      // 转换为编辑器需要的格式
+      const editingData: Workflow = {
+        id: newWorkflow.id,
+        name: newWorkflow.name,
+        description: workflowInfo.description,
+        nodes: [],
+        edges: [],
+        createdAt: newWorkflow.createdAt,
+        updatedAt: newWorkflow.updatedAt,
+        createdBy: newWorkflow.creator?.user?.name || "当前用户",
+        isDraft: newWorkflow.status === "DRAFT",
+        version: newWorkflow.version,
+        assigneeMap: newWorkflow.assigneeMap || {},
+        totalSteps: newWorkflow.totalSteps,
+      };
+
+      setEditingWorkflow(editingData);
+      setIsSetupModalOpen(false);
+      setViewMode("editor");
+      toast.success("工作流创建成功");
+    } catch (error) {
+      console.error("创建工作流失败:", error);
+      toast.error("创建工作流失败");
+    }
   };
 
-  const handleEditWorkflow = (workflow: Workflow) => {
+  const handleEditWorkflow = (workflowResponse: WorkflowResponse) => {
+    // 转换API响应到编辑器格式
+    const workflow: Workflow = {
+      id: workflowResponse.id,
+      name: workflowResponse.name,
+      description: "", // 从JSON中获取或设置默认值
+      nodes: [],
+      edges: [],
+      createdAt: workflowResponse.createdAt,
+      updatedAt: workflowResponse.updatedAt,
+      createdBy: workflowResponse.creator?.user?.name || "未知用户",
+      isDraft: workflowResponse.status === "DRAFT",
+      version: workflowResponse.version,
+      assigneeMap: workflowResponse.assigneeMap || {},
+      totalSteps: workflowResponse.totalSteps,
+    };
+
+    // 如果有JSON数据，解析节点和边
+    if (workflowResponse.json) {
+      try {
+        const parsedData = JSON.parse(workflowResponse.json);
+        workflow.nodes = parsedData.nodes || [];
+        workflow.edges = parsedData.edges || [];
+        workflow.description = parsedData.description || "";
+      } catch (error) {
+        console.error("解析工作流JSON失败:", error);
+      }
+    }
+
     setEditingWorkflow(workflow);
     setViewMode("editor");
   };
 
-  const handleSaveWorkflow = (workflow: Workflow) => {
-    workflowStorage.save(workflow);
-    setWorkflows(workflowStorage.getAll());
-    setEditingWorkflow(null);
-    setViewMode("list");
-  };
+  const handleSaveWorkflow = async (workflow: Workflow) => {
+    if (!currentWorkspace?.id) {
+      toast.error("工作空间信息不完整");
+      return;
+    }
 
-  const handleDeleteWorkflow = (workflowId: string) => {
-    if (confirm("确定要删除这个工作流吗？")) {
-      workflowStorage.delete(workflowId);
-      setWorkflows(workflowStorage.getAll());
+    try {
+      await updateWorkflowJsonMutation.mutateAsync({
+        workspaceId: currentWorkspace.id,
+        workflowId: workflow.id,
+        workflowData: {
+          nodes: workflow.nodes,
+          edges: workflow.edges,
+          assigneeMap: workflow.assigneeMap,
+        },
+      });
+
+      setEditingWorkflow(null);
+      setViewMode("list");
+      toast.success("工作流保存成功");
+    } catch (error) {
+      console.error("保存工作流失败:", error);
+      toast.error("保存工作流失败");
     }
   };
+
+  const handleDeleteWorkflow = async (workflowId: string) => {
+    if (!currentWorkspace?.id) {
+      toast.error("工作空间信息不完整");
+      return;
+    }
+
+    if (confirm("确定要删除这个工作流吗？")) {
+      try {
+        await deleteWorkflowMutation.mutateAsync({
+          workspaceId: currentWorkspace.id,
+          workflowId,
+        });
+        toast.success("工作流删除成功");
+      } catch (error) {
+        console.error("删除工作流失败:", error);
+        toast.error("删除工作流失败");
+      }
+    }
+  };
+
+  const handleOpenSettings = (workflow: WorkflowResponse) => {
+    setSelectedWorkflow(workflow);
+    setIsSettingsModalOpen(true);
+  };
+
+  const handleCloseSettings = () => {
+    setSelectedWorkflow(null);
+    setIsSettingsModalOpen(false);
+  };
+
+  const handleWorkflowUpdate = () =>
+    // updatedWorkflow: WorkflowResponse
+    {
+      // 这里可以添加额外的处理逻辑，比如更新本地状态
+      // React Query会自动刷新数据
+    };
 
   const handleBackToList = () => {
     setEditingWorkflow(null);
     setViewMode("list");
   };
+
+  // 加载状态
+  if (isLoading) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <div className="flex items-center gap-2 text-app-text-secondary">
+          <RiLoader4Line className="w-5 h-5 animate-spin" />
+          加载中...
+        </div>
+      </div>
+    );
+  }
+
+  // 错误状态
+  if (error) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <div className="text-center">
+          <RiFlowChart className="w-12 h-12 text-app-text-muted mx-auto mb-3" />
+          <h3 className="text-base font-medium text-app-text-primary mb-1">
+            加载失败
+          </h3>
+          <p className="text-app-text-secondary text-sm">
+            {error.message || "获取工作流列表失败"}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (viewMode === "editor") {
     return (
@@ -111,25 +268,25 @@ export default function Workflows() {
           <div className="bg-app-content-bg rounded-lg border border-app-border p-3">
             <p className="text-xs text-app-text-secondary mb-1">总工作流</p>
             <p className="text-xl font-semibold text-app-text-primary">
-              {workflows.length}
+              {stats.total}
             </p>
           </div>
           <div className="bg-app-content-bg rounded-lg border border-app-border p-3">
             <p className="text-xs text-app-text-secondary mb-1">草稿</p>
             <p className="text-xl font-semibold text-app-text-primary">
-              {workflows.filter((w) => w.isDraft).length}
+              {stats.draft}
             </p>
           </div>
           <div className="bg-app-content-bg rounded-lg border border-app-border p-3">
-            <p className="text-xs text-app-text-secondary mb-1">最近更新</p>
+            <p className="text-xs text-app-text-secondary mb-1">已发布</p>
             <p className="text-xl font-semibold text-app-text-primary">
-              {workflows.length > 0 ? "今天" : "-"}
+              {stats.published}
             </p>
           </div>
           <div className="bg-app-content-bg rounded-lg border border-app-border p-3">
             <p className="text-xs text-app-text-secondary mb-1">使用中</p>
             <p className="text-xl font-semibold text-app-text-primary">
-              {workflows.filter((w) => w.tags?.includes("active")).length}
+              {stats.active}
             </p>
           </div>
         </div>
@@ -174,7 +331,9 @@ export default function Workflows() {
           ) : (
             <div className="divide-y divide-app-border">
               {workflows
-                .filter((workflow) => !showDraftsOnly || workflow.isDraft)
+                .filter(
+                  (workflow) => !showDraftsOnly || workflow.status === "DRAFT"
+                )
                 .map((workflow) => (
                   <div
                     key={workflow.id}
@@ -184,35 +343,27 @@ export default function Workflows() {
                       <div className="flex-1 min-w-0">
                         <h3 className="text-base font-semibold text-app-text-primary mb-1 truncate flex items-center gap-2">
                           {workflow.name}
-                          {workflow.isDraft && (
+                          {workflow.status === "DRAFT" && (
                             <span className="text-xs bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2 py-0.5 rounded">
                               草稿
                             </span>
                           )}
+                          {workflow.status === "PUBLISHED" && (
+                            <span className="text-xs bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-2 py-0.5 rounded">
+                              已发布
+                            </span>
+                          )}
                         </h3>
-                        <p className="text-app-text-secondary text-sm mb-2 line-clamp-2">
-                          {workflow.description}
-                        </p>
                         <div className="flex items-center gap-3 text-xs text-app-text-muted">
-                          <span>节点: {workflow.nodes.length}</span>
-                          <span>创建者: {workflow.createdBy}</span>
+                          <span>节点: {workflow.totalSteps}</span>
+                          <span>
+                            创建者: {workflow.creator?.user?.name || "未知"}
+                          </span>
                           <span>
                             创建时间:{" "}
                             {new Date(workflow.createdAt).toLocaleDateString()}
                           </span>
                         </div>
-                        {workflow.tags && workflow.tags.length > 0 && (
-                          <div className="flex gap-1.5 mt-2">
-                            {workflow.tags.map((tag, index) => (
-                              <span
-                                key={index}
-                                className="text-xs px-1.5 py-0.5 bg-app-button-hover text-app-text-secondary rounded"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
                       </div>
                       <div className="flex items-center gap-1 ml-3">
                         <button
@@ -221,6 +372,13 @@ export default function Workflows() {
                           title="查看/编辑"
                         >
                           <RiEyeLine className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleOpenSettings(workflow)}
+                          className="p-1.5 text-app-text-secondary hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition-colors"
+                          title="设置"
+                        >
+                          <RiSettings3Line className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleEditWorkflow(workflow)}
@@ -233,8 +391,13 @@ export default function Workflows() {
                           onClick={() => handleDeleteWorkflow(workflow.id)}
                           className="p-1.5 text-app-text-secondary hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                           title="删除"
+                          disabled={deleteWorkflowMutation.isPending}
                         >
-                          <RiDeleteBinLine className="w-4 h-4" />
+                          {deleteWorkflowMutation.isPending ? (
+                            <RiLoader4Line className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <RiDeleteBinLine className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
                     </div>
@@ -251,6 +414,16 @@ export default function Workflows() {
         onClose={() => setIsSetupModalOpen(false)}
         onContinue={handleSetupContinue}
       />
+
+      {/* Workflow Settings Modal */}
+      {selectedWorkflow && (
+        <WorkflowSettingsModal
+          isOpen={isSettingsModalOpen}
+          onClose={handleCloseSettings}
+          workflow={selectedWorkflow}
+          onUpdate={handleWorkflowUpdate}
+        />
+      )}
     </div>
   );
 }
