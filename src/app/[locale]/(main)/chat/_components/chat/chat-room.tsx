@@ -207,9 +207,7 @@ export function ChatRoom({ channelId, channel }: ChatRoomProps) {
         session.user?.user_metadata.name ||
         session.user?.email?.split("@")[0] ||
         "Anonymous",
-      userAvatar:
-        session.user?.user_metadata.avatar_url ||
-        "https://avatar.vercel.sh/luke",
+      userAvatar: session.user?.user_metadata.avatar_url,
       channelId: channelId,
       messageType: "text", // 新增：指定消息类型
     });

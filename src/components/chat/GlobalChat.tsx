@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { useChatStore } from "@/stores/chat";
-import { usePathname } from "next/navigation"; // 导入 usePathname
+import { usePathname, useSearchParams } from "next/navigation"; // 增加useSearchParams
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
 import { Card } from "@/components/ui/card";
 import { ChatSidebar } from "@/app/[locale]/(main)/chat/_components/sidebar/ChatSidebar";
@@ -94,8 +94,19 @@ ChatTopBar.displayName = "ChatTopBar";
 
 // MARK: 聊天内容组件
 const ChatContent = React.memo(() => {
-  const { currentChannelId } = useChatStore();
+  const { currentChannelId, setCurrentChannel } = useChatStore();
   const { session } = useAuth();
+  const searchParams = useSearchParams();
+
+  // 从URL参数中获取channelId
+  const channelIdFromUrl = searchParams.get("channelId");
+
+  // 当URL参数变化时更新当前频道
+  useEffect(() => {
+    if (channelIdFromUrl) {
+      setCurrentChannel(channelIdFromUrl);
+    }
+  }, [channelIdFromUrl, setCurrentChannel]);
 
   // 获取用户的频道列表
   const channels = useQuery(
@@ -165,60 +176,80 @@ ChatContent.displayName = "ChatContent";
 
 // MARK: 全局Chat组件
 // NOTE: 管理显示状态和缓存
-export const GlobalChat = React.memo(() => {
-  const { isVisible, showChat, hideChat, initializeChat, isInitialized } =
-    useChatStore();
-  const pathname = usePathname();
+interface GlobalChatProps {
+  initialChannelId?: string | null;
+}
 
-  // 根据路径控制Chat显示/隐藏
-  useEffect(() => {
-    const isChatRoute = pathname.includes("/chat");
+export const GlobalChat = React.memo(
+  ({ initialChannelId }: GlobalChatProps) => {
+    const {
+      isVisible,
+      showChat,
+      hideChat,
+      initializeChat,
+      isInitialized,
+      setCurrentChannel,
+    } = useChatStore();
+    const pathname = usePathname();
 
-    if (isChatRoute) {
-      showChat();
-    } else {
-      hideChat();
+    // 当initialChannelId变化时更新当前频道
+    useEffect(() => {
+      if (initialChannelId) {
+        console.log("GlobalChat - 设置初始频道ID:", initialChannelId);
+        setCurrentChannel(initialChannelId);
+      }
+    }, [initialChannelId, setCurrentChannel]);
+
+    // 根据路径控制Chat显示/隐藏
+    useEffect(() => {
+      const isChatRoute = pathname.includes("/chat");
+
+      if (isChatRoute) {
+        showChat();
+      } else {
+        hideChat();
+      }
+    }, [pathname, showChat, hideChat]);
+
+    // 预初始化Chat（在后台加载基础组件）
+    useEffect(() => {
+      if (!isInitialized) {
+        // 延迟初始化，避免阻塞主要内容
+        const timer = setTimeout(() => {
+          initializeChat();
+        }, 1000);
+
+        return () => clearTimeout(timer);
+      }
+    }, [isInitialized, initializeChat]);
+
+    // 如果还没有初始化且不可见，则不渲染
+    if (!isInitialized && !isVisible) {
+      return null;
     }
-  }, [pathname, showChat, hideChat]);
 
-  // 预初始化Chat（在后台加载基础组件）
-  useEffect(() => {
-    if (!isInitialized) {
-      // 延迟初始化，避免阻塞主要内容
-      const timer = setTimeout(() => {
-        initializeChat();
-      }, 1000);
+    return (
+      <ContextMenuWrapper>
+        {/* 适配原layout结构内的Chat布局 */}
+        <div className="h-full flex w-full overflow-hidden">
+          {/* 桌面端侧边栏 */}
+          <ChatSidebar />
 
-      return () => clearTimeout(timer);
-    }
-  }, [isInitialized, initializeChat]);
+          {/* 主要内容区域 */}
+          <Card className="flex-1 flex flex-col rounded-none pt-0">
+            {/* 顶部栏 */}
+            <ChatTopBar />
 
-  // 如果还没有初始化且不可见，则不渲染
-  if (!isInitialized && !isVisible) {
-    return null;
+            {/* 移动端侧边栏 */}
+            <MobileSidebar />
+
+            {/* 聊天内容区域 */}
+            <ChatContent />
+          </Card>
+        </div>
+      </ContextMenuWrapper>
+    );
   }
-
-  return (
-    <ContextMenuWrapper>
-      {/* 适配原layout结构内的Chat布局 */}
-      <div className="h-full flex w-full overflow-hidden">
-        {/* 桌面端侧边栏 */}
-        <ChatSidebar />
-
-        {/* 主要内容区域 */}
-        <Card className="flex-1 flex flex-col rounded-none pt-0">
-          {/* 顶部栏 */}
-          <ChatTopBar />
-
-          {/* 移动端侧边栏 */}
-          <MobileSidebar />
-
-          {/* 聊天内容区域 */}
-          <ChatContent />
-        </Card>
-      </div>
-    </ContextMenuWrapper>
-  );
-});
+);
 
 GlobalChat.displayName = "GlobalChat";

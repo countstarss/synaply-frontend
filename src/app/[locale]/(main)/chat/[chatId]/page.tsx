@@ -1,5 +1,7 @@
 "use client";
 
+import { CachedChatPage } from "@/components/cache/pages/CachedChatPage";
+
 export default function ChatPage() {
-  return <div className="flex flex-col h-[calc(100vh-74px)]">Chat</div>;
+  return <CachedChatPage />;
 }
