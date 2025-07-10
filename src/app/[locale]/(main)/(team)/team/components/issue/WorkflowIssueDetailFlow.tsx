@@ -32,15 +32,6 @@ const nodeTypes = {
   custom: CustomNode,
 };
 
-interface Comment {
-  id: string;
-  content: string;
-  author: string;
-  authorAvatar?: string;
-  createdAt: string;
-  mentions: string[];
-}
-
 export interface WorkflowIssueDetailProps {
   issue: Issue;
   isOpen: boolean;
@@ -78,26 +69,6 @@ export function WorkflowIssueDetailFlow({
   const [activeTab, setActiveTab] = useState<
     "history" | "discussion" | "records"
   >("history");
-
-  // 评论数据
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: "1",
-      content: "工作流进度看起来不错，继续保持。",
-      author: "张三",
-      authorAvatar: user?.user_metadata.avatar_url as string,
-      createdAt: "2024-01-10T10:30:00Z",
-      mentions: [],
-    },
-    {
-      id: "2",
-      content: "这个节点需要@李四 来确认一下技术方案。",
-      author: "王五",
-      authorAvatar: user?.user_metadata.avatar_url as string,
-      createdAt: "2024-01-10T11:15:00Z",
-      mentions: ["李四"],
-    },
-  ]);
 
   // MARK: TabContent
   // Records data
@@ -236,7 +207,7 @@ export function WorkflowIssueDetailFlow({
         </div>
 
         {/* Current Node Control */}
-        <div className="flex flex-col h-full gap-2 flex-1">
+        <div className="flex flex-col h-[calc(100vh-170px)] gap-2 flex-1">
           {currentNode && (
             <NodeStatusUpdate
               nodeId={currentNode.id}
@@ -252,7 +223,7 @@ export function WorkflowIssueDetailFlow({
           )}
 
           {/* Tabs for History and Discussion */}
-          <div className="flex-1 bg-app-content-bg rounded-lg border border-app-border flex flex-col">
+          <div className="flex-1 h-[calc(100vh-520px)] bg-app-content-bg rounded-lg border border-app-border flex flex-col">
             {/* Tab Header */}
             <div className="p-4 border-b border-app-border flex-shrink-0">
               <div className="flex items-center gap-4">
@@ -276,7 +247,7 @@ export function WorkflowIssueDetailFlow({
                   }`}
                 >
                   <RiFileTextLine className="w-4 h-4" />
-                  讨论 ({comments.length})
+                  讨论
                 </button>
                 <button
                   onClick={() => setActiveTab("records")}
@@ -293,33 +264,14 @@ export function WorkflowIssueDetailFlow({
             </div>
 
             {/* Tab Content */}
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-y-auto">
               {activeTab === "history" ? (
                 <HistoryTab activities={activities} />
               ) : activeTab === "discussion" ? (
                 <DiscussionTab
-                  comments={comments}
+                  issueId={issue.id}
+                  workspaceId={issue.workspaceId}
                   teamMembers={teamMembers}
-                  userAvatar={user?.user_metadata.avatar_url as string}
-                  userName={user?.user_metadata.name as string}
-                  onSendComment={(comment) => {
-                    // 提取@提及的用户
-                    const mentions =
-                      comment
-                        .match(/@(\w+)/g)
-                        ?.map((mention) => mention.substring(1)) || [];
-
-                    const newComment: Comment = {
-                      id: Date.now().toString(),
-                      content: comment,
-                      author: user?.user_metadata.name as string,
-                      authorAvatar: user?.user_metadata.avatar_url as string,
-                      createdAt: new Date().toISOString(),
-                      mentions,
-                    };
-
-                    setComments([...comments, newComment]);
-                  }}
                 />
               ) : (
                 <RecordsTab records={stepRecords} />

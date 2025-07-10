@@ -14,7 +14,7 @@ interface HistoryTabProps {
 export const HistoryTab: React.FC<HistoryTabProps> = ({ activities }) => {
   return (
     <div className="h-full p-4 overflow-y-auto">
-      <div className="space-y-3 h-[calc(700px)] overflow-y-auto">
+      <div className="space-y-3 overflow-y-auto">
         {activities.map((activity) => (
           <div key={activity.id} className="flex items-start gap-3 text-sm">
             <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
