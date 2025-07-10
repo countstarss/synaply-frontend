@@ -12,7 +12,8 @@ import {
 import { getIssues, Issue } from "@/lib/fetchers/issue";
 import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import IssueDetailModal from "@/components/shared/issue/NormalIssueDetail";
+import WorkflowIssueDetail from "../components/issue/WorkflowIssueDetail";
+import NormalIssueDetail from "@/components/shared/issue/NormalIssueDetail";
 
 export default function IssuesPage() {
   const { session } = useAuth();
@@ -170,8 +171,16 @@ export default function IssuesPage() {
         onCreated={fetchIssues} // 创建成功后重新获取列表
       />
 
-      {selectedIssue && (
-        <IssueDetailModal
+      {selectedIssue && selectedIssue.issueType === "WORKFLOW" && (
+        <WorkflowIssueDetail
+          issue={selectedIssue}
+          isOpen={!!selectedIssue}
+          onClose={() => setSelectedIssue(null)}
+          onUpdate={fetchIssues} // 更新成功后也重新获取列表
+        />
+      )}
+      {selectedIssue && selectedIssue.issueType === "NORMAL" && (
+        <NormalIssueDetail
           issue={selectedIssue}
           isOpen={!!selectedIssue}
           onClose={() => setSelectedIssue(null)}

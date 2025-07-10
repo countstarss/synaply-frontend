@@ -1,3 +1,5 @@
+import { IssuePriority, IssueStatus, IssueType } from "@/types/prisma";
+
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
 
@@ -12,12 +14,21 @@ export interface Issue {
   createdAt: string;
   updatedAt: string;
   dueDate?: string | null;
-  // FIXME: 待添加属性
-  assignee?: string | null;
-  status?: "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE" | null;
-  priority?: "URGENT" | "HIGH" | "NORMAL" | "LOW";
-  type?: "normal" | "workflow";
-  snapshot?: string | null;
+  // 基础属性
+  priority?: IssuePriority;
+
+  /**
+   * Issue 类型：NORMAL / WORKFLOW
+   */
+  issueType?: IssueType;
+
+  // 工作流相关字段
+  workflowId?: string;
+  totalSteps?: number;
+  currentStepId?: string;
+  currentStepIndex?: number;
+  currentStepStatus?: IssueStatus;
+  workflowSnapshot?: Record<string, unknown>;
 }
 
 // MARK: CreateDTO
@@ -27,6 +38,20 @@ export interface CreateIssueDto {
   workspaceId: string;
   directAssigneeId?: string;
   dueDate?: string;
+}
+
+export interface CreateWorkflowIssueDto {
+  title: string;
+  description?: string;
+  workspaceId: string;
+  dueDate?: string;
+
+  workflowId: string;
+  workflowSnapshot: string;
+  totalSteps: number;
+  currentStepId: string;
+  currentStepIndex: number;
+  currentStepStatus: IssueStatus;
 }
 
 /**
@@ -74,7 +99,28 @@ export async function createIssue(
   token: string
 ): Promise<Issue> {
   const { workspaceId } = issueData;
-  return fetchApi<Issue>(`/workspaces/${workspaceId}/issues`, token, {
+  return fetchApi<Issue>(
+    `/workspaces/${workspaceId}/issues/direct-assignee`,
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(issueData),
+    }
+  );
+}
+
+/**
+ * 创建基于工作流的 Issue
+ * @param issueData 创建工作流 Issue 所需的数据
+ * @param token Supabase JWT
+ * @returns Promise<Issue>
+ */
+export async function createWorkflowIssue(
+  issueData: CreateWorkflowIssueDto,
+  token: string
+): Promise<Issue> {
+  const { workspaceId } = issueData;
+  return fetchApi<Issue>(`/workspaces/${workspaceId}/issues/workflow`, token, {
     method: "POST",
     body: JSON.stringify(issueData),
   });

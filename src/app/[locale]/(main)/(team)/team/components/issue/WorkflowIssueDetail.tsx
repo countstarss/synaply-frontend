@@ -24,12 +24,10 @@ import {
   RiHistoryLine,
 } from "react-icons/ri";
 import CustomNode from "../workflow/CustomNode";
-import { WorkflowIssue, Issue } from "@/types/team";
-import {
-  workflowIssueStorage,
-  issueStorage,
-  workflowStorage,
-} from "../../utils/storage";
+// 使用新的 Issue 类型
+import { Issue } from "@/lib/fetchers/issue";
+import { WorkflowIssue } from "@/types/team"; // 仅复用内部结构，无需修改
+import { workflowIssueStorage } from "../../utils/storage";
 import { useAuth } from "@/context/AuthContext";
 import { useCurrentTeam, useTeamMembers } from "@/hooks/useTeam";
 
@@ -78,10 +76,10 @@ function NodeStatusUpdate({
   const [showCommentInput, setShowCommentInput] = useState(false);
 
   const statusOptions = [
-    { value: "todo", label: "待处理", color: "gray" },
-    { value: "in_progress", label: "进行中", color: "blue" },
-    { value: "almost", label: "接近完成", color: "yellow" },
-    { value: "done", label: "已完成", color: "green" },
+    { value: "TODO", label: "待处理", color: "gray" },
+    { value: "IN_PROGRESS", label: "进行中", color: "blue" },
+    { value: "AMOST_DONE", label: "接近完成", color: "yellow" },
+    { value: "DONE", label: "已完成", color: "green" },
   ];
 
   const handleStatusChange = (newStatus: string) => {
@@ -177,7 +175,7 @@ function NodeStatusUpdate({
           </button>
           <button
             onClick={onNext}
-            disabled={!canNext || currentStatus !== "done"}
+            disabled={!canNext || currentStatus !== "DONE"}
             className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded transition-colors disabled:cursor-not-allowed"
           >
             下一步
@@ -199,8 +197,49 @@ function WorkflowIssueDetailFlow({
   // 获取团队成员
   const { data: teamMembers = [] } = useTeamMembers(team?.id);
   const { user } = useAuth();
+  // 解析 workflowSnapshot
+  const initialWorkflowIssue = React.useMemo((): WorkflowIssue | null => {
+    if (!issue.workflowSnapshot) return null;
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const snapshot: Record<string, unknown> =
+      typeof issue.workflowSnapshot === "string"
+        ? (JSON.parse(issue.workflowSnapshot) as Record<string, unknown>)
+        : (issue.workflowSnapshot as Record<string, unknown>);
+
+    const nodes: Node[] = (snapshot as { nodes?: Node[] }).nodes || [];
+
+    // 构建默认的 nodeStatuses
+    const nodeStatuses: Record<string, { status: string }> = {};
+    nodes.forEach((n: Node, idx: number) => {
+      const status =
+        idx < (issue.currentStepIndex || 0)
+          ? "DONE"
+          : idx === (issue.currentStepIndex || 0)
+          ? (issue.currentStepStatus || "TODO").toLowerCase()
+          : "TODO";
+      nodeStatuses[n.id] = { status };
+    });
+
+    return {
+      id: issue.id,
+      title: issue.title,
+      description: issue.description || "",
+      workflowId: issue.workflowId || "",
+      workflowName: (snapshot as { name?: string }).name || "工作流",
+      priority: issue.priority || "NORMAL",
+      project: undefined,
+      createdAt: issue.createdAt,
+      updatedAt: issue.updatedAt,
+      deadline: issue.dueDate || undefined,
+      currentNodeId: issue.currentStepId || nodes[0]?.id,
+      nodeStatuses,
+      history: [],
+    } as unknown as WorkflowIssue;
+  }, [issue]);
+
   const [workflowIssue, setWorkflowIssue] = useState<WorkflowIssue | null>(
-    issue.workflowData || null
+    initialWorkflowIssue
   );
   const [activeTab, setActiveTab] = useState<"history" | "discussion">(
     "history"
@@ -229,10 +268,13 @@ function WorkflowIssueDetailFlow({
   const [cursorPosition, setCursorPosition] = useState(0);
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
 
-  const workflow = useMemo(() => {
-    if (!workflowIssue) return null;
-    return workflowStorage.getById(workflowIssue.workflowId);
-  }, [workflowIssue]);
+  // 直接使用 snapshot 作为 workflow 数据
+  const workflow = React.useMemo(() => {
+    if (!issue.workflowSnapshot) return null;
+    return typeof issue.workflowSnapshot === "string"
+      ? JSON.parse(issue.workflowSnapshot)
+      : issue.workflowSnapshot;
+  }, [issue.workflowSnapshot]);
 
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
@@ -364,12 +406,17 @@ function WorkflowIssueDetailFlow({
           ...workflowIssue.nodeStatuses,
           [nodeId]: {
             ...workflowIssue.nodeStatuses[nodeId],
-            status: status as "todo" | "in_progress" | "almost" | "done",
-            ...(status === "in_progress" &&
+            status: status as
+              | "TODO"
+              | "IN_PROGRESS"
+              | "AMOST_DONE"
+              | "BLOCKED"
+              | "DONE",
+            ...(status === "IN_PROGRESS" &&
             !workflowIssue.nodeStatuses[nodeId]?.startedAt
               ? { startedAt: new Date().toISOString() }
               : {}),
-            ...(status === "done"
+            ...(status === "DONE"
               ? { completedAt: new Date().toISOString() }
               : {}),
             ...(comment
@@ -399,12 +446,14 @@ function WorkflowIssueDetailFlow({
       workflowIssueStorage.save(updatedIssue);
 
       // Update main issue
-      const updatedMainIssue = {
+      const updatedMainIssue: Issue = {
         ...issue,
-        workflowData: updatedIssue,
         updatedAt: new Date().toISOString(),
-      };
-      issueStorage.save(updatedMainIssue);
+      } as Issue & { workflowData?: unknown };
+      // 本地缓存附带 workflowData 用于前端查看
+      (updatedMainIssue as unknown as { workflowData?: unknown }).workflowData =
+        updatedIssue;
+      // 本地缓存可选，如需持久化请启用保存
 
       onUpdate();
     },
@@ -438,12 +487,13 @@ function WorkflowIssueDetailFlow({
       setWorkflowIssue(updatedIssue);
       workflowIssueStorage.save(updatedIssue);
 
-      const updatedMainIssue = {
+      const updatedMainIssue: Issue = {
         ...issue,
-        workflowData: updatedIssue,
         updatedAt: new Date().toISOString(),
-      };
-      issueStorage.save(updatedMainIssue);
+      } as Issue & { workflowData?: unknown };
+      (updatedMainIssue as unknown as { workflowData?: unknown }).workflowData =
+        updatedIssue;
+      // issueStorage.save(updatedMainIssue);
 
       onUpdate();
     }
@@ -476,12 +526,14 @@ function WorkflowIssueDetailFlow({
       setWorkflowIssue(updatedIssue);
       workflowIssueStorage.save(updatedIssue);
 
-      const updatedMainIssue = {
+      const updatedMainIssuePrev: Issue = {
         ...issue,
-        workflowData: updatedIssue,
         updatedAt: new Date().toISOString(),
-      };
-      issueStorage.save(updatedMainIssue);
+      } as Issue & { workflowData?: unknown };
+      (
+        updatedMainIssuePrev as unknown as { workflowData?: unknown }
+      ).workflowData = updatedIssue;
+      // issueStorage.save(updatedMainIssuePrev);
 
       onUpdate();
     }
@@ -523,7 +575,6 @@ function WorkflowIssueDetailFlow({
             <div className="flex items-center gap-4 text-sm text-app-text-muted">
               <span>工作流: {workflowIssue.workflowName}</span>
               <span>优先级: {issue.priority}</span>
-              {issue.assignee && <span>负责人: {issue.assignee}</span>}
             </div>
           </div>
           <button
@@ -577,7 +628,7 @@ function WorkflowIssueDetailFlow({
           {currentNode && (
             <NodeStatusUpdate
               nodeId={currentNode.id}
-              currentStatus={currentNodeStatus?.status || "todo"}
+              currentStatus={currentNodeStatus?.status || "TODO"}
               assignee={currentNodeStatus?.assignee}
               onStatusUpdate={handleStatusUpdate}
               onNext={handleNext}

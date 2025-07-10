@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   RiAddLine,
   RiSearchLine,
@@ -13,10 +13,11 @@ import {
 } from "react-icons/ri";
 import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
 import NormalIssueDetail from "@/components/shared/issue/NormalIssueDetail";
-import { Issue } from "@/types/team";
-import { issueStorage } from "@/app/[locale]/(main)/(team)/team/utils/storage";
+import WorkflowIssueDetail from "../(team)/team/components/issue/WorkflowIssueDetail";
+import { Issue } from "@/lib/fetchers/issue";
+import { useIssues } from "@/hooks/useIssueApi";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import WorkflowIssueDetail from "../(team)/team/components/workflow/WorkflowIssueDetail";
+import { useQueryClient } from "@tanstack/react-query";
 
 const statusConfig = {
   TODO: {
@@ -28,6 +29,11 @@ const statusConfig = {
     label: "进行中",
     icon: <RiPlayCircleLine className="w-4 h-4" />,
     color: "text-blue-600 dark:text-blue-400",
+  },
+  AMOST_DONE: {
+    label: "接近完成",
+    icon: <RiCheckboxCircleLine className="w-4 h-4" />,
+    color: "text-orange-600 dark:text-orange-400",
   },
   BLOCKED: {
     label: "受阻",
@@ -65,31 +71,27 @@ const priorityConfig = {
 };
 
 export default function Issues() {
-  const { currentWorkspace } = useWorkspace();
   const [selectedView, setSelectedView] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [issues, setIssues] = useState<Issue[]>([]);
+  const { currentWorkspace } = useWorkspace();
+  const workspaceId = currentWorkspace?.id || "";
+  const { data: issues = [], isLoading: isLoadingIssues } =
+    useIssues(workspaceId);
+  const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isNormalDetailOpen, setIsNormalDetailOpen] = useState(false);
 
-  useEffect(() => {
-    loadIssues();
-  }, []);
-
-  const loadIssues = () => {
-    const storedIssues = issueStorage.getAll();
-    setIssues(storedIssues);
-  };
-
   const handleCreateIssue = () => {
-    loadIssues(); // Reload issues from storage
+    // 创建成功后，由 createIssue / createWorkflowIssue 的 mutation 成功回调已经触发了 invalidateQueries
+    // 这里手动再触发一次确保列表及时刷新
+    queryClient.invalidateQueries({ queryKey: ["issues", workspaceId] });
   };
 
   const handleViewIssue = (issue: Issue) => {
     setSelectedIssue(issue);
-    if (issue.type === "workflow") {
+    if (issue.issueType === "WORKFLOW") {
       setIsDetailModalOpen(true);
     } else {
       setIsNormalDetailOpen(true);
@@ -110,23 +112,12 @@ export default function Issues() {
     setIsNormalDetailOpen(false);
   };
 
-  const handleUpdateNormalIssue = (updatedIssue: Issue) => {
-    // 更新本地状态
-    setIssues(
-      issues.map((issue) =>
-        issue.id === updatedIssue.id ? updatedIssue : issue
-      )
-    );
-
-    // 更新存储
-    issueStorage.save(updatedIssue);
-
-    // 重新加载以确保数据同步
-    loadIssues();
+  const handleUpdateNormalIssue = () => {
+    queryClient.invalidateQueries({ queryKey: ["issues", workspaceId] });
   };
 
   const handleUpdateWorkflowIssue = () => {
-    loadIssues(); // Reload issues when workflow issue is updated
+    queryClient.invalidateQueries({ queryKey: ["issues", workspaceId] });
   };
 
   return (
@@ -194,7 +185,11 @@ export default function Issues() {
       {/* Issues List */}
       <div className="flex-1 overflow-y-auto">
         <div className="px-6 py-4">
-          {filteredIssues.length === 0 ? (
+          {isLoadingIssues ? (
+            <div className="text-center py-12 text-app-text-muted">
+              加载中...
+            </div>
+          ) : filteredIssues.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-app-text-muted mb-4">
                 {issues.length === 0 ? "还没有 Issue" : "没有找到匹配的 Issue"}
@@ -212,8 +207,12 @@ export default function Issues() {
           ) : (
             <div className="space-y-1">
               {filteredIssues.map((issue) => {
-                const status = statusConfig[issue.status];
-                const priority = priorityConfig[issue.priority];
+                const statusKey = (issue.currentStepStatus ||
+                  "TODO") as keyof typeof statusConfig;
+                const status = statusConfig[statusKey];
+                const priorityKey = (issue.priority ||
+                  "NORMAL") as keyof typeof priorityConfig;
+                const priority = priorityConfig[priorityKey];
 
                 return (
                   <div
@@ -230,7 +229,7 @@ export default function Issues() {
                         <h3 className="text-sm font-medium text-app-text-primary truncate">
                           {issue.title}
                         </h3>
-                        {issue.type === "workflow" && (
+                        {issue.issueType === "WORKFLOW" && (
                           <div className="flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 rounded text-xs">
                             <RiFlowChart className="w-3 h-3" />
                             <span>工作流</span>
@@ -241,16 +240,7 @@ export default function Issues() {
                         <span className="text-xs text-app-text-muted">
                           #{issue.id}
                         </span>
-                        {issue.project && (
-                          <span className="text-xs text-app-text-secondary">
-                            {issue.project}
-                          </span>
-                        )}
-                        {issue.type === "workflow" && issue.workflowData && (
-                          <span className="text-xs text-app-text-secondary">
-                            {issue.workflowData.workflowName}
-                          </span>
-                        )}
+                        {/* 可以在此处显示其他自定义字段 */}
                       </div>
                     </div>
 
@@ -260,13 +250,6 @@ export default function Issues() {
                       >
                         {priority.label}
                       </span>
-                      {issue.assignee && (
-                        <div className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                          <span className="text-xs text-white">
-                            {issue.assignee[0]}
-                          </span>
-                        </div>
-                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -291,12 +274,10 @@ export default function Issues() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCreated={handleCreateIssue}
-        workspaceType={currentWorkspace?.type || "PERSONAL"}
-        workspaceId={currentWorkspace?.id || ""}
       />
 
       {/* Workflow Issue Detail Modal */}
-      {selectedIssue && selectedIssue.type === "workflow" && (
+      {selectedIssue && selectedIssue.issueType === "WORKFLOW" && (
         <WorkflowIssueDetail
           issue={selectedIssue}
           isOpen={isDetailModalOpen}
@@ -306,7 +287,7 @@ export default function Issues() {
       )}
 
       {/* Normal Issue Detail Modal */}
-      {selectedIssue && selectedIssue.type !== "workflow" && (
+      {selectedIssue && selectedIssue.issueType === "NORMAL" && (
         <NormalIssueDetail
           issue={selectedIssue}
           isOpen={isNormalDetailOpen}

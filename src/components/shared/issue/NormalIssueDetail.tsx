@@ -8,7 +8,6 @@ import {
   RiSendPlaneLine,
   RiAtLine,
   RiCalendarLine,
-  RiUserLine,
   RiPriceTagLine,
   RiFileTextLine,
   RiTimeLine,
@@ -48,13 +47,6 @@ const teamMembers = [
   { id: "4", name: "赵六", email: "zhaoliu@example.com", avatar: "👩‍🔬" },
 ];
 
-const statusOptions = [
-  { value: "todo", label: "待处理", color: "bg-gray-100 text-gray-700" },
-  { value: "in_progress", label: "进行中", color: "bg-blue-100 text-blue-700" },
-  { value: "done", label: "已完成", color: "bg-green-100 text-green-700" },
-  { value: "canceled", label: "已取消", color: "bg-red-100 text-red-700" },
-];
-
 const priorityOptions = [
   { value: "low", label: "低", color: "bg-gray-100 text-gray-700" },
   { value: "medium", label: "中", color: "bg-yellow-100 text-yellow-700" },
@@ -80,14 +72,6 @@ export default function NormalIssueDetail({
       authorAvatar: user?.user_metadata.avatar_url as string,
       createdAt: "2024-01-10T10:30:00Z",
       mentions: [],
-    },
-    {
-      id: "2",
-      content: "我同意，@李四 你能帮忙看一下相关的技术方案吗？",
-      author: "王五",
-      authorAvatar: user?.user_metadata.avatar_url as string,
-      createdAt: "2024-01-10T11:15:00Z",
-      mentions: ["李四"],
     },
   ]);
   const [showMentionList, setShowMentionList] = useState(false);
@@ -185,13 +169,6 @@ export default function NormalIssueDetail({
     return new Date(dateString).toLocaleString("zh-CN");
   };
 
-  const getStatusOption = (status: string) => {
-    return (
-      statusOptions.find((option) => option.value === status) ||
-      statusOptions[0]
-    );
-  };
-
   const getPriorityOption = (priority: string) => {
     return (
       priorityOptions.find((option) => option.value === priority) ||
@@ -215,16 +192,6 @@ export default function NormalIssueDetail({
                   </h2>
                   <div className="flex items-center gap-4 text-sm text-app-text-muted">
                     <span>#{localIssue.id}</span>
-                    <span>
-                      状态: {getStatusOption(localIssue.status || "").label}
-                    </span>
-                    <span>
-                      优先级:{" "}
-                      {getPriorityOption(localIssue.priority || "").label}
-                    </span>
-                    {localIssue.assignee && (
-                      <span>负责人: {localIssue.assignee}</span>
-                    )}
                   </div>
                 </div>
                 <button
@@ -304,7 +271,7 @@ export default function NormalIssueDetail({
 
                       <div className="grid grid-cols-2 gap-4">
                         {/* 状态 */}
-                        <div
+                        {/* <div
                         // MARK: 状态
                         >
                           <label className="block text-xs font-medium text-app-text-secondary mb-1">
@@ -333,7 +300,7 @@ export default function NormalIssueDetail({
                               {getStatusOption(localIssue.status || "").label}
                             </button>
                           )}
-                        </div>
+                        </div> */}
                         {/* 优先级 */}
                         <div
                         // MARK: 优先级
@@ -360,7 +327,7 @@ export default function NormalIssueDetail({
                             <button
                               onClick={() => handleFieldEdit("priority")}
                               className={`w-full text-left px-2 py-1 rounded text-sm
-                        
+
                                hover:opacity-80 transition-opacity`}
                             >
                               {
@@ -371,7 +338,7 @@ export default function NormalIssueDetail({
                           )}
                         </div>
                         {/* 负责人 */}
-                        <div
+                        {/* <div
                         // MARK: 负责人
                         >
                           <label className="block text-xs font-medium text-app-text-secondary mb-1 flex items-center gap-1">
@@ -421,7 +388,7 @@ export default function NormalIssueDetail({
                               {localIssue.assignee || "未分配"}
                             </button>
                           )}
-                        </div>
+                        </div> */}
                         {/* 项目 */}
                         <div
                         // MARK: 项目

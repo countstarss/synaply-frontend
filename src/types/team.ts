@@ -9,7 +9,7 @@ export interface WorkflowNode {
     role: string;
     color: string;
     assignee?: string;
-    status?: "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
+    status?: "TODO" | "IN_PROGRESS" | "AMOST_DONE" | "BLOCKED" | "DONE";
     estimatedHours?: number;
     actualHours?: number;
     description?: string;
@@ -48,9 +48,7 @@ export interface WorkflowIssue {
   description: string;
   workflowId: string;
   workflowName: string;
-  status: "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
-  priority: "URGENT" | "HIGH" | "NORMAL" | "LOW";
-  assignee?: string;
+  status: "TODO" | "IN_PROGRESS" | "AMOST_DONE" | "BLOCKED" | "DONE";
   project?: string;
   createdAt: string;
   updatedAt: string;
@@ -59,7 +57,7 @@ export interface WorkflowIssue {
   nodeStatuses: Record<
     string,
     {
-      status: "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
+      status: "TODO" | "IN_PROGRESS" | "AMOST_DONE" | "BLOCKED" | "DONE";
       assignee?: string;
       startedAt?: string;
       completedAt?: string;
@@ -80,7 +78,7 @@ export interface Issue {
   id: string;
   title: string;
   description?: string;
-  status: "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
+  status: "TODO" | "IN_PROGRESS" | "AMOST_DONE" | "BLOCKED" | "DONE";
   priority: "URGENT" | "HIGH" | "NORMAL" | "LOW";
   assignee?: string;
   project?: string;

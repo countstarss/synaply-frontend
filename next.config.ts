@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
       dynamic: 30,
     },
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "googleusercontent.com",
+      },
+    ],
+  },
 };
 
 const withNextIntl = createNextIntlPlugin();
