@@ -185,18 +185,22 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
   // MARK: 更新节点详情
   const handleNodeDetailsUpdate = (
     nodeId: string,
-    updatedData: Partial<CustomNodeData>
+    updatedData: Partial<CustomNodeData>,
   ) => {
     setNodes((nds) =>
-      nds.map((n) => {
-        if (n.id === nodeId) {
-          return {
-            ...n,
-            data: { ...n.data, ...updatedData },
-          };
+      nds.map((node) => {
+        if (node.id !== nodeId) {
+          return node;
         }
-        return n;
-      })
+        // 创建一个包含更新数据的新节点对象，以确保 React Flow 检测到变化。
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            ...updatedData,
+          },
+        };
+      }),
     );
   };
 

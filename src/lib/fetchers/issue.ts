@@ -1,14 +1,23 @@
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
+
 // MARK: Issue
 export interface Issue {
   id: string;
   title: string;
-  description?: string | null;
+  description?: string;
   workspaceId: string;
   directAssigneeId?: string | null;
   creatorId: string;
   createdAt: string;
   updatedAt: string;
   dueDate?: string | null;
+  // FIXME: 待添加属性
+  assignee?: string | null;
+  status?: "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE" | null;
+  priority?: "URGENT" | "HIGH" | "NORMAL" | "LOW";
+  type?: "normal" | "workflow";
+  snapshot?: string | null;
 }
 
 // MARK: CreateDTO
@@ -32,7 +41,7 @@ async function fetchApi<T>(
   token: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const response = await fetch(`http://localhost:5678${endpoint}`, {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",

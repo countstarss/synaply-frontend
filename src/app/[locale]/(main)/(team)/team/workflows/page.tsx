@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import React, { useState } from "react";
 import {
   RiAddLine,
@@ -36,8 +37,9 @@ export default function Workflows() {
 
   // 获取当前工作空间
   const { currentWorkspace } = useWorkspace();
+  const pathname = usePathname(); // 获取当前路由路径
 
-  // 获取工作流数据
+  // MARK: 获取工作流数据
   const {
     data: workflows = [],
     isLoading,
@@ -45,7 +47,7 @@ export default function Workflows() {
   } = useWorkflows(currentWorkspace?.id);
   const { stats } = useWorkflowStats(currentWorkspace?.id);
 
-  // 变更操作
+  // MARK: 变更操作
   const createWorkflowMutation = useCreateWorkflow();
   const deleteWorkflowMutation = useDeleteWorkflow();
   const updateWorkflowJsonMutation = useUpdateWorkflowJson();
@@ -55,6 +57,7 @@ export default function Workflows() {
     setIsSetupModalOpen(true);
   };
 
+  // MARK: 创建工作流
   const handleSetupContinue = async (workflowInfo: {
     name: string;
     description: string;
@@ -64,12 +67,25 @@ export default function Workflows() {
       return;
     }
 
+    // MARK: 判断默认工作流可见
+    let defaultVisibility: "PRIVATE" | "TEAM_EDITABLE" = "PRIVATE";
+
+    if (currentWorkspace?.type === "PERSONAL") {
+      defaultVisibility = "PRIVATE";
+    } else if (currentWorkspace?.type === "TEAM") {
+      if (pathname.includes("/personal/workflows")) {
+        defaultVisibility = "PRIVATE";
+      } else if (pathname.includes("/team/workflows")) {
+        defaultVisibility = "TEAM_EDITABLE";
+      }
+    }
+
     try {
       const newWorkflow = await createWorkflowMutation.mutateAsync({
         workspaceId: currentWorkspace.id,
         data: {
           name: workflowInfo.name,
-          visibility: "PRIVATE",
+          visibility: defaultVisibility, // 使用动态设置的可见性
         },
       });
 
@@ -132,6 +148,7 @@ export default function Workflows() {
     setViewMode("editor");
   };
 
+  // MARK: 保存工作流
   const handleSaveWorkflow = async (workflow: Workflow) => {
     if (!currentWorkspace?.id) {
       toast.error("工作空间信息不完整");
@@ -151,13 +168,13 @@ export default function Workflows() {
 
       setEditingWorkflow(null);
       setViewMode("list");
-      toast.success("工作流保存成功");
     } catch (error) {
       console.error("保存工作流失败:", error);
       toast.error("保存工作流失败");
     }
   };
 
+  // MARK: 删除工作流
   const handleDeleteWorkflow = async (workflowId: string) => {
     if (!currentWorkspace?.id) {
       toast.error("工作空间信息不完整");
@@ -178,16 +195,19 @@ export default function Workflows() {
     }
   };
 
+  // MARK: 打开工作流设置
   const handleOpenSettings = (workflow: WorkflowResponse) => {
     setSelectedWorkflow(workflow);
     setIsSettingsModalOpen(true);
   };
 
+  // MARK: 关闭工作流设置
   const handleCloseSettings = () => {
     setSelectedWorkflow(null);
     setIsSettingsModalOpen(false);
   };
 
+  // MARK: 更新工作流
   const handleWorkflowUpdate = () =>
     // updatedWorkflow: WorkflowResponse
     {
@@ -195,6 +215,7 @@ export default function Workflows() {
       // React Query会自动刷新数据
     };
 
+  // MARK: 返回工作流列表
   const handleBackToList = () => {
     setEditingWorkflow(null);
     setViewMode("list");

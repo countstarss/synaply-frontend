@@ -9,7 +9,7 @@ export interface CustomNodeData {
   color: string;
   icon?: string;
   assignee?: string;
-  status?: "todo" | "in_progress" | "almost" | "done";
+  status?: "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
   isCurrentNode?: boolean;
   description?: string;
   estimatedHours?: number;
@@ -129,7 +129,7 @@ function CustomNode({ data, isConnectable }: NodeProps<CustomNodeData>) {
       {data.status && (
         <div
           className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white dark:border-app-content-bg ${
-            statusColors[data.status]
+            statusColors[data.status.toLowerCase() as keyof typeof statusColors]
           }`}
           title={`状态: ${data.status}`}
         />

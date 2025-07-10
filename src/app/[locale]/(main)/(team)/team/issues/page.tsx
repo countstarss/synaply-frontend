@@ -12,7 +12,7 @@ import {
 import { getIssues, Issue } from "@/lib/fetchers/issue";
 import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
 import { useWorkspace } from "@/hooks/useWorkspace";
-// import IssueDetailModal from '@/components/shared/issue/IssueDetailModal'; // 假设有一个统一的详情模态框
+import IssueDetailModal from "@/components/shared/issue/NormalIssueDetail";
 
 export default function IssuesPage() {
   const { session } = useAuth();
@@ -24,11 +24,12 @@ export default function IssuesPage() {
   const { currentWorkspace } = useWorkspace();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  // const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
   const fetchIssues = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    if (!currentWorkspace?.id) return;
 
     try {
       if (!session?.access_token) throw new Error("认证失败");
@@ -99,7 +100,7 @@ export default function IssuesPage() {
           <div
             key={issue.id}
             className="group flex items-center gap-4 px-4 py-3 hover:bg-app-button-hover rounded-lg cursor-pointer transition-colors"
-            // onClick={() => setSelectedIssue(issue)} // 点击打开详情
+            onClick={() => setSelectedIssue(issue)} // 点击打开详情
           >
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-medium text-app-text-primary truncate">
@@ -169,14 +170,14 @@ export default function IssuesPage() {
         onCreated={fetchIssues} // 创建成功后重新获取列表
       />
 
-      {/* {selectedIssue && (
+      {selectedIssue && (
         <IssueDetailModal
           issue={selectedIssue}
           isOpen={!!selectedIssue}
           onClose={() => setSelectedIssue(null)}
           onUpdate={fetchIssues} // 更新成功后也重新获取列表
         />
-      )} */}
+      )}
     </div>
   );
 }

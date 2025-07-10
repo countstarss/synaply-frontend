@@ -1,6 +1,6 @@
 import { CreateTeamDto, InviteMemberDto } from "@/api";
 
-// Team相关的API fetchers
+// MARK: - ✅团队
 export interface Team {
   id: string;
   name: string;
@@ -10,6 +10,8 @@ export interface Team {
     id: string;
     name: string;
     type: string;
+    user_id: string;
+    team_id: string;
   };
   members: Array<{
     id: string;
@@ -17,6 +19,7 @@ export interface Team {
     user: {
       id: string;
       email: string;
+      user_id: string;
     };
   }>;
 }

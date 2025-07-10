@@ -139,6 +139,7 @@ export default function WorkflowSettingsModal({
               className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="PRIVATE">私有</option>
+              <option value="PUBLIC">公开</option>
               <option value="TEAM_READONLY">团队只读</option>
               <option value="TEAM_EDITABLE">团队可编辑</option>
             </select>

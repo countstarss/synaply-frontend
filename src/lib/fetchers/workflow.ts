@@ -3,22 +3,28 @@ import { CreateWorkflowDto, UpdateWorkflowDto } from "@/api";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
 
+// MARK: - ✅工作流
 export interface WorkflowResponse {
   id: string;
   name: string;
   workspaceId: string;
   createdAt: string;
   updatedAt: string;
+
   status: string;
   creatorId: string;
+
   visibility: string;
   assigneeMap?: Record<string, string>;
   json?: string;
+
   totalSteps: number;
+  version: string;
+
   currentStepIndex: number;
   currentStepStatus: string;
   isSystemTemplate: boolean;
-  version: string;
+
   creator?: {
     id: string;
     user: {
@@ -209,8 +215,8 @@ export const updateWorkflowJson = async (
       },
       body: JSON.stringify({
         json: JSON.stringify(workflowData),
-        totalSteps: workflowData.nodes.length,
-        assigneeMap: workflowData.assigneeMap,
+        // totalSteps: workflowData.nodes.length,
+        // assigneeMap: workflowData.assigneeMap,
       }),
     }
   );

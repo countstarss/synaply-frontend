@@ -14,7 +14,7 @@ import {
   RiTimeLine,
   RiCheckLine,
 } from "react-icons/ri";
-import { Issue } from "@/types/team";
+import { Issue } from "@/lib/fetchers/issue";
 import { useAuth } from "@/context/AuthContext";
 
 // 扩展的 Issue 接口，支持个人空间的额外字段
@@ -216,10 +216,11 @@ export default function NormalIssueDetail({
                   <div className="flex items-center gap-4 text-sm text-app-text-muted">
                     <span>#{localIssue.id}</span>
                     <span>
-                      状态: {getStatusOption(localIssue.status).label}
+                      状态: {getStatusOption(localIssue.status || "").label}
                     </span>
                     <span>
-                      优先级: {getPriorityOption(localIssue.priority).label}
+                      优先级:{" "}
+                      {getPriorityOption(localIssue.priority || "").label}
                     </span>
                     {localIssue.assignee && (
                       <span>负责人: {localIssue.assignee}</span>
@@ -294,7 +295,8 @@ export default function NormalIssueDetail({
                       </div>
                     </div>
 
-                    {/* MARK: Issue属性 */}
+                    {/* MARK: Issue属性
+                     */}
                     <div className="space-y-4">
                       <h4 className="text-sm font-medium text-app-text-primary border-b border-app-border pb-2">
                         Issue 属性
@@ -302,13 +304,15 @@ export default function NormalIssueDetail({
 
                       <div className="grid grid-cols-2 gap-4">
                         {/* 状态 */}
-                        <div className="">
+                        <div
+                        // MARK: 状态
+                        >
                           <label className="block text-xs font-medium text-app-text-secondary mb-1">
                             状态
                           </label>
                           {editingField === "status" ? (
                             <select
-                              value={localIssue.status}
+                              value={localIssue.status || ""}
                               onChange={(e) =>
                                 handleFieldSave("status", e.target.value)
                               }
@@ -326,12 +330,14 @@ export default function NormalIssueDetail({
                               onClick={() => handleFieldEdit("status")}
                               className={`w-full text-left px-2 py-1 rounded text-sm hover:opacity-80 transition-opacity`}
                             >
-                              {getStatusOption(localIssue.status).label}
+                              {getStatusOption(localIssue.status || "").label}
                             </button>
                           )}
                         </div>
                         {/* 优先级 */}
-                        <div>
+                        <div
+                        // MARK: 优先级
+                        >
                           <label className="block text-xs font-medium text-app-text-secondary mb-1">
                             优先级
                           </label>
@@ -357,12 +363,17 @@ export default function NormalIssueDetail({
                         
                                hover:opacity-80 transition-opacity`}
                             >
-                              {getPriorityOption(localIssue.priority).label}
+                              {
+                                getPriorityOption(localIssue.priority || "")
+                                  .label
+                              }
                             </button>
                           )}
                         </div>
                         {/* 负责人 */}
-                        <div>
+                        <div
+                        // MARK: 负责人
+                        >
                           <label className="block text-xs font-medium text-app-text-secondary mb-1 flex items-center gap-1">
                             <RiUserLine className="w-3 h-3" />
                             负责人
@@ -387,7 +398,7 @@ export default function NormalIssueDetail({
                                   onClick={() =>
                                     handleFieldSave(
                                       "assignee",
-                                      localIssue.assignee
+                                      localIssue.assignee || ""
                                     )
                                   }
                                   className="px-2 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
@@ -412,7 +423,9 @@ export default function NormalIssueDetail({
                           )}
                         </div>
                         {/* 项目 */}
-                        <div>
+                        <div
+                        // MARK: 项目
+                        >
                           <label className="block text-xs font-medium text-app-text-secondary mb-1 flex items-center gap-1">
                             <RiPriceTagLine className="w-3 h-3" />
                             项目
@@ -420,12 +433,13 @@ export default function NormalIssueDetail({
                           {editingField === "project" ? (
                             <div className="flex flex-row gap-2">
                               <input
+                                // FIXME: 添加项目属性
                                 type="text"
-                                value={localIssue.project || ""}
-                                onChange={(e) =>
+                                value={"Synaply"}
+                                onChange={() =>
                                   setLocalIssue({
                                     ...localIssue,
-                                    project: e.target.value,
+                                    // project: e.target.value,
                                   })
                                 }
                                 className="w-full px-2 py-1 border border-app-border rounded bg-app-bg text-app-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -435,10 +449,7 @@ export default function NormalIssueDetail({
                               <div className="flex gap-1">
                                 <button
                                   onClick={() =>
-                                    handleFieldSave(
-                                      "project",
-                                      localIssue.project
-                                    )
+                                    handleFieldSave("project", "Synaply")
                                   }
                                   className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
                                 >
@@ -457,13 +468,15 @@ export default function NormalIssueDetail({
                               onClick={() => handleFieldEdit("project")}
                               className="w-full text-left px-2 py-1 text-sm text-app-text-primary hover:bg-app-button-hover rounded transition-colors"
                             >
-                              {localIssue.project || "未设置"}
+                              {"Synaply"}
                             </button>
                           )}
                         </div>
                         {/* 截止时间 (如果有) */}
                         {(localIssue as ExtendedIssue).deadline && (
-                          <div>
+                          <div
+                          // MARK: 截止时间
+                          >
                             <label className="block text-xs font-medium text-app-text-secondary mb-1 flex items-center gap-1">
                               <RiCalendarLine className="w-3 h-3" />
                               截止时间

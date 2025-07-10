@@ -1,12 +1,15 @@
-// Workspace相关的API fetchers
+// MARK: - ✅工作区
 export interface Workspace {
   id: string;
   name: string;
   type: "PERSONAL" | "TEAM";
+
   createdAt: string;
   updatedAt: string;
+
   userId?: string;
   teamId?: string;
+
   user?: {
     id: string;
     email: string;
