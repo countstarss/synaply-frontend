@@ -77,6 +77,18 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
                       href={item.href}
                     />
                   ))}
+                  <SidebarSection title="Team">
+                    <CreateTeamDialog>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex items-center gap-2 text-sm w-full justify-start px-3 py-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span>创建团队</span>
+                      </Button>
+                    </CreateTeamDialog>
+                  </SidebarSection>
                 </div>
               ) : (
                 /* MARK: TEAM 导航

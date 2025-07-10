@@ -1,123 +1,85 @@
-import { Issue } from "@/types/team";
-import { Api, CreateIssueDto } from "@/api";
-import {
-  Issue as PrismaIssue,
-  VisibilityType,
-  // Comment,
-  // IssueDependency,
-} from "@/types/prisma";
-import {
-  prismaToTeamIssue,
-  teamToPrismaIssue,
-} from "@/lib/adapters/typeAdapters";
+// MARK: Issue
+export interface Issue {
+  id: string;
+  title: string;
+  description?: string | null;
+  workspaceId: string;
+  directAssigneeId?: string | null;
+  creatorId: string;
+  createdAt: string;
+  updatedAt: string;
+  dueDate?: string | null;
+}
 
-// 创建API实例
-const createApi = (token: string) => {
-  const api = new Api({
-    baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL || "",
-    securityWorker: () => ({
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }),
-  });
-  api.setSecurityData(token);
-  return api;
-};
+// MARK: CreateDTO
+export interface CreateIssueDto {
+  title: string;
+  description?: string;
+  workspaceId: string;
+  directAssigneeId?: string;
+  dueDate?: string;
+}
 
 /**
- * 创建普通Issue
+ * 统一的 API 请求函数
+ * @param endpoint API 路径
+ * @param token Supabase JWT
+ * @param options 请求选项 (method, body, etc.)
+ * @returns Promise<T>
+ */
+async function fetchApi<T>(
+  endpoint: string,
+  token: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const response = await fetch(`http://localhost:5678${endpoint}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || "API 请求失败");
+  }
+
+  // 对于 204 No Content，直接返回 null
+  if (response.status === 204) {
+    return null as T;
+  }
+
+  return response.json();
+}
+
+/**
+ * 创建新的 Issue (简化版)
+ * @param issueData 创建 Issue 所需的数据
+ * @param token Supabase JWT
+ * @returns Promise<Issue>
  */
 export async function createIssue(
-  issue: Partial<Issue>,
-  token: string,
-  workspaceId: string
+  issueData: CreateIssueDto,
+  token: string
 ): Promise<Issue> {
-  const api = createApi(token);
-  const backendIssue = teamToPrismaIssue(issue);
-
-  const issueData: CreateIssueDto = {
-    title: backendIssue.title || "无标题",
-    description: backendIssue.description || "",
-    workspaceId,
-    projectId: backendIssue.projectId || undefined,
-    status: backendIssue.status,
-    priority: backendIssue.priority,
-    directAssigneeId: backendIssue.directAssigneeId || undefined,
-    dueDate: backendIssue.dueDate || undefined,
-    startDate: undefined, // 使用后端默认值
-    visibility: VisibilityType.PRIVATE, // 默认私有
-  };
-
-  const response = await api.workspaces.issueControllerCreate(
-    workspaceId,
-    issueData
-  );
-
-  if (!response.ok) {
-    throw new Error("创建Issue失败");
-  }
-
-  return prismaToTeamIssue(response.data! as PrismaIssue);
+  const { workspaceId } = issueData;
+  return fetchApi<Issue>(`/workspaces/${workspaceId}/issues`, token, {
+    method: "POST",
+    body: JSON.stringify(issueData),
+  });
 }
 
 /**
- * 创建工作流Issue
+ * 获取指定工作空间下的所有 Issue (简化版)
+ * @param workspaceId 工作空间 ID
+ * @param token Supabase JWT
+ * @returns Promise<Issue[]>
  */
-export async function createWorkflowIssue(
-  issue: Partial<Issue>,
-  workflowId: string,
-  token: string,
-  workspaceId: string
-): Promise<Issue> {
-  const api = createApi(token);
-  const backendIssue = teamToPrismaIssue(issue);
-
-  const issueData: CreateIssueDto = {
-    title: backendIssue.title || "无标题",
-    description: backendIssue.description || "",
-    workspaceId,
-    projectId: backendIssue.projectId || undefined,
-    workflowId,
-    currentStepId: backendIssue.currentStepId || undefined,
-    status: backendIssue.status,
-    priority: backendIssue.priority,
-    directAssigneeId: backendIssue.directAssigneeId || undefined,
-    dueDate: backendIssue.dueDate || undefined,
-    startDate: undefined, // 使用后端默认值
-    visibility: VisibilityType.PRIVATE, // 默认私有
-  };
-
-  const response = await api.workspaces.issueControllerCreate(
-    workspaceId,
-    issueData
-  );
-
-  if (!response.ok) {
-    throw new Error("创建工作流Issue失败");
-  }
-
-  return prismaToTeamIssue(response.data! as PrismaIssue);
-}
-
-/**
- * 获取Issue列表
- */
-export async function fetchIssues(
-  token: string,
+export async function getIssues(
   workspaceId: string,
-  projectId?: string
+  token: string
 ): Promise<Issue[]> {
-  const api = createApi(token);
-  const response = await api.workspaces.issueControllerFindAll(
-    workspaceId,
-    projectId ? { projectId } : ({} as { projectId: string })
-  );
-
-  if (!response.ok) {
-    return [];
-  }
-
-  const issues = response.data! as PrismaIssue[];
-  return issues.map((issue) => prismaToTeamIssue(issue));
+  return fetchApi<Issue[]>(`/workspaces/${workspaceId}/issues`, token);
 }

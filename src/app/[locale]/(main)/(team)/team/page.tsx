@@ -98,12 +98,12 @@ export default function Team() {
     const workflows = workflowStorage.getAll();
 
     const inProgressIssues = issues.filter(
-      (issue) => issue.status === "in_progress"
+      (issue) => issue.status === "IN_PROGRESS"
     ).length;
     const weeklyCompleted = issues.filter((issue) => {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
-      return issue.status === "done" && new Date(issue.updatedAt) > weekAgo;
+      return issue.status === "DONE" && new Date(issue.updatedAt) > weekAgo;
     }).length;
 
     setStats({
