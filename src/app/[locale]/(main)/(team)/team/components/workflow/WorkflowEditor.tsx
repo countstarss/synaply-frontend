@@ -164,7 +164,9 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
             ? nodeType.color
             : getColorClasses(nodeType.color),
           icon: nodeType.icon,
-          assignee: nodeType.assignee, // 保留预设的负责人
+          assigneeId: nodeType.assigneeId,
+          assigneeName: nodeType.assigneeName,
+          assignee: nodeType.assigneeName,
         },
       };
 
@@ -185,7 +187,7 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
   // MARK: 更新节点详情
   const handleNodeDetailsUpdate = (
     nodeId: string,
-    updatedData: Partial<CustomNodeData>,
+    updatedData: Partial<CustomNodeData>
   ) => {
     setNodes((nds) =>
       nds.map((node) => {
@@ -200,7 +202,7 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
             ...updatedData,
           },
         };
-      }),
+      })
     );
   };
 

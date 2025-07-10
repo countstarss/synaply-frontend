@@ -5,70 +5,20 @@ import {
   RiAddLine,
   RiSearchLine,
   RiFilter3Line,
-  RiCheckboxCircleLine,
-  RiRadioButtonLine,
-  RiPlayCircleLine,
   RiFlowChart,
-  RiEyeLine,
+  RiEdit2Line,
+  RiDeleteBinLine,
 } from "react-icons/ri";
 import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
 import NormalIssueDetail from "@/components/shared/issue/NormalIssueDetail";
 import WorkflowIssueDetail from "../(team)/team/components/issue/WorkflowIssueDetail";
 import { Issue } from "@/lib/fetchers/issue";
 import { useIssues } from "@/hooks/useIssueApi";
+import { useDeleteIssue } from "@/hooks/useIssueApi";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useQueryClient } from "@tanstack/react-query";
-
-const statusConfig = {
-  TODO: {
-    label: "待处理",
-    icon: <RiRadioButtonLine className="w-4 h-4" />,
-    color: "text-gray-500 dark:text-gray-400",
-  },
-  IN_PROGRESS: {
-    label: "进行中",
-    icon: <RiPlayCircleLine className="w-4 h-4" />,
-    color: "text-blue-600 dark:text-blue-400",
-  },
-  AMOST_DONE: {
-    label: "接近完成",
-    icon: <RiCheckboxCircleLine className="w-4 h-4" />,
-    color: "text-orange-600 dark:text-orange-400",
-  },
-  BLOCKED: {
-    label: "受阻",
-    icon: <RiEyeLine className="w-4 h-4" />,
-    color: "text-red-600 dark:text-red-400",
-  },
-  DONE: {
-    label: "已完成",
-    icon: <RiCheckboxCircleLine className="w-4 h-4" />,
-    color: "text-green-600 dark:text-green-400",
-  },
-};
-
-const priorityConfig = {
-  URGENT: {
-    label: "紧急",
-    color:
-      "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800",
-  },
-  HIGH: {
-    label: "高",
-    color:
-      "bg-orange-100 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800",
-  },
-  NORMAL: {
-    label: "中",
-    color:
-      "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800",
-  },
-  LOW: {
-    label: "低",
-    color:
-      "bg-gray-100 dark:bg-gray-900/20 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-800",
-  },
-};
+import { priorityConfig, statusConfig } from "@/lib/data/issueConfig";
+import { toast } from "sonner";
 
 export default function Issues() {
   const [selectedView, setSelectedView] = useState("all");
@@ -78,6 +28,7 @@ export default function Issues() {
   const { data: issues = [], isLoading: isLoadingIssues } =
     useIssues(workspaceId);
   const queryClient = useQueryClient();
+  const deleteIssueMutation = useDeleteIssue();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -118,6 +69,24 @@ export default function Issues() {
 
   const handleUpdateWorkflowIssue = () => {
     queryClient.invalidateQueries({ queryKey: ["issues", workspaceId] });
+  };
+
+  const handleDeleteIssue = (issue: Issue) => {
+    if (confirm(`确定要删除该 Issue: ${issue.title} ？删除后不可恢复。`)) {
+      deleteIssueMutation.mutate(
+        { workspaceId, issueId: issue.id },
+        {
+          onSuccess: () => {
+            toast.success("已删除 Issue");
+          },
+          onError: (err: unknown) => {
+            toast.error(
+              err instanceof Error ? err.message : "删除 Issue 失败，请重试"
+            );
+          },
+        }
+      );
+    }
   };
 
   return (
@@ -250,16 +219,28 @@ export default function Issues() {
                       >
                         {priority.label}
                       </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewIssue(issue);
-                        }}
-                        className="p-1 opacity-0 group-hover:opacity-100 hover:bg-app-content-bg rounded transition-all"
-                        title="查看详情"
-                      >
-                        <RiEyeLine className="w-4 h-4 text-app-text-secondary" />
-                      </button>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewIssue(issue);
+                          }}
+                          className="p-1 hover:bg-app-content-bg rounded transition-colors"
+                          title="查看 / 编辑"
+                        >
+                          <RiEdit2Line className="w-4 h-4 text-app-text-secondary" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteIssue(issue);
+                          }}
+                          className="p-1 hover:bg-red-100 dark:hover:bg-red-900/20 rounded transition-colors"
+                          title="删除"
+                        >
+                          <RiDeleteBinLine className="w-4 h-4 text-red-600 dark:text-red-400" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );

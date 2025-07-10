@@ -6,11 +6,14 @@ import {
   createIssue,
   createWorkflowIssue,
   getIssues,
+  updateIssue,
+  deleteIssue,
+  Issue,
 } from "@/lib/fetchers/issue";
 import { IssueStatus } from "@/types/prisma";
 
 /**
- * 获取工作空间下的所有Issue
+ * MARK: 获取工作空间Issue
  */
 export const useIssues = (workspaceId: string) => {
   const { session } = useAuth();
@@ -26,7 +29,7 @@ export const useIssues = (workspaceId: string) => {
 };
 
 /**
- * 创建普通Issue
+ * MARK: 创建普通Issue
  */
 export const useCreateIssue = () => {
   const { session } = useAuth();
@@ -63,7 +66,7 @@ export const useCreateIssue = () => {
 };
 
 /**
- * 创建基于工作流的Issue
+ * MARK: 基于工作流创建
  */
 export const useCreateWorkflowIssue = () => {
   const { session } = useAuth();
@@ -128,6 +131,65 @@ export const useCreateWorkflowIssue = () => {
       };
 
       return createWorkflowIssue(issueData, session.access_token);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["issues", variables.workspaceId],
+      });
+    },
+  });
+};
+
+/**
+ * MARK: 更新 Issue （PATCH）
+ */
+export const useUpdateIssue = () => {
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      workspaceId,
+      issueId,
+      data,
+    }: {
+      workspaceId: string;
+      issueId: string;
+      data: Partial<Issue>;
+    }) => {
+      if (!session?.access_token) {
+        throw new Error("未授权");
+      }
+
+      return updateIssue(workspaceId, issueId, data, session.access_token);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["issues", variables.workspaceId],
+      });
+    },
+  });
+};
+
+/**
+ * MARK: 删除 Issue
+ */
+export const useDeleteIssue = () => {
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      workspaceId,
+      issueId,
+    }: {
+      workspaceId: string;
+      issueId: string;
+    }) => {
+      if (!session?.access_token) {
+        throw new Error("未授权");
+      }
+      await deleteIssue(workspaceId, issueId, session.access_token);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({

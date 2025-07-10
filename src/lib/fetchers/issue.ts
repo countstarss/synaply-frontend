@@ -138,3 +138,35 @@ export async function getIssues(
 ): Promise<Issue[]> {
   return fetchApi<Issue[]>(`/workspaces/${workspaceId}/issues`, token);
 }
+
+/**
+ * 更新 Issue 信息（PATCH 部分字段）
+ */
+export async function updateIssue(
+  workspaceId: string,
+  issueId: string,
+  data: Partial<Issue>,
+  token: string
+): Promise<Issue> {
+  return fetchApi<Issue>(
+    `/workspaces/${workspaceId}/issues/${issueId}`,
+    token,
+    {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+/**
+ * 删除 Issue
+ */
+export async function deleteIssue(
+  workspaceId: string,
+  issueId: string,
+  token: string
+): Promise<void> {
+  await fetchApi<void>(`/workspaces/${workspaceId}/issues/${issueId}`, token, {
+    method: "DELETE",
+  });
+}

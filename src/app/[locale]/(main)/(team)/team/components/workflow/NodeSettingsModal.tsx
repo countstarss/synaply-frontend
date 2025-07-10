@@ -35,9 +35,7 @@ export default function NodeSettingsModal({
 }: NodeSettingsModalProps) {
   const [customNodes, setCustomNodes] = useState<NodeType[]>([]);
   const [editingNode, setEditingNode] = useState<NodeType | null>(null);
-  const [newNodeForm, setNewNodeForm] = useState<
-    Partial<NodeType & { assignee: string }>
-  >({});
+  const [newNodeForm, setNewNodeForm] = useState<Partial<NodeType>>({});
 
   // MARK: 获取团队成员
   const { team } = useCurrentTeam();
@@ -62,7 +60,16 @@ export default function NodeSettingsModal({
   };
 
   const handleAssigneeChange = (value: string) => {
-    setNewNodeForm((prev) => ({ ...prev, assignee: value }));
+    // 通过 user.id 查找成员，获取展示用名称
+    const member = teamMembers.find((m) => m.user.id === value);
+    const displayName =
+      member?.user.name || member?.user.email.split("@")[0] || value;
+
+    setNewNodeForm((prev) => ({
+      ...prev,
+      assigneeId: value,
+      assigneeName: displayName,
+    }));
   };
 
   // MARK: 保存节点
@@ -72,7 +79,8 @@ export default function NodeSettingsModal({
       !newNodeForm.role ||
       !newNodeForm.color ||
       !newNodeForm.icon ||
-      !newNodeForm.assignee
+      !newNodeForm.assigneeId ||
+      !newNodeForm.assigneeName
     ) {
       alert("请填写所有必填字段");
       return;
@@ -86,7 +94,8 @@ export default function NodeSettingsModal({
               ...editingNode,
               ...newNodeForm,
               id: editingNode.id,
-              assignee: newNodeForm.assignee,
+              assigneeId: newNodeForm.assigneeId,
+              assigneeName: newNodeForm.assigneeName,
             } as NodeType)
           : node
       );
@@ -94,7 +103,8 @@ export default function NodeSettingsModal({
       const newNode: NodeType = {
         id: generateId(),
         ...newNodeForm,
-        assignee: newNodeForm.assignee,
+        assigneeId: newNodeForm.assigneeId,
+        assigneeName: newNodeForm.assigneeName,
       } as NodeType;
       updatedNodes = [...customNodes, newNode];
     }
@@ -111,7 +121,8 @@ export default function NodeSettingsModal({
     setEditingNode(node);
     setNewNodeForm({
       ...node,
-      assignee: node.assignee || "",
+      assigneeId: node.assigneeId || "",
+      assigneeName: node.assigneeName || "",
     });
   };
 
@@ -188,10 +199,10 @@ export default function NodeSettingsModal({
                           <span className="text-sm text-app-text-secondary">
                             {node.role}
                           </span>
-                          {node.assignee && (
+                          {node.assigneeName && (
                             <span className="text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-full flex items-center gap-1">
                               <RiUserLine className="w-3 h-3" />
-                              {node.assignee}
+                              {node.assigneeName}
                             </span>
                           )}
                         </div>
@@ -308,7 +319,7 @@ export default function NodeSettingsModal({
                   </div>
                 ) : (
                   <Select
-                    value={newNodeForm.assignee || ""}
+                    value={newNodeForm.assigneeId || ""}
                     onValueChange={handleAssigneeChange}
                   >
                     <SelectTrigger className="w-full">
@@ -317,13 +328,7 @@ export default function NodeSettingsModal({
                     <SelectContent>
                       {teamMembers.length > 0 ? (
                         teamMembers.map((member) => (
-                          <SelectItem
-                            key={member.id}
-                            value={
-                              member.user.name ||
-                              member.user.email.split("@")[0]
-                            }
-                          >
+                          <SelectItem key={member.id} value={member.user.id}>
                             <div className="flex items-center gap-2">
                               <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs">
                                 {member.user.avatar_url ? (

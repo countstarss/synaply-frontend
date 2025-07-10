@@ -8,13 +8,19 @@ import {
 import { getColorClasses } from "../SimpleColorPicker";
 
 export interface NodeType {
-  id: string; // 新增 ID 字段
+  id: string; // 唯一 ID
   role: string;
   label: string;
   color: string;
   icon: string;
-  assignee?: string; // 新增 assignee 字段
-  tags?: string[]; // 新增 tags 字段
+  /**
+   * 节点负责人信息
+   * assigneeId  保存 supabase user.id
+   * assigneeName 用于前端展示
+   */
+  assigneeId?: string;
+  assigneeName?: string;
+  tags?: string[];
 }
 
 const defaultNodeTypes: NodeType[] = [
@@ -136,10 +142,12 @@ export default function NodePanel({
                       {nodeType.label}
                     </span>
                   </div>
-                  {nodeType.assignee && (
+                  {(nodeType.assigneeName || nodeType.assigneeId) && (
                     <div className="flex items-center gap-1 mt-1 text-xs text-app-text-secondary">
                       <RiUserLine className="w-3 h-3" />
-                      <span className="truncate">{nodeType.assignee}</span>
+                      <span className="truncate">
+                        {nodeType.assigneeName || nodeType.assigneeId}
+                      </span>
                     </div>
                   )}
                 </div>
