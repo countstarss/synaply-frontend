@@ -11,10 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { inviteTeamMember, type InviteMemberData } from "@/lib/fetchers/team";
+import { inviteTeamMember } from "@/lib/fetchers/team";
 import { useAuth } from "@/context/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { Mail, UserPlus } from "lucide-react";
+import { InviteMemberDto } from "@/api";
 
 interface InviteMemberDialogProps {
   open: boolean;
@@ -52,7 +53,7 @@ export function InviteMemberDialog({
     setIsLoading(true);
 
     try {
-      const inviteData: InviteMemberData = { email };
+      const inviteData: InviteMemberDto = { email };
       await inviteTeamMember(teamId, inviteData, session!.access_token);
 
       toast.success(`已成功邀请 ${email} 加入团队 ${teamName}`);

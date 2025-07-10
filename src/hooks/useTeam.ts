@@ -5,12 +5,12 @@ import { useAuth } from "@/context/AuthContext";
 import {
   fetchUserTeams,
   createTeam,
-  CreateTeamData,
   fetchTeamMembers,
   fetchTeamById,
   Team,
   TeamMember,
 } from "@/lib/fetchers/team";
+import { CreateTeamDto } from "@/api";
 
 export const useTeam = () => {
   const { session } = useAuth();
@@ -29,7 +29,7 @@ export const useTeam = () => {
 
   // MARK: - 创建团队
   const createTeamMutation = useMutation({
-    mutationFn: (data: CreateTeamData) =>
+    mutationFn: (data: CreateTeamDto) =>
       createTeam(data, session!.access_token),
     onSuccess: () => {
       // 成功后重新获取团队列表
