@@ -31,6 +31,17 @@ import { workflowIssueStorage } from "../../utils/storage";
 import { useAuth } from "@/context/AuthContext";
 import { useCurrentTeam, useTeamMembers } from "@/hooks/useTeam";
 import { useUpdateIssue } from "@/hooks/useIssueApi";
+import {
+  useIssueStepRecords,
+  useCreateIssueStepRecord,
+  useIssueActivities,
+  useCreateIssueActivity,
+} from "@/hooks/useIssueApi";
+import {
+  CreateIssueStepRecordDto,
+  CreateIssueActivityDto,
+} from "@/lib/fetchers/issue";
+// import { Dialog } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { IssueStatus } from "@/types/prisma";
 
@@ -193,6 +204,47 @@ function NodeStatusUpdate({
   );
 }
 
+// 简易成果物 Modal 组件
+function RecordModal({
+  isOpen,
+  onClose,
+  onSubmit,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (data: { resultText: string }) => void;
+}) {
+  const [text, setText] = React.useState("");
+  return isOpen ? (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-app-content-bg rounded-lg w-full max-w-lg p-6 space-y-4">
+        <h2 className="text-lg font-semibold">填写成果物</h2>
+        <textarea
+          className="w-full h-32 border border-app-border rounded p-2"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="本步骤完成情况..."
+        />
+        <div className="flex justify-end gap-2">
+          <button
+            className="px-4 py-2 border border-app-border rounded"
+            onClick={onClose}
+          >
+            取消
+          </button>
+          <button
+            className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+            disabled={!text.trim()}
+            onClick={() => onSubmit({ resultText: text.trim() })}
+          >
+            提交
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+}
+
 function WorkflowIssueDetailFlow({
   issue,
   onClose,
@@ -257,9 +309,9 @@ function WorkflowIssueDetailFlow({
   const [workflowIssue, setWorkflowIssue] = useState<WorkflowIssue | null>(
     initialWorkflowIssue
   );
-  const [activeTab, setActiveTab] = useState<"history" | "discussion">(
-    "history"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "history" | "discussion" | "records"
+  >("history");
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState<Comment[]>([
     {
@@ -283,6 +335,25 @@ function WorkflowIssueDetailFlow({
   const [mentionQuery, setMentionQuery] = useState("");
   const [cursorPosition, setCursorPosition] = useState(0);
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Records data
+  const { data: stepRecords = [] } = useIssueStepRecords(
+    issue.workspaceId,
+    issue.id
+  );
+  const createStepRecordMutation = useCreateIssueStepRecord();
+
+  // Activities data
+  const { data: activities = [] } = useIssueActivities(
+    issue.workspaceId,
+    issue.id
+  );
+  const createActivityMutation = useCreateIssueActivity();
+
+  const [isRecordModalOpen, setIsRecordModalOpen] = React.useState(false);
+  const [pendingNextEdge, setPendingNextEdge] = React.useState<Edge | null>(
+    null
+  );
 
   // 直接使用 snapshot 作为 workflow 数据
   const workflow = React.useMemo(() => {
@@ -425,7 +496,7 @@ function WorkflowIssueDetailFlow({
   const updateIssueMutation = useUpdateIssue();
 
   const handleStatusUpdate = useCallback(
-    async (nodeId: string, status: string) => {
+    async (nodeId: string, status: string, comment?: string) => {
       if (!workflowIssue) return;
 
       // 权限校验
@@ -458,6 +529,7 @@ function WorkflowIssueDetailFlow({
       );
 
       try {
+        // 更新Issue状态
         await updateIssueMutation.mutateAsync({
           workspaceId: issue.workspaceId,
           issueId: issue.id,
@@ -467,6 +539,34 @@ function WorkflowIssueDetailFlow({
             currentStepStatus: status as IssueStatus,
           },
         });
+
+        // 创建活动记录
+        const nodeName =
+          (currentNode?.data as { label?: string })?.label || "步骤";
+        const statusMap: Record<string, string> = {
+          TODO: "待处理",
+          IN_PROGRESS: "进行中",
+          AMOST_DONE: "接近完成",
+          DONE: "已完成",
+        };
+
+        await createActivityMutation.mutateAsync({
+          workspaceId: issue.workspaceId,
+          issueId: issue.id,
+          data: {
+            action: `将节点 "${nodeName}" 状态更新为 ${
+              statusMap[status] || status
+            }`,
+            metadata: {
+              nodeId,
+              nodeName,
+              oldStatus: nodeStatus?.status,
+              newStatus: status,
+              comment: comment || null,
+            },
+          } as CreateIssueActivityDto,
+        });
+
         onUpdate();
       } catch (error) {
         console.error(error);
@@ -475,25 +575,28 @@ function WorkflowIssueDetailFlow({
         toast.error("节点状态同步失败");
       }
     },
-    [workflowIssue, issue, onUpdate, workflow, updateIssueMutation, user?.id]
+    [
+      workflowIssue,
+      issue,
+      onUpdate,
+      workflow,
+      updateIssueMutation,
+      user?.id,
+      currentNode,
+      createActivityMutation,
+    ]
   );
 
-  // MARK: handleNext
-  const handleNext = useCallback(async () => {
+  const proceedNext = async (nextEdge: Edge) => {
     if (!workflow || !workflowIssue || !currentNode) return;
 
-    // 权限校验：仅负责人可执行
+    // 权限校验
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const currStatus = workflowIssue.nodeStatuses[currentNode.id] as any;
     if (currStatus?.assigneeId && currStatus.assigneeId !== user?.id) {
       alert("只有当前节点负责人才能执行此操作");
       return;
     }
-
-    const nextEdge = workflow.edges.find(
-      (e: Edge) => e.source === currentNode.id
-    );
-    if (!nextEdge) return;
 
     const updatedIssue: WorkflowIssue = {
       ...workflowIssue,
@@ -520,38 +623,89 @@ function WorkflowIssueDetailFlow({
           (n: Node) => n.id === nextEdge.target
         );
 
-        await fetch(
-          `${
-            process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678"
-          }/workspaces/${issue.workspaceId}/issues/${issue.id}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({
-              currentStepId: nextEdge.target,
-              currentStepIndex: nextIndex,
-              currentStepStatus: "TODO",
-            }),
-          }
+        await updateIssueMutation.mutateAsync({
+          workspaceId: issue.workspaceId,
+          issueId: issue.id,
+          data: {
+            currentStepId: nextEdge.target,
+            currentStepIndex: nextIndex,
+            currentStepStatus: "TODO" as IssueStatus,
+          },
+        });
+
+        // 创建活动记录
+        const currentNodeName =
+          (currentNode.data as { label?: string })?.label || "步骤";
+        const nextNode = workflow.nodes.find(
+          (n: Node) => n.id === nextEdge.target
         );
+        const nextNodeName =
+          (nextNode?.data as { label?: string })?.label || "步骤";
+
+        await createActivityMutation.mutateAsync({
+          workspaceId: issue.workspaceId,
+          issueId: issue.id,
+          data: {
+            action: `从 "${currentNodeName}" 前进到 "${nextNodeName}"`,
+            metadata: {
+              fromNodeId: currentNode.id,
+              fromNodeName: currentNodeName,
+              toNodeId: nextEdge.target,
+              toNodeName: nextNodeName,
+            },
+          } as CreateIssueActivityDto,
+        });
       }
     } catch (err) {
       console.error("同步后端失败", err);
     }
 
     onUpdate();
-  }, [
-    workflow,
-    workflowIssue,
-    currentNode,
-    issue,
-    onUpdate,
-    session?.access_token,
-    user?.id,
-  ]);
+  };
+
+  const handleNext = useCallback(() => {
+    if (!workflow || !workflowIssue || !currentNode) return;
+
+    // 权限校验
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const currStatus = workflowIssue.nodeStatuses[currentNode.id] as any;
+    if (currStatus?.assigneeId && currStatus.assigneeId !== user?.id) {
+      alert("只有当前节点负责人才能执行此操作");
+      return;
+    }
+
+    const nextEdge = workflow.edges.find(
+      (e: Edge) => e.source === currentNode.id
+    );
+    if (!nextEdge) return;
+
+    // 弹出成果物 Modal
+    setPendingNextEdge(nextEdge);
+    setIsRecordModalOpen(true);
+  }, [workflow, workflowIssue, currentNode, user?.id]);
+
+  const handleSubmitRecord = async ({ resultText }: { resultText: string }) => {
+    if (!pendingNextEdge) return;
+
+    try {
+      await createStepRecordMutation.mutateAsync({
+        workspaceId: issue.workspaceId,
+        issueId: issue.id,
+        data: {
+          stepId: currentNode!.id,
+          stepName: (currentNode!.data as { label?: string }).label || "步骤",
+          index: 1,
+          resultText,
+          assigneeId: user?.id || "",
+        } as CreateIssueStepRecordDto,
+      });
+      setIsRecordModalOpen(false);
+      await proceedNext(pendingNextEdge);
+    } catch (error) {
+      console.error("创建成果物失败", error);
+      toast.error("创建成果物失败");
+    }
+  };
 
   // MARK: handlePrevious
   const handlePrevious = useCallback(async () => {
@@ -595,23 +749,38 @@ function WorkflowIssueDetailFlow({
           (n: Node) => n.id === prevEdge.source
         );
 
-        await fetch(
-          `${
-            process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678"
-          }/workspaces/${issue.workspaceId}/issues/${issue.id}`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({
-              currentStepId: prevEdge.source,
-              currentStepIndex: prevIndex,
-              currentStepStatus: "TODO",
-            }),
-          }
+        await updateIssueMutation.mutateAsync({
+          workspaceId: issue.workspaceId,
+          issueId: issue.id,
+          data: {
+            currentStepId: prevEdge.source,
+            currentStepIndex: prevIndex,
+            currentStepStatus: "TODO" as IssueStatus,
+          },
+        });
+
+        // 创建活动记录
+        const currentNodeName =
+          (currentNode.data as { label?: string })?.label || "步骤";
+        const prevNode = workflow.nodes.find(
+          (n: Node) => n.id === prevEdge.source
         );
+        const prevNodeName =
+          (prevNode?.data as { label?: string })?.label || "步骤";
+
+        await createActivityMutation.mutateAsync({
+          workspaceId: issue.workspaceId,
+          issueId: issue.id,
+          data: {
+            action: `从 "${currentNodeName}" 回退到 "${prevNodeName}"`,
+            metadata: {
+              fromNodeId: currentNode.id,
+              fromNodeName: currentNodeName,
+              toNodeId: prevEdge.source,
+              toNodeName: prevNodeName,
+            },
+          } as CreateIssueActivityDto,
+        });
       }
     } catch (err) {
       console.error("同步后端失败", err);
@@ -626,6 +795,8 @@ function WorkflowIssueDetailFlow({
     onUpdate,
     session?.access_token,
     user?.id,
+    updateIssueMutation,
+    createActivityMutation,
   ]);
 
   // MARK: canNext
@@ -701,7 +872,7 @@ function WorkflowIssueDetailFlow({
               fitView
               proOptions={{ hideAttribution: true }}
               nodesDraggable={false} // 禁止节点拖动
-              nodesConnectable={false} // 禁止创建新连接
+              nodesConnectable={true} // 禁止创建新连接
               elementsSelectable={true} // 允许选择元素，但不允许修改
               zoomOnDoubleClick={false} // 禁止双击缩放
               edgesFocusable={false} // 边不可聚焦
@@ -762,6 +933,17 @@ function WorkflowIssueDetailFlow({
                   <RiFileTextLine className="w-4 h-4" />
                   讨论 ({comments.length})
                 </button>
+                <button
+                  onClick={() => setActiveTab("records")}
+                  className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-medium transition-colors ${
+                    activeTab === "records"
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                      : "text-app-text-secondary hover:text-app-text-primary hover:bg-app-button-hover"
+                  }`}
+                >
+                  <RiFileTextLine className="w-4 h-4" />
+                  成果 ({stepRecords.length})
+                </button>
               </div>
             </div>
 
@@ -770,39 +952,34 @@ function WorkflowIssueDetailFlow({
               {activeTab === "history" ? (
                 <div className="h-full p-4 overflow-y-auto">
                   <div className="space-y-3 h-[calc(700px)] overflow-y-auto">
-                    {workflowIssue.history.map((entry, index) => (
+                    {activities.map((activity) => (
                       <div
-                        key={index}
+                        key={activity.id}
                         className="flex items-start gap-3 text-sm"
                       >
                         <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
                         <div className="flex-1 min-w-0">
                           <p className="text-app-text-primary">
-                            {entry.action}
+                            {activity.action}
                           </p>
                           <div className="flex items-center gap-2 mt-1 text-xs text-app-text-muted">
-                            <span>{entry.fromUser}</span>
+                            <span>{activity.actorId}</span>
                             <span>•</span>
                             <span>
-                              {new Date(entry.timestamp).toLocaleString()}
+                              {new Date(activity.createdAt).toLocaleString()}
                             </span>
                           </div>
-                          {entry.comment && (
-                            <p className="mt-1 text-xs text-app-text-secondary bg-app-button-hover rounded px-2 py-1">
-                              {entry.comment}
-                            </p>
-                          )}
                         </div>
                       </div>
                     ))}
-                    {workflowIssue.history.length === 0 && (
+                    {activities.length === 0 && (
                       <div className="text-center text-app-text-muted py-8">
                         暂无操作历史
                       </div>
                     )}
                   </div>
                 </div>
-              ) : (
+              ) : activeTab === "discussion" ? (
                 <div className="h-full flex flex-col">
                   {/* Discussion Content */}
                   <div className="flex-1 overflow-y-auto p-4">
@@ -924,11 +1101,40 @@ function WorkflowIssueDetailFlow({
                     </div>
                   </div>
                 </div>
+              ) : (
+                <div className="h-full p-4 overflow-y-auto">
+                  {stepRecords.map((rec) => (
+                    <div
+                      key={rec.id}
+                      className="border-b border-app-border py-2 text-sm"
+                    >
+                      <div className="font-medium">
+                        {rec.stepName} (第{rec.index}步)
+                      </div>
+                      <div className="text-app-text-secondary mt-1 whitespace-pre-wrap">
+                        {rec.resultText}
+                      </div>
+                      <div className="text-xs text-app-text-muted mt-1">
+                        {new Date(rec.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+                  ))}
+                  {stepRecords.length === 0 && (
+                    <div className="text-app-text-muted text-center py-8">
+                      暂无成果物
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
         </div>
       </div>
+      <RecordModal
+        isOpen={isRecordModalOpen}
+        onClose={() => setIsRecordModalOpen(false)}
+        onSubmit={handleSubmitRecord}
+      />
     </div>
   );
 }

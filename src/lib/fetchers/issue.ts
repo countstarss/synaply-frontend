@@ -40,6 +40,7 @@ export interface CreateIssueDto {
   dueDate?: string;
 }
 
+// MARK: WorkflowIssueDto
 export interface CreateWorkflowIssueDto {
   title: string;
   description?: string;
@@ -77,7 +78,7 @@ async function fetchApi<T>(
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.message || "API 请求失败");
+    throw new Error(errorData || "API 请求失败");
   }
 
   // 对于 204 No Content，直接返回 null
@@ -169,4 +170,96 @@ export async function deleteIssue(
   await fetchApi<void>(`/workspaces/${workspaceId}/issues/${issueId}`, token, {
     method: "DELETE",
   });
+}
+
+// -------------------- Step Record & Activity --------------------
+// MARK: IssueStepRecord
+export interface IssueStepRecord {
+  id: string;
+  issueId: string;
+  stepId: string;
+  stepName: string;
+  index: number;
+  resultText?: string;
+  attachments?: unknown;
+  assigneeId: string;
+  createdAt: string;
+}
+// MARK: StepRecordDto
+export interface CreateIssueStepRecordDto {
+  stepId: string;
+  stepName: string;
+  index: number;
+  resultText?: string;
+  attachments?: unknown;
+  assigneeId: string;
+}
+
+export async function createIssueStepRecord(
+  workspaceId: string,
+  issueId: string,
+  data: CreateIssueStepRecordDto,
+  token: string
+): Promise<IssueStepRecord> {
+  return fetchApi<IssueStepRecord>(
+    `/workspaces/${workspaceId}/issues/${issueId}/steps`,
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+export async function getIssueStepRecords(
+  workspaceId: string,
+  issueId: string,
+  token: string
+): Promise<IssueStepRecord[]> {
+  return fetchApi<IssueStepRecord[]>(
+    `/workspaces/${workspaceId}/issues/${issueId}/steps`,
+    token
+  );
+}
+
+// MARK: IssueActivity
+export interface IssueActivity {
+  id: string;
+  issueId: string;
+  actorId: string;
+  action: string;
+  metadata?: unknown;
+  createdAt: string;
+}
+
+export interface CreateIssueActivityDto {
+  action: string;
+  metadata?: unknown;
+}
+
+export async function createIssueActivity(
+  workspaceId: string,
+  issueId: string,
+  data: CreateIssueActivityDto,
+  token: string
+): Promise<IssueActivity> {
+  return fetchApi<IssueActivity>(
+    `/workspaces/${workspaceId}/issues/${issueId}/activities`,
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+export async function getIssueActivities(
+  workspaceId: string,
+  issueId: string,
+  token: string
+): Promise<IssueActivity[]> {
+  return fetchApi<IssueActivity[]>(
+    `/workspaces/${workspaceId}/issues/${issueId}/activities`,
+    token
+  );
 }

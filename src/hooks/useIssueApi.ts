@@ -9,6 +9,12 @@ import {
   updateIssue,
   deleteIssue,
   Issue,
+  createIssueStepRecord,
+  getIssueStepRecords,
+  CreateIssueStepRecordDto,
+  createIssueActivity,
+  getIssueActivities,
+  CreateIssueActivityDto,
 } from "@/lib/fetchers/issue";
 import { IssueStatus } from "@/types/prisma";
 
@@ -194,6 +200,92 @@ export const useDeleteIssue = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issues", variables.workspaceId],
+      });
+    },
+  });
+};
+
+/**
+ * MARK: 步骤记录列表
+ */
+export const useIssueStepRecords = (workspaceId: string, issueId: string) => {
+  const { session } = useAuth();
+
+  return useQuery({
+    queryKey: ["issue-step-records", issueId],
+    queryFn: () =>
+      getIssueStepRecords(workspaceId, issueId, session!.access_token),
+    enabled: !!session?.access_token && !!issueId,
+  });
+};
+
+export const useCreateIssueStepRecord = () => {
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      workspaceId,
+      issueId,
+      data,
+    }: {
+      workspaceId: string;
+      issueId: string;
+      data: CreateIssueStepRecordDto;
+    }) => {
+      if (!session?.access_token) throw new Error("未授权");
+      return createIssueStepRecord(
+        workspaceId,
+        issueId,
+        data,
+        session.access_token
+      );
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["issue-step-records", variables.issueId],
+      });
+    },
+  });
+};
+
+/**
+ * MARK: Issue Activities
+ */
+export const useIssueActivities = (workspaceId: string, issueId: string) => {
+  const { session } = useAuth();
+  return useQuery({
+    queryKey: ["issue-activities", issueId],
+    queryFn: () =>
+      getIssueActivities(workspaceId, issueId, session!.access_token),
+    enabled: !!session?.access_token && !!issueId,
+  });
+};
+
+export const useCreateIssueActivity = () => {
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      workspaceId,
+      issueId,
+      data,
+    }: {
+      workspaceId: string;
+      issueId: string;
+      data: CreateIssueActivityDto;
+    }) => {
+      if (!session?.access_token) throw new Error("未授权");
+      return createIssueActivity(
+        workspaceId,
+        issueId,
+        data,
+        session.access_token
+      );
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["issue-activities", variables.issueId],
       });
     },
   });
