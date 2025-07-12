@@ -12,7 +12,7 @@ import {
 import { getIssues, Issue } from "@/lib/fetchers/issue";
 import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import WorkflowIssueDetail from "../components/issue/WorkflowIssueDetail";
+import WorkflowIssueDetail from "../_components/issue/WorkflowIssueDetail";
 import NormalIssueDetail from "@/components/shared/issue/NormalIssueDetail";
 
 export default function IssuesPage() {

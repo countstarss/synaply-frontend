@@ -9,8 +9,8 @@ import {
   RiUserLine,
 } from "react-icons/ri";
 import { NodeType } from "./NodePanel";
-import { nodeStorage } from "../../utils/node-storage";
-import { generateId } from "../../utils/storage";
+import { nodeStorage } from "../../_utils/node-storage";
+import { generateId } from "../../_utils/storage";
 import SimpleColorPicker from "../SimpleColorPicker";
 import { useTeamMembers } from "@/hooks/useTeam";
 import { useCurrentTeam } from "@/hooks/useTeam";

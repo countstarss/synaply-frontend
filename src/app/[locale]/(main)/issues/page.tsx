@@ -11,7 +11,7 @@ import {
 } from "react-icons/ri";
 import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
 import NormalIssueDetail from "@/components/shared/issue/NormalIssueDetail";
-import WorkflowIssueDetail from "../(team)/team/components/issue/WorkflowIssueDetail";
+import WorkflowIssueDetail from "../(team)/team/_components/issue/WorkflowIssueDetail";
 import { Issue } from "@/lib/fetchers/issue";
 import { useIssues } from "@/hooks/useIssueApi";
 import { useDeleteIssue } from "@/hooks/useIssueApi";

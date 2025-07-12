@@ -20,14 +20,14 @@ import "reactflow/dist/style.css";
 import CustomNode, { CustomNodeData } from "./CustomNode";
 import NodePanel, { NodeType } from "./NodePanel";
 import { Workflow, WorkflowNode, WorkflowEdge } from "@/types/team";
-import { generateId } from "../../utils/storage";
+import { generateId } from "../../_utils/storage";
 import NodeSettingsModal from "./NodeSettingsModal";
-import { nodeStorage } from "../../utils/node-storage";
+import { nodeStorage } from "../../_utils/node-storage";
 import WorkflowEditorToolbar from "./WorkflowEditorToolbar";
 import { getColorClasses } from "../SimpleColorPicker";
 import NodeDetailsModal from "./NodeDetailsModal";
 import { toast } from "sonner";
-import { useWorkflowJson } from "../../hooks/useWorkflowJson";
+import { useWorkflowJson } from "../../_hooks/useWorkflowJson";
 
 const nodeTypes = {
   custom: CustomNode,

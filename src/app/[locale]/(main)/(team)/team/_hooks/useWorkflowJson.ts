@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Node, Edge } from "reactflow";
 import { toast } from "sonner";
 import { Workflow, WorkflowNode, WorkflowEdge } from "@/types/team";
-import { generateId } from "../utils/storage";
+import { generateId } from "../_utils/storage";
 
 interface WorkflowJsonData {
   id: string;

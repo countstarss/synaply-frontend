@@ -64,7 +64,7 @@ const Layout = ({ children }: LayoutProps) => {
                 : "opacity-100 translate-x-0 pointer-events-auto"
             )}
           >
-            <main className="mx-2 mb-2 bg-app-content-bg h-[calc(100vh-66px)] rounded-lg border border-app-border">
+            <main className="mx-2 mb-2 bg-app-content-bg h-[calc(100vh-64px)] rounded-lg border border-app-border">
               <div className="flex-1 overflow-y-auto bg-app-content-bg rounded-lg h-full">
                 {children}
               </div>
@@ -82,7 +82,7 @@ const Layout = ({ children }: LayoutProps) => {
           >
             {/* 保持与常规内容相同的结构和间距 */}
             <div className="flex flex-col h-full">
-              <div className="mx-2 mb-2 bg-app-content-bg h-[calc(100vh-66px)] rounded-lg border border-app-border overflow-hidden">
+              <div className="mx-2 mb-2 bg-app-content-bg h-[calc(100vh-64px)] rounded-lg border border-app-border overflow-hidden">
                 <GlobalPageCache />
               </div>
             </div>
