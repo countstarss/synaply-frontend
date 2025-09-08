@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
 import { Node, Edge, MarkerType } from "reactflow";
-import { CustomNodeData } from "@/app/[locale]/(main)/(team)/team/components/workflow/CustomNode";
+// import { CustomNodeData } from "@/app/[locale]/(main)/(team)/team/components/workflow/CustomNode";
 import { Workflow, WorkflowNode, WorkflowEdge } from "@/types/team";
+import { CustomNodeData } from "@/app/[locale]/(main)/(team)/team/_components/workflow/CustomNode";
 
 interface WorkflowJsonHookResult {
   exportWorkflowJson: (nodes: Node<CustomNodeData>[], edges: Edge[]) => string;
