@@ -28,7 +28,8 @@ export const mainNavItems = [
   { icon: MessageSquareCode, label: "Chat", href: "/chat" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
   { icon: Bug, label: "Issues", href: "/team/issues" },
-  { icon: Settings, label: "Settings", href: "/settings" },
+  // 顶部不再显示setting选项, 因为它会扰乱UI切换逻辑, 代为一个单独按钮打开
+  // { icon: Settings, label: "Settings", href: "/settings" },
 ];
 export const secondaryNavItems = [
   { icon: Layers, label: "Team", href: "/team" },

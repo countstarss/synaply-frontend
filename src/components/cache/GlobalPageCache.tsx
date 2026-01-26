@@ -19,20 +19,20 @@ const PAGE_COMPONENTS = {
   tasks: CachedTasksPage,
   chat: CachedChatPage,
   docs: CachedDocsPage,
-  settings: CachedSettingsPage,
   dashboard: CachedDashboardPage,
+  settings: CachedSettingsPage,
 } as const;
 
 type PageId = keyof typeof PAGE_COMPONENTS;
 
-// MARK: 页面顺序编号：inbox(1) -> tasks(2) -> chat(3) -> docs(4) -> settings(5)
+// MARK: 页面顺序编号：inbox(1) -> tasks(2) -> chat(3) -> docs(4) -> dashboard(5) -> settings(6)
 const PAGE_ORDER: Record<PageId, number> = {
   inbox: 1,
   tasks: 2,
   chat: 3,
   docs: 4,
-  settings: 5,
-  dashboard: 6,
+  dashboard: 5,
+  settings: 6,
 };
 
 // 路径到页面ID的映射
@@ -41,8 +41,8 @@ const getPageIdFromPath = (pathname: string): PageId | null => {
   if (pathname.includes("/tasks")) return "tasks";
   if (pathname.includes("/chat")) return "chat";
   if (pathname.includes("/docs")) return "docs";
-  if (pathname.includes("/settings")) return "settings";
   if (pathname.includes("/dashboard")) return "dashboard";
+  if (pathname.includes("/settings")) return "settings";
   return null;
 };
 
@@ -113,7 +113,7 @@ PageRenderer.displayName = "PageRenderer";
 export const GlobalPageCache = React.memo(() => {
   const pathname = usePathname();
   const [currentPageId, setCurrentPageId] = useState<PageId | null>(() =>
-    getPageIdFromPath(pathname)
+    getPageIdFromPath(pathname),
   );
   const [pageStates, setPageStates] = useState<Record<PageId, PageState>>(
     () => {
@@ -129,7 +129,7 @@ export const GlobalPageCache = React.memo(() => {
       });
 
       return initialStates;
-    }
+    },
   );
 
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -141,14 +141,30 @@ export const GlobalPageCache = React.memo(() => {
 
       console.log(`🔄 页面切换: ${fromPageId} → ${toPageId}`);
 
-      const fromOrder = fromPageId ? PAGE_ORDER[fromPageId] : 0;
-      const toOrder = PAGE_ORDER[toPageId];
-      const isForward = toOrder > fromOrder; // 是否向前切换
-
       // 清除之前的动画
       if (animationTimeoutRef.current) {
         clearTimeout(animationTimeoutRef.current);
       }
+
+      // settings 页面不使用动画，直接切换
+      if (toPageId === "settings" || fromPageId === "settings") {
+        setPageStates((prev) => {
+          const newStates = { ...prev };
+          Object.keys(newStates).forEach((id) => {
+            newStates[id as PageId] = {
+              ...newStates[id as PageId],
+              position: id === toPageId ? "center" : "hidden",
+              isAnimating: false,
+            };
+          });
+          return newStates;
+        });
+        return;
+      }
+
+      const fromOrder = fromPageId ? PAGE_ORDER[fromPageId] : 0;
+      const toOrder = PAGE_ORDER[toPageId];
+      const isForward = toOrder > fromOrder; // 是否向前切换
 
       // MARK: - 1. 构建切换堆栈
       setPageStates((prev) => {
@@ -254,7 +270,7 @@ export const GlobalPageCache = React.memo(() => {
         }, 300); // 等待动画完成
       }, 16); // 下一帧开始动画
     },
-    [setPageStates]
+    [setPageStates],
   );
 
   // MARK: - 监听路径变化
