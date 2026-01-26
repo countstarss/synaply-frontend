@@ -25,7 +25,7 @@ const PAGE_COMPONENTS = {
 
 type PageId = keyof typeof PAGE_COMPONENTS;
 
-// MARK: 页面顺序编号：inbox(1) -> tasks(2) -> chat(3) -> docs(4) -> dashboard(5) -> settings(6)
+// MARK: 页面顺序编号
 const PAGE_ORDER: Record<PageId, number> = {
   inbox: 1,
   tasks: 2,
