@@ -25,6 +25,7 @@ export interface EmailMessage {
   sender: EmailContact;
   recipients: EmailContact[];
   cc?: EmailContact[];
+  bcc?: EmailContact[];
   labels?: string[];
   folder: "inbox" | "sent" | "draft" | "trash" | "archive" | "junk";
   hasAttachments?: boolean;

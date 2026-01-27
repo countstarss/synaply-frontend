@@ -6,6 +6,7 @@ import { PanelLeft, PanelRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MailNav } from "./MailNav";
 import { MailList } from "./MailList";
+import { MailComposer } from "./MailComposer";
 import { EmailAccount } from "../types/mail.entity";
 import { mockAccounts } from "../data/mock-data";
 import {
@@ -14,6 +15,7 @@ import {
   preloadEmailProviderIcons,
   subscribeEmailIconUpdates,
 } from "../config/email-icon-registry";
+import { useMailStore } from "../store/use-mail-store";
 
 interface MailClientProps {
   accounts?: EmailAccount[];
@@ -26,6 +28,7 @@ export function MailClient({
 }: MailClientProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed);
   const [, setIconVersion] = React.useState(0);
+  const { openComposer, hydrateDrafts } = useMailStore();
 
   React.useEffect(() => {
     const initIcons = async () => {
@@ -35,7 +38,8 @@ export function MailClient({
       setIconVersion((value) => value + 1);
     };
     void initIcons();
-  }, []);
+    hydrateDrafts();
+  }, [hydrateDrafts]);
 
   React.useEffect(() => {
     const unsubscribe = subscribeEmailIconUpdates(() => {
@@ -51,8 +55,12 @@ export function MailClient({
 
   // 处理写邮件
   const handleCompose = () => {
-    // TODO: 打开写邮件弹窗或跳转到写邮件页面
-    console.log("Compose new email");
+    const fromAccount = accounts[0];
+    openComposer("new", {
+      from: fromAccount
+        ? { name: fromAccount.label, email: fromAccount.email }
+        : undefined,
+    });
   };
 
   return (
@@ -105,6 +113,8 @@ export function MailClient({
           </div>
         </div>
       </div>
+
+      <MailComposer />
     </TooltipProvider>
   );
 }

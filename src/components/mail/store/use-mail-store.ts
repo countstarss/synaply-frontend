@@ -2,18 +2,34 @@
 
 import { create } from "zustand";
 import { MailFolder, EmailMessage } from "../types/mail.entity";
+import { ComposerState, ComposeInitialData, ComposeMode } from "../types/compose";
 import { mockEmails } from "../data/mock-data";
+import {
+  DraftRecord,
+  draftToEmailMessage,
+  loadDrafts,
+  removeDraft as removeStoredDraft,
+  upsertDraft,
+} from "../data/draft-storage";
 
 interface MailStore {
   // 状态
   currentFolder: MailFolder;
   selectedId: string | null;
   emails: EmailMessage[];
+  composer: ComposerState;
 
   // Actions
   setCurrentFolder: (folder: MailFolder) => void;
   setSelectedId: (id: string | null) => void;
   setEmails: (emails: EmailMessage[]) => void;
+  openComposer: (mode: ComposeMode, initial?: ComposeInitialData) => void;
+  closeComposer: () => void;
+  hydrateDrafts: () => void;
+  saveDraft: (draft: DraftRecord) => void;
+  removeDraft: (draftId: string) => void;
+  addEmail: (email: EmailMessage) => void;
+  updateEmail: (email: EmailMessage) => void;
 
   // 邮件操作
   markAsRead: (id: string) => void;
@@ -34,6 +50,11 @@ export const useMailStore = create<MailStore>((set, get) => ({
   currentFolder: "inbox",
   selectedId: null,
   emails: mockEmails,
+  composer: {
+    isOpen: false,
+    mode: "new",
+    initial: {},
+  },
 
   // 设置当前文件夹
   setCurrentFolder: (folder) => {
@@ -52,6 +73,59 @@ export const useMailStore = create<MailStore>((set, get) => ({
   // 设置邮件列表
   setEmails: (emails) => {
     set({ emails });
+  },
+
+  openComposer: (mode, initial = {}) => {
+    set({ composer: { isOpen: true, mode, initial } });
+  },
+
+  closeComposer: () => {
+    set({ composer: { isOpen: false, mode: "new", initial: {} } });
+  },
+
+  hydrateDrafts: () => {
+    const drafts = loadDrafts().map(draftToEmailMessage);
+    set((state) => ({
+      emails: [
+        ...drafts,
+        ...state.emails.filter((email) => email.folder !== "draft"),
+      ],
+    }));
+  },
+
+  saveDraft: (draft) => {
+    const drafts = upsertDraft(draft).map(draftToEmailMessage);
+    set((state) => ({
+      emails: [
+        ...drafts,
+        ...state.emails.filter((email) => email.folder !== "draft"),
+      ],
+    }));
+  },
+
+  removeDraft: (draftId) => {
+    const drafts = removeStoredDraft(draftId).map(draftToEmailMessage);
+    set((state) => ({
+      emails: [
+        ...drafts,
+        ...state.emails.filter((email) => email.folder !== "draft"),
+      ],
+      selectedId: state.selectedId === draftId ? null : state.selectedId,
+    }));
+  },
+
+  addEmail: (email) => {
+    set((state) => ({
+      emails: [email, ...state.emails],
+    }));
+  },
+
+  updateEmail: (email) => {
+    set((state) => ({
+      emails: state.emails.map((item) =>
+        item.id === email.id ? email : item,
+      ),
+    }));
   },
 
   // 标记为已读
@@ -77,6 +151,10 @@ export const useMailStore = create<MailStore>((set, get) => ({
   // 移动到文件夹
   moveToFolder: (id, folder) => {
     // TODO: 调用 API 移动邮件到指定文件夹
+    const currentEmail = get().emails.find((email) => email.id === id);
+    if (currentEmail?.folder === "draft" && folder !== "draft") {
+      removeStoredDraft(id);
+    }
     set((state) => ({
       emails: state.emails.map((email) =>
         email.id === id ? { ...email, folder } : email,

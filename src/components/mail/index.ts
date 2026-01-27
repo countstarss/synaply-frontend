@@ -1,10 +1,13 @@
 export * from "./types/mail.entity";
+export * from "./types/compose";
 export * from "./data/mock-data";
+export * from "./data/draft-storage";
 export { useMailStore } from "./store/use-mail-store";
 export { MailClient } from "./components/MailClient";
 export { MailNav } from "./components/MailNav";
 export { MailList } from "./components/MailList";
 export { MailDisplay } from "./components/MailDisplay";
+export { MailComposer } from "./components/MailComposer";
 export { NavItem } from "./components/NavItem";
 export { AccountSwitcher } from "./components/AccountSwitcher";
 export * from "./config/email-icon-registry";

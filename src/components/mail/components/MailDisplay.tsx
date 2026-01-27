@@ -52,8 +52,31 @@ const getInitials = (name: string) => {
     .slice(0, 2);
 };
 
+const dedupeRecipients = (recipients: EmailMessage["recipients"]) => {
+  const unique = new Map<string, EmailMessage["recipients"][number]>();
+  recipients.forEach((recipient) => {
+    unique.set(recipient.email, recipient);
+  });
+  return Array.from(unique.values());
+};
+
+const buildQuotedBody = (mail: EmailMessage) => {
+  const original = mail.body || `<p>${mail.snippet}</p>`;
+  return `
+    <p></p>
+    <blockquote>${original}</blockquote>
+  `;
+};
+
+const withSubjectPrefix = (prefix: string, subject: string) => {
+  const normalized = subject?.toLowerCase().startsWith(prefix.toLowerCase());
+  if (normalized) return subject;
+  return `${prefix} ${subject}`.trim();
+};
+
 export function MailDisplay({ mail }: MailDisplayProps) {
-  const { moveToFolder, markAsUnread, toggleStar } = useMailStore();
+  const { moveToFolder, markAsUnread, toggleStar, openComposer } =
+    useMailStore();
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
   // 检测邮件内容是否包含 HTML 标签
@@ -199,22 +222,52 @@ export function MailDisplay({ mail }: MailDisplayProps) {
   // 处理回复邮件
   const handleReply = () => {
     if (!mail) return;
-    // TODO: 打开回复邮件弹窗
-    console.log("Reply to:", mail.sender.email);
+    openComposer("reply", {
+      to: [mail.sender],
+      subject: withSubjectPrefix("Re:", mail.subject),
+      body: buildQuotedBody(mail),
+    });
   };
 
   // 处理全部回复
   const handleReplyAll = () => {
     if (!mail) return;
-    // TODO: 打开全部回复邮件弹窗
-    console.log("Reply all");
+    const toRecipients = dedupeRecipients([
+      mail.sender,
+      ...mail.recipients,
+    ]);
+    const ccRecipients = dedupeRecipients(mail.cc ?? []).filter(
+      (recipient) =>
+        !toRecipients.some((item) => item.email === recipient.email),
+    );
+    openComposer("replyAll", {
+      to: toRecipients,
+      cc: ccRecipients,
+      subject: withSubjectPrefix("Re:", mail.subject),
+      body: buildQuotedBody(mail),
+    });
   };
 
   // 处理转发
   const handleForward = () => {
     if (!mail) return;
-    // TODO: 打开转发邮件弹窗
-    console.log("Forward");
+    openComposer("forward", {
+      subject: withSubjectPrefix("Fwd:", mail.subject),
+      body: buildQuotedBody(mail),
+    });
+  };
+
+  const handleEditDraft = () => {
+    if (!mail) return;
+    openComposer("draft", {
+      draftId: mail.id,
+      from: mail.sender,
+      to: mail.recipients,
+      cc: mail.cc,
+      bcc: mail.bcc,
+      subject: mail.subject,
+      body: mail.body,
+    });
   };
 
   // 如果没有选中的邮件，显示空状态
@@ -388,8 +441,17 @@ export function MailDisplay({ mail }: MailDisplayProps) {
       <div className="flex-1 overflow-auto">
         <div className="p-4">
           {/* 主题 */}
-          <div className="flex items-start justify-between pb-4">
-            <h1 className="text-xl font-bold">{mail.subject}</h1>
+          <div className="flex items-start justify-between gap-4 pb-4">
+            <div className="flex flex-col gap-2">
+              <h1 className="text-xl font-bold">
+                {mail.subject || "(No Subject)"}
+              </h1>
+              {mail.folder === "draft" && (
+                <Button variant="outline" size="sm" onClick={handleEditDraft}>
+                  编辑草稿
+                </Button>
+              )}
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="shrink-0">
@@ -453,6 +515,9 @@ export function MailDisplay({ mail }: MailDisplayProps) {
             {mail.cc && mail.cc.length > 0 && (
               <div>Cc: {mail.cc.map((c) => c.name || c.email).join(", ")}</div>
             )}
+            {mail.bcc && mail.bcc.length > 0 && (
+              <div>Bcc: {mail.bcc.map((b) => b.name || b.email).join(", ")}</div>
+            )}
           </div>
 
           <Separator className="my-4" />
@@ -511,18 +576,26 @@ export function MailDisplay({ mail }: MailDisplayProps) {
       {/* 底部回复按钮 - 固定在底部 */}
       <div className="flex items-center border-t p-4 shrink-0">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleReply}>
-            <Reply className="mr-2 h-4 w-4" />
-            Reply
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleReplyAll}>
-            <ReplyAll className="mr-2 h-4 w-4" />
-            Reply all
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleForward}>
-            <Forward className="mr-2 h-4 w-4" />
-            Forward
-          </Button>
+          {mail.folder === "draft" ? (
+            <Button variant="outline" size="sm" onClick={handleEditDraft}>
+              编辑草稿
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" onClick={handleReply}>
+                <Reply className="mr-2 h-4 w-4" />
+                Reply
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleReplyAll}>
+                <ReplyAll className="mr-2 h-4 w-4" />
+                Reply all
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleForward}>
+                <Forward className="mr-2 h-4 w-4" />
+                Forward
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>

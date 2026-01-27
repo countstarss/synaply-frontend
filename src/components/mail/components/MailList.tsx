@@ -125,10 +125,10 @@ export function MailList({
           const avatarSrc = providerIcon ?? item.sender.avatar;
 
           return (
-            <button
+            <div
               key={item.id}
               className={cn(
-                "flex items-start gap-3 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent",
+                "flex items-start gap-3 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent cursor-pointer",
                 selectedId === item.id && "bg-muted",
               )}
               onClick={() => handleMailClick(item.id)}
@@ -200,7 +200,7 @@ export function MailList({
                   )}
                 />
               </button>
-            </button>
+            </div>
           );
         })
       )}
