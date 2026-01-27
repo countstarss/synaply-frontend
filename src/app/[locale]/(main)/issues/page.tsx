@@ -11,7 +11,6 @@ import {
 } from "react-icons/ri";
 import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
 import NormalIssueDetail from "@/components/shared/issue/NormalIssueDetail";
-import WorkflowIssueDetail from "../(team)/team/_components/issue/WorkflowIssueDetail";
 import { Issue } from "@/lib/fetchers/issue";
 import { useIssues } from "@/hooks/useIssueApi";
 import { useDeleteIssue } from "@/hooks/useIssueApi";
@@ -19,6 +18,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useQueryClient } from "@tanstack/react-query";
 import { priorityConfig, statusConfig } from "@/lib/data/issueConfig";
 import { toast } from "sonner";
+import WorkflowIssueDetail from "@/components/issue/WorkflowIssueDetail";
 
 export default function Issues() {
   const [selectedView, setSelectedView] = useState("all");
@@ -50,7 +50,7 @@ export default function Issues() {
   };
 
   const filteredIssues = issues.filter((issue) =>
-    issue.title.toLowerCase().includes(searchQuery.toLowerCase())
+    issue.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleCloseDetail = () => {
@@ -81,10 +81,10 @@ export default function Issues() {
           },
           onError: (err: unknown) => {
             toast.error(
-              err instanceof Error ? err.message : "删除 Issue 失败，请重试"
+              err instanceof Error ? err.message : "删除 Issue 失败，请重试",
             );
           },
-        }
+        },
       );
     }
   };

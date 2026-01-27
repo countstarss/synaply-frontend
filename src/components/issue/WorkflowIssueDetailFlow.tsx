@@ -12,7 +12,6 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { RiCloseLine, RiHistoryLine, RiFileTextLine } from "react-icons/ri";
-import CustomNode from "../workflow/CustomNode";
 import { Issue } from "@/lib/fetchers/issue";
 import { WorkflowIssue } from "@/types/team";
 import { useAuth } from "@/context/AuthContext";
@@ -20,13 +19,14 @@ import { useCurrentTeam, useTeamMembers } from "@/hooks/useTeam";
 import { useIssueStepRecords, useIssueActivities } from "@/hooks/useIssueApi";
 import { NodeStatusUpdate } from "./NodeStatusUpdate";
 import { RecordModal } from "./RecordModal";
-import { useWorkflowNodeStatus } from "../hooks/useWorkflowNodeStatus";
 import {
   createInitialWorkflowIssue,
   parseWorkflowSnapshot,
   createFlowNodesAndEdges,
-} from "../utils/workflowUtils";
+} from "@/app/[locale]/(main)/(team)/team/_components/utils/workflowUtils";
 import { HistoryTab, DiscussionTab, RecordsTab } from "./tabs";
+import useWorkflowNodeStatus from "@/app/[locale]/(main)/(team)/team/_components/hooks/useWorkflowNodeStatus";
+import CustomNode from "../workflow/CustomNode";
 
 const nodeTypes = {
   custom: CustomNode,
@@ -53,16 +53,16 @@ export function WorkflowIssueDetailFlow({
   // MARK: 解析工作流快照
   const initialWorkflowIssue = React.useMemo(
     () => createInitialWorkflowIssue(issue),
-    [issue]
+    [issue],
   );
 
   const workflow = React.useMemo(
     () => parseWorkflowSnapshot(issue.workflowSnapshot),
-    [issue.workflowSnapshot]
+    [issue.workflowSnapshot],
   );
 
   const [workflowIssue, setWorkflowIssue] = useState<WorkflowIssue | null>(
-    initialWorkflowIssue
+    initialWorkflowIssue,
   );
 
   // MARK: Tabs
@@ -74,20 +74,20 @@ export function WorkflowIssueDetailFlow({
   // Records data
   const { data: stepRecords = [] } = useIssueStepRecords(
     issue.workspaceId,
-    issue.id
+    issue.id,
   );
 
   // Activities data
   const { data: activities = [] } = useIssueActivities(
     issue.workspaceId,
-    issue.id
+    issue.id,
   );
 
   // MARK: 节点和边计算
   // 使用工具函数转换为ReactFlow的nodes和edges
   const { nodes, edges } = useMemo(
     () => createFlowNodesAndEdges(workflow, workflowIssue),
-    [workflow, workflowIssue]
+    [workflow, workflowIssue],
   );
 
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState(nodes);
@@ -102,7 +102,7 @@ export function WorkflowIssueDetailFlow({
   const currentNode = useMemo(() => {
     if (!workflowIssue || !workflow) return null;
     return workflow.nodes.find(
-      (n: Node) => n.id === workflowIssue.currentNodeId
+      (n: Node) => n.id === workflowIssue.currentNodeId,
     );
   }, [workflow, workflowIssue]);
 

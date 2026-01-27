@@ -68,7 +68,7 @@ export default function NormalIssueDetail({
     {
       id: "1",
       content: "这个Issue看起来很重要，我们需要尽快处理。",
-      author: "张三",
+      author: user?.user_metadata.name as string,
       authorAvatar: user?.user_metadata.avatar_url as string,
       createdAt: "2024-01-10T10:30:00Z",
       mentions: [],
@@ -162,7 +162,7 @@ export default function NormalIssueDetail({
   };
 
   const filteredMembers = teamMembers.filter((member) =>
-    member.name.toLowerCase().includes(mentionQuery.toLowerCase())
+    member.name.toLowerCase().includes(mentionQuery.toLowerCase()),
   );
 
   const formatDate = (dateString: string) => {
@@ -450,7 +450,7 @@ export default function NormalIssueDetail({
                             </label>
                             <div className="text-sm text-app-text-primary">
                               {new Date(
-                                (localIssue as ExtendedIssue).deadline!
+                                (localIssue as ExtendedIssue).deadline!,
                               ).toLocaleDateString("zh-CN")}
                             </div>
                           </div>
@@ -512,7 +512,7 @@ export default function NormalIssueDetail({
                                 onClick={() =>
                                   handleFieldSave(
                                     "description",
-                                    localIssue.description
+                                    localIssue.description,
                                   )
                                 }
                                 className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"

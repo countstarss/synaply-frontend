@@ -7,7 +7,7 @@ import {
 } from "react-icons/ri";
 import { Node } from "reactflow";
 import { CustomNodeData } from "./CustomNode";
-import MentionInput from "../MentionInput";
+import MentionInput from "@/app/[locale]/(main)/(team)/team/_components/MentionInput";
 
 interface NodeDetailsModalProps {
   isOpen: boolean;
@@ -45,7 +45,7 @@ export default function NodeDetailsModal({
   if (!isOpen || !node) return null;
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
     setFormData({

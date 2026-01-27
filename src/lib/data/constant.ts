@@ -27,7 +27,7 @@ export const mainNavItems = [
   { icon: ListCheck, label: "My Task", href: "/tasks" },
   { icon: MessageSquareCode, label: "Chat", href: "/chat" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
-  { icon: Bug, label: "Issues", href: "/team/issues" },
+  { icon: Bug, label: "Issues", href: "/issues" },
   // 顶部不再显示setting选项, 因为它会扰乱UI切换逻辑, 代为一个单独按钮打开
   // { icon: Settings, label: "Settings", href: "/settings" },
 ];
@@ -43,17 +43,17 @@ export const personalNavItems = [
   { icon: FolderOpen, label: "Projects", href: "/projects" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
   { icon: Bug, label: "Issues", href: "/issues" },
-  { icon: Settings, label: "Settings", href: "/settings" },
+  // { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
-// WorkSpace 子项
+// NOTE: WorkSpace 子项
 export const workspaceItems = [
   { icon: FolderOpen, label: "Projects", href: "/team/projects" },
   { icon: Eye, label: "Views", href: "/team/views" },
   { icon: Workflow, label: "Workflows", href: "/team/workflows" },
 ];
 
-// Personal 子项
+// NOTE: Personal 子项
 export const personalItems = [
   { icon: FolderOpen, label: "Projects", href: "/personal/projects" },
   { icon: Eye, label: "Views", href: "/personal/views" },

@@ -1,7 +1,7 @@
 import React, { memo, useState } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { RiEditLine, RiInformationLine } from "react-icons/ri";
-import MentionInput from "../MentionInput";
+import MentionInput from "@/app/[locale]/(main)/(team)/team/_components/MentionInput";
 
 export interface CustomNodeData {
   label: string;
@@ -69,11 +69,11 @@ function CustomNode({ data, isConnectable }: NodeProps<CustomNodeData>) {
       ? // 如果 data.color 包含空格，说明是完整的 CSS 类名，直接使用
         data.color
       : // 否则使用基于 role 的预设颜色
-      roleColors[data.role]
-      ? `${roleColors[data.role].border} ${roleColors[data.role].bg} ${
-          roleColors[data.role].text
-        }`
-      : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/20 text-gray-700 dark:text-gray-400";
+        roleColors[data.role]
+        ? `${roleColors[data.role].border} ${roleColors[data.role].bg} ${
+            roleColors[data.role].text
+          }`
+        : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/20 text-gray-700 dark:text-gray-400";
 
   // 优先使用传入的图标，如果没有则使用基于 role 的预设图标
   const icon = data.icon || roleIcons[data.role] || "👤";
