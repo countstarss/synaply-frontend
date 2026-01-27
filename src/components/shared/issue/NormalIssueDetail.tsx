@@ -54,6 +54,7 @@ const priorityOptions = [
   { value: "urgent", label: "紧急", color: "bg-red-100 text-red-700" },
 ];
 
+// TO AGENTS: 不要破坏这个组件的整体布局和样式, 增减一些内容或者字段是OK的;
 export default function NormalIssueDetail({
   issue,
   isOpen,
@@ -162,7 +163,7 @@ export default function NormalIssueDetail({
   };
 
   const filteredMembers = teamMembers.filter((member) =>
-    member.name.toLowerCase().includes(mentionQuery.toLowerCase())
+    member.name.toLowerCase().includes(mentionQuery.toLowerCase()),
   );
 
   const formatDate = (dateString: string) => {
@@ -450,7 +451,7 @@ export default function NormalIssueDetail({
                             </label>
                             <div className="text-sm text-app-text-primary">
                               {new Date(
-                                (localIssue as ExtendedIssue).deadline!
+                                (localIssue as ExtendedIssue).deadline!,
                               ).toLocaleDateString("zh-CN")}
                             </div>
                           </div>
@@ -512,7 +513,7 @@ export default function NormalIssueDetail({
                                 onClick={() =>
                                   handleFieldSave(
                                     "description",
-                                    localIssue.description
+                                    localIssue.description,
                                   )
                                 }
                                 className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"

@@ -9,6 +9,7 @@ import {
   PenBox,
   Send,
   Trash2,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -17,15 +18,26 @@ import { NavItem } from "./NavItem";
 import { AccountSwitcher } from "./AccountSwitcher";
 import { useMailStore } from "../store/use-mail-store";
 import { NavLinkItem, EmailAccount } from "../types/mail.entity";
+import { MailAccessView } from "../types/access";
 import { getUnreadCount } from "../data/mock-data";
 
 interface MailNavProps {
   accounts: EmailAccount[];
   isCollapsed: boolean;
   onCompose?: () => void;
+  activeView?: MailAccessView;
+  showAdminPanel?: boolean;
+  onViewChange?: (view: MailAccessView) => void;
 }
 
-export function MailNav({ accounts, isCollapsed, onCompose }: MailNavProps) {
+export function MailNav({
+  accounts,
+  isCollapsed,
+  onCompose,
+  activeView = "mail",
+  showAdminPanel = false,
+  onViewChange,
+}: MailNavProps) {
   const { currentFolder, setCurrentFolder, emails } = useMailStore();
 
   // 获取未读数量，0 时不显示
@@ -39,28 +51,40 @@ export function MailNav({ accounts, isCollapsed, onCompose }: MailNavProps) {
       label: inboxUnread > 0 ? inboxUnread.toString() : "",
       icon: Inbox,
       variant: currentFolder === "inbox" ? "default" : "ghost",
-      onClick: () => setCurrentFolder("inbox"),
+      onClick: () => {
+        onViewChange?.("mail");
+        setCurrentFolder("inbox");
+      },
     },
     {
       title: "草稿箱",
       label: draftCount > 0 ? draftCount.toString() : "",
       icon: File,
       variant: currentFolder === "draft" ? "default" : "ghost",
-      onClick: () => setCurrentFolder("draft"),
+      onClick: () => {
+        onViewChange?.("mail");
+        setCurrentFolder("draft");
+      },
     },
     {
       title: "已发送",
       label: "",
       icon: Send,
       variant: currentFolder === "sent" ? "default" : "ghost",
-      onClick: () => setCurrentFolder("sent"),
+      onClick: () => {
+        onViewChange?.("mail");
+        setCurrentFolder("sent");
+      },
     },
     {
       title: "垃圾箱",
       label: "",
       icon: ArchiveX,
       variant: currentFolder === "junk" ? "default" : "ghost",
-      onClick: () => setCurrentFolder("junk"),
+      onClick: () => {
+        onViewChange?.("mail");
+        setCurrentFolder("junk");
+      },
     },
   ];
 
@@ -71,16 +95,34 @@ export function MailNav({ accounts, isCollapsed, onCompose }: MailNavProps) {
       label: "",
       icon: Trash2,
       variant: currentFolder === "trash" ? "default" : "ghost",
-      onClick: () => setCurrentFolder("trash"),
+      onClick: () => {
+        onViewChange?.("mail");
+        setCurrentFolder("trash");
+      },
     },
     {
       title: "存档",
       label: "",
       icon: Archive,
       variant: currentFolder === "archive" ? "default" : "ghost",
-      onClick: () => setCurrentFolder("archive"),
+      onClick: () => {
+        onViewChange?.("mail");
+        setCurrentFolder("archive");
+      },
     },
   ];
+
+  const adminLinks: NavLinkItem[] = showAdminPanel
+    ? [
+        {
+          title: "管理面板",
+          label: "",
+          icon: Shield,
+          variant: activeView === "admin" ? "default" : "ghost",
+          onClick: () => onViewChange?.("admin"),
+        },
+      ]
+    : [];
 
   return (
     <div
@@ -134,6 +176,7 @@ export function MailNav({ accounts, isCollapsed, onCompose }: MailNavProps) {
             )}
             onClick={() => {
               // TODO: 打开写邮件弹窗
+              onViewChange?.("mail");
               onCompose?.();
             }}
           >
@@ -165,6 +208,20 @@ export function MailNav({ accounts, isCollapsed, onCompose }: MailNavProps) {
           System
         </span>
         <NavItem isCollapsed={isCollapsed} links={secondaryLinks} />
+
+        {showAdminPanel && (
+          <>
+            <span
+              className={cn(
+                "text-muted-foreground text-xs px-4 mt-4 block",
+                isCollapsed && "hidden",
+              )}
+            >
+              Admin
+            </span>
+            <NavItem isCollapsed={isCollapsed} links={adminLinks} />
+          </>
+        )}
       </ScrollArea>
 
       {/* User Info (Bottom) */}

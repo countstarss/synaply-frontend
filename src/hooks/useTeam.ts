@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import {
   fetchUserTeams,
   createTeam,
@@ -15,6 +16,7 @@ import { CreateTeamDto } from "@/api";
 export const useTeam = () => {
   const { session } = useAuth();
   const queryClient = useQueryClient();
+  const { currentWorkspace } = useWorkspace();
 
   // MARK: - 获取用户所有团队
   const {
@@ -39,8 +41,10 @@ export const useTeam = () => {
 
   // MARK: - 当前用户团队状态
   const hasTeams = teams && teams.length > 0;
-  const hasOnlyOneTeam = teams && teams.length === 1;
-  const currentTeam = hasOnlyOneTeam ? teams[0] : null;
+  const currentTeam =
+    currentWorkspace?.teamId && teams
+      ? teams.find((team) => team.id === currentWorkspace.teamId) || null
+      : null;
 
   // MARK: -获取当前团队成员信息;
   // const currentTeamMember =
@@ -56,20 +60,19 @@ export const useTeam = () => {
     isCreatingTeam: createTeamMutation.isPending,
     createTeamError: createTeamMutation.error,
     hasTeams,
-    hasOnlyOneTeam,
     currentTeam,
     // currentTeamMember,
   };
 };
 
 /**
- * MARK: 获取当前用户的主团队（第一个团队）
+ * MARK: 获取当前工作空间对应团队
  */
 export const useCurrentTeam = () => {
-  const { teams, isLoadingTeams, teamsError } = useTeam();
+  const { currentTeam, isLoadingTeams, teamsError } = useTeam();
 
   return {
-    team: teams?.[0] || null,
+    team: currentTeam,
     isLoading: isLoadingTeams,
     error: teamsError,
   };

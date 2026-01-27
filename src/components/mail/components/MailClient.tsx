@@ -7,6 +7,9 @@ import { cn } from "@/lib/utils";
 import { MailNav } from "./MailNav";
 import { MailList } from "./MailList";
 import { MailComposer } from "./MailComposer";
+import { MailAdminPanel } from "./MailAdminPanel";
+import { MailAccessRequest } from "./MailAccessRequest";
+import { MailPersonalNotice } from "./MailPersonalNotice";
 import { EmailAccount } from "../types/mail.entity";
 import { mockAccounts } from "../data/mock-data";
 import {
@@ -16,6 +19,8 @@ import {
   subscribeEmailIconUpdates,
 } from "../config/email-icon-registry";
 import { useMailStore } from "../store/use-mail-store";
+import { useMailAccessStore } from "../store/use-mail-access-store";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface MailClientProps {
   accounts?: EmailAccount[];
@@ -29,6 +34,13 @@ export function MailClient({
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed);
   const [, setIconVersion] = React.useState(0);
   const { openComposer, hydrateDrafts } = useMailStore();
+  const { currentWorkspace } = useWorkspace();
+  const {
+    role,
+    activeView,
+    setActiveView,
+    getCurrentUserAccount,
+  } = useMailAccessStore();
 
   React.useEffect(() => {
     const initIcons = async () => {
@@ -63,6 +75,19 @@ export function MailClient({
     });
   };
 
+  const isPersonalWorkspace = currentWorkspace?.type === "PERSONAL";
+  const isAdmin = role === "OWNER" || role === "ADMIN";
+  const currentAccount = getCurrentUserAccount();
+  const hasMailbox = currentAccount?.status === "active";
+
+  if (isPersonalWorkspace) {
+    return <MailPersonalNotice />;
+  }
+
+  if (role === "MEMBER" && !hasMailbox) {
+    return <MailAccessRequest />;
+  }
+
   return (
     <TooltipProvider delayDuration={0}>
       <div className="flex h-full w-full">
@@ -71,6 +96,9 @@ export function MailClient({
           accounts={accounts}
           isCollapsed={isCollapsed}
           onCompose={handleCompose}
+          activeView={activeView}
+          showAdminPanel={isAdmin}
+          onViewChange={setActiveView}
         />
 
         {/* 主内容区域 */}
@@ -109,7 +137,11 @@ export function MailClient({
 
           {/* 邮件列表和详情 */}
           <div className="flex-1 overflow-hidden">
-            <MailList defaultLayout={[40, 60]} />
+            {isAdmin && activeView === "admin" ? (
+              <MailAdminPanel />
+            ) : (
+              <MailList defaultLayout={[40, 60]} />
+            )}
           </div>
         </div>
       </div>

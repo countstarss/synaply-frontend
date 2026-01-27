@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
+import { useWorkspaceStore } from "@/stores/workspace";
 import {
   fetchUserWorkspaces,
   Workspace as APIWorkspace,
@@ -22,9 +23,7 @@ export interface Workspace {
 export function useWorkspace() {
   const { session } = useAuth();
   const queryClient = useQueryClient();
-  const [currentWorkspaceId, setCurrentWorkspaceId] = useState<string | null>(
-    null
-  );
+  const { currentWorkspaceId, setCurrentWorkspaceId } = useWorkspaceStore();
 
   // 获取用户所有工作空间
   const {
@@ -66,7 +65,7 @@ export function useWorkspace() {
         setCurrentWorkspaceId(personalWorkspace?.id || workspaces[0].id);
       }
     }
-  }, [workspaces, currentWorkspaceId]);
+  }, [workspaces, currentWorkspaceId, setCurrentWorkspaceId]);
 
   // 获取当前工作空间
   const currentWorkspace =

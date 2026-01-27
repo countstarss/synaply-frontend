@@ -7,7 +7,6 @@ import ContextMenuWrapper from "@/components/ContextMenuWrapper";
 // 缓存页面组件
 import { CachedDocsPage } from "./pages/CachedDocsPage";
 import { CachedInboxPage } from "./pages/CachedInboxPage";
-import { CachedSettingsPage } from "./pages/CachedSettingsPage";
 import { CachedChatPage } from "./pages/CachedChatPage";
 import { CachedTasksPage } from "./pages/CachedTasksPage";
 import { CachedDashboardPage } from "./pages/CachedDashboardPage";
@@ -20,7 +19,6 @@ const PAGE_COMPONENTS = {
   chat: CachedChatPage,
   docs: CachedDocsPage,
   dashboard: CachedDashboardPage,
-  settings: CachedSettingsPage,
 } as const;
 
 type PageId = keyof typeof PAGE_COMPONENTS;
@@ -32,7 +30,6 @@ const PAGE_ORDER: Record<PageId, number> = {
   chat: 3,
   docs: 4,
   dashboard: 5,
-  settings: 6,
 };
 
 // 路径到页面ID的映射
@@ -42,7 +39,6 @@ const getPageIdFromPath = (pathname: string): PageId | null => {
   if (pathname.includes("/chat")) return "chat";
   if (pathname.includes("/docs")) return "docs";
   if (pathname.includes("/dashboard")) return "dashboard";
-  if (pathname.includes("/settings")) return "settings";
   return null;
 };
 
@@ -144,22 +140,6 @@ export const GlobalPageCache = React.memo(() => {
       // 清除之前的动画
       if (animationTimeoutRef.current) {
         clearTimeout(animationTimeoutRef.current);
-      }
-
-      // settings 页面不使用动画，直接切换
-      if (toPageId === "settings" || fromPageId === "settings") {
-        setPageStates((prev) => {
-          const newStates = { ...prev };
-          Object.keys(newStates).forEach((id) => {
-            newStates[id as PageId] = {
-              ...newStates[id as PageId],
-              position: id === toPageId ? "center" : "hidden",
-              isAnimating: false,
-            };
-          });
-          return newStates;
-        });
-        return;
       }
 
       const fromOrder = fromPageId ? PAGE_ORDER[fromPageId] : 0;

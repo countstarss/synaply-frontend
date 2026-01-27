@@ -32,8 +32,8 @@ const SidebarSection = ({
       <div
         className={cn(
           "flex items-center gap-2 px-4 py-2 text-xs font-semibold",
-          "text-gray-400 uppercase tracking-wider select-none",
-          isCollapsible && "cursor-pointer"
+          "text-gray-400 tracking-wider select-none",
+          isCollapsible && "cursor-pointer",
         )}
         onClick={toggleExpanded}
       >

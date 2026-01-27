@@ -225,18 +225,18 @@ export function MailList({
             <span className="text-xs text-muted-foreground">
               共 {folderStats.total} 封邮件
             </span>
+            {folderStats.total > 0 ? (
+              <span className="text-xs text-muted-foreground">
+                {folderStats.hasUnread && `${folderStats.unread} 封未读`}
+                {folderStats.hasUnread && folderStats.starred > 0 && " · "}
+                {folderStats.starred > 0 && `${folderStats.starred} 封星标`}
+              </span>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                {folderTitle}中没有邮件
+              </span>
+            )}
           </div>
-          {folderStats.total > 0 ? (
-            <p className="text-xs text-muted-foreground">
-              {folderStats.hasUnread && `${folderStats.unread} 封未读`}
-              {folderStats.hasUnread && folderStats.starred > 0 && " · "}
-              {folderStats.starred > 0 && `${folderStats.starred} 封星标`}
-            </p>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              {folderTitle}中没有邮件
-            </p>
-          )}
         </div>
         <TabsList className="ml-auto">
           <TabsTrigger value="all">全部</TabsTrigger>
