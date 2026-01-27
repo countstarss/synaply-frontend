@@ -1,10 +1,11 @@
-// 邮件发送者/接收者
+// MARK: 邮件发送者/接收者
 export interface EmailContact {
   name: string;
   email: string;
+  avatar?: string;
 }
 
-// 邮件附件
+// MARK: 邮件附件
 export interface EmailAttachment {
   id: string;
   filename: string;
@@ -12,26 +13,34 @@ export interface EmailAttachment {
   contentType: string;
 }
 
-// 邮件消息
+// MARK: 邮件消息
 export interface EmailMessage {
   id: string;
   subject: string;
   snippet: string;
   body?: string;
   date: string;
-  unread: boolean;
+  isRead: boolean;
+  isStarred: boolean;
   sender: EmailContact;
   recipients: EmailContact[];
+  cc?: EmailContact[];
   labels?: string[];
-  folder?: string;
+  folder: "inbox" | "sent" | "draft" | "trash" | "archive" | "junk";
   hasAttachments?: boolean;
   attachments?: EmailAttachment[];
 }
 
-// 邮件文件夹类型
-export type MailFolder = "inbox" | "sent" | "draft" | "trash" | "archive" | "junk";
+// MARK: 邮件文件夹类型
+export type MailFolder =
+  | "inbox"
+  | "sent"
+  | "draft"
+  | "trash"
+  | "archive"
+  | "junk";
 
-// 导航链接项
+// MARK: 导航链接项
 export interface NavLinkItem {
   title: string;
   label?: string;
@@ -42,14 +51,14 @@ export interface NavLinkItem {
   onClick?: () => void;
 }
 
-// 邮件账户
+// MARK: 邮件账户
 export interface EmailAccount {
   label: string;
   email: string;
   icon?: React.ReactNode;
 }
 
-// 邮件状态
+// MARK: 邮件状态
 export interface MailState {
   currentFolder: MailFolder;
   selectedId: string | null;

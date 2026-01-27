@@ -1,11 +1,13 @@
 "use client";
 
 import { create } from "zustand";
-import { MailFolder, MailState, EmailMessage } from "./types";
-import { mockEmails } from "./mock-data";
+import { MailFolder, EmailMessage } from "../types/mail.entity";
+import { mockEmails } from "../data/mock-data";
 
-interface MailStore extends MailState {
-  // 邮件列表
+interface MailStore {
+  // 状态
+  currentFolder: MailFolder;
+  selectedId: string | null;
   emails: EmailMessage[];
 
   // Actions
@@ -57,7 +59,7 @@ export const useMailStore = create<MailStore>((set, get) => ({
     // TODO: 调用 API 标记邮件为已读
     set((state) => ({
       emails: state.emails.map((email) =>
-        email.id === id ? { ...email, unread: false } : email
+        email.id === id ? { ...email, isRead: true } : email,
       ),
     }));
   },
@@ -67,7 +69,7 @@ export const useMailStore = create<MailStore>((set, get) => ({
     // TODO: 调用 API 标记邮件为未读
     set((state) => ({
       emails: state.emails.map((email) =>
-        email.id === id ? { ...email, unread: true } : email
+        email.id === id ? { ...email, isRead: false } : email,
       ),
     }));
   },
@@ -77,7 +79,7 @@ export const useMailStore = create<MailStore>((set, get) => ({
     // TODO: 调用 API 移动邮件到指定文件夹
     set((state) => ({
       emails: state.emails.map((email) =>
-        email.id === id ? { ...email, folder } : email
+        email.id === id ? { ...email, folder } : email,
       ),
       selectedId: state.selectedId === id ? null : state.selectedId,
     }));
@@ -87,19 +89,9 @@ export const useMailStore = create<MailStore>((set, get) => ({
   toggleStar: (id) => {
     // TODO: 调用 API 切换邮件星标状态
     set((state) => ({
-      emails: state.emails.map((email) => {
-        if (email.id === id) {
-          const labels = email.labels || [];
-          const hasImportant = labels.includes("important");
-          return {
-            ...email,
-            labels: hasImportant
-              ? labels.filter((l) => l !== "important")
-              : [...labels, "important"],
-          };
-        }
-        return email;
-      }),
+      emails: state.emails.map((email) =>
+        email.id === id ? { ...email, isStarred: !email.isStarred } : email,
+      ),
     }));
   },
 

@@ -8,7 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { NavLinkItem } from "./types";
+import { NavLinkItem } from "../types/mail.entity";
 
 interface NavItemProps {
   isCollapsed: boolean;
@@ -32,7 +32,7 @@ export function NavItem({ links, isCollapsed }: NavItemProps) {
                   className={cn(
                     "h-9 w-9",
                     (link.variant === "default" || link.isActive) &&
-                      "dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-white"
+                      "dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-white",
                   )}
                   onClick={link.onClick}
                 >
@@ -57,7 +57,7 @@ export function NavItem({ links, isCollapsed }: NavItemProps) {
               className={cn(
                 (link.variant === "default" || link.isActive) &&
                   "dark:bg-muted dark:text-white dark:hover:bg-muted dark:hover:text-white",
-                "justify-start"
+                "justify-start",
               )}
               onClick={link.onClick}
             >
@@ -68,14 +68,14 @@ export function NavItem({ links, isCollapsed }: NavItemProps) {
                   className={cn(
                     "ml-auto",
                     link.variant === "default" &&
-                      "text-background dark:text-white"
+                      "text-background dark:text-white",
                   )}
                 >
                   {link.label}
                 </span>
               )}
             </Button>
-          )
+          ),
         )}
       </nav>
     </div>

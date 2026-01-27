@@ -16,7 +16,8 @@ import {
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { User, LogOut, Settings, Plus, Check } from "lucide-react";
-import { EmailAccount } from "./types";
+import { EmailAccount } from "../types/mail.entity";
+import { MailIconSettingsDialog } from "./MailIconSettingsDialog";
 
 interface AccountSwitcherProps {
   isCollapsed: boolean;
@@ -28,12 +29,13 @@ export function AccountSwitcher({
   accounts,
 }: AccountSwitcherProps) {
   const [selectedAccount, setSelectedAccount] = React.useState<string>(
-    accounts[0]?.email || ""
+    accounts[0]?.email || "",
   );
+  const [iconSettingsOpen, setIconSettingsOpen] = React.useState(false);
 
   // 获取当前账户信息
   const currentAccount = accounts.find(
-    (account) => account.email === selectedAccount
+    (account) => account.email === selectedAccount,
   );
 
   // 获取用户名首字母作为头像备用显示
@@ -61,7 +63,7 @@ export function AccountSwitcher({
           variant="outline"
           className={cn(
             "h-11 py-1 flex w-full justify-start gap-2 [&>span]:line-clamp-1 [&>span]:flex [&>span]:items-center [&>span]:gap-1 [&>span]:truncate",
-            isCollapsed && "h-9 w-9 justify-center p-0"
+            isCollapsed && "h-9 w-9 justify-center p-0",
           )}
         >
           <Avatar className="h-7 w-7">
@@ -138,7 +140,7 @@ export function AccountSwitcher({
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => {
-              // TODO: 跳转到邮箱设置页面
+              setIconSettingsOpen(true);
             }}
           >
             <Settings className="mr-2 h-4 w-4" />
@@ -166,6 +168,11 @@ export function AccountSwitcher({
           <span>注销当前账户</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
+
+      <MailIconSettingsDialog
+        open={iconSettingsOpen}
+        onOpenChange={setIconSettingsOpen}
+      />
     </DropdownMenu>
   );
 }

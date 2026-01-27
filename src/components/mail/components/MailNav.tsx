@@ -15,9 +15,9 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { NavItem } from "./NavItem";
 import { AccountSwitcher } from "./AccountSwitcher";
-import { useMailStore } from "./use-mail-store";
-import { NavLinkItem, EmailAccount } from "./types";
-import { getUnreadCount } from "./mock-data";
+import { useMailStore } from "../store/use-mail-store";
+import { NavLinkItem, EmailAccount } from "../types/mail.entity";
+import { getUnreadCount } from "../data/mock-data";
 
 interface MailNavProps {
   accounts: EmailAccount[];
@@ -25,25 +25,25 @@ interface MailNavProps {
   onCompose?: () => void;
 }
 
-export function MailNav({
-  accounts,
-  isCollapsed,
-  onCompose,
-}: MailNavProps) {
+export function MailNav({ accounts, isCollapsed, onCompose }: MailNavProps) {
   const { currentFolder, setCurrentFolder, emails } = useMailStore();
+
+  // 获取未读数量，0 时不显示
+  const inboxUnread = getUnreadCount(emails, "inbox");
+  const draftCount = emails.filter((e) => e.folder === "draft").length;
 
   // 主要链接数据
   const mainLinks: NavLinkItem[] = [
     {
       title: "收件箱",
-      label: getUnreadCount(emails, "inbox").toString() || "",
+      label: inboxUnread > 0 ? inboxUnread.toString() : "",
       icon: Inbox,
       variant: currentFolder === "inbox" ? "default" : "ghost",
       onClick: () => setCurrentFolder("inbox"),
     },
     {
       title: "草稿箱",
-      label: getUnreadCount(emails, "draft").toString() || "",
+      label: draftCount > 0 ? draftCount.toString() : "",
       icon: File,
       variant: currentFolder === "draft" ? "default" : "ghost",
       onClick: () => setCurrentFolder("draft"),
@@ -86,7 +86,7 @@ export function MailNav({
     <div
       className={cn(
         "flex flex-col bg-background border-r h-full transition-all duration-300",
-        isCollapsed ? "w-[60px] items-center" : "w-[220px]"
+        isCollapsed ? "w-[60px] items-center" : "w-[220px]",
       )}
     >
       {/* Logo */}
@@ -113,13 +113,15 @@ export function MailNav({
       <div
         className={cn(
           "flex flex-col",
-          isCollapsed ? "items-center" : "justify-start"
+          isCollapsed ? "items-center" : "justify-start",
         )}
       >
         <div
           className={cn(
             "mt-2 w-full",
-            isCollapsed ? "flex flex-col items-center px-2" : "justify-start px-2"
+            isCollapsed
+              ? "flex flex-col items-center px-2"
+              : "justify-start px-2",
           )}
         >
           <Button
@@ -128,7 +130,7 @@ export function MailNav({
               "rounded-md bg-primary text-primary-foreground shadow transition-all",
               isCollapsed
                 ? "w-9 h-9 p-0 flex items-center justify-center"
-                : "w-full px-4 py-2 flex items-center justify-start"
+                : "w-full px-4 py-2 flex items-center justify-start",
             )}
             onClick={() => {
               // TODO: 打开写邮件弹窗
@@ -146,7 +148,7 @@ export function MailNav({
         <span
           className={cn(
             "text-muted-foreground text-xs px-4",
-            isCollapsed && "hidden"
+            isCollapsed && "hidden",
           )}
         >
           Main
@@ -157,7 +159,7 @@ export function MailNav({
         <span
           className={cn(
             "text-muted-foreground text-xs px-4 mt-4 block",
-            isCollapsed && "hidden"
+            isCollapsed && "hidden",
           )}
         >
           System
@@ -166,12 +168,7 @@ export function MailNav({
       </ScrollArea>
 
       {/* User Info (Bottom) */}
-      <div
-        className={cn(
-          "p-4 border-t",
-          isCollapsed ? "px-2" : "px-4"
-        )}
-      >
+      <div className={cn("p-4 border-t", isCollapsed ? "px-2" : "px-4")}>
         {isCollapsed ? (
           <div className="w-9 h-9 bg-muted rounded-full flex items-center justify-center overflow-hidden mx-auto">
             <span className="font-medium text-sm">LK</span>
