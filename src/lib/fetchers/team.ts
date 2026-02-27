@@ -134,6 +134,62 @@ export const fetchTeamMembers = async (
 };
 
 /**
+ * MARK: - ✅更新团队成员角色
+ */
+export const updateTeamMemberRole = async (
+  teamId: string,
+  memberUserId: string,
+  role: "OWNER" | "ADMIN" | "MEMBER",
+  token: string
+): Promise<TeamMember> => {
+  const response = await fetch(
+    `${API_BASE_URL}/teams/${teamId}/members/${memberUserId}/role`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ role }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.message || "更新成员角色失败");
+  }
+
+  return response.json();
+};
+
+/**
+ * MARK: - ✅移除团队成员
+ */
+export const removeTeamMember = async (
+  teamId: string,
+  memberUserId: string,
+  token: string
+): Promise<{ message: string }> => {
+  const response = await fetch(
+    `${API_BASE_URL}/teams/${teamId}/members/${memberUserId}`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.message || "移除成员失败");
+  }
+
+  return response.json();
+};
+
+/**
  * MARK: - ✅获取团队详情
  */
 export const fetchTeamById = async (

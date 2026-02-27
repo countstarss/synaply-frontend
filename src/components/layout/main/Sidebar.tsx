@@ -20,7 +20,7 @@ import {
 } from "@/lib/data/constant";
 import { settingMockData } from "@/lib/data/settingData";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
-import { useTeam } from "@/hooks/useTeam";
+import { useCurrentTeam } from "@/hooks/useTeam";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { CreateTeamDialog } from "@/components/dialogs/CreateTeamDialog";
 import { Plus } from "lucide-react";
@@ -33,11 +33,11 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
   const { isOpen: sidebarOpen } = useSidebarStore();
   const { mode, switchToMain } = useSidebarMode();
   const router = useRouter();
-  const { hasOnlyOneTeam, currentTeam } = useTeam();
+  const { team: currentTeam } = useCurrentTeam();
   const { currentWorkspace } = useWorkspace();
 
   const handleBackToMain = useCallback(() => {
-    router.back();
+    router.push("/inbox");
     switchToMain();
   }, [router, switchToMain]);
 
@@ -48,7 +48,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
           "w-64 h-[calc(100vh-16px)] bg-app-bg lg:flex hidden flex-col my-2 ml-2 mr-0 border border-app-border rounded-lg overflow-hidden",
           "transition-transform duration-300 ease-in-out",
           !sidebarOpen && "pointer-events-none",
-          className
+          className,
         )}
       >
         {/* 品牌标识 - 始终显示 */}
@@ -60,7 +60,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
           <div
             className={cn(
               "absolute inset-0 transition-transform duration-300 ease-in-out",
-              mode === "settings" ? "-translate-x-full" : "translate-x-0"
+              mode === "settings" ? "-translate-x-full" : "translate-x-0",
             )}
           >
             {/* MARK: Personal导航
@@ -106,31 +106,20 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
                   </div>
 
                   {/* Team 部分 */}
-                  {hasOnlyOneTeam && currentTeam ? (
-                    <SidebarSection title={currentTeam.name}>
-                      {workspaceItems.map((item) => (
-                        <SidebarNavItem
-                          key={item.href}
-                          icon={item.icon}
-                          label={item.label}
-                          href={item.href}
-                        />
-                      ))}
-                    </SidebarSection>
-                  ) : (
-                    <SidebarSection title="Team">
-                      <CreateTeamDialog>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="flex items-center gap-2 text-sm w-full justify-start px-3 py-2"
-                        >
-                          <Plus className="h-4 w-4" />
-                          <span>创建团队</span>
-                        </Button>
-                      </CreateTeamDialog>
-                    </SidebarSection>
-                  )}
+                  <SidebarSection
+                    title={
+                      currentTeam?.name || currentWorkspace?.name || "Team"
+                    }
+                  >
+                    {workspaceItems.map((item) => (
+                      <SidebarNavItem
+                        key={item.href}
+                        icon={item.icon}
+                        label={item.label}
+                        href={item.href}
+                      />
+                    ))}
+                  </SidebarSection>
 
                   {/* Personal 部分 */}
                   <SidebarSection title="Personal">
@@ -153,7 +142,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
           <div
             className={cn(
               "absolute inset-0 transition-transform duration-300 ease-in-out",
-              mode === "settings" ? "translate-x-0" : "translate-x-full"
+              mode === "settings" ? "translate-x-0" : "translate-x-full",
             )}
           >
             <div className="h-full overflow-y-auto">

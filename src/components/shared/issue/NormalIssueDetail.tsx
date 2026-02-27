@@ -54,6 +54,7 @@ const priorityOptions = [
   { value: "urgent", label: "紧急", color: "bg-red-100 text-red-700" },
 ];
 
+// TO AGENTS: 不要破坏这个组件的整体布局和样式, 增减一些内容或者字段是OK的;
 export default function NormalIssueDetail({
   issue,
   isOpen,
