@@ -1,5 +1,5 @@
 import { Node, Edge, MarkerType } from "reactflow";
-import { CustomNodeData } from "./workflow/CustomNode";
+import { CustomNodeData } from "@/components/workflow/CustomNode";
 
 export const initialNodes: Node<CustomNodeData>[] = [
   {

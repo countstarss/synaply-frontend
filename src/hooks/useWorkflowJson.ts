@@ -2,18 +2,18 @@ import { useState, useCallback } from "react";
 import { Node, Edge, MarkerType } from "reactflow";
 // import { CustomNodeData } from "@/app/[locale]/(main)/(team)/team/components/workflow/CustomNode";
 import { Workflow, WorkflowNode, WorkflowEdge } from "@/types/team";
-import { CustomNodeData } from "@/app/[locale]/(main)/(team)/team/_components/workflow/CustomNode";
+import { CustomNodeData } from "@/components/workflow/CustomNode";
 
 interface WorkflowJsonHookResult {
   exportWorkflowJson: (nodes: Node<CustomNodeData>[], edges: Edge[]) => string;
   importWorkflowJson: (
-    jsonString: string
+    jsonString: string,
   ) => { nodes: Node<CustomNodeData>[]; edges: Edge[] } | null;
   viewWorkflowJson: (nodes: Node<CustomNodeData>[], edges: Edge[]) => void;
   saveWorkflowWithJson: (
     workflow: Workflow,
     nodes: Node<CustomNodeData>[],
-    edges: Edge[]
+    edges: Edge[],
   ) => Workflow;
   jsonError: string | null;
 }
@@ -84,12 +84,12 @@ export function useWorkflowJson(): WorkflowJsonHookResult {
       } catch (error) {
         setJsonError(
           "导出JSON失败: " +
-            (error instanceof Error ? error.message : String(error))
+            (error instanceof Error ? error.message : String(error)),
         );
         return "{}";
       }
     },
-    []
+    [],
   );
 
   /**
@@ -130,7 +130,7 @@ export function useWorkflowJson(): WorkflowJsonHookResult {
             color: node.data.color,
             assignee: node.data.assignee,
           },
-        })
+        }),
       );
 
       const edges: Edge[] = parsedData.edges.map(
@@ -148,7 +148,7 @@ export function useWorkflowJson(): WorkflowJsonHookResult {
           markerEnd: edge.markerEnd
             ? { type: MarkerType.ArrowClosed }
             : undefined,
-        })
+        }),
       );
 
       setJsonError(null);
@@ -156,7 +156,7 @@ export function useWorkflowJson(): WorkflowJsonHookResult {
     } catch (error) {
       setJsonError(
         "导入JSON失败: " +
-          (error instanceof Error ? error.message : String(error))
+          (error instanceof Error ? error.message : String(error)),
       );
       return null;
     }
@@ -170,7 +170,7 @@ export function useWorkflowJson(): WorkflowJsonHookResult {
       const jsonString = exportWorkflowJson(nodes, edges);
       console.log("工作流JSON数据:", JSON.parse(jsonString));
     },
-    [exportWorkflowJson]
+    [exportWorkflowJson],
   );
 
   /**
@@ -180,7 +180,7 @@ export function useWorkflowJson(): WorkflowJsonHookResult {
     (
       workflow: Workflow,
       nodes: Node<CustomNodeData>[],
-      edges: Edge[]
+      edges: Edge[],
     ): Workflow => {
       try {
         const jsonString = exportWorkflowJson(nodes, edges);
@@ -205,12 +205,12 @@ export function useWorkflowJson(): WorkflowJsonHookResult {
       } catch (error) {
         setJsonError(
           "保存工作流JSON失败: " +
-            (error instanceof Error ? error.message : String(error))
+            (error instanceof Error ? error.message : String(error)),
         );
         return workflow;
       }
     },
-    [exportWorkflowJson]
+    [exportWorkflowJson],
   );
 
   return {

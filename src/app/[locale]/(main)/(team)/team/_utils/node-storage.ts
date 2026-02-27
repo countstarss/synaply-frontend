@@ -1,4 +1,4 @@
-import { NodeType } from "../_components/workflow/NodePanel";
+import { NodeType } from "@/components/workflow/NodePanel";
 
 const STORAGE_KEY = "custom_workflow_nodes";
 

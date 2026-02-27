@@ -20,14 +20,14 @@ import "reactflow/dist/style.css";
 import CustomNode, { CustomNodeData } from "./CustomNode";
 import NodePanel, { NodeType } from "./NodePanel";
 import { Workflow, WorkflowNode, WorkflowEdge } from "@/types/team";
-import { generateId } from "../../_utils/storage";
+import { generateId } from "@/app/[locale]/(main)/(team)/team/_utils/storage";
 import NodeSettingsModal from "./NodeSettingsModal";
-import { nodeStorage } from "../../_utils/node-storage";
+import { nodeStorage } from "@/app/[locale]/(main)/(team)/team/_utils/node-storage";
 import WorkflowEditorToolbar from "./WorkflowEditorToolbar";
-import { getColorClasses } from "../SimpleColorPicker";
+import { getColorClasses } from "@/app/[locale]/(main)/(team)/team/_components/SimpleColorPicker";
 import NodeDetailsModal from "./NodeDetailsModal";
 import { toast } from "sonner";
-import { useWorkflowJson } from "../../_hooks/useWorkflowJson";
+import { useWorkflowJson } from "@/hooks/useWorkflowJson";
 
 const nodeTypes = {
   custom: CustomNode,
@@ -61,28 +61,41 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
   const [isNodeDetailsModalOpen, setIsNodeDetailsModalOpen] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const { project } = useReactFlow();
+  const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
 
-  // MARK: useWorkflowJson
+  // MARK: useWorkflowJson（无参数，返回工具函数）
   const {
     exportWorkflowJson,
     importWorkflowJson,
-    viewWorkflowJson,
-    logSavedWorkflow,
-    isJsonModalOpen,
-    setIsJsonModalOpen,
-    buildWorkflowJsonData,
-  } = useWorkflowJson({
-    workflow,
-    nodes,
-    edges,
-    workflowName,
-    workflowDescription,
-    isDraft,
-    setNodes,
-    setEdges,
-    setWorkflowName,
-    setWorkflowDescription,
-  });
+  } = useWorkflowJson();
+
+  const handleExportJSON = useCallback(() => {
+    const json = exportWorkflowJson(nodes, edges);
+    navigator.clipboard?.writeText(json).then(() => toast.success("已复制 JSON 到剪贴板"));
+  }, [exportWorkflowJson, nodes, edges]);
+
+  const handleImportJSON = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = (e: Event) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = importWorkflowJson(reader.result as string);
+        if (result) {
+          setNodes(result.nodes);
+          setEdges(result.edges);
+          toast.success("已导入工作流");
+        } else {
+          toast.error("导入失败");
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }, [importWorkflowJson, setNodes, setEdges]);
 
   // Load custom node types
   useEffect(() => {
@@ -290,9 +303,6 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
       isDraft: saveAsDraft,
     };
 
-    // 使用hook中的函数记录保存的工作流数据
-    logSavedWorkflow(workflowData);
-
     if (onSave) {
       onSave(workflowData);
     }
@@ -320,9 +330,9 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
         onSave={handleSaveWorkflow}
         onSaveAsDraft={handleSaveAsDraft}
         onGoBack={onCancel || (() => {})}
-        onExportJSON={exportWorkflowJson}
-        onImportJSON={importWorkflowJson}
-        onViewJSON={viewWorkflowJson}
+        onExportJSON={handleExportJSON}
+        onImportJSON={handleImportJSON}
+        onViewJSON={() => setIsJsonModalOpen(true)}
         disabled={false}
       />
 
@@ -423,7 +433,7 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
             </div>
             <div className="overflow-y-auto p-4 max-h-[calc(90vh-60px)]">
               <pre className="bg-app-bg rounded p-4 text-app-text-secondary overflow-x-auto whitespace-pre-wrap text-xs">
-                {JSON.stringify(buildWorkflowJsonData(), null, 2)}
+                {exportWorkflowJson(nodes, edges)}
               </pre>
             </div>
             <div className="p-4 border-t border-app-border flex justify-end">

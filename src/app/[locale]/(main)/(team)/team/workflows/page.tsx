@@ -11,9 +11,6 @@ import {
   RiLoader4Line,
   RiSettings3Line,
 } from "react-icons/ri";
-import WorkflowEditor from "../_components/workflow/WorkflowEditor";
-import WorkflowSetupModal from "../_components/workflow/WorkflowSetupModal";
-import WorkflowSettingsModal from "../_components/workflow/WorkflowSettingsModal";
 import { Workflow } from "@/types/team";
 import {
   useWorkflows,
@@ -25,6 +22,9 @@ import {
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { toast } from "sonner";
 import { WorkflowResponse } from "@/lib/fetchers/workflow";
+import WorkflowSetupModal from "@/components/workflow/WorkflowSetupModal";
+import WorkflowSettingsModal from "@/components/workflow/WorkflowSettingsModal";
+import WorkflowEditor from "@/components/workflow/WorkflowEditor";
 
 export default function Workflows() {
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
@@ -353,7 +353,7 @@ export default function Workflows() {
             <div className="divide-y divide-app-border">
               {workflows
                 .filter(
-                  (workflow) => !showDraftsOnly || workflow.status === "DRAFT"
+                  (workflow) => !showDraftsOnly || workflow.status === "DRAFT",
                 )
                 .map((workflow) => (
                   <div

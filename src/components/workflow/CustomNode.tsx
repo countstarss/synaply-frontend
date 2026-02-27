@@ -9,7 +9,7 @@ export interface CustomNodeData {
   color: string;
   icon?: string;
   assignee?: string;
-  status?: "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
+  status?: "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE" | "AMOST_DONE";
   isCurrentNode?: boolean;
   description?: string;
   estimatedHours?: number;
