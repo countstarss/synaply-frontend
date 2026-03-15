@@ -1,9 +1,6 @@
 import React from "react";
-import { ThemeProvider } from "./theme-provider";
-import { ConvexClientProvider } from "./convex-provider";
 import { NextIntlClientProvider } from "next-intl";
-import { AuthProvider } from "@/context/AuthContext";
-import { QueryProvider } from "./query-provider"; // 导入 QueryProvider
+import { ThemeProvider } from "./theme-provider";
 
 interface AppProviderProps {
   children: React.ReactNode;
@@ -16,15 +13,9 @@ const AppProvider = ({ children }: AppProviderProps) => {
       defaultTheme="light"
       enableSystem={false}
       disableTransitionOnChange
-      storageKey="synaply-theme"
+      storageKey="template-ui-theme"
     >
-      <ConvexClientProvider>
-        <NextIntlClientProvider>
-          <QueryProvider>
-            <AuthProvider>{children}</AuthProvider>
-          </QueryProvider>
-        </NextIntlClientProvider>
-      </ConvexClientProvider>
+      <NextIntlClientProvider>{children}</NextIntlClientProvider>
     </ThemeProvider>
   );
 };

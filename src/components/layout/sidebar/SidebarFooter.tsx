@@ -11,14 +11,14 @@ const SidebarFooter = ({ className }: SidebarFooterProps) => {
   return (
     <div
       className={cn(
-        "flex flex-col items-center px-4 py-6 mt-auto text-center",
-        className
+        "mt-auto flex flex-col items-center px-4 py-6 text-center",
+        className,
       )}
     >
-      <div className="">
-        <h3 className="text-lg font-bold mb-1">Insight Lab</h3>
-        <p className="text-xs text-gray-400">Where Insight Sparks action.</p>
-      </div>
+      <h3 className="text-sm font-semibold">UI Template Starter</h3>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Built for rapid business customization.
+      </p>
     </div>
   );
 };

@@ -1,18 +1,9 @@
 "use client";
 
-import * as React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -20,205 +11,138 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { useAuth } from "@/context/AuthContext";
-import { useTeamMembers } from "@/hooks/useTeam";
-import { useWorkspace } from "@/hooks/useWorkspace";
-import {
-  removeTeamMember,
-  updateTeamMemberRole,
-  type TeamMember,
-} from "@/lib/fetchers/team";
+import { StatusPill } from "@/components/dashboard-kit";
 
-const ROLE_LABELS: Record<string, string> = {
-  OWNER: "Owner",
-  ADMIN: "Admin",
-  MEMBER: "Member",
-};
+interface Member {
+  id: string;
+  name: string;
+  email: string;
+  role: "Owner" | "Admin" | "Editor" | "Viewer";
+  status: "Active" | "Invited";
+}
 
-const ROLE_BADGE: Record<string, "default" | "secondary" | "outline"> = {
-  OWNER: "default",
-  ADMIN: "secondary",
-  MEMBER: "outline",
-};
-
-const resolveMemberUserId = (member: TeamMember) =>
-  member.user?.id ?? member.userId;
+const INITIAL_MEMBERS: Member[] = [
+  {
+    id: "1",
+    name: "Taylor Morgan",
+    email: "taylor@acme.dev",
+    role: "Owner",
+    status: "Active",
+  },
+  {
+    id: "2",
+    name: "Jordan Lee",
+    email: "jordan@acme.dev",
+    role: "Admin",
+    status: "Active",
+  },
+  {
+    id: "3",
+    name: "Cameron Kim",
+    email: "cameron@acme.dev",
+    role: "Viewer",
+    status: "Invited",
+  },
+];
 
 export default function MembersSettingsPage() {
-  const { session } = useAuth();
-  const { currentWorkspace } = useWorkspace();
-  const teamId = currentWorkspace?.teamId;
-  const queryClient = useQueryClient();
-  const { data: members, isLoading, error } = useTeamMembers(teamId);
+  const [members, setMembers] = useState<Member[]>(INITIAL_MEMBERS);
+  const [inviteEmail, setInviteEmail] = useState("");
 
-  const currentMember = members?.find((member) => {
-    const memberUserId = resolveMemberUserId(member);
-    return memberUserId === session?.user?.id;
-  });
-  const isOwner = currentMember?.role === "OWNER";
+  return (
+    <div className="p-6">
+      <div className="mx-auto max-w-5xl space-y-4">
+        <h1 className="text-2xl font-semibold">Members</h1>
 
-  const updateRoleMutation = useMutation({
-    mutationFn: (payload: {
-      memberUserId: string;
-      role: "OWNER" | "ADMIN" | "MEMBER";
-    }) =>
-      updateTeamMemberRole(
-        teamId || "",
-        payload.memberUserId,
-        payload.role,
-        session?.access_token || "",
-      ),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["team-members", teamId] });
-    },
-  });
-
-  const removeMemberMutation = useMutation({
-    mutationFn: (memberUserId: string) =>
-      removeTeamMember(teamId || "", memberUserId, session?.access_token || ""),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["team-members", teamId] });
-    },
-  });
-
-  if (!teamId) {
-    return (
-      <div className="p-6">
-        <Card>
+        <Card className="border-app-border bg-app-content-bg">
           <CardHeader>
-            <CardTitle>团队成员管理</CardTitle>
-            <CardDescription>该功能仅在团队工作区可用。</CardDescription>
+            <CardTitle className="text-base">Invite Member</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            请切换到团队工作区后管理成员权限。
+          <CardContent className="flex flex-col gap-3 sm:flex-row">
+            <Input
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="new-member@company.com"
+            />
+            <Button
+              onClick={() => {
+                if (!inviteEmail.trim()) return;
+                setMembers((prev) => [
+                  ...prev,
+                  {
+                    id: String(Date.now()),
+                    name: "Pending Invite",
+                    email: inviteEmail.trim(),
+                    role: "Viewer",
+                    status: "Invited",
+                  },
+                ]);
+                setInviteEmail("");
+              }}
+            >
+              Send invite
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-app-border bg-app-content-bg">
+          <CardHeader>
+            <CardTitle className="text-base">Member Directory</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[680px] text-sm">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="px-2 py-2">Name</th>
+                    <th className="px-2 py-2">Email</th>
+                    <th className="px-2 py-2">Role</th>
+                    <th className="px-2 py-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {members.map((member) => (
+                    <tr key={member.id} className="border-t border-app-border/60">
+                      <td className="px-2 py-3 font-medium">{member.name}</td>
+                      <td className="px-2 py-3 text-muted-foreground">{member.email}</td>
+                      <td className="px-2 py-3">
+                        <Select
+                          value={member.role}
+                          onValueChange={(role) =>
+                            setMembers((prev) =>
+                              prev.map((item) =>
+                                item.id === member.id
+                                  ? {
+                                      ...item,
+                                      role: role as Member["role"],
+                                    }
+                                  : item,
+                              ),
+                            )
+                          }
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Owner">Owner</SelectItem>
+                            <SelectItem value="Admin">Admin</SelectItem>
+                            <SelectItem value="Editor">Editor</SelectItem>
+                            <SelectItem value="Viewer">Viewer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-2 py-3">
+                        <StatusPill status={member.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       </div>
-    );
-  }
-
-  return (
-    <div className="p-0 space-y-6">
-      {!isOwner && (
-        <Card className="border-none">
-          <CardHeader>
-            <CardTitle>权限不足</CardTitle>
-            <CardDescription>只有 OWNER 可以管理团队成员。</CardDescription>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
-            如需调整成员角色，请联系团队拥有者。
-          </CardContent>
-        </Card>
-      )}
-
-      <Card className="border-none">
-        <CardHeader>
-          <CardTitle>成员列表</CardTitle>
-          <CardDescription>
-            管理团队成员角色与权限, 仅 OWNER 可更新角色或移除成员。
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 pb-6">
-          {isLoading && (
-            <div className="text-sm text-muted-foreground">加载中...</div>
-          )}
-          {error && (
-            <div className="text-sm text-destructive">
-              {(error as Error).message || "加载成员失败"}
-            </div>
-          )}
-          {members?.map((member) => {
-            const memberUserId = resolveMemberUserId(member);
-            const isSelf = memberUserId === session?.user?.id;
-            return (
-              <div
-                key={member.id}
-                className="flex flex-col gap-3 rounded-md border p-4"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="font-medium">
-                      {member.user?.name || member.user?.email || "未知成员"}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {member.user?.email}
-                    </div>
-                  </div>
-                  <Badge variant={ROLE_BADGE[member.role]}>
-                    {ROLE_LABELS[member.role]}
-                  </Badge>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  加入时间：{format(new Date(member.createdAt), "PPpp")}
-                </div>
-                <Separator />
-                <div className="flex flex-wrap items-center gap-3">
-                  <Select
-                    value={member.role}
-                    onValueChange={(value) =>
-                      memberUserId &&
-                      updateRoleMutation.mutate({
-                        memberUserId,
-                        role: value as "OWNER" | "ADMIN" | "MEMBER",
-                      })
-                    }
-                    disabled={
-                      !isOwner ||
-                      isSelf ||
-                      updateRoleMutation.isPending ||
-                      !memberUserId
-                    }
-                  >
-                    <SelectTrigger size="sm" className="w-[160px]">
-                      <SelectValue placeholder="选择角色" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="OWNER">Owner</SelectItem>
-                      <SelectItem value="ADMIN">Admin</SelectItem>
-                      <SelectItem value="MEMBER">Member</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={
-                      !isOwner ||
-                      isSelf ||
-                      removeMemberMutation.isPending ||
-                      !memberUserId
-                    }
-                    onClick={() => {
-                      const confirmed = window.confirm(
-                        `确认移除 ${member.user?.email || "该成员"} 吗？`,
-                      );
-                      if (confirmed && memberUserId) {
-                        removeMemberMutation.mutate(memberUserId);
-                      }
-                    }}
-                  >
-                    移除成员
-                  </Button>
-                  {isSelf && (
-                    <span className="text-xs text-muted-foreground">
-                      当前账号不能修改自身角色或移除。
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </CardContent>
-        <CardFooter className="flex flex-col items-start gap-2">
-          {(updateRoleMutation.error || removeMemberMutation.error) && (
-            <div className="text-sm text-destructive">
-              {(updateRoleMutation.error as Error)?.message ||
-                (removeMemberMutation.error as Error)?.message ||
-                "操作失败"}
-            </div>
-          )}
-        </CardFooter>
-      </Card>
     </div>
   );
 }

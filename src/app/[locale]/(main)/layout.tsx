@@ -1,87 +1,77 @@
 "use client";
 
+import React from "react";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { useSidebarStore } from "@/stores/sidebar";
 import Infobar from "@/components/layout/main/Infobar";
 import Sidebar from "@/components/layout/main/Sidebar";
 import { GlobalPageCache } from "@/components/cache/GlobalPageCache";
-import React from "react";
-import { cn } from "@/lib/utils";
-import { useSidebarStore } from "@/stores/sidebar";
-import { usePathname } from "next/navigation";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-// 检查是否为缓存页面 - 支持tasks页面
 const isCachedPage = (pathname: string) => {
   return (
-    pathname.includes("/docs") ||
-    pathname.includes("/inbox") ||
     pathname.includes("/dashboard") ||
-    pathname.includes("/chat") ||
-    pathname.includes("/tasks")
+    pathname.includes("/customers") ||
+    pathname.includes("/orders") ||
+    pathname.includes("/analytics") ||
+    pathname.includes("/content")
   );
 };
 
 const Layout = ({ children }: LayoutProps) => {
   const { isOpen: sidebarOpen } = useSidebarStore();
   const pathname = usePathname();
-
-  // 直接根据路径判断是否显示缓存页面，避免依赖store状态
   const showCachedPage = isCachedPage(pathname);
 
   return (
-    <div className="flex h-screen bg-app-bg overflow-hidden">
-      {/* Sidebar - 使用动画控制显示/隐藏 */}
+    <div className="flex h-screen overflow-hidden bg-app-bg">
       <div
         className={cn(
           "transition-all duration-300 ease-in-out",
-          sidebarOpen ? "w-64 opacity-100" : "w-0 opacity-0 overflow-hidden"
+          sidebarOpen ? "w-64 opacity-100" : "w-0 overflow-hidden opacity-0",
         )}
       >
         <Sidebar />
       </div>
 
-      {/* Main Content - 始终保持8px间隔 */}
       <div
         className={cn(
-          "flex-1 flex flex-col overflow-hidden relative",
-          sidebarOpen ? "ml-2" : "ml-0"
+          "relative flex flex-1 flex-col overflow-hidden",
+          sidebarOpen ? "ml-2" : "ml-0",
         )}
       >
-        {/* InfoBar - 始终保持在顶部，不参与动画 */}
         <Infobar />
 
-        {/* 内容区域 - 相对定位用于切换动画 */}
         <div className="relative flex-1 overflow-hidden">
-          {/* 常规页面内容 - 正确的从左向右滑动 */}
           <div
             className={cn(
               "absolute inset-0 transition-all duration-300 ease-in-out",
               showCachedPage
-                ? "opacity-0 translate-x-full pointer-events-none" // 向右退出
-                : "opacity-100 translate-x-0 pointer-events-auto"
+                ? "pointer-events-none translate-x-full opacity-0"
+                : "pointer-events-auto translate-x-0 opacity-100",
             )}
           >
-            <main className="mx-2 mb-2 bg-app-content-bg h-[calc(100vh-64px)] rounded-lg border border-app-border">
-              <div className="flex-1 overflow-y-auto bg-app-content-bg rounded-lg h-full">
+            <main className="mx-2 mb-2 h-[calc(100vh-64px)] rounded-lg border border-app-border bg-app-content-bg">
+              <div className="h-full flex-1 overflow-y-auto rounded-lg bg-app-content-bg">
                 {children}
               </div>
             </main>
           </div>
 
-          {/* 全局页面缓存系统 - 正确的从左向右滑动 */}
           <div
             className={cn(
               "absolute inset-0 transition-all duration-300 ease-in-out",
               showCachedPage
-                ? "opacity-100 translate-x-0 pointer-events-auto" // 从左滑入到中央
-                : "opacity-0 translate-x-[-100%] pointer-events-none" // 在左侧待命
+                ? "pointer-events-auto translate-x-0 opacity-100"
+                : "pointer-events-none -translate-x-full opacity-0",
             )}
           >
-            {/* 保持与常规内容相同的结构和间距 */}
-            <div className="flex flex-col h-full">
-              <div className="mx-2 mb-2 bg-app-content-bg h-[calc(100vh-64px)] rounded-lg border border-app-border overflow-hidden">
+            <div className="flex h-full flex-col">
+              <div className="mx-2 mb-2 h-[calc(100vh-64px)] overflow-hidden rounded-lg border border-app-border bg-app-content-bg">
                 <GlobalPageCache />
               </div>
             </div>

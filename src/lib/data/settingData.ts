@@ -1,14 +1,13 @@
 import {
-  User,
   Bell,
-  Palette,
   Building2,
-  Users,
-  UserCheck,
-  Shield,
-  Smartphone,
   CreditCard,
-  Plus,
+  LayoutDashboard,
+  Palette,
+  Plug,
+  Shield,
+  User,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -28,14 +27,14 @@ export interface SettingSection {
 
 export const settingMockData: SettingSection[] = [
   {
-    id: "general",
-    title: "General",
+    id: "dashboard",
+    title: "Dashboard",
     items: [
       {
-        id: "profile",
-        label: "Profile",
-        icon: User,
-        href: "/settings/profile",
+        id: "dashboard-preferences",
+        label: "Dashboard Preferences",
+        icon: LayoutDashboard,
+        href: "/settings/dashboard",
       },
       {
         id: "notifications",
@@ -52,9 +51,10 @@ export const settingMockData: SettingSection[] = [
     ],
   },
   {
-    id: "administration",
-    title: "Administration",
+    id: "organization",
+    title: "Organization",
     items: [
+      { id: "profile", label: "Profile", icon: User, href: "/settings/profile" },
       {
         id: "workspace",
         label: "Workspace",
@@ -62,15 +62,9 @@ export const settingMockData: SettingSection[] = [
         href: "/settings/workspace",
       },
       {
-        id: "teams",
-        label: "Teams",
-        icon: Users,
-        href: "/settings/teams",
-      },
-      {
         id: "members",
         label: "Members",
-        icon: UserCheck,
+        icon: Users,
         href: "/settings/members",
       },
       {
@@ -80,40 +74,16 @@ export const settingMockData: SettingSection[] = [
         href: "/settings/security",
       },
       {
-        id: "application",
-        label: "Application",
-        icon: Smartphone,
-        href: "/settings/application",
+        id: "integrations",
+        label: "Integrations",
+        icon: Plug,
+        href: "/settings/integrations",
       },
       {
         id: "billing",
         label: "Billing",
         icon: CreditCard,
         href: "/settings/billing",
-      },
-    ],
-  },
-  {
-    id: "team",
-    title: "Team",
-    items: [
-      {
-        id: "insightlab",
-        label: "InsightLab",
-        icon: Building2,
-        href: "/settings/team/insightlab",
-      },
-      {
-        id: "wizlab",
-        label: "wiz lab",
-        icon: Building2,
-        href: "/settings/team/wizlab",
-      },
-      {
-        id: "create-team",
-        label: "Create new team",
-        icon: Plus,
-        action: () => console.log("创建新团队"),
       },
     ],
   },

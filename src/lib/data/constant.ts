@@ -1,65 +1,34 @@
 import {
-  BookAIcon,
-  Eye,
-  FileText,
-  FolderOpen,
-  Inbox,
-  Layers,
-  ListCheck,
-  MessageSquareCode,
-  User,
-  Workflow,
-  Bug,
+  BarChart3,
+  BookTemplate,
+  CircleHelp,
+  FileStack,
+  LayoutDashboard,
+  Package,
+  Settings2,
+  Users,
+  type LucideIcon,
 } from "lucide-react";
 
-/*
-NOTE: 用于提供给滚动条
-MARK: - Clients
-*/
-export const clients = [...new Array(10)].map((_, index) => ({
-  href: `/${index + 1}.png`,
-}));
+export interface NavItem {
+  icon: LucideIcon;
+  label: string;
+  href: string;
+}
 
-// MARK: - TEAM导航
-export const mainNavItems = [
-  { icon: Inbox, label: "Inbox", href: "/inbox" },
-  { icon: ListCheck, label: "My Task", href: "/tasks" },
-  { icon: MessageSquareCode, label: "Chat", href: "/chat" },
-  { icon: BookAIcon, label: "Docs", href: "/docs" },
-  { icon: Bug, label: "Issues", href: "/issues" },
-  // 顶部不再显示setting选项, 因为它会扰乱UI切换逻辑, 代为一个单独按钮打开
-  // { icon: Settings, label: "Settings", href: "/settings" },
-];
-export const secondaryNavItems = [
-  { icon: Layers, label: "Team", href: "/team" },
-  { icon: User, label: "Personal", href: "/personal" },
+export const mainNavItems: NavItem[] = [
+  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+  { icon: Users, label: "Customers", href: "/customers" },
+  { icon: Package, label: "Orders", href: "/orders" },
+  { icon: BarChart3, label: "Analytics", href: "/analytics" },
+  { icon: FileStack, label: "Content", href: "/content" },
 ];
 
-// MARK: - PERSONAL导航
-export const personalNavItems = [
-  { icon: Inbox, label: "Inbox", href: "/inbox" },
-  { icon: ListCheck, label: "Tasks", href: "/tasks" },
-  { icon: FolderOpen, label: "Projects", href: "/projects" },
-  { icon: BookAIcon, label: "Docs", href: "/docs" },
-  { icon: Bug, label: "Issues", href: "/issues" },
-  // { icon: Settings, label: "Settings", href: "/settings" },
+export const utilityNavItems: NavItem[] = [
+  { icon: Settings2, label: "Settings", href: "/settings" },
+  { icon: CircleHelp, label: "Help Center", href: "/settings/support" },
 ];
 
-// NOTE: WorkSpace 子项
-export const workspaceItems = [
-  { icon: FolderOpen, label: "Projects", href: "/team/projects" },
-  { icon: Eye, label: "Views", href: "/team/views" },
-  { icon: Workflow, label: "Workflows", href: "/team/workflows" },
-];
-
-// NOTE: Personal 子项
-export const personalItems = [
-  { icon: FolderOpen, label: "Projects", href: "/personal/projects" },
-  { icon: Eye, label: "Views", href: "/personal/views" },
-  { icon: FileText, label: "Docs", href: "/personal/doc" },
-];
-
-// MARK: mobileMenu
 export const mobileMenu: {
   title: string;
   href: string;
@@ -67,57 +36,68 @@ export const mobileMenu: {
   published: boolean;
 }[] = [
   {
-    title: "Template",
-    href: "/dashboard/template",
-    description: "Template",
+    title: "Dashboard",
+    href: "/dashboard",
+    description: "Template overview and metrics.",
     published: true,
   },
   {
-    title: "Notification",
-    href: "/dashboard/notification",
-    description: "Notification",
+    title: "Customers",
+    href: "/customers",
+    description: "Manage account-style records.",
     published: true,
   },
   {
-    title: "Security",
-    href: "/dashboard/security",
-    description: "Security",
-    published: false,
-  },
-  {
-    title: "Team",
-    href: "/dashboard/team",
-    description: "Team",
-    published: false,
-  },
-  {
-    title: "Event",
-    href: "/dashboard/event",
-    description: "Event",
+    title: "Orders",
+    href: "/orders",
+    description: "Track operational flows.",
     published: true,
   },
   {
-    title: "CRM",
-    href: "/dashboard/crm",
-    description: "CRM",
-    published: false,
+    title: "Analytics",
+    href: "/analytics",
+    description: "Reporting and KPI workspace.",
+    published: true,
   },
   {
-    title: "Billing",
-    href: "/dashboard/billing",
-    description: "Billing",
-    published: false,
+    title: "Content",
+    href: "/content",
+    description: "CMS and documentation patterns.",
+    published: true,
+  },
+  {
+    title: "Template Landing",
+    href: "/landing",
+    description: "Marketplace-ready presentation page.",
+    published: true,
+  },
+  {
+    title: "Template Auth",
+    href: "/auth",
+    description: "Optional starter auth UI.",
+    published: true,
   },
   {
     title: "Settings",
-    href: "/dashboard/settings",
-    description: "Settings",
+    href: "/settings",
+    description: "Basic configuration placeholders.",
     published: true,
   },
   {
-    title: "登录",
-    href: "/auth",
-    description: "用户登录",
+    title: "Components",
+    href: "/content",
+    description: "Reusable UI composition patterns.",
+    published: true,
+  },
+  {
+    title: "Starter Module",
+    href: "/dashboard",
+    description: "Extend with your own feature modules.",
     published: true,
   },
 ];
+
+export const templateBadge = {
+  icon: BookTemplate,
+  label: "Marketplace UI Template",
+};

@@ -1,6 +1,16 @@
-import { redirect } from "next/navigation";
+"use client";
 
-// 默认重定向到任务页面
+import { useEffect } from "react";
+import { useRouter } from "@/i18n/navigation";
+import { useDashboardPreferencesStore } from "@/stores/dashboard-preferences";
+
 export default function MainPage() {
-  redirect("/tasks");
+  const router = useRouter();
+  const landingModule = useDashboardPreferencesStore((state) => state.landingModule);
+
+  useEffect(() => {
+    router.replace(`/${landingModule}`);
+  }, [landingModule, router]);
+
+  return null;
 }
