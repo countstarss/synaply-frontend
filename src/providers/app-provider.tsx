@@ -1,6 +1,7 @@
 import React from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { ThemeProvider } from "./theme-provider";
+import { AuthProvider } from "./auth-provider";
 
 interface AppProviderProps {
   children: React.ReactNode;
@@ -15,7 +16,9 @@ const AppProvider = ({ children }: AppProviderProps) => {
       disableTransitionOnChange
       storageKey="template-ui-theme"
     >
-      <NextIntlClientProvider>{children}</NextIntlClientProvider>
+      <NextIntlClientProvider>
+        <AuthProvider>{children}</AuthProvider>
+      </NextIntlClientProvider>
     </ThemeProvider>
   );
 };

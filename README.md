@@ -79,6 +79,16 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### Backend Auth Wiring
+
+Set the backend URL in `.env.local`:
+
+```bash
+NEXT_PUBLIC_BACKEND_URL=http://localhost:5678
+```
+
+Then use `/auth` for email-password register/login. On success, the sidebar top-left section shows the logged-in user name and email.
+
 ## How To Build Your Product On Top
 
 1. Replace `template-data.ts` mock data with your real domain schema.
