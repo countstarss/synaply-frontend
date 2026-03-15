@@ -5,42 +5,48 @@ import { usePathname } from "next/navigation";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
 
 import { CachedDashboardPage } from "./pages/CachedDashboardPage";
-import { CachedCustomersPage } from "./pages/CachedCustomersPage";
-import { CachedOrdersPage } from "./pages/CachedOrdersPage";
-import { CachedAnalyticsPage } from "./pages/CachedAnalyticsPage";
-import { CachedContentPage } from "./pages/CachedContentPage";
+import { CachedTeachersPage } from "./pages/CachedTeachersPage";
+import { CachedProfilesPage } from "./pages/CachedProfilesPage";
+import { CachedBookingsPage } from "./pages/CachedBookingsPage";
+import { CachedOperationsPage } from "./pages/CachedOperationsPage";
+import { CachedAuditLogsPage } from "./pages/CachedAuditLogsPage";
 
 const PAGE_COMPONENTS = {
   dashboard: CachedDashboardPage,
-  customers: CachedCustomersPage,
-  orders: CachedOrdersPage,
-  analytics: CachedAnalyticsPage,
-  content: CachedContentPage,
+  teachers: CachedTeachersPage,
+  profiles: CachedProfilesPage,
+  bookings: CachedBookingsPage,
+  operations: CachedOperationsPage,
+  "audit-logs": CachedAuditLogsPage,
 } as const;
 
 type PageId = keyof typeof PAGE_COMPONENTS;
 
 const PAGE_ORDER: Record<PageId, number> = {
   dashboard: 1,
-  customers: 2,
-  orders: 3,
-  analytics: 4,
-  content: 5,
+  teachers: 2,
+  profiles: 3,
+  bookings: 4,
+  operations: 5,
+  "audit-logs": 6,
 };
 
 const getPageIdFromPath = (pathname: string): PageId | null => {
   if (pathname.includes("/dashboard")) return "dashboard";
-  if (pathname.includes("/customers")) {
-    return "customers";
+  if (pathname.includes("/teachers")) {
+    return "teachers";
   }
-  if (pathname.includes("/orders")) {
-    return "orders";
+  if (pathname.includes("/profiles")) {
+    return "profiles";
   }
-  if (pathname.includes("/analytics")) {
-    return "analytics";
+  if (pathname.includes("/bookings")) {
+    return "bookings";
   }
-  if (pathname.includes("/content")) {
-    return "content";
+  if (pathname.includes("/operations")) {
+    return "operations";
+  }
+  if (pathname.includes("/audit-logs")) {
+    return "audit-logs";
   }
 
   return null;

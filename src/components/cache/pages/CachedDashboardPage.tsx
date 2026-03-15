@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import DashboardWorkbench from "@/components/template/DashboardWorkbench";
+import { AdminDashboardPage } from "@/components/admin/AdminDashboardPage";
 
 export const CachedDashboardPage = React.memo(() => {
-  return <DashboardWorkbench />;
+  return <AdminDashboardPage />;
 });
 
 CachedDashboardPage.displayName = "CachedDashboardPage";

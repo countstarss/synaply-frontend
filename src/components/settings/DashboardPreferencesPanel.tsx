@@ -17,9 +17,12 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { TEMPLATE_SCREEN_DATA } from "@/components/template/template-data";
 import {
+  ADMIN_DASHBOARD_DATA,
+  ADMIN_MODULES,
   DashboardLandingModule,
+} from "@/lib/data/admin-data";
+import {
   DashboardSegmentKey,
   getDashboardMetricId,
   useDashboardPreferencesStore,
@@ -53,7 +56,7 @@ export function DashboardPreferencesPanel({
 
   const baseMetrics = useMemo(
     () =>
-      TEMPLATE_SCREEN_DATA.dashboard.metrics.map((metric) => ({
+      ADMIN_DASHBOARD_DATA.metrics.map((metric) => ({
         ...metric,
         id: getDashboardMetricId(metric),
       })),
@@ -135,11 +138,11 @@ export function DashboardPreferencesPanel({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="dashboard">Dashboard</SelectItem>
-                <SelectItem value="customers">Customers</SelectItem>
-                <SelectItem value="orders">Orders</SelectItem>
-                <SelectItem value="analytics">Analytics</SelectItem>
-                <SelectItem value="content">Content</SelectItem>
+                {ADMIN_MODULES.map((module) => (
+                  <SelectItem key={module.id} value={module.id}>
+                    {module.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

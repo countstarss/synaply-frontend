@@ -14,7 +14,14 @@ function getTone(status: string) {
     normalized.includes("healthy") ||
     normalized.includes("published") ||
     normalized.includes("completed") ||
-    normalized.includes("online")
+    normalized.includes("online") ||
+    status.includes("已通过") ||
+    status.includes("已完成") ||
+    status.includes("活跃") ||
+    status.includes("已留痕") ||
+    status.includes("已支付") ||
+    status.includes("已确认") ||
+    status.includes("已完整")
   ) {
     return "positive";
   }
@@ -24,7 +31,14 @@ function getTone(status: string) {
     normalized.includes("pending") ||
     normalized.includes("processing") ||
     normalized.includes("warning") ||
-    normalized.includes("paused")
+    normalized.includes("paused") ||
+    status.includes("待") ||
+    status.includes("处理中") ||
+    status.includes("需") ||
+    status.includes("高风险") ||
+    status.includes("暂停") ||
+    status.includes("未") ||
+    status.includes("复核")
   ) {
     return "warning";
   }

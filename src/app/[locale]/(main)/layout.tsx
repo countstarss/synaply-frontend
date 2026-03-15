@@ -15,10 +15,11 @@ interface LayoutProps {
 const isCachedPage = (pathname: string) => {
   return (
     pathname.includes("/dashboard") ||
-    pathname.includes("/customers") ||
-    pathname.includes("/orders") ||
-    pathname.includes("/analytics") ||
-    pathname.includes("/content")
+    pathname.includes("/teachers") ||
+    pathname.includes("/profiles") ||
+    pathname.includes("/bookings") ||
+    pathname.includes("/operations") ||
+    pathname.includes("/audit-logs")
   );
 };
 

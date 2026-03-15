@@ -9,6 +9,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { ADMIN_MODULES } from "./admin-data";
 
 export interface NavItem {
   icon: LucideIcon;
@@ -17,11 +18,12 @@ export interface NavItem {
 }
 
 export const mainNavItems: NavItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-  { icon: Users, label: "Customers", href: "/customers" },
-  { icon: Package, label: "Orders", href: "/orders" },
-  { icon: BarChart3, label: "Analytics", href: "/analytics" },
-  { icon: FileStack, label: "Content", href: "/content" },
+  { icon: LayoutDashboard, label: "总览", href: "/dashboard" },
+  { icon: Users, label: "老师审核", href: "/teachers" },
+  { icon: FileStack, label: "用户档案", href: "/profiles" },
+  { icon: Package, label: "预约履约", href: "/bookings" },
+  { icon: BarChart3, label: "评价运营", href: "/operations" },
+  { icon: BookTemplate, label: "审计日志", href: "/audit-logs" },
 ];
 
 export const utilityNavItems: NavItem[] = [
@@ -35,69 +37,21 @@ export const mobileMenu: {
   description: string;
   published: boolean;
 }[] = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    description: "Template overview and metrics.",
+  ...ADMIN_MODULES.map((module) => ({
+    title: module.label,
+    href: module.href,
+    description: module.description,
     published: true,
-  },
+  })),
   {
-    title: "Customers",
-    href: "/customers",
-    description: "Manage account-style records.",
-    published: true,
-  },
-  {
-    title: "Orders",
-    href: "/orders",
-    description: "Track operational flows.",
-    published: true,
-  },
-  {
-    title: "Analytics",
-    href: "/analytics",
-    description: "Reporting and KPI workspace.",
-    published: true,
-  },
-  {
-    title: "Content",
-    href: "/content",
-    description: "CMS and documentation patterns.",
-    published: true,
-  },
-  {
-    title: "Template Landing",
-    href: "/landing",
-    description: "Marketplace-ready presentation page.",
-    published: true,
-  },
-  {
-    title: "Template Auth",
-    href: "/auth",
-    description: "Optional starter auth UI.",
-    published: true,
-  },
-  {
-    title: "Settings",
+    title: "设置",
     href: "/settings",
-    description: "Basic configuration placeholders.",
-    published: true,
-  },
-  {
-    title: "Components",
-    href: "/content",
-    description: "Reusable UI composition patterns.",
-    published: true,
-  },
-  {
-    title: "Starter Module",
-    href: "/dashboard",
-    description: "Extend with your own feature modules.",
+    description: "后台默认项与总览配置。",
     published: true,
   },
 ];
 
 export const templateBadge = {
   icon: BookTemplate,
-  label: "Marketplace UI Template",
+  label: "TuneTime Admin",
 };

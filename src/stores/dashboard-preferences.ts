@@ -3,16 +3,13 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { DashboardMetric, TrendTone } from "@/components/dashboard-kit";
-import { TEMPLATE_SCREEN_DATA } from "@/components/template/template-data";
+import {
+  ADMIN_DASHBOARD_DATA,
+  DashboardLandingModule,
+} from "@/lib/data/admin-data";
 
 export type DashboardSegmentKey = "overview" | "revenue" | "operations";
 export type DashboardTimeframeKey = "7d" | "30d" | "90d" | "12m";
-export type DashboardLandingModule =
-  | "dashboard"
-  | "customers"
-  | "orders"
-  | "analytics"
-  | "content";
 
 export interface CustomMetricInput {
   label: string;
@@ -47,7 +44,7 @@ interface DashboardPreferencesState {
 const getMetricId = (metric: DashboardMetric) =>
   metric.id || metric.label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
-const DASHBOARD_BASE_METRICS = TEMPLATE_SCREEN_DATA.dashboard.metrics.map((metric) => ({
+const DASHBOARD_BASE_METRICS = ADMIN_DASHBOARD_DATA.metrics.map((metric) => ({
   ...metric,
   id: getMetricId(metric),
 }));
