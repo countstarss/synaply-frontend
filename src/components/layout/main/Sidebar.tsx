@@ -13,6 +13,7 @@ import { useSidebarStore } from "@/stores/sidebar";
 import { useSidebarMode } from "@/hooks/useSidebarMode";
 import { useRouter } from "@/i18n/navigation";
 import {
+  getReadyNavItems,
   mainNavItems,
   personalItems,
   personalNavItems,
@@ -30,6 +31,8 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
   const { mode, switchToMain } = useSidebarMode();
   const router = useRouter();
   const { currentWorkspace } = useWorkspace();
+  const readyMainNavItems = getReadyNavItems(mainNavItems);
+  const readyPersonalNavItems = getReadyNavItems(personalNavItems);
 
   const handleBackToMain = useCallback(() => {
     router.push("/inbox");
@@ -64,7 +67,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
               {currentWorkspace?.type === "PERSONAL" ? (
                 /* PERSONAL空间的简化导航 */
                 <div className="space-y-1 py-2">
-                  {personalNavItems.map((item) => (
+                  {readyPersonalNavItems.map((item) => (
                     <SidebarNavItem
                       key={item.href}
                       icon={item.icon}
@@ -78,7 +81,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
                  */
                 <>
                   <div className="space-y-1 py-2">
-                    {mainNavItems.map((item) => (
+                    {readyMainNavItems.map((item) => (
                       <SidebarNavItem
                         key={item.href}
                         icon={item.icon}

@@ -6,6 +6,7 @@ import {
   MessageSquareCode,
   Workflow,
   Bug,
+  type LucideIcon,
 } from "lucide-react";
 
 /*
@@ -17,9 +18,19 @@ export const clients = [...new Array(10)].map((_, index) => ({
 }));
 
 // MARK: - TEAM导航
-export const mainNavItems = [
-  { icon: Inbox, label: "Inbox", href: "/inbox" },
-  { icon: ListCheck, label: "My Task", href: "/tasks" },
+export interface NavItem {
+  icon: LucideIcon;
+  label: string;
+  href: string;
+  isReady?: boolean;
+}
+
+export const getReadyNavItems = (items: NavItem[]) =>
+  items.filter((item) => item.isReady !== false);
+
+export const mainNavItems: NavItem[] = [
+  { icon: Inbox, label: "Inbox", href: "/inbox", isReady: false },
+  { icon: ListCheck, label: "My Task", href: "/tasks", isReady: false },
   { icon: MessageSquareCode, label: "Chat", href: "/chat" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
   { icon: Bug, label: "Issues", href: "/issues" },
@@ -30,17 +41,17 @@ export const mainNavItems = [
 ];
 
 // MARK: - PERSONAL导航
-export const personalNavItems = [
-  { icon: Inbox, label: "Inbox", href: "/inbox" },
-  { icon: ListCheck, label: "Tasks", href: "/tasks" },
-  { icon: FolderOpen, label: "Projects", href: "/projects" },
+export const personalNavItems: NavItem[] = [
+  { icon: Inbox, label: "Inbox", href: "/inbox", isReady: false },
+  { icon: ListCheck, label: "Tasks", href: "/tasks", isReady: false },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
   { icon: Bug, label: "Issues", href: "/issues" },
+  { icon: FolderOpen, label: "Projects", href: "/projects" },
   // { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
 // NOTE: Personal 子项
-export const personalItems = [
+export const personalItems: NavItem[] = [
   { icon: BookAIcon, label: "Docs", href: "/personal/doc" },
 ];
 

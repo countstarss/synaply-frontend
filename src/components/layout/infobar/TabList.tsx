@@ -5,7 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/stores/sidebar";
-import { mainNavItems, personalNavItems } from "@/lib/data/constant";
+import {
+  getReadyNavItems,
+  mainNavItems,
+  personalNavItems,
+} from "@/lib/data/constant";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
 export default function TabList() {
@@ -14,7 +18,9 @@ export default function TabList() {
   const { currentWorkspace } = useWorkspace();
 
   const tabItems =
-    currentWorkspace?.type === "TEAM" ? [...mainNavItems] : [...personalNavItems];
+    currentWorkspace?.type === "TEAM"
+      ? getReadyNavItems(mainNavItems)
+      : getReadyNavItems(personalNavItems);
 
   return (
     <div className="flex items-center gap-2 animate-in slide-in-from-left-5 duration-300">
