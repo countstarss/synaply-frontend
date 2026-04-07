@@ -1,26 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { RiCloseLine, RiFlowChart } from "react-icons/ri";
 import { useAuth } from "@/context/AuthContext";
-
-import { CreateIssueDto } from "@/lib/fetchers/issue";
+import { useProjects } from "@/hooks/useProjectApi";
 import { useCreateIssue, useCreateWorkflowIssue } from "@/hooks/useIssueApi";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import type { CreateIssueDto } from "@/lib/fetchers/issue";
+import type { WorkflowResponse } from "@/lib/fetchers/workflow";
+import type { Workflow } from "@/types/team";
 import { useWorkflows } from "@/hooks/useWorkflowApi";
-import { Workflow } from "@/types/team";
-import { WorkflowResponse } from "@/lib/fetchers/workflow";
 
 interface CreateIssueModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreated: () => void;
+  initialProjectId?: string;
+  projectContextName?: string;
 }
 
 export default function CreateIssueModal({
   isOpen,
   onClose,
   onCreated,
+  initialProjectId,
+  projectContextName,
 }: CreateIssueModalProps) {
   const { session } = useAuth();
   const { currentWorkspace } = useWorkspace();
@@ -34,10 +38,15 @@ export default function CreateIssueModal({
   const [directAssigneeId, setDirectAssigneeId] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [selectedWorkflowId, setSelectedWorkflowId] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState(
+    initialProjectId || "",
+  );
 
   // 获取工作流列表
   const { data: workflowResponses = [], isLoading: isLoadingWorkflows } =
     useWorkflows(workspaceId);
+  const { data: projects = [], isLoading: isLoadingProjects } =
+    useProjects(workspaceId);
   const createIssueMutation = useCreateIssue();
   const createWorkflowIssueMutation = useCreateWorkflowIssue();
 
@@ -74,8 +83,16 @@ export default function CreateIssueModal({
       }
 
       return workflow;
-    }
+    },
   );
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    setSelectedProjectId(initialProjectId || "");
+  }, [initialProjectId, isOpen]);
 
   // 重置表单
   const resetForm = () => {
@@ -85,6 +102,7 @@ export default function CreateIssueModal({
     setDirectAssigneeId("");
     setDueDate("");
     setSelectedWorkflowId("");
+    setSelectedProjectId(initialProjectId || "");
   };
 
   const handleClose = () => {
@@ -114,6 +132,8 @@ export default function CreateIssueModal({
     const issueData: Partial<CreateIssueDto> = {
       title: title.trim(),
       description: description.trim() || undefined,
+      projectId:
+        issueType === "normal" ? selectedProjectId || undefined : undefined,
       directAssigneeId: directAssigneeId.trim() || undefined,
       dueDate: dueDate || undefined,
       workspaceId,
@@ -146,28 +166,32 @@ export default function CreateIssueModal({
 
   // 获取选中的工作流
   const selectedWorkflow = workflows.find(
-    (workflow) => workflow.id === selectedWorkflowId
+    (workflow) => workflow.id === selectedWorkflowId,
   );
+  const selectedProject = projects.find(
+    (project) => project.id === selectedProjectId,
+  );
+  const isProjectContext = !!initialProjectId;
 
   return (
-    <div className="fixed inset-0 dark:bg-black/50 bg-white/80 flex items-center justify-center z-50">
-      <div className="bg-app-content-bg rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-app-border">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 dark:bg-black/50">
+      <div className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-app-content-bg shadow-xl">
+        <div className="flex items-center justify-between border-b border-app-border p-6">
           <h2 className="text-xl font-semibold text-app-text-primary">
             新建 Issue
-            <span className="text-sm font-normal text-app-text-secondary ml-2">
+            <span className="ml-2 text-sm font-normal text-app-text-secondary">
               ({workspaceType === "PERSONAL" ? "个人空间" : "团队空间"})
             </span>
           </h2>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-app-button-hover rounded-lg transition-colors"
+            className="rounded-lg p-2 transition-colors hover:bg-app-button-hover"
           >
-            <RiCloseLine className="w-5 h-5 text-app-text-secondary" />
+            <RiCloseLine className="h-5 w-5 text-app-text-secondary" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 p-6">
           {/* 仅在团队空间显示工作流选项 */}
           {workspaceType === "TEAM" && (
             <div>
@@ -245,6 +269,55 @@ export default function CreateIssueModal({
               )}
             </div>
           )}
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-app-text-primary">
+              归属项目
+              {isProjectContext && (
+                <span className="ml-2 text-xs font-normal text-app-text-muted">
+                  已默认填入当前项目
+                </span>
+              )}
+            </label>
+            <select
+              value={selectedProjectId}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              className="w-full rounded-md border border-app-border bg-app-bg px-3 py-2 text-app-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isLoadingProjects || issueType === "workflow"}
+            >
+              <option value="">不归属任何项目</option>
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+            {selectedProject ? (
+              <div className="mt-2 rounded-lg border border-app-border bg-app-button-hover px-3 py-2">
+                <div className="text-sm font-medium text-app-text-primary">
+                  {selectedProject.name}
+                </div>
+                <div className="mt-1 text-xs text-app-text-secondary">
+                  {selectedProject.description || "这个项目还没有补充描述。"}
+                </div>
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-app-text-muted">
+                如果暂时不归属项目，可以先保持为空。
+              </p>
+            )}
+            {isProjectContext && (
+              <p className="mt-2 text-xs text-app-text-muted">
+                当前从项目视图发起创建，默认已选中
+                {projectContextName || selectedProject?.name || "当前项目"}。
+              </p>
+            )}
+            {issueType === "workflow" && (
+              <p className="mt-2 text-xs text-app-text-muted">
+                当前工作流 Issue 创建流程暂不写入 projectId，请使用普通 Issue。
+              </p>
+            )}
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-app-text-primary mb-2">

@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import {
   CreateIssueDto,
   CreateWorkflowIssueDto,
+  IssueQueryParams,
   createIssue,
   createWorkflowIssue,
   getIssues,
@@ -21,16 +22,21 @@ import { IssueStatus } from "@/types/prisma";
 /**
  * MARK: 获取工作空间Issue
  */
-export const useIssues = (workspaceId: string) => {
+export const useIssues = (
+  workspaceId: string,
+  params: IssueQueryParams = {},
+  options: { enabled?: boolean } = {},
+) => {
   const { session } = useAuth();
 
   return useQuery({
-    queryKey: ["issues", workspaceId],
+    queryKey: ["issues", workspaceId, params],
     queryFn: async () => {
       if (!session?.access_token) return [];
-      return getIssues(workspaceId, session.access_token);
+      return getIssues(workspaceId, session.access_token, params);
     },
-    enabled: !!session?.access_token && !!workspaceId,
+    enabled:
+      (options.enabled ?? true) && !!session?.access_token && !!workspaceId,
   });
 };
 
@@ -57,6 +63,7 @@ export const useCreateIssue = () => {
         title: issue.title || "",
         description: issue.description,
         workspaceId,
+        projectId: issue.projectId,
         directAssigneeId: issue.directAssigneeId,
         dueDate: issue.dueDate,
       };
@@ -101,7 +108,7 @@ export const useCreateWorkflowIssue = () => {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -238,7 +245,7 @@ export const useCreateIssueStepRecord = () => {
         workspaceId,
         issueId,
         data,
-        session.access_token
+        session.access_token,
       );
     },
     onSuccess: (_, variables) => {

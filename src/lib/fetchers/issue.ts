@@ -4,13 +4,30 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
 
 // MARK: Issue
+export interface IssueStateSummary {
+  id?: string;
+  name: string;
+  color?: string;
+}
+
+export interface IssueProject {
+  id: string;
+  name: string;
+  description?: string | null;
+  workspaceId?: string;
+  visibility?: string;
+}
+
 export interface Issue {
   id: string;
+  key?: string;
   title: string;
   description?: string;
   workspaceId: string;
+  projectId?: string | null;
   directAssigneeId?: string | null;
   creatorId: string;
+  stateId?: string | null;
   createdAt: string;
   updatedAt: string;
   dueDate?: string | null;
@@ -29,6 +46,8 @@ export interface Issue {
   currentStepIndex?: number;
   currentStepStatus?: IssueStatus;
   workflowSnapshot?: Record<string, unknown>;
+  state?: IssueStateSummary | null;
+  project?: IssueProject | null;
 }
 
 // MARK: CreateDTO
@@ -36,8 +55,15 @@ export interface CreateIssueDto {
   title: string;
   description?: string;
   workspaceId: string;
+  projectId?: string;
   directAssigneeId?: string;
   dueDate?: string;
+}
+
+export interface IssueQueryParams {
+  projectId?: string;
+  cursor?: string;
+  limit?: number;
 }
 
 // MARK: WorkflowIssueDto
@@ -65,7 +91,7 @@ export interface CreateWorkflowIssueDto {
 async function fetchApi<T>(
   endpoint: string,
   token: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
@@ -77,16 +103,38 @@ async function fetchApi<T>(
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData || "API 请求失败");
+    let message = "API 请求失败";
+
+    try {
+      const errorData = await response.json();
+      message =
+        errorData?.message ||
+        errorData?.error ||
+        (typeof errorData === "string" ? errorData : message);
+    } catch {
+      const errorText = await response.text().catch(() => "");
+      message = errorText || message;
+    }
+
+    throw new Error(message);
   }
 
-  // 对于 204 No Content，直接返回 null
   if (response.status === 204) {
     return null as T;
   }
 
   return response.json();
+}
+
+function buildIssueQueryString(params: IssueQueryParams = {}) {
+  const searchParams = new URLSearchParams();
+
+  if (params.projectId) searchParams.set("projectId", params.projectId);
+  if (params.cursor) searchParams.set("cursor", params.cursor);
+  if (params.limit) searchParams.set("limit", `${params.limit}`);
+
+  const queryString = searchParams.toString();
+  return queryString ? `?${queryString}` : "";
 }
 
 /**
@@ -97,7 +145,7 @@ async function fetchApi<T>(
  */
 export async function createIssue(
   issueData: CreateIssueDto,
-  token: string
+  token: string,
 ): Promise<Issue> {
   const { workspaceId } = issueData;
   return fetchApi<Issue>(
@@ -106,7 +154,7 @@ export async function createIssue(
     {
       method: "POST",
       body: JSON.stringify(issueData),
-    }
+    },
   );
 }
 
@@ -118,7 +166,7 @@ export async function createIssue(
  */
 export async function createWorkflowIssue(
   issueData: CreateWorkflowIssueDto,
-  token: string
+  token: string,
 ): Promise<Issue> {
   const { workspaceId } = issueData;
   return fetchApi<Issue>(`/workspaces/${workspaceId}/issues/workflow`, token, {
@@ -135,9 +183,47 @@ export async function createWorkflowIssue(
  */
 export async function getIssues(
   workspaceId: string,
-  token: string
+  token: string,
+  params: IssueQueryParams = {},
 ): Promise<Issue[]> {
-  return fetchApi<Issue[]>(`/workspaces/${workspaceId}/issues`, token);
+  const shouldFetchSinglePage =
+    params.limit !== undefined || params.cursor !== undefined;
+
+  if (shouldFetchSinglePage) {
+    return fetchApi<Issue[]>(
+      `/workspaces/${workspaceId}/issues${buildIssueQueryString(params)}`,
+      token,
+    );
+  }
+
+  const pageSize = 100;
+  const issues: Issue[] = [];
+  let cursor: string | undefined;
+
+  while (true) {
+    const page = await fetchApi<Issue[]>(
+      `/workspaces/${workspaceId}/issues${buildIssueQueryString({
+        ...params,
+        limit: pageSize,
+        cursor,
+      })}`,
+      token,
+    );
+
+    issues.push(...page);
+
+    if (page.length < pageSize) {
+      break;
+    }
+
+    cursor = page[page.length - 1]?.id;
+
+    if (!cursor) {
+      break;
+    }
+  }
+
+  return issues;
 }
 
 /**
@@ -147,7 +233,7 @@ export async function updateIssue(
   workspaceId: string,
   issueId: string,
   data: Partial<Issue>,
-  token: string
+  token: string,
 ): Promise<Issue> {
   return fetchApi<Issue>(
     `/workspaces/${workspaceId}/issues/${issueId}`,
@@ -155,7 +241,7 @@ export async function updateIssue(
     {
       method: "PATCH",
       body: JSON.stringify(data),
-    }
+    },
   );
 }
 
@@ -165,7 +251,7 @@ export async function updateIssue(
 export async function deleteIssue(
   workspaceId: string,
   issueId: string,
-  token: string
+  token: string,
 ): Promise<void> {
   await fetchApi<void>(`/workspaces/${workspaceId}/issues/${issueId}`, token, {
     method: "DELETE",
@@ -199,7 +285,7 @@ export async function createIssueStepRecord(
   workspaceId: string,
   issueId: string,
   data: CreateIssueStepRecordDto,
-  token: string
+  token: string,
 ): Promise<IssueStepRecord> {
   return fetchApi<IssueStepRecord>(
     `/workspaces/${workspaceId}/issues/${issueId}/steps`,
@@ -207,18 +293,18 @@ export async function createIssueStepRecord(
     {
       method: "POST",
       body: JSON.stringify(data),
-    }
+    },
   );
 }
 
 export async function getIssueStepRecords(
   workspaceId: string,
   issueId: string,
-  token: string
+  token: string,
 ): Promise<IssueStepRecord[]> {
   return fetchApi<IssueStepRecord[]>(
     `/workspaces/${workspaceId}/issues/${issueId}/steps`,
-    token
+    token,
   );
 }
 
@@ -241,7 +327,7 @@ export async function createIssueActivity(
   workspaceId: string,
   issueId: string,
   data: CreateIssueActivityDto,
-  token: string
+  token: string,
 ): Promise<IssueActivity> {
   return fetchApi<IssueActivity>(
     `/workspaces/${workspaceId}/issues/${issueId}/activities`,
@@ -249,17 +335,17 @@ export async function createIssueActivity(
     {
       method: "POST",
       body: JSON.stringify(data),
-    }
+    },
   );
 }
 
 export async function getIssueActivities(
   workspaceId: string,
   issueId: string,
-  token: string
+  token: string,
 ): Promise<IssueActivity[]> {
   return fetchApi<IssueActivity[]>(
     `/workspaces/${workspaceId}/issues/${issueId}/activities`,
-    token
+    token,
   );
 }
