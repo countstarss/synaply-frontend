@@ -1,7 +1,5 @@
-"use client";
+export const dynamic = "force-dynamic";
 
-import { CachedChatPage } from "@/components/cache/pages/CachedChatPage";
-
-export default function ChatPage() {
-  return <CachedChatPage />;
+export default function ChatChannelPage() {
+  return null;
 }

@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import TasksPage from "@/app/[locale]/(main)/tasks/page";
+import TasksPageContent from "@/components/tasks/TasksPageContent";
 
 export const CachedTasksPage = React.memo(() => {
   return (
     <div className="h-full w-full">
-      <TasksPage />
+      <TasksPageContent />
     </div>
   );
 });

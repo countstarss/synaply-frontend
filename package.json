@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack & npx convex dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start & npx convex dev",
     "lint": "next lint"
   },
   "dependencies": {
