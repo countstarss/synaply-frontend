@@ -174,6 +174,11 @@ export function ProjectDetailView({
                     </div>
 
                     <div className="hidden items-center gap-2 md:flex">
+                      {issue.dueDate && (
+                        <b className="text-xs text-white/80 text-bold">
+                          {formatShortDate(issue.dueDate)}
+                        </b>
+                      )}
                       <span className="text-xs text-app-text-muted">
                         {stateMeta.label}
                       </span>
@@ -185,11 +190,6 @@ export function ProjectDetailView({
                           )}
                         >
                           {priorityMeta.label}
-                        </span>
-                      )}
-                      {issue.dueDate && (
-                        <span className="text-xs text-app-text-muted">
-                          {formatShortDate(issue.dueDate)}
                         </span>
                       )}
                     </div>

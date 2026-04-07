@@ -1,13 +1,27 @@
-import { IssuePriority, IssueStatus, IssueType } from "@/types/prisma";
+import {
+  IssuePriority,
+  IssueScope,
+  IssueStateCategory,
+  IssueStatus,
+  IssueType,
+  VisibilityType,
+} from "@/types/prisma";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
 
 // MARK: Issue
 export interface IssueStateSummary {
-  id?: string;
+  id: string;
   name: string;
-  color?: string;
+  color?: string | null;
+  category?: IssueStateCategory;
+  position?: number;
+  isDefault?: boolean;
+  isArchived?: boolean;
+  workspaceId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface IssueProject {
@@ -16,38 +30,85 @@ export interface IssueProject {
   description?: string | null;
   workspaceId?: string;
   visibility?: string;
+  creatorId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface IssueMemberUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  avatar_url?: string | null;
+  avatarUrl?: string | null;
+}
+
+export interface IssueAssigneeMember {
+  id: string;
+  userId?: string;
+  role?: string;
+  user?: IssueMemberUser | null;
+}
+
+export interface IssueAssignee {
+  id: string;
+  issueId: string;
+  memberId: string;
+  assignedAt?: string;
+  member?: IssueAssigneeMember | null;
+}
+
+export interface IssueLabelSummary {
+  id: string;
+  name: string;
+  color?: string | null;
+  workspaceId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface IssueLabel {
+  id: string;
+  issueId: string;
+  labelId: string;
+  createdAt?: string;
+  label?: IssueLabelSummary | null;
 }
 
 export interface Issue {
   id: string;
   key?: string;
+  sequence?: number;
   title: string;
-  description?: string;
+  description?: string | null;
   workspaceId: string;
   projectId?: string | null;
   directAssigneeId?: string | null;
   creatorId: string;
+  creatorMemberId?: string | null;
   stateId?: string | null;
   createdAt: string;
   updatedAt: string;
   dueDate?: string | null;
-  // 基础属性
-  priority?: IssuePriority;
+  priority?: IssuePriority | null;
+  visibility?: VisibilityType;
 
   /**
    * Issue 类型：NORMAL / WORKFLOW
    */
-  issueType?: IssueType;
+  issueType?: IssueType | null;
 
   // 工作流相关字段
-  workflowId?: string;
-  totalSteps?: number;
-  currentStepId?: string;
-  currentStepIndex?: number;
-  currentStepStatus?: IssueStatus;
-  workflowSnapshot?: Record<string, unknown>;
+  workflowId?: string | null;
+  totalSteps?: number | null;
+  currentStepId?: string | null;
+  currentStepIndex?: number | null;
+  currentStepStatus?: IssueStatus | null;
+  workflowSnapshot?: Record<string, unknown> | null;
   state?: IssueStateSummary | null;
   project?: IssueProject | null;
+  assignees?: IssueAssignee[];
+  labels?: IssueLabel[];
 }
 
 // MARK: CreateDTO
@@ -58,10 +119,24 @@ export interface CreateIssueDto {
   projectId?: string;
   directAssigneeId?: string;
   dueDate?: string;
+  stateId?: string;
+  priority?: IssuePriority;
+  visibility?: VisibilityType;
+  assigneeIds?: string[];
+  labelIds?: string[];
 }
 
 export interface IssueQueryParams {
+  scope?: IssueScope;
+  stateId?: string;
+  stateCategory?: IssueStateCategory;
   projectId?: string;
+  assigneeId?: string;
+  labelId?: string;
+  issueType?: IssueType;
+  priority?: IssuePriority;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
   cursor?: string;
   limit?: number;
 }
@@ -129,7 +204,18 @@ async function fetchApi<T>(
 function buildIssueQueryString(params: IssueQueryParams = {}) {
   const searchParams = new URLSearchParams();
 
+  if (params.scope) searchParams.set("scope", params.scope);
+  if (params.stateId) searchParams.set("stateId", params.stateId);
+  if (params.stateCategory) {
+    searchParams.set("stateCategory", params.stateCategory);
+  }
   if (params.projectId) searchParams.set("projectId", params.projectId);
+  if (params.assigneeId) searchParams.set("assigneeId", params.assigneeId);
+  if (params.labelId) searchParams.set("labelId", params.labelId);
+  if (params.issueType) searchParams.set("issueType", params.issueType);
+  if (params.priority) searchParams.set("priority", params.priority);
+  if (params.sortBy) searchParams.set("sortBy", params.sortBy);
+  if (params.sortOrder) searchParams.set("sortOrder", params.sortOrder);
   if (params.cursor) searchParams.set("cursor", params.cursor);
   if (params.limit) searchParams.set("limit", `${params.limit}`);
 
@@ -224,6 +310,14 @@ export async function getIssues(
   }
 
   return issues;
+}
+
+export async function getIssue(
+  workspaceId: string,
+  issueId: string,
+  token: string,
+): Promise<Issue | null> {
+  return fetchApi<Issue | null>(`/workspaces/${workspaceId}/issues/${issueId}`, token);
 }
 
 /**

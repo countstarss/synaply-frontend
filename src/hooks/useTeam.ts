@@ -8,6 +8,7 @@ import {
   createTeam,
   fetchTeamMembers,
   fetchTeamById,
+  fetchTeamMemberByUserId,
   Team,
   TeamMember,
 } from "@/lib/fetchers/team";
@@ -105,5 +106,21 @@ export const useTeamById = (teamId: string | undefined) => {
     enabled: !!session?.access_token && !!teamId,
     staleTime: 5 * 60 * 1000, // 5分钟内认为数据新鲜
     retry: 2,
+  });
+};
+
+/**
+ * MARK: 获取当前用户默认 TeamMember
+ */
+export const useTeamMemberByUserId = (userId: string | undefined) => {
+  const { session } = useAuth();
+
+  return useQuery<TeamMember | null>({
+    queryKey: ["team-member-by-user-id", userId],
+    queryFn: () =>
+      fetchTeamMemberByUserId(userId!, session?.access_token || ""),
+    enabled: !!session?.access_token && !!userId,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 };

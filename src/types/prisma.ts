@@ -28,6 +28,15 @@ export enum IssueStatus {
   DONE = "DONE",
 }
 
+// MARK: Issue 主状态分类
+export enum IssueStateCategory {
+  BACKLOG = "BACKLOG",
+  TODO = "TODO",
+  IN_PROGRESS = "IN_PROGRESS",
+  DONE = "DONE",
+  CANCELED = "CANCELED",
+}
+
 // MARK: 任务优先级
 export enum IssuePriority {
   LOW = "LOW",
@@ -48,4 +57,11 @@ export enum VisibilityType {
   TEAM_READONLY = "TEAM_READONLY",
   TEAM_EDITABLE = "TEAM_EDITABLE",
   PUBLIC = "PUBLIC",
+}
+
+// MARK: Issue 查询范围
+export enum IssueScope {
+  ALL = "all",
+  TEAM = "team",
+  PERSONAL = "personal",
 }

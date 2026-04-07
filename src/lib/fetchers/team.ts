@@ -134,6 +134,33 @@ export const fetchTeamMembers = async (
 };
 
 /**
+ * MARK: - ✅根据用户 ID 获取默认团队成员
+ */
+export const fetchTeamMemberByUserId = async (
+  userId: string,
+  token: string
+): Promise<TeamMember | null> => {
+  const response = await fetch(`${API_BASE_URL}/teams/by-user-id/${userId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null);
+    throw new Error(errorData?.message || "获取默认成员失败");
+  }
+
+  return response.json();
+};
+
+/**
  * MARK: - ✅更新团队成员角色
  */
 export const updateTeamMemberRole = async (

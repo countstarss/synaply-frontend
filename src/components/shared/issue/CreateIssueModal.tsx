@@ -1,15 +1,39 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { RiCloseLine, RiFlowChart } from "react-icons/ri";
 import { useAuth } from "@/context/AuthContext";
-import { useProjects } from "@/hooks/useProjectApi";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useCreateIssue, useCreateWorkflowIssue } from "@/hooks/useIssueApi";
+import { useIssueStates } from "@/hooks/useIssueStates";
+import { useProjects } from "@/hooks/useProjectApi";
+import { useTeamMemberByUserId, useTeamMembers } from "@/hooks/useTeam";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import type { CreateIssueDto } from "@/lib/fetchers/issue";
-import type { WorkflowResponse } from "@/lib/fetchers/workflow";
-import type { Workflow } from "@/types/team";
 import { useWorkflows } from "@/hooks/useWorkflowApi";
+import type { CreateIssueDto } from "@/lib/fetchers/issue";
+import type { TeamMember } from "@/lib/fetchers/team";
+import type { WorkflowResponse } from "@/lib/fetchers/workflow";
+import { cn } from "@/lib/utils";
+import {
+  IssuePriority,
+  IssueStateCategory,
+  VisibilityType,
+} from "@/types/prisma";
+import type { Workflow } from "@/types/team";
 
 interface CreateIssueModalProps {
   isOpen: boolean;
@@ -19,6 +43,60 @@ interface CreateIssueModalProps {
   projectContextName?: string;
 }
 
+interface MemberOption {
+  id: string;
+  name: string;
+  email: string;
+}
+
+const NONE_VALUE = "__none__";
+const DEFAULT_PRIORITY_VALUE = "__default_priority__";
+
+const PRIORITY_OPTIONS = [
+  { value: DEFAULT_PRIORITY_VALUE, label: "按默认优先级（中）" },
+  { value: IssuePriority.LOW, label: "低" },
+  { value: IssuePriority.NORMAL, label: "中" },
+  { value: IssuePriority.HIGH, label: "高" },
+  { value: IssuePriority.URGENT, label: "紧急" },
+] as const;
+
+const STATE_CATEGORY_OPTIONS = [
+  { value: IssueStateCategory.BACKLOG, label: "Backlog" },
+  { value: IssueStateCategory.TODO, label: "待处理" },
+  { value: IssueStateCategory.IN_PROGRESS, label: "进行中" },
+  { value: IssueStateCategory.DONE, label: "已完成" },
+  { value: IssueStateCategory.CANCELED, label: "已取消" },
+] as const;
+
+function getDefaultVisibility(workspaceType: "PERSONAL" | "TEAM") {
+  return workspaceType === "TEAM"
+    ? VisibilityType.TEAM_EDITABLE
+    : VisibilityType.PRIVATE;
+}
+
+function getVisibilityOptions(workspaceType: "PERSONAL" | "TEAM") {
+  if (workspaceType === "TEAM") {
+    return [
+      { value: VisibilityType.PRIVATE, label: "仅自己可见" },
+      { value: VisibilityType.TEAM_READONLY, label: "团队只读" },
+      { value: VisibilityType.TEAM_EDITABLE, label: "团队可编辑" },
+    ];
+  }
+
+  return [
+    { value: VisibilityType.PRIVATE, label: "仅自己可见" },
+    { value: VisibilityType.PUBLIC, label: "公开可见" },
+  ];
+}
+
+function getTeamMemberName(member: TeamMember) {
+  return (
+    member.user.name?.trim() ||
+    member.user.email?.split("@")[0] ||
+    `成员 ${member.id.slice(0, 6)}`
+  );
+}
+
 export default function CreateIssueModal({
   isOpen,
   onClose,
@@ -26,31 +104,41 @@ export default function CreateIssueModal({
   initialProjectId,
   projectContextName,
 }: CreateIssueModalProps) {
-  const { session } = useAuth();
+  const { session, user } = useAuth();
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id || "";
   const workspaceType = currentWorkspace?.type || "PERSONAL";
+  const teamId = currentWorkspace?.teamId;
+  const currentUserLabel =
+    user?.user_metadata?.name?.trim() || user?.email?.split("@")[0] || "当前用户";
 
-  // 1. 添加工作流类型选择
   const [issueType, setIssueType] = useState<"normal" | "workflow">("normal");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [directAssigneeId, setDirectAssigneeId] = useState("");
-  const [dueDate, setDueDate] = useState("");
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [selectedWorkflowId, setSelectedWorkflowId] = useState("");
-  const [selectedProjectId, setSelectedProjectId] = useState(
-    initialProjectId || "",
+  const [selectedProjectId, setSelectedProjectId] = useState(initialProjectId || "");
+  const [selectedStateCategory, setSelectedStateCategory] = useState<
+    IssueStateCategory | ""
+  >("");
+  const [selectedPriority, setSelectedPriority] = useState<IssuePriority | "">("");
+  const [selectedVisibility, setSelectedVisibility] = useState<VisibilityType>(
+    getDefaultVisibility(workspaceType),
   );
+  const [directAssigneeId, setDirectAssigneeId] = useState("");
+  const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<string[]>([]);
 
-  // 获取工作流列表
   const { data: workflowResponses = [], isLoading: isLoadingWorkflows } =
     useWorkflows(workspaceId);
   const { data: projects = [], isLoading: isLoadingProjects } =
     useProjects(workspaceId);
+  const { data: issueStates = [], isLoading: isLoadingIssueStates } =
+    useIssueStates(workspaceId, { enabled: isOpen });
+  const { data: teamMembers = [] } = useTeamMembers(teamId);
+  const { data: currentUserTeamMember } = useTeamMemberByUserId(session?.user?.id);
   const createIssueMutation = useCreateIssue();
   const createWorkflowIssueMutation = useCreateWorkflowIssue();
 
-  // 转换API响应的工作流到前端格式
   const workflows = workflowResponses.map(
     (workflowResponse: WorkflowResponse): Workflow => {
       const workflow: Workflow = {
@@ -66,7 +154,6 @@ export default function CreateIssueModal({
         totalSteps: workflowResponse.totalSteps,
       };
 
-      // 解析JSON数据
       if (workflowResponse.json) {
         try {
           const parsedData =
@@ -78,7 +165,7 @@ export default function CreateIssueModal({
           workflow.edges = parsedData.edges || [];
           workflow.description = parsedData.description || "";
         } catch (error) {
-          console.error("解析工作流JSON失败:", error);
+          console.error("解析工作流 JSON 失败:", error);
         }
       }
 
@@ -86,23 +173,105 @@ export default function CreateIssueModal({
     },
   );
 
+  const teamMemberOptions = useMemo<MemberOption[]>(
+    () =>
+      teamMembers
+        .map((member) => ({
+          id: member.id,
+          name: getTeamMemberName(member),
+          email: member.user.email,
+        }))
+        .sort((left, right) => left.name.localeCompare(right.name, "zh-CN")),
+    [teamMembers],
+  );
+
+  const personalAssigneeId = currentUserTeamMember?.id || "";
+
+  const selectedProject = projects.find((project) => project.id === selectedProjectId);
+  const selectedWorkflow = workflows.find(
+    (workflow) => workflow.id === selectedWorkflowId,
+  );
+  const resolvedState =
+    (selectedStateCategory
+      ? issueStates.find(
+          (state) => state.category === selectedStateCategory && state.isDefault,
+        ) ||
+        issueStates.find((state) => state.category === selectedStateCategory)
+      : issueStates.find((state) => state.isDefault) || issueStates[0]) || null;
+  const isProjectContext = !!initialProjectId;
+  const visibilityOptions = getVisibilityOptions(workspaceType);
+
   useEffect(() => {
     if (!isOpen) {
       return;
     }
 
     setSelectedProjectId(initialProjectId || "");
-  }, [initialProjectId, isOpen]);
+    setSelectedVisibility(getDefaultVisibility(workspaceType));
+  }, [initialProjectId, isOpen, workspaceType]);
 
-  // 重置表单
+  useEffect(() => {
+    if (!isOpen || issueStates.length === 0 || selectedStateCategory) {
+      return;
+    }
+
+    const defaultState = issueStates.find((state) => state.isDefault) || issueStates[0];
+    if (defaultState) {
+      setSelectedStateCategory(defaultState.category);
+    }
+  }, [isOpen, issueStates, selectedStateCategory]);
+
+  useEffect(() => {
+    if (workspaceType !== "PERSONAL") {
+      return;
+    }
+
+    if (personalAssigneeId) {
+      setDirectAssigneeId(personalAssigneeId);
+      setSelectedAssigneeIds([personalAssigneeId]);
+    }
+  }, [personalAssigneeId, workspaceType]);
+
+  useEffect(() => {
+    if (workspaceType !== "TEAM" || !directAssigneeId) {
+      return;
+    }
+
+    setSelectedAssigneeIds((previousIds) =>
+      previousIds.includes(directAssigneeId)
+        ? previousIds
+        : [...previousIds, directAssigneeId],
+    );
+  }, [directAssigneeId, workspaceType]);
+
+  useEffect(() => {
+    if (workspaceType !== "TEAM" || teamMemberOptions.length === 0) {
+      return;
+    }
+
+    const availableIds = new Set(teamMemberOptions.map((member) => member.id));
+
+    if (directAssigneeId && !availableIds.has(directAssigneeId)) {
+      setDirectAssigneeId("");
+    }
+
+    setSelectedAssigneeIds((previousIds) =>
+      previousIds.filter((memberId) => availableIds.has(memberId)),
+    );
+  }, [directAssigneeId, teamMemberOptions, workspaceType]);
+
   const resetForm = () => {
     setIssueType("normal");
     setTitle("");
     setDescription("");
-    setDirectAssigneeId("");
-    setDueDate("");
+    setDueDate(undefined);
     setSelectedWorkflowId("");
     setSelectedProjectId(initialProjectId || "");
+    setSelectedStateCategory("");
+    setSelectedPriority("");
+    setSelectedVisibility(getDefaultVisibility(workspaceType));
+    setDirectAssigneeId("");
+    setSelectedAssigneeIds([]);
   };
 
   const handleClose = () => {
@@ -110,9 +279,24 @@ export default function CreateIssueModal({
     onClose();
   };
 
-  // 2. 更新提交逻辑以支持工作流
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleToggleAssignee = (memberId: string, checked: boolean) => {
+    setSelectedAssigneeIds((previousIds) => {
+      if (!checked) {
+        if (directAssigneeId === memberId) {
+          setDirectAssigneeId("");
+        }
+
+        return previousIds.filter((currentId) => currentId !== memberId);
+      }
+
+      return previousIds.includes(memberId)
+        ? previousIds
+        : [...previousIds, memberId];
+    });
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
 
     if (!title.trim()) {
       alert("请输入标题");
@@ -129,14 +313,45 @@ export default function CreateIssueModal({
       return;
     }
 
+    if (workspaceType === "PERSONAL" && !personalAssigneeId) {
+      alert("还没拿到你的负责人身份，请稍等片刻后再创建");
+      return;
+    }
+
+    const normalizedAssigneeIds =
+      workspaceType === "TEAM"
+        ? Array.from(
+            new Set([
+              ...selectedAssigneeIds,
+              ...(directAssigneeId ? [directAssigneeId] : []),
+            ]),
+          )
+        : directAssigneeId
+          ? [directAssigneeId]
+          : [];
+
     const issueData: Partial<CreateIssueDto> = {
       title: title.trim(),
       description: description.trim() || undefined,
-      projectId:
-        issueType === "normal" ? selectedProjectId || undefined : undefined,
-      directAssigneeId: directAssigneeId.trim() || undefined,
-      dueDate: dueDate || undefined,
       workspaceId,
+      stateId: resolvedState?.id,
+      projectId: selectedProjectId || undefined,
+      directAssigneeId: directAssigneeId || undefined,
+      priority: selectedPriority || undefined,
+      visibility: selectedVisibility,
+      dueDate: dueDate
+        ? (() => {
+            const normalizedDate = new Date(dueDate);
+            normalizedDate.setHours(0, 0, 0, 0);
+            return normalizedDate.toISOString();
+          })()
+        : undefined,
+      assigneeIds:
+        workspaceType === "TEAM" &&
+        issueType === "normal" &&
+        normalizedAssigneeIds.length > 0
+          ? normalizedAssigneeIds
+          : undefined,
     };
 
     try {
@@ -146,7 +361,6 @@ export default function CreateIssueModal({
           issue: issueData,
         });
       } else {
-        // 基于工作流创建
         await createWorkflowIssueMutation.mutateAsync({
           workspaceId,
           issue: issueData,
@@ -154,246 +368,391 @@ export default function CreateIssueModal({
         });
       }
 
-      onCreated(); // 重新获取 issue 列表
-      handleClose(); // 关闭并重置表单
+      onCreated();
+      handleClose();
     } catch (error) {
-      console.error("创建Issue失败:", error);
-      alert(error instanceof Error ? error.message : "创建Issue失败，请重试");
+      console.error("创建 Issue 失败:", error);
+      alert(error instanceof Error ? error.message : "创建 Issue 失败，请重试");
     }
   };
 
-  if (!isOpen) return null;
-
-  // 获取选中的工作流
-  const selectedWorkflow = workflows.find(
-    (workflow) => workflow.id === selectedWorkflowId,
-  );
-  const selectedProject = projects.find(
-    (project) => project.id === selectedProjectId,
-  );
-  const isProjectContext = !!initialProjectId;
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 dark:bg-black/50">
-      <div className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-app-content-bg shadow-xl">
-        <div className="flex items-center justify-between border-b border-app-border p-6">
-          <h2 className="text-xl font-semibold text-app-text-primary">
-            新建 Issue
-            <span className="ml-2 text-sm font-normal text-app-text-secondary">
-              ({workspaceType === "PERSONAL" ? "个人空间" : "团队空间"})
-            </span>
-          </h2>
+      <div className="mx-4 max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-app-border bg-app-content-bg shadow-2xl">
+        <div className="flex items-center justify-between border-b border-app-border px-6 py-5">
+          <div>
+            <h2 className="text-xl font-semibold text-app-text-primary">
+              新建 Issue
+            </h2>
+            <p className="mt-1 text-sm text-app-text-secondary">
+              {workspaceType === "PERSONAL" ? "个人空间" : "团队空间"}
+              {isProjectContext
+                ? ` · 当前项目：${projectContextName || selectedProject?.name || "未命名项目"}`
+                : ""}
+            </p>
+          </div>
+
           <button
             onClick={handleClose}
-            className="rounded-lg p-2 transition-colors hover:bg-app-button-hover"
+            className="rounded-xl p-2 text-app-text-secondary transition-colors hover:bg-app-button-hover"
           >
-            <RiCloseLine className="h-5 w-5 text-app-text-secondary" />
+            <RiCloseLine className="h-5 w-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 p-6">
-          {/* 仅在团队空间显示工作流选项 */}
+        <form onSubmit={handleSubmit} className="space-y-6 px-6 py-6">
           {workspaceType === "TEAM" && (
             <div>
-              <label className="block text-sm font-medium text-app-text-primary mb-3">
+              <label className="mb-3 block text-sm font-medium text-app-text-primary">
                 Issue 类型
               </label>
-              <div className="flex gap-4">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="issueType"
-                    value="normal"
-                    checked={issueType === "normal"}
-                    onChange={() => setIssueType("normal")}
-                    className="mr-2"
-                  />
-                  <span className="text-app-text-secondary">普通 Issue</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="issueType"
-                    value="workflow"
-                    checked={issueType === "workflow"}
-                    onChange={() => setIssueType("workflow")}
-                    className="mr-2"
-                  />
-                  <span className="text-app-text-secondary">基于工作流</span>
-                </label>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant={issueType === "normal" ? "default" : "outline"}
+                  className={cn(
+                    "h-10 rounded-xl",
+                    issueType === "normal"
+                      ? "bg-sky-600 text-white hover:bg-sky-500"
+                      : "border-app-border bg-app-bg text-app-text-primary",
+                  )}
+                  onClick={() => setIssueType("normal")}
+                >
+                  普通 Issue
+                </Button>
+                <Button
+                  type="button"
+                  variant={issueType === "workflow" ? "default" : "outline"}
+                  className={cn(
+                    "h-10 rounded-xl",
+                    issueType === "workflow"
+                      ? "bg-sky-600 text-white hover:bg-sky-500"
+                      : "border-app-border bg-app-bg text-app-text-primary",
+                  )}
+                  onClick={() => setIssueType("workflow")}
+                >
+                  基于工作流
+                </Button>
               </div>
             </div>
           )}
 
-          {/* 仅在选择工作流类型时显示工作流选择器 */}
           {workspaceType === "TEAM" && issueType === "workflow" && (
-            <div>
-              <label className="block text-sm font-medium text-app-text-primary mb-2">
-                选择工作流
+            <div className="grid gap-2">
+              <label className="text-sm font-medium text-app-text-primary">
+                工作流
               </label>
-              <select
-                value={selectedWorkflowId}
-                onChange={(e) => setSelectedWorkflowId(e.target.value)}
-                className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required={issueType === "workflow"}
+              <Select
+                value={selectedWorkflowId || undefined}
+                onValueChange={setSelectedWorkflowId}
                 disabled={isLoadingWorkflows}
               >
-                <option value="">请选择工作流...</option>
-                {isLoadingWorkflows ? (
-                  <option value="" disabled>
-                    加载中...
-                  </option>
-                ) : (
-                  workflows.map((workflow) => (
-                    <option key={workflow.id} value={workflow.id}>
-                      {workflow.name} ({workflow.totalSteps || 0} 个节点)
-                    </option>
-                  ))
-                )}
-              </select>
+                <SelectTrigger className="h-11 w-full rounded-xl border-app-border bg-app-bg text-app-text-primary">
+                  <SelectValue placeholder="选择工作流" />
+                </SelectTrigger>
+                <SelectContent className="border-app-border bg-app-content-bg">
+                  {workflows.map((workflow) => (
+                    <SelectItem key={workflow.id} value={workflow.id}>
+                      {workflow.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {selectedWorkflow && (
-                <div className="my-2 p-3 bg-app-button-hover rounded-lg border">
-                  <div className="flex items-center gap-2 mb-2">
-                    <RiFlowChart className="w-4 h-4 text-app-text-secondary" />
-                    <span className="text-sm font-medium text-app-text-primary">
-                      {selectedWorkflow.name}
-                    </span>
+                <div className="rounded-2xl border border-app-border bg-app-bg px-4 py-3">
+                  <div className="flex items-center gap-2 text-sm font-medium text-app-text-primary">
+                    <RiFlowChart className="h-4 w-4 text-app-text-secondary" />
+                    {selectedWorkflow.name}
                   </div>
-                  <p className="text-sm text-app-text-secondary">
+                  <p className="mt-2 text-sm text-app-text-secondary">
                     {selectedWorkflow.description || "无描述"}
                   </p>
-                  <div className="mt-2 text-xs text-app-text-muted">
-                    包含 {selectedWorkflow.totalSteps || 0} 个节点
-                  </div>
                 </div>
               )}
             </div>
           )}
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-app-text-primary">
-              归属项目
-              {isProjectContext && (
-                <span className="ml-2 text-xs font-normal text-app-text-muted">
-                  已默认填入当前项目
-                </span>
-              )}
-            </label>
-            <select
-              value={selectedProjectId}
-              onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="w-full rounded-md border border-app-border bg-app-bg px-3 py-2 text-app-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={isLoadingProjects || issueType === "workflow"}
-            >
-              <option value="">不归属任何项目</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-            {selectedProject ? (
-              <div className="mt-2 rounded-lg border border-app-border bg-app-button-hover px-3 py-2">
-                <div className="text-sm font-medium text-app-text-primary">
-                  {selectedProject.name}
-                </div>
-                <div className="mt-1 text-xs text-app-text-secondary">
-                  {selectedProject.description || "这个项目还没有补充描述。"}
-                </div>
-              </div>
-            ) : (
-              <p className="mt-2 text-xs text-app-text-muted">
-                如果暂时不归属项目，可以先保持为空。
-              </p>
-            )}
-            {isProjectContext && (
-              <p className="mt-2 text-xs text-app-text-muted">
-                当前从项目视图发起创建，默认已选中
-                {projectContextName || selectedProject?.name || "当前项目"}。
-              </p>
-            )}
-            {issueType === "workflow" && (
-              <p className="mt-2 text-xs text-app-text-muted">
-                当前工作流 Issue 创建流程暂不写入 projectId，请使用普通 Issue。
-              </p>
-            )}
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-2">
+              <label className="text-sm font-medium text-app-text-primary">
+                归属项目
+              </label>
+              <Select
+                value={selectedProjectId || NONE_VALUE}
+                onValueChange={(value) =>
+                  setSelectedProjectId(value === NONE_VALUE ? "" : value)
+                }
+                disabled={isLoadingProjects}
+              >
+                <SelectTrigger className="h-11 w-full rounded-xl border-app-border bg-app-bg text-app-text-primary">
+                  <SelectValue placeholder="选择项目" />
+                </SelectTrigger>
+                <SelectContent className="border-app-border bg-app-content-bg">
+                  <SelectItem value={NONE_VALUE}>不归属任何项目</SelectItem>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <label className="text-sm font-medium text-app-text-primary">
+                可见性
+              </label>
+              <Select
+                value={selectedVisibility}
+                onValueChange={(value) => setSelectedVisibility(value as VisibilityType)}
+              >
+                <SelectTrigger className="h-11 w-full rounded-xl border-app-border bg-app-bg text-app-text-primary">
+                  <SelectValue placeholder="选择可见性" />
+                </SelectTrigger>
+                <SelectContent className="border-app-border bg-app-content-bg">
+                  {visibilityOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-app-text-primary mb-2">
-              标题 *
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-app-text-primary">
+              标题
             </label>
-            <input
-              type="text"
+            <Input
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(event) => setTitle(event.target.value)}
               placeholder="输入 Issue 标题..."
-              className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="h-11 rounded-xl border-app-border bg-app-bg text-app-text-primary"
+              autoFocus
               required
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-app-text-primary mb-2">
+          <div className="grid gap-2">
+            <label className="text-sm font-medium text-app-text-primary">
               描述
             </label>
-            <textarea
+            <Textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(event) => setDescription(event.target.value)}
               placeholder="输入详细描述..."
-              rows={4}
-              className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="min-h-28 rounded-2xl border-app-border bg-app-bg text-app-text-primary"
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-app-text-primary mb-2">
-                负责人 ID
+          <div className="grid gap-5 md:grid-cols-3">
+            <div className="grid gap-2">
+              <label className="text-sm font-medium text-app-text-primary">
+                状态分类
               </label>
-              <input
-                type="text"
-                value={directAssigneeId}
-                onChange={(e) => setDirectAssigneeId(e.target.value)}
-                placeholder="输入负责人团队成员ID..."
-                className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <Select
+                value={selectedStateCategory || undefined}
+                onValueChange={(value) =>
+                  setSelectedStateCategory(value as IssueStateCategory)
+                }
+                disabled={isLoadingIssueStates || issueStates.length === 0}
+              >
+                <SelectTrigger className="h-11 w-full rounded-xl border-app-border bg-app-bg text-app-text-primary">
+                  <SelectValue placeholder="选择状态分类" />
+                </SelectTrigger>
+                <SelectContent className="border-app-border bg-app-content-bg">
+                  {STATE_CATEGORY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* <div>
-              <label className="block text-sm font-medium text-app-text-primary mb-2">
+            <div className="grid gap-2">
+              <label className="text-sm font-medium text-app-text-primary">
+                优先级
+              </label>
+              <Select
+                value={selectedPriority || DEFAULT_PRIORITY_VALUE}
+                onValueChange={(value) =>
+                  setSelectedPriority(
+                    value === DEFAULT_PRIORITY_VALUE ? "" : (value as IssuePriority),
+                  )
+                }
+              >
+                <SelectTrigger className="h-11 w-full rounded-xl border-app-border bg-app-bg text-app-text-primary">
+                  <SelectValue placeholder="选择优先级" />
+                </SelectTrigger>
+                <SelectContent className="border-app-border bg-app-content-bg">
+                  {PRIORITY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <label className="text-sm font-medium text-app-text-primary">
                 截止日期
               </label>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div> */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      "h-11 justify-start rounded-xl border-app-border bg-app-bg text-left font-normal text-app-text-primary hover:bg-app-button-hover",
+                      !dueDate && "text-app-text-muted",
+                    )}
+                  >
+                    <CalendarIcon className="h-4 w-4" />
+                    {dueDate ? format(dueDate, "yyyy-MM-dd") : "选择截止日期"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-auto rounded-2xl border-app-border bg-app-content-bg p-0"
+                  align="start"
+                >
+                  <Calendar
+                    mode="single"
+                    selected={dueDate}
+                    onSelect={setDueDate}
+                    initialFocus
+                  />
+                  {dueDate && (
+                    <div className="border-t border-app-border p-3">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-8 px-2 text-app-text-secondary"
+                        onClick={() => setDueDate(undefined)}
+                      >
+                        清除日期
+                      </Button>
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
-            <button
+          <div className="rounded-2xl border border-app-border bg-app-bg px-4 py-4">
+            <div className="mb-4">
+              <div className="text-sm font-medium text-app-text-primary">负责人</div>
+              <p className="mt-1 text-xs text-app-text-muted">
+                {workspaceType === "PERSONAL"
+                  ? "个人空间里负责人固定为你自己。"
+                  : "团队空间里可以从当前团队全部成员中选择。"}
+              </p>
+            </div>
+
+            {workspaceType === "PERSONAL" ? (
+              <div className="rounded-2xl border border-app-border bg-app-content-bg px-4 py-3">
+                <div className="text-sm font-medium text-app-text-primary">
+                  {currentUserLabel}
+                </div>
+                <div className="mt-1 text-xs text-app-text-secondary">
+                  {user?.email || "当前登录用户"}
+                </div>
+                <div className="mt-2 text-xs text-app-text-muted">
+                  {personalAssigneeId
+                    ? `会以真实成员 ID 传入：${personalAssigneeId.slice(0, 8)}...`
+                    : "正在加载你的成员身份，创建时会带上真实负责人 ID。"}
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-5 lg:grid-cols-2">
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium text-app-text-primary">
+                    主负责人
+                  </label>
+                  <Select
+                    value={directAssigneeId || NONE_VALUE}
+                    onValueChange={(value) =>
+                      setDirectAssigneeId(value === NONE_VALUE ? "" : value)
+                    }
+                  >
+                    <SelectTrigger className="h-11 w-full rounded-xl border-app-border bg-app-content-bg text-app-text-primary">
+                      <SelectValue placeholder="选择主负责人" />
+                    </SelectTrigger>
+                    <SelectContent className="border-app-border bg-app-content-bg">
+                      <SelectItem value={NONE_VALUE}>暂不指定负责人</SelectItem>
+                      {teamMemberOptions.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium text-app-text-primary">
+                    协作成员
+                  </label>
+                  <div className="max-h-44 space-y-2 overflow-y-auto rounded-2xl border border-app-border bg-app-content-bg p-3">
+                    {teamMemberOptions.length === 0 ? (
+                      <p className="text-sm text-app-text-muted">当前没有可选成员。</p>
+                    ) : (
+                      teamMemberOptions.map((member) => (
+                        <label
+                          key={member.id}
+                          className="flex items-start gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-app-button-hover"
+                        >
+                          <Checkbox
+                            checked={selectedAssigneeIds.includes(member.id)}
+                            onCheckedChange={(checked) =>
+                              handleToggleAssignee(member.id, checked === true)
+                            }
+                            className="mt-0.5"
+                          />
+                          <div className="min-w-0">
+                            <div className="text-sm text-app-text-primary">
+                              {member.name}
+                            </div>
+                            <div className="truncate text-xs text-app-text-muted">
+                              {member.email}
+                            </div>
+                          </div>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 border-t border-app-border pt-5">
+            <Button
               type="button"
+              variant="outline"
+              className="rounded-xl border-app-border bg-transparent text-app-text-primary"
               onClick={handleClose}
-              className="px-4 py-2 text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors"
             >
               取消
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="rounded-xl bg-sky-600 text-white hover:bg-sky-500"
               disabled={
                 createIssueMutation.isPending ||
                 createWorkflowIssueMutation.isPending
               }
             >
-              {createIssueMutation.isPending ||
-              createWorkflowIssueMutation.isPending
+              {createIssueMutation.isPending || createWorkflowIssueMutation.isPending
                 ? "创建中..."
                 : "创建 Issue"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

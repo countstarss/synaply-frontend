@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import {
   CreateIssueDto,
   CreateWorkflowIssueDto,
+  getIssue,
   IssueQueryParams,
   createIssue,
   createWorkflowIssue,
@@ -18,6 +19,36 @@ import {
   CreateIssueActivityDto,
 } from "@/lib/fetchers/issue";
 import { IssueStatus } from "@/types/prisma";
+
+function buildWorkflowIssuePatch(issue: Partial<CreateIssueDto>) {
+  const patch: Partial<Issue> = {};
+
+  if (issue.stateId !== undefined) {
+    patch.stateId = issue.stateId;
+  }
+
+  if (issue.projectId !== undefined) {
+    patch.projectId = issue.projectId ?? null;
+  }
+
+  if (issue.directAssigneeId !== undefined) {
+    patch.directAssigneeId = issue.directAssigneeId ?? null;
+  }
+
+  if (issue.dueDate !== undefined) {
+    patch.dueDate = issue.dueDate ?? null;
+  }
+
+  if (issue.priority !== undefined) {
+    patch.priority = issue.priority;
+  }
+
+  if (issue.visibility !== undefined) {
+    patch.visibility = issue.visibility;
+  }
+
+  return patch;
+}
 
 /**
  * MARK: 获取工作空间Issue
@@ -63,9 +94,14 @@ export const useCreateIssue = () => {
         title: issue.title || "",
         description: issue.description,
         workspaceId,
+        stateId: issue.stateId,
         projectId: issue.projectId,
         directAssigneeId: issue.directAssigneeId,
+        priority: issue.priority,
+        visibility: issue.visibility,
         dueDate: issue.dueDate,
+        assigneeIds: issue.assigneeIds,
+        labelIds: issue.labelIds,
       };
 
       return createIssue(issueData, session.access_token);
@@ -143,7 +179,18 @@ export const useCreateWorkflowIssue = () => {
         currentStepStatus: IssueStatus.TODO,
       };
 
-      return createWorkflowIssue(issueData, session.access_token);
+      const createdIssue = await createWorkflowIssue(issueData, session.access_token);
+      const patch = buildWorkflowIssuePatch(issue);
+
+      if (createdIssue?.id && Object.keys(patch).length > 0) {
+        await updateIssue(workspaceId, createdIssue.id, patch, session.access_token);
+      }
+
+      if (!createdIssue?.id) {
+        return createdIssue;
+      }
+
+      return getIssue(workspaceId, createdIssue.id, session.access_token);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({

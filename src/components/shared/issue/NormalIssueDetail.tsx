@@ -1,27 +1,26 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  RiCloseLine,
-  RiEditLine,
-  RiSaveLine,
-  RiSendPlaneLine,
   RiAtLine,
   RiCalendarLine,
-  RiPriceTagLine,
+  RiCloseLine,
+  RiEditLine,
   RiFileTextLine,
+  RiPriceTagLine,
+  RiSaveLine,
+  RiSendPlaneLine,
   RiTimeLine,
-  RiCheckLine,
 } from "react-icons/ri";
-import { Issue } from "@/lib/fetchers/issue";
 import { useAuth } from "@/context/AuthContext";
-
-// 扩展的 Issue 接口，支持个人空间的额外字段
-interface ExtendedIssue extends Issue {
-  deadline?: string;
-  tags?: string;
-  notes?: string;
-}
+import { useUpdateIssue } from "@/hooks/useIssueApi";
+import { useIssueStates } from "@/hooks/useIssueStates";
+import { useProjects } from "@/hooks/useProjectApi";
+import { useTeamMemberByUserId, useTeamMembers } from "@/hooks/useTeam";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { Issue, IssueAssigneeMember } from "@/lib/fetchers/issue";
+import type { TeamMember } from "@/lib/fetchers/team";
+import { IssuePriority, VisibilityType } from "@/types/prisma";
 
 interface NormalIssueDetailProps {
   issue: Issue;
@@ -39,22 +38,100 @@ interface Comment {
   mentions: string[];
 }
 
-// 模拟团队成员数据
-const teamMembers = [
-  { id: "1", name: "张三", email: "zhangsan@example.com", avatar: "👨‍💻" },
-  { id: "2", name: "李四", email: "lisi@example.com", avatar: "👩‍💼" },
-  { id: "3", name: "王五", email: "wangwu@example.com", avatar: "👨‍🎨" },
-  { id: "4", name: "赵六", email: "zhaoliu@example.com", avatar: "👩‍🔬" },
-];
+interface MemberOption {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl?: string;
+}
 
-const priorityOptions = [
-  { value: "low", label: "低", color: "bg-gray-100 text-gray-700" },
-  { value: "medium", label: "中", color: "bg-yellow-100 text-yellow-700" },
-  { value: "high", label: "高", color: "bg-orange-100 text-orange-700" },
-  { value: "urgent", label: "紧急", color: "bg-red-100 text-red-700" },
-];
+const PRIORITY_OPTIONS = [
+  { value: IssuePriority.LOW, label: "低", color: "bg-gray-100 text-gray-700" },
+  {
+    value: IssuePriority.NORMAL,
+    label: "中",
+    color: "bg-yellow-100 text-yellow-700",
+  },
+  {
+    value: IssuePriority.HIGH,
+    label: "高",
+    color: "bg-orange-100 text-orange-700",
+  },
+  {
+    value: IssuePriority.URGENT,
+    label: "紧急",
+    color: "bg-red-100 text-red-700",
+  },
+] as const;
 
-// TO AGENTS: 不要破坏这个组件的整体布局和样式, 增减一些内容或者字段是OK的;
+const VISIBILITY_OPTIONS = [
+  { value: VisibilityType.PRIVATE, label: "仅自己可见" },
+  { value: VisibilityType.TEAM_READONLY, label: "团队只读" },
+  { value: VisibilityType.TEAM_EDITABLE, label: "团队可编辑" },
+  { value: VisibilityType.PUBLIC, label: "公开可见" },
+] as const;
+
+function getTeamMemberName(member: TeamMember) {
+  return (
+    member.user.name?.trim() ||
+    member.user.email?.split("@")[0] ||
+    `成员 ${member.id.slice(0, 6)}`
+  );
+}
+
+function getIssueMemberName(member?: IssueAssigneeMember | null) {
+  return (
+    member?.user?.name?.trim() ||
+    member?.user?.email?.split("@")[0] ||
+    `成员 ${member?.id?.slice(0, 6) || "未知"}`
+  );
+}
+
+function getCommentAuthorName(author?: string | null) {
+  return author?.trim() || "匿名用户";
+}
+
+function getAvatarFallback(value?: string | null) {
+  return value?.trim()?.[0] || "?";
+}
+
+function formatDate(dateString?: string | null) {
+  if (!dateString) {
+    return "未设置";
+  }
+
+  return new Date(dateString).toLocaleString("zh-CN");
+}
+
+function formatDateOnly(dateString?: string | null) {
+  if (!dateString) {
+    return "未设置";
+  }
+
+  return new Date(dateString).toLocaleDateString("zh-CN");
+}
+
+function getPriorityOption(priority?: IssuePriority | null) {
+  return PRIORITY_OPTIONS.find((option) => option.value === priority) || null;
+}
+
+function buildInitialComments(
+  currentUserName: string,
+  currentUserAvatar?: string,
+): Comment[] {
+  return [
+    {
+      id: "1",
+      content: "这里可以继续补充处理思路、同步上下文或给协作者留言。",
+      author: currentUserName,
+      authorAvatar: currentUserAvatar,
+      createdAt: new Date().toISOString(),
+      mentions: [],
+    },
+  ];
+}
+
+// TO AGENTS: 不要破坏这个组件的整体布局和样式, 增减一些内容或者字段是 OK 的。
 export default function NormalIssueDetail({
   issue,
   isOpen,
@@ -62,173 +139,270 @@ export default function NormalIssueDetail({
   onUpdate,
 }: NormalIssueDetailProps) {
   const { user } = useAuth();
+  const { currentWorkspace } = useWorkspace();
+  const workspaceId = currentWorkspace?.id || "";
+  const workspaceType = currentWorkspace?.type || "PERSONAL";
+  const teamId = currentWorkspace?.teamId;
+  const currentUserName =
+    user?.user_metadata?.name?.trim() || user?.email?.split("@")[0] || "匿名用户";
+  const currentUserAvatar = user?.user_metadata?.avatar_url || undefined;
+
   const [editingField, setEditingField] = useState<string | null>(null);
+  const [committedIssue, setCommittedIssue] = useState<Issue>(issue);
   const [localIssue, setLocalIssue] = useState<Issue>(issue);
   const [commentText, setCommentText] = useState("");
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: "1",
-      content: "这个Issue看起来很重要，我们需要尽快处理。",
-      author: user?.user_metadata.name as string,
-      authorAvatar: user?.user_metadata.avatar_url as string,
-      createdAt: "2024-01-10T10:30:00Z",
-      mentions: [],
-    },
-  ]);
+  const [comments, setComments] = useState<Comment[]>(
+    buildInitialComments(currentUserName, currentUserAvatar),
+  );
   const [showMentionList, setShowMentionList] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [cursorPosition, setCursorPosition] = useState(0);
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
 
+  const { data: projects = [] } = useProjects(workspaceId);
+  const { data: issueStates = [] } = useIssueStates(workspaceId, {
+    enabled: isOpen,
+  });
+  const { data: teamMembers = [] } = useTeamMembers(teamId);
+  const { data: currentUserTeamMember } = useTeamMemberByUserId(user?.id);
+  const updateIssueMutation = useUpdateIssue();
+
+  const memberMap = new Map<string, MemberOption>();
+
+  for (const member of teamMembers) {
+    memberMap.set(member.id, {
+      id: member.id,
+      name: getTeamMemberName(member),
+      email: member.user.email,
+      avatarUrl: member.user.avatar_url,
+    });
+  }
+
+  for (const assignee of localIssue.assignees || []) {
+    if (!memberMap.has(assignee.memberId)) {
+      memberMap.set(assignee.memberId, {
+        id: assignee.memberId,
+        name: getIssueMemberName(assignee.member),
+        email: assignee.member?.user?.email || "",
+        avatarUrl:
+          assignee.member?.user?.avatar_url ||
+          assignee.member?.user?.avatarUrl ||
+          undefined,
+      });
+    }
+  }
+
+  const memberOptions = Array.from(memberMap.values()).sort((left, right) =>
+    left.name.localeCompare(right.name, "zh-CN"),
+  );
+  const personalDirectAssignee =
+    workspaceType === "PERSONAL" &&
+    localIssue.directAssigneeId &&
+    currentUserTeamMember?.id === localIssue.directAssigneeId
+      ? {
+          id: currentUserTeamMember.id,
+          name: currentUserName,
+          email: user?.email || "",
+        }
+      : null;
+  const directAssignee = memberOptions.find(
+    (member) => member.id === localIssue.directAssigneeId,
+  ) || personalDirectAssignee;
+  const selectedProject = projects.find(
+    (project) => project.id === localIssue.projectId,
+  );
+  const selectedState = issueStates.find((state) => state.id === localIssue.stateId);
+
   useEffect(() => {
+    setCommittedIssue(issue);
     setLocalIssue(issue);
+    setEditingField(null);
   }, [issue]);
+
+  useEffect(() => {
+    setComments(buildInitialComments(currentUserName, currentUserAvatar));
+    setCommentText("");
+    setShowMentionList(false);
+    setMentionQuery("");
+  }, [currentUserAvatar, currentUserName, issue.id]);
 
   const handleFieldEdit = (field: string) => {
     setEditingField(field);
   };
 
-  const handleFieldSave = (field: string, value: string | undefined) => {
-    const updatedIssue = {
-      ...localIssue,
-      [field]: value,
-      updatedAt: new Date().toISOString(),
-    };
-    setLocalIssue(updatedIssue);
+  const handleCancelEdit = () => {
+    setLocalIssue(committedIssue);
     setEditingField(null);
-    onUpdate(updatedIssue);
   };
 
-  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    const cursorPos = e.target.selectionStart;
+  const handleCommentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = event.target.value;
+    const nextCursorPosition = event.target.selectionStart;
 
     setCommentText(value);
-    setCursorPosition(cursorPos);
+    setCursorPosition(nextCursorPosition);
 
-    // 检测@符号
-    const atIndex = value.lastIndexOf("@", cursorPos);
+    const atIndex = value.lastIndexOf("@", nextCursorPosition);
     if (atIndex !== -1 && (atIndex === 0 || value[atIndex - 1] === " ")) {
-      const query = value.substring(atIndex + 1, cursorPos);
+      const query = value.substring(atIndex + 1, nextCursorPosition);
       if (!query.includes(" ")) {
         setMentionQuery(query);
         setShowMentionList(true);
         return;
       }
     }
+
     setShowMentionList(false);
   };
 
-  const handleMentionSelect = (member: (typeof teamMembers)[0]) => {
+  const handleMentionSelect = (member: MemberOption) => {
     const atIndex = commentText.lastIndexOf("@", cursorPosition);
     const beforeAt = commentText.substring(0, atIndex);
     const afterCursor = commentText.substring(cursorPosition);
-    const newText = `${beforeAt}@${member.name} ${afterCursor}`;
+    const nextText = `${beforeAt}@${member.name} ${afterCursor}`;
 
-    setCommentText(newText);
+    setCommentText(nextText);
     setShowMentionList(false);
     setMentionQuery("");
 
-    // 重新聚焦到输入框
     setTimeout(() => {
-      if (commentInputRef.current) {
-        const newCursorPos = atIndex + member.name.length + 2;
-        commentInputRef.current.focus();
-        commentInputRef.current.setSelectionRange(newCursorPos, newCursorPos);
+      if (!commentInputRef.current) {
+        return;
       }
+
+      const nextCursorPosition = atIndex + member.name.length + 2;
+      commentInputRef.current.focus();
+      commentInputRef.current.setSelectionRange(
+        nextCursorPosition,
+        nextCursorPosition,
+      );
     }, 0);
   };
 
-  // MARK: - Handle Comment
   const handleSendComment = () => {
-    if (!commentText.trim()) return;
+    if (!commentText.trim()) {
+      return;
+    }
 
-    // 提取@提及的用户
     const mentions =
-      commentText.match(/@(\w+)/g)?.map((mention) => mention.substring(1)) ||
+      commentText.match(/@([^\s]+)/g)?.map((mention) => mention.substring(1)) ||
       [];
 
-    const newComment: Comment = {
+    const nextComment: Comment = {
       id: Date.now().toString(),
       content: commentText,
-      author: user?.user_metadata.name as string,
-      authorAvatar: user?.user_metadata.avatar_url as string,
+      author: currentUserName,
+      authorAvatar: currentUserAvatar,
       createdAt: new Date().toISOString(),
       mentions,
     };
 
-    setComments([...comments, newComment]);
+    setComments((previousComments) => [...previousComments, nextComment]);
     setCommentText("");
     setShowMentionList(false);
   };
 
-  const filteredMembers = teamMembers.filter((member) =>
+  const filteredMembers = memberOptions.filter((member) =>
     member.name.toLowerCase().includes(mentionQuery.toLowerCase()),
   );
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString("zh-CN");
+  const persistIssuePatch = async (
+    patch: Partial<Issue>,
+    relationOverrides: Partial<Issue> = {},
+  ) => {
+    if (!workspaceId) {
+      alert("当前工作空间无效，无法保存 Issue");
+      return;
+    }
+
+    const sanitizedPatch = Object.fromEntries(
+      Object.entries(patch).filter(([, value]) => value !== undefined),
+    ) as Partial<Issue>;
+
+    if (Object.keys(sanitizedPatch).length === 0) {
+      handleCancelEdit();
+      return;
+    }
+
+    try {
+      const updatedIssue = await updateIssueMutation.mutateAsync({
+        workspaceId,
+        issueId: committedIssue.id,
+        data: sanitizedPatch,
+      });
+
+      const mergedIssue: Issue = {
+        ...committedIssue,
+        ...sanitizedPatch,
+        ...updatedIssue,
+        ...relationOverrides,
+      };
+
+      setCommittedIssue(mergedIssue);
+      setLocalIssue(mergedIssue);
+      setEditingField(null);
+      onUpdate(mergedIssue);
+    } catch (error) {
+      console.error("更新 Issue 失败:", error);
+      alert(error instanceof Error ? error.message : "更新 Issue 失败，请重试");
+    }
   };
 
-  const getPriorityOption = (priority: string) => {
-    return (
-      priorityOptions.find((option) => option.value === priority) ||
-      priorityOptions[1]
-    );
-  };
-
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   return (
-    <div className="fixed inset-0 w-full dark:bg-black/50 bg-white/80 flex items-center justify-center z-50">
-      <div className="bg-app-bg rounded-lg shadow-xl w-full max-w-screen h-[calc(100vh-56px)] overflow-hidden relative">
+    <div className="fixed inset-0 z-50 flex w-full items-center justify-center bg-white/80 dark:bg-black/50">
+      <div className="relative h-[calc(100vh-64px)] w-full max-w-screen overflow-hidden rounded-lg bg-app-bg shadow-xl">
         <div className="h-full p-2">
-          <div className="h-full flex flex-col gap-2">
-            {/* Issue Info Header */}
-            <div className="bg-app-content-bg rounded-lg border border-app-border p-4 flex-shrink-0">
+          <div className="flex h-full flex-col gap-2">
+            <div className="flex-shrink-0 rounded-lg border border-app-border bg-app-content-bg p-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold text-app-text-primary mb-2">
+                  <h2 className="mb-2 text-xl font-semibold text-app-text-primary">
                     {localIssue.title}
                   </h2>
                   <div className="flex items-center gap-4 text-sm text-app-text-muted">
-                    <span>#{localIssue.id}</span>
+                    <span>{localIssue.key || `#${localIssue.id}`}</span>
+                    {selectedState && (
+                      <span className="rounded-full bg-app-button-hover px-2 py-1 text-xs">
+                        {selectedState.name}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-app-button-hover rounded-lg transition-colors"
+                  className="rounded-lg p-2 transition-colors hover:bg-app-button-hover"
                 >
-                  <RiCloseLine className="w-5 h-5 text-app-text-secondary" />
+                  <RiCloseLine className="h-5 w-5 text-app-text-secondary" />
                 </button>
               </div>
             </div>
 
-            {/* Main Content */}
-            <div className="flex-1 min-h-0 flex gap-2">
-              {/* 左侧：Issue详情和属性 (2/3) */}
-              <div className="w-2/3 bg-app-content-bg rounded-lg border border-app-border flex flex-col">
-                <div className="p-4 border-b border-app-border flex-shrink-0">
+            <div className="flex min-h-0 flex-1 gap-2">
+              <div className="flex w-2/3 flex-col rounded-lg border border-app-border bg-app-content-bg">
+                <div className="flex-shrink-0 border-b border-app-border p-4">
                   <h3 className="text-lg font-semibold text-app-text-primary">
                     Issue 详情
                   </h3>
                 </div>
+
                 <div className="flex-1 overflow-y-auto p-4">
                   <div className="flex flex-col gap-6">
-                    {/* Issue内容 */}
                     <div className="space-y-6">
-                      {/* 标题 */}
                       <div>
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="mb-2 flex items-center justify-between">
                           <label className="text-sm font-medium text-app-text-primary">
                             标题
                           </label>
                           {editingField !== "title" && (
                             <button
                               onClick={() => handleFieldEdit("title")}
-                              className="p-1 hover:bg-app-button-hover rounded"
+                              className="rounded p-1 hover:bg-app-button-hover"
                             >
-                              <RiEditLine className="w-4 h-4 text-app-text-secondary" />
+                              <RiEditLine className="h-4 w-4 text-app-text-secondary" />
                             </button>
                           )}
                         </div>
@@ -237,22 +411,28 @@ export default function NormalIssueDetail({
                             <input
                               type="text"
                               value={localIssue.title}
-                              onChange={(e) =>
+                              onChange={(event) =>
                                 setLocalIssue({
                                   ...localIssue,
-                                  title: e.target.value,
+                                  title: event.target.value,
                                 })
                               }
-                              className="flex-1 px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="flex-1 rounded-md border border-app-border bg-app-bg px-3 py-2 text-app-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
                               autoFocus
                             />
                             <button
                               onClick={() =>
-                                handleFieldSave("title", localIssue.title)
+                                persistIssuePatch({ title: localIssue.title })
                               }
-                              className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                              className="rounded-md bg-blue-600 px-3 py-2 text-white transition-colors hover:bg-blue-700"
                             >
-                              <RiSaveLine className="w-4 h-4" />
+                              <RiSaveLine className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={handleCancelEdit}
+                              className="rounded-md border border-app-border px-3 py-2 transition-colors hover:bg-app-button-hover"
+                            >
+                              <RiCloseLine className="h-4 w-4 text-app-text-secondary" />
                             </button>
                           </div>
                         ) : (
@@ -263,234 +443,344 @@ export default function NormalIssueDetail({
                       </div>
                     </div>
 
-                    {/* MARK: Issue属性
-                     */}
                     <div className="space-y-4">
-                      <h4 className="text-sm font-medium text-app-text-primary border-b border-app-border pb-2">
+                      <h4 className="border-b border-app-border pb-2 text-sm font-medium text-app-text-primary">
                         Issue 属性
                       </h4>
 
                       <div className="grid grid-cols-2 gap-4">
-                        {/* 状态 */}
-                        {/* <div
-                        // MARK: 状态
-                        >
-                          <label className="block text-xs font-medium text-app-text-secondary mb-1">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-app-text-secondary">
                             状态
                           </label>
-                          {editingField === "status" ? (
-                            <select
-                              value={localIssue.status || ""}
-                              onChange={(e) =>
-                                handleFieldSave("status", e.target.value)
-                              }
-                              className="w-full px-2 py-1 border border-app-border rounded bg-app-bg text-app-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              autoFocus
-                            >
-                              {statusOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
+                          {editingField === "stateId" ? (
+                            <div className="flex gap-2">
+                              <select
+                                value={localIssue.stateId || ""}
+                                onChange={(event) => {
+                                  const nextStateId = event.target.value;
+                                  const nextState = issueStates.find(
+                                    (state) => state.id === nextStateId,
+                                  );
+
+                                  setLocalIssue({
+                                    ...localIssue,
+                                    stateId: nextStateId || null,
+                                    state: nextState || null,
+                                  });
+                                }}
+                                className="w-full rounded bg-app-bg px-2 py-1 text-sm text-app-text-primary ring-1 ring-app-border focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autoFocus
+                              >
+                                {issueStates.map((state) => (
+                                  <option key={state.id} value={state.id}>
+                                    {state.name} ({state.category})
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() =>
+                                  persistIssuePatch(
+                                    { stateId: localIssue.stateId || undefined },
+                                    { state: localIssue.state || null },
+                                  )
+                                }
+                                className="rounded bg-blue-600 px-2 text-white transition-colors hover:bg-blue-700"
+                              >
+                                <RiSaveLine className="h-4 w-4" />
+                              </button>
+                            </div>
                           ) : (
                             <button
-                              onClick={() => handleFieldEdit("status")}
-                              className={`w-full text-left px-2 py-1 rounded text-sm hover:opacity-80 transition-opacity`}
+                              onClick={() => handleFieldEdit("stateId")}
+                              className="w-full rounded px-2 py-1 text-left text-sm text-app-text-primary transition-colors hover:bg-app-button-hover"
                             >
-                              {getStatusOption(localIssue.status || "").label}
+                              {localIssue.state?.name || "未设置"}
+                              {localIssue.state?.category
+                                ? ` · ${localIssue.state.category}`
+                                : ""}
                             </button>
                           )}
-                        </div> */}
-                        {/* 优先级 */}
-                        <div
-                        // MARK: 优先级
-                        >
-                          <label className="block text-xs font-medium text-app-text-secondary mb-1">
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-app-text-secondary">
                             优先级
                           </label>
                           {editingField === "priority" ? (
-                            <select
-                              value={localIssue.priority}
-                              onChange={(e) =>
-                                handleFieldSave("priority", e.target.value)
-                              }
-                              className="w-full px-2 py-1 border border-app-border rounded bg-app-bg text-app-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              autoFocus
-                            >
-                              {priorityOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
+                            <div className="flex gap-2">
+                              <select
+                                value={localIssue.priority || ""}
+                                onChange={(event) =>
+                                  setLocalIssue({
+                                    ...localIssue,
+                                    priority:
+                                      (event.target.value as IssuePriority) ||
+                                      undefined,
+                                  })
+                                }
+                                className="w-full rounded bg-app-bg px-2 py-1 text-sm text-app-text-primary ring-1 ring-app-border focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autoFocus
+                              >
+                                <option value="">未设置</option>
+                                {PRIORITY_OPTIONS.map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() =>
+                                  persistIssuePatch({
+                                    priority: localIssue.priority,
+                                  })
+                                }
+                                className="rounded bg-blue-600 px-2 text-white transition-colors hover:bg-blue-700"
+                              >
+                                <RiSaveLine className="h-4 w-4" />
+                              </button>
+                            </div>
                           ) : (
                             <button
                               onClick={() => handleFieldEdit("priority")}
-                              className={`w-full text-left px-2 py-1 rounded text-sm
-
-                               hover:opacity-80 transition-opacity`}
+                              className="w-full rounded px-2 py-1 text-left text-sm text-app-text-primary transition-colors hover:bg-app-button-hover"
                             >
-                              {
-                                getPriorityOption(localIssue.priority || "")
-                                  .label
-                              }
+                              {getPriorityOption(localIssue.priority)?.label || "未设置"}
                             </button>
                           )}
                         </div>
-                        {/* 负责人 */}
-                        {/* <div
-                        // MARK: 负责人
-                        >
-                          <label className="block text-xs font-medium text-app-text-secondary mb-1 flex items-center gap-1">
-                            <RiUserLine className="w-3 h-3" />
-                            负责人
-                          </label>
-                          {editingField === "assignee" ? (
-                            <div className="flex flex-row gap-2">
-                              <input
-                                type="text"
-                                value={localIssue.assignee || ""}
-                                onChange={(e) =>
-                                  setLocalIssue({
-                                    ...localIssue,
-                                    assignee: e.target.value,
-                                  })
-                                }
-                                className="w-full px-2 py-1 border border-app-border rounded bg-app-bg text-app-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="输入负责人..."
-                                autoFocus
-                              />
-                              <div className="flex gap-1">
-                                <button
-                                  onClick={() =>
-                                    handleFieldSave(
-                                      "assignee",
-                                      localIssue.assignee || ""
-                                    )
-                                  }
-                                  className="px-2 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
-                                >
-                                  <RiCheckLine className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={() => setEditingField(null)}
-                                  className="px-2 border border-app-border rounded text-xs hover:bg-app-button-hover"
-                                >
-                                  <RiCloseLine className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => handleFieldEdit("assignee")}
-                              className="w-full text-left px-2 py-1 text-sm text-app-text-primary hover:bg-app-button-hover rounded transition-colors"
-                            >
-                              {localIssue.assignee || "未分配"}
-                            </button>
-                          )}
-                        </div> */}
-                        {/* 项目 */}
-                        <div
-                        // MARK: 项目
-                        >
-                          <label className="block text-xs font-medium text-app-text-secondary mb-1 flex items-center gap-1">
-                            <RiPriceTagLine className="w-3 h-3" />
+
+                        <div>
+                          <label className="mb-1 flex items-center gap-1 text-xs font-medium text-app-text-secondary">
+                            <RiPriceTagLine className="h-3 w-3" />
                             项目
                           </label>
-                          {editingField === "project" ? (
-                            <div className="flex flex-row gap-2">
-                              <input
-                                // FIXME: 添加项目属性
-                                type="text"
-                                value={"Synaply"}
-                                onChange={() =>
+                          {editingField === "projectId" ? (
+                            <div className="flex gap-2">
+                              <select
+                                value={localIssue.projectId || ""}
+                                onChange={(event) => {
+                                  const nextProjectId = event.target.value;
+                                  const nextProject = projects.find(
+                                    (project) => project.id === nextProjectId,
+                                  );
+
                                   setLocalIssue({
                                     ...localIssue,
-                                    // project: e.target.value,
-                                  })
-                                }
-                                className="w-full px-2 py-1 border border-app-border rounded bg-app-bg text-app-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="输入项目名称..."
+                                    projectId: nextProjectId || null,
+                                    project: nextProject || null,
+                                  });
+                                }}
+                                className="w-full rounded bg-app-bg px-2 py-1 text-sm text-app-text-primary ring-1 ring-app-border focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 autoFocus
-                              />
-                              <div className="flex gap-1">
-                                <button
-                                  onClick={() =>
-                                    handleFieldSave("project", "Synaply")
-                                  }
-                                  className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
-                                >
-                                  <RiCheckLine className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={() => setEditingField(null)}
-                                  className="px-2 py-1 border border-app-border rounded text-xs hover:bg-app-button-hover"
-                                >
-                                  <RiCloseLine className="w-3 h-3" />
-                                </button>
-                              </div>
+                              >
+                                <option value="">不归属任何项目</option>
+                                {projects.map((project) => (
+                                  <option key={project.id} value={project.id}>
+                                    {project.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() =>
+                                  persistIssuePatch(
+                                    { projectId: localIssue.projectId ?? null },
+                                    { project: localIssue.project || null },
+                                  )
+                                }
+                                className="rounded bg-blue-600 px-2 text-white transition-colors hover:bg-blue-700"
+                              >
+                                <RiSaveLine className="h-4 w-4" />
+                              </button>
                             </div>
                           ) : (
                             <button
-                              onClick={() => handleFieldEdit("project")}
-                              className="w-full text-left px-2 py-1 text-sm text-app-text-primary hover:bg-app-button-hover rounded transition-colors"
+                              onClick={() => handleFieldEdit("projectId")}
+                              className="w-full rounded px-2 py-1 text-left text-sm text-app-text-primary transition-colors hover:bg-app-button-hover"
                             >
-                              {"Synaply"}
+                              {selectedProject?.name || localIssue.project?.name || "未设置"}
                             </button>
                           )}
                         </div>
-                        {/* 截止时间 (如果有) */}
-                        {(localIssue as ExtendedIssue).deadline && (
-                          <div
-                          // MARK: 截止时间
-                          >
-                            <label className="block text-xs font-medium text-app-text-secondary mb-1 flex items-center gap-1">
-                              <RiCalendarLine className="w-3 h-3" />
-                              截止时间
-                            </label>
-                            <div className="text-sm text-app-text-primary">
-                              {new Date(
-                                (localIssue as ExtendedIssue).deadline!,
-                              ).toLocaleDateString("zh-CN")}
-                            </div>
-                          </div>
-                        )}
-                        {/* 标签 (如果有) */}
-                        {(localIssue as ExtendedIssue).tags && (
-                          <div>
-                            <label className="block text-xs font-medium text-app-text-secondary mb-1">
-                              标签
-                            </label>
-                            <div className="flex flex-wrap gap-1">
-                              {(localIssue as ExtendedIssue)
-                                .tags!.split(",")
-                                .map((tag: string, index: number) => (
-                                  <span
-                                    key={index}
-                                    className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs"
-                                  >
-                                    {tag.trim()}
-                                  </span>
+
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-app-text-secondary">
+                            可见性
+                          </label>
+                          {editingField === "visibility" ? (
+                            <div className="flex gap-2">
+                              <select
+                                value={localIssue.visibility || ""}
+                                onChange={(event) =>
+                                  setLocalIssue({
+                                    ...localIssue,
+                                    visibility:
+                                      (event.target.value as VisibilityType) ||
+                                      undefined,
+                                  })
+                                }
+                                className="w-full rounded bg-app-bg px-2 py-1 text-sm text-app-text-primary ring-1 ring-app-border focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autoFocus
+                              >
+                                {VISIBILITY_OPTIONS.map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
                                 ))}
+                              </select>
+                              <button
+                                onClick={() =>
+                                  persistIssuePatch({
+                                    visibility: localIssue.visibility,
+                                  })
+                                }
+                                className="rounded bg-blue-600 px-2 text-white transition-colors hover:bg-blue-700"
+                              >
+                                <RiSaveLine className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleFieldEdit("visibility")}
+                              className="w-full rounded px-2 py-1 text-left text-sm text-app-text-primary transition-colors hover:bg-app-button-hover"
+                            >
+                              {VISIBILITY_OPTIONS.find(
+                                (option) => option.value === localIssue.visibility,
+                              )?.label || "未设置"}
+                            </button>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-app-text-secondary">
+                            主负责人
+                          </label>
+                          {workspaceType === "PERSONAL" ? (
+                            <div className="w-full rounded px-2 py-1 text-left text-sm text-app-text-primary">
+                              {directAssignee?.name || currentUserName}
+                            </div>
+                          ) : editingField === "directAssigneeId" ? (
+                            <div className="flex gap-2">
+                              <select
+                                value={localIssue.directAssigneeId || ""}
+                                onChange={(event) =>
+                                  setLocalIssue({
+                                    ...localIssue,
+                                    directAssigneeId: event.target.value || null,
+                                  })
+                                }
+                                className="w-full rounded bg-app-bg px-2 py-1 text-sm text-app-text-primary ring-1 ring-app-border focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autoFocus
+                              >
+                                <option value="">暂不指定负责人</option>
+                                {memberOptions.map((member) => (
+                                  <option key={member.id} value={member.id}>
+                                    {member.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() =>
+                                  persistIssuePatch({
+                                    directAssigneeId:
+                                      localIssue.directAssigneeId ?? null,
+                                  })
+                                }
+                                className="rounded bg-blue-600 px-2 text-white transition-colors hover:bg-blue-700"
+                              >
+                                <RiSaveLine className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleFieldEdit("directAssigneeId")}
+                              className="w-full rounded px-2 py-1 text-left text-sm text-app-text-primary transition-colors hover:bg-app-button-hover"
+                            >
+                              {directAssignee?.name || "未分配"}
+                            </button>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="mb-1 flex items-center gap-1 text-xs font-medium text-app-text-secondary">
+                            <RiCalendarLine className="h-3 w-3" />
+                            截止日期
+                          </label>
+                          {editingField === "dueDate" ? (
+                            <div className="flex gap-2">
+                              <input
+                                type="date"
+                                value={
+                                  localIssue.dueDate
+                                    ? new Date(localIssue.dueDate)
+                                        .toISOString()
+                                        .slice(0, 10)
+                                    : ""
+                                }
+                                onChange={(event) =>
+                                  setLocalIssue({
+                                    ...localIssue,
+                                    dueDate: event.target.value
+                                      ? `${event.target.value}T00:00:00.000Z`
+                                      : null,
+                                  })
+                                }
+                                className="w-full rounded bg-app-bg px-2 py-1 text-sm text-app-text-primary ring-1 ring-app-border focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                autoFocus
+                              />
+                              <button
+                                onClick={() =>
+                                  persistIssuePatch({
+                                    dueDate: localIssue.dueDate ?? null,
+                                  })
+                                }
+                                className="rounded bg-blue-600 px-2 text-white transition-colors hover:bg-blue-700"
+                              >
+                                <RiSaveLine className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleFieldEdit("dueDate")}
+                              className="w-full rounded px-2 py-1 text-left text-sm text-app-text-primary transition-colors hover:bg-app-button-hover"
+                            >
+                              {formatDateOnly(localIssue.dueDate)}
+                            </button>
+                          )}
+                        </div>
+
+                        {(localIssue.assignees?.length || 0) > 0 && (
+                          <div className="col-span-2">
+                            <label className="mb-1 block text-xs font-medium text-app-text-secondary">
+                              协作成员
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                              {localIssue.assignees?.map((assignee) => (
+                                <span
+                                  key={assignee.id}
+                                  className="rounded-full bg-app-button-hover px-3 py-1 text-xs text-app-text-primary"
+                                >
+                                  {memberOptions.find(
+                                    (member) => member.id === assignee.memberId,
+                                  )?.name || getIssueMemberName(assignee.member)}
+                                </span>
+                              ))}
                             </div>
                           </div>
                         )}
                       </div>
 
-                      {/* MARK: 描述
-                       */}
-                      <div className="border-t border-app-border p-2 h-full">
-                        <div className="flex items-center justify-between mb-2">
+                      <div className="border-t border-app-border p-2">
+                        <div className="mb-2 flex items-center justify-between">
                           <label className="text-sm font-medium text-app-text-primary">
                             描述
                           </label>
                           {editingField !== "description" && (
                             <button
                               onClick={() => handleFieldEdit("description")}
-                              className="p-1 hover:bg-app-button-hover rounded"
+                              className="rounded p-1 hover:bg-app-button-hover"
                             >
-                              <RiEditLine className="w-4 h-4 text-app-text-secondary" />
+                              <RiEditLine className="h-4 w-4 text-app-text-secondary" />
                             </button>
                           )}
                         </div>
@@ -498,58 +788,55 @@ export default function NormalIssueDetail({
                           <div className="space-y-2">
                             <textarea
                               value={localIssue.description || ""}
-                              onChange={(e) =>
+                              onChange={(event) =>
                                 setLocalIssue({
                                   ...localIssue,
-                                  description: e.target.value,
+                                  description: event.target.value,
                                 })
                               }
-                              className="max-h-[600px] min-h-[200px] w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="min-h-[200px] max-h-[600px] w-full rounded-md border border-app-border bg-app-bg px-3 py-2 text-app-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
                               rows={4}
                               placeholder="添加描述..."
                             />
                             <div className="flex gap-2">
                               <button
                                 onClick={() =>
-                                  handleFieldSave(
-                                    "description",
-                                    localIssue.description,
-                                  )
+                                  persistIssuePatch({
+                                    description: localIssue.description,
+                                  })
                                 }
-                                className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
+                                className="rounded bg-blue-600 px-3 py-1 text-sm text-white transition-colors hover:bg-blue-700"
                               >
                                 保存
                               </button>
                               <button
-                                onClick={() => setEditingField(null)}
-                                className="px-3 py-1 border border-app-border rounded text-sm hover:bg-app-button-hover transition-colors"
+                                onClick={handleCancelEdit}
+                                className="rounded border border-app-border px-3 py-1 text-sm transition-colors hover:bg-app-button-hover"
                               >
                                 取消
                               </button>
                             </div>
                           </div>
                         ) : (
-                          <div className="text-app-text-secondary whitespace-pre-wrap">
+                          <div className="whitespace-pre-wrap text-app-text-secondary">
                             {localIssue.description || "暂无描述"}
                           </div>
                         )}
                       </div>
 
-                      {/* 时间信息 */}
                       <div className="absolute bottom-4">
                         <div className="space-y-2 text-xs text-app-text-muted">
                           <div className="flex items-center gap-1">
-                            <RiTimeLine className="w-3 h-3" />
-                            <span>
-                              创建时间: {formatDate(localIssue.createdAt)}
-                            </span>
+                            <RiTimeLine className="h-3 w-3" />
+                            <span>创建时间: {formatDate(localIssue.createdAt)}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <RiTimeLine className="w-3 h-3" />
-                            <span>
-                              更新时间: {formatDate(localIssue.updatedAt)}
-                            </span>
+                            <RiTimeLine className="h-3 w-3" />
+                            <span>更新时间: {formatDate(localIssue.updatedAt)}</span>
                           </div>
+                          {updateIssueMutation.isPending && (
+                            <div className="text-blue-600">正在保存变更...</div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -557,105 +844,120 @@ export default function NormalIssueDetail({
                 </div>
               </div>
 
-              {/* 右侧：讨论区域 (1/3) */}
-              <div className="w-1/3 bg-app-content-bg rounded-lg border border-app-border flex flex-col">
-                <div className="p-4 border-b border-app-border flex-shrink-0">
-                  <h4 className="text-lg font-semibold text-app-text-primary flex items-center gap-2">
-                    <RiFileTextLine className="w-5 h-5" />
+              <div className="flex w-1/3 flex-col rounded-lg border border-app-border bg-app-content-bg">
+                <div className="flex-shrink-0 border-b border-app-border p-4">
+                  <h4 className="flex items-center gap-2 text-lg font-semibold text-app-text-primary">
+                    <RiFileTextLine className="h-5 w-5" />
                     讨论 ({comments.length})
                   </h4>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4">
-                  {/* 评论列表 */}
-                  <div className="space-y-4 mb-4">
-                    {comments.map((comment) => (
-                      <div key={comment.id} className="flex gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-sm flex-shrink-0 overflow-hidden">
-                          {comment.authorAvatar ? (
-                            <img
-                              src={comment.authorAvatar}
-                              alt="avatar"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-sm">{comment.author[0]}</span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium text-app-text-primary">
-                              {comment.author}
-                            </span>
-                            <span className="text-xs text-app-text-muted">
-                              {formatDate(comment.createdAt)}
-                            </span>
+                  <div className="mb-4 space-y-4">
+                    {comments.map((comment) => {
+                      const authorName = getCommentAuthorName(comment.author);
+
+                      return (
+                        <div key={comment.id} className="flex gap-3">
+                          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-blue-400 to-purple-500 text-sm text-white">
+                            {comment.authorAvatar ? (
+                              <img
+                                src={comment.authorAvatar}
+                                alt="avatar"
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-sm">
+                                {getAvatarFallback(authorName)}
+                              </span>
+                            )}
                           </div>
-                          <div className="text-sm text-app-text-secondary">
-                            {comment.content
-                              .split(/(@\w+)/)
-                              .map((part, index) => (
-                                <span
-                                  key={index}
-                                  className={
-                                    part.startsWith("@")
-                                      ? "text-blue-600 font-medium"
-                                      : ""
-                                  }
-                                >
-                                  {part}
-                                </span>
-                              ))}
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-1 flex items-center gap-2">
+                              <span className="text-sm font-medium text-app-text-primary">
+                                {authorName}
+                              </span>
+                              <span className="text-xs text-app-text-muted">
+                                {formatDate(comment.createdAt)}
+                              </span>
+                            </div>
+                            <div className="text-sm text-app-text-secondary">
+                              {comment.content
+                                .split(/(@[^\s]+)/)
+                                .map((part, index) => (
+                                  <span
+                                    key={index}
+                                    className={
+                                      part.startsWith("@")
+                                        ? "font-medium text-blue-600"
+                                        : ""
+                                    }
+                                  >
+                                    {part}
+                                  </span>
+                                ))}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* 新评论输入 */}
-                <div className="p-4 border-t border-app-border">
+                <div className="border-t border-app-border p-4">
                   <div className="relative">
                     <div className="flex gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-sm flex-shrink-0 overflow-hidden">
-                        {user?.user_metadata.avatar_url ? (
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-green-400 to-blue-500 text-sm text-white">
+                        {currentUserAvatar ? (
                           <img
-                            src={user?.user_metadata.avatar_url}
+                            src={currentUserAvatar}
                             alt="avatar"
-                            className="w-full h-full object-cover"
+                            className="h-full w-full object-cover"
                           />
                         ) : (
                           <span className="text-sm">
-                            {user?.user_metadata.name?.[0]}
+                            {getAvatarFallback(currentUserName)}
                           </span>
                         )}
                       </div>
-                      <div className="flex-1 relative">
+
+                      <div className="relative flex-1">
                         <textarea
                           ref={commentInputRef}
                           value={commentText}
                           onChange={handleCommentChange}
-                          placeholder="添加评论... 使用@提及团队成员"
-                          className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                          placeholder="添加评论... 使用 @ 提及团队成员"
+                          className="w-full resize-none rounded-md border border-app-border bg-app-bg px-3 py-2 text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
                           rows={3}
                         />
 
-                        {/* @提及列表 */}
-                        {showMentionList && (
-                          <div className="absolute bottom-full left-0 right-0 mt-1 bg-app-content-bg border border-app-border rounded-md shadow-lg z-10 overflow-y-auto">
+                        {showMentionList && filteredMembers.length > 0 && (
+                          <div className="absolute bottom-full left-0 right-0 z-10 max-h-48 overflow-y-auto rounded-md border border-app-border bg-app-content-bg shadow-lg">
                             {filteredMembers.map((member) => (
                               <button
                                 key={member.id}
                                 onClick={() => handleMentionSelect(member)}
-                                className="w-full px-3 py-2 text-left hover:bg-app-button-hover flex items-center gap-2"
+                                className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-app-button-hover"
                               >
-                                <span className="text-lg">{member.avatar}</span>
-                                <div>
+                                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-app-button-hover">
+                                  {member.avatarUrl ? (
+                                    <img
+                                      src={member.avatarUrl}
+                                      alt={member.name}
+                                      className="h-full w-full object-cover"
+                                    />
+                                  ) : (
+                                    <span className="text-xs text-app-text-primary">
+                                      {getAvatarFallback(member.name)}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="min-w-0">
                                   <div className="text-sm font-medium text-app-text-primary">
                                     {member.name}
                                   </div>
-                                  <div className="text-xs text-app-text-muted">
-                                    {member.email}
+                                  <div className="truncate text-xs text-app-text-muted">
+                                    {member.email || member.id}
                                   </div>
                                 </div>
                               </button>
@@ -663,17 +965,17 @@ export default function NormalIssueDetail({
                           </div>
                         )}
 
-                        <div className="flex justify-between items-center mt-2">
+                        <div className="mt-2 flex items-center justify-between">
                           <div className="flex items-center gap-2 text-xs text-app-text-muted">
-                            <RiAtLine className="w-3 h-3" />
-                            <span>使用@提及团队成员</span>
+                            <RiAtLine className="h-3 w-3" />
+                            <span>使用 @ 提及当前工作空间成员</span>
                           </div>
                           <button
                             onClick={handleSendComment}
                             disabled={!commentText.trim()}
-                            className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-1 rounded bg-blue-600 px-3 py-1 text-sm text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            <RiSendPlaneLine className="w-3 h-3" />
+                            <RiSendPlaneLine className="h-3 w-3" />
                             发送
                           </button>
                         </div>
