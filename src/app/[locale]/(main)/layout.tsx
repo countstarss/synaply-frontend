@@ -6,31 +6,16 @@ import { GlobalPageCache } from "@/components/cache/GlobalPageCache";
 import React from "react";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/stores/sidebar";
-import { usePathname } from "next/navigation";
+import { useSelectedLayoutSegments } from "next/navigation";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-// 检查是否为缓存页面 - 支持tasks页面
-const isCachedPage = (pathname: string) => {
-  return (
-    pathname.includes("/docs") ||
-    pathname.includes("/inbox") ||
-    pathname.includes("/chat") ||
-    pathname.includes("/tasks") ||
-    pathname.includes("/issues") ||
-    pathname.includes("/projects") ||
-    pathname.includes("/workflows")
-  );
-};
-
 const Layout = ({ children }: LayoutProps) => {
   const { isOpen: sidebarOpen } = useSidebarStore();
-  const pathname = usePathname();
-
-  // 直接根据路径判断是否显示缓存页面，避免依赖store状态
-  const showCachedPage = isCachedPage(pathname);
+  const segments = useSelectedLayoutSegments();
+  const showCachedPage = segments.includes("(cached)");
 
   return (
     <div className="flex h-screen bg-app-bg overflow-hidden">
