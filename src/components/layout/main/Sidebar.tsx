@@ -20,8 +20,6 @@ import {
 import { settingMockData } from "@/lib/data/settingData";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { CreateTeamDialog } from "@/components/dialogs/CreateTeamDialog";
-import { Plus } from "lucide-react";
 
 interface SidebarProps {
   className?: string;
@@ -74,18 +72,6 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
                       href={item.href}
                     />
                   ))}
-                  <SidebarSection title="Team">
-                    <CreateTeamDialog>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex items-center gap-2 text-sm w-full justify-start px-3 py-2"
-                      >
-                        <Plus className="h-4 w-4" />
-                        <span>创建团队</span>
-                      </Button>
-                    </CreateTeamDialog>
-                  </SidebarSection>
                 </div>
               ) : (
                 /* MARK: TEAM 导航
