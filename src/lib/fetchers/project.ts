@@ -1,93 +1,173 @@
-// import { CreateProjectDto } from "@/api";
-// import { Project } from "@/types/prisma";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
 
-// const API_BASE_URL =
-//   process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
+export type ProjectVisibility =
+  | "PRIVATE"
+  | "TEAM_READONLY"
+  | "TEAM_EDITABLE"
+  | "PUBLIC";
 
-// // MARK: 获取项目列表
-// export const fetchProjects = async (
-//   workspaceId: string,
-//   token: string
-// ): Promise<Project[]> => {
-//   const response = await fetch(
-//     `${API_BASE_URL}/workspaces/${workspaceId}/projects`,
-//     {
-//       method: "GET",
-//       headers: {
-//         "Content-Type": "application/json",
-//         Authorization: `Bearer ${token}`,
-//       },
-//     }
-//   );
+export interface Project {
+  id: string;
+  name: string;
+  description?: string | null;
+  workspaceId: string;
+  creatorId: string;
+  visibility: ProjectVisibility;
+  createdAt: string;
+  updatedAt: string;
+}
 
-//   if (!response.ok) {
-//     throw new Error("获取项目列表失败");
-//   }
+export interface ProjectDetail extends Project {
+  workspace?: {
+    id: string;
+    name: string;
+    type: "PERSONAL" | "TEAM";
+  };
+}
 
-//   return response.json();
-// };
+export interface DeleteProjectResult extends Project {
+  deletedIssueCount: number;
+}
 
-// // MARK: 创建项目
-// export const createProject = async (
-//   workspaceId: string,
-//   data: CreateProjectDto,
-//   token: string
-// ): Promise<Project> => {
-//   const response = await fetch(
-//     `${API_BASE_URL}/workspaces/${workspaceId}/projects`,
-//     {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//         Authorization: `Bearer ${token}`,
-//       },
-//       body: JSON.stringify(data),
-//     }
-//   );
+export interface CreateProjectDto {
+  name: string;
+  description?: string;
+  visibility?: ProjectVisibility;
+}
 
-//   if (!response.ok) {
-//     throw new Error("创建项目失败");
-//   }
+export interface UpdateProjectDto {
+  name?: string;
+  description?: string;
+  visibility?: ProjectVisibility;
+}
 
-//   return response.json();
-// };
+export const PROJECT_VISIBILITY_OPTIONS: Array<{
+  value: ProjectVisibility;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "PRIVATE",
+    label: "Private",
+    description: "仅当前 workspace 负责人或可访问成员可见",
+  },
+  {
+    value: "TEAM_READONLY",
+    label: "Team Readonly",
+    description: "团队成员可读，不可改动项目本身",
+  },
+  {
+    value: "TEAM_EDITABLE",
+    label: "Team Editable",
+    description: "团队内协作编辑，适合共享推进中的项目",
+  },
+  {
+    value: "PUBLIC",
+    label: "Public",
+    description: "公开可见，适合对外共享的项目说明",
+  },
+];
 
-// // MARK: 更新项目
-// export const updateProject = async (
-//   projectId: string,
-//   data: Partial<CreateProjectDto>,
-//   token: string
-// ): Promise<Project> => {
-//   const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
-//     method: "PUT",
-//     headers: {
-//       "Content-Type": "application/json",
-//       Authorization: `Bearer ${token}`,
-//     },
-//     body: JSON.stringify(data),
-//   });
+export function getDefaultProjectVisibility(
+  workspaceType: "PERSONAL" | "TEAM",
+): ProjectVisibility {
+  return workspaceType === "TEAM" ? "TEAM_READONLY" : "PRIVATE";
+}
 
-//   if (!response.ok) {
-//     throw new Error("更新项目失败");
-//   }
+async function fetchProjectApi<T>(
+  endpoint: string,
+  token: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...options.headers,
+    },
+  });
 
-//   return response.json();
-// };
+  if (!response.ok) {
+    let message = "项目请求失败";
 
-// // MARK: 删除项目
-// export const deleteProject = async (
-//   projectId: string,
-//   token: string
-// ): Promise<void> => {
-//   const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
-//     method: "DELETE",
-//     headers: {
-//       "Content-Type": "application/json",
-//       Authorization: `Bearer ${token}`,
-//     },
-//   });
+    try {
+      const errorData = await response.json();
+      message =
+        errorData?.message ||
+        errorData?.error ||
+        (typeof errorData === "string" ? errorData : message);
+    } catch {
+      const errorText = await response.text().catch(() => "");
+      message = errorText || message;
+    }
 
-//   if (!response.ok) {
-//     throw new Error("删除项目失败");
-//   }
-// };
+    throw new Error(message);
+  }
+
+  if (response.status === 204) {
+    return null as T;
+  }
+
+  return response.json();
+}
+
+export async function getProjects(
+  workspaceId: string,
+  token: string,
+): Promise<Project[]> {
+  return fetchProjectApi<Project[]>(`/workspaces/${workspaceId}/projects`, token);
+}
+
+export async function getProject(
+  workspaceId: string,
+  projectId: string,
+  token: string,
+): Promise<ProjectDetail> {
+  return fetchProjectApi<ProjectDetail>(
+    `/workspaces/${workspaceId}/projects/${projectId}`,
+    token,
+  );
+}
+
+export async function createProject(
+  workspaceId: string,
+  data: CreateProjectDto,
+  token: string,
+): Promise<Project> {
+  return fetchProjectApi<Project>(`/workspaces/${workspaceId}/projects`, token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateProject(
+  workspaceId: string,
+  projectId: string,
+  data: UpdateProjectDto,
+  token: string,
+): Promise<Project> {
+  return fetchProjectApi<Project>(
+    `/workspaces/${workspaceId}/projects/${projectId}`,
+    token,
+    {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    },
+  );
+}
+
+export async function deleteProject(
+  workspaceId: string,
+  projectId: string,
+  token: string,
+): Promise<DeleteProjectResult> {
+  return fetchProjectApi<DeleteProjectResult>(
+    `/workspaces/${workspaceId}/projects/${projectId}`,
+    token,
+    {
+      method: "DELETE",
+    },
+  );
+}

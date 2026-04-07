@@ -1,266 +1,400 @@
 "use client";
 
-import React, { useState } from "react";
-import { RiAddLine, RiMoreLine, RiTimeLine, RiTeamLine } from "react-icons/ri";
-
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  status: "planning" | "active" | "completed" | "on_hold";
-  progress: number;
-  lead: string;
-  team: string[];
-  startDate: string;
-  endDate: string;
-  issuesCount: {
-    total: number;
-    completed: number;
-  };
-}
-
-const statusConfig = {
-  planning: {
-    label: "规划中",
-    color: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300",
-  },
-  active: {
-    label: "进行中",
-    color: "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400",
-  },
-  completed: {
-    label: "已完成",
-    color:
-      "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400",
-  },
-  on_hold: {
-    label: "暂停",
-    color:
-      "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400",
-  },
-};
-
-const mockProjects: Project[] = [
-  {
-    id: "1",
-    name: "主站性能优化",
-    description: "提升网站首页加载速度，优化用户体验",
-    status: "active",
-    progress: 65,
-    lead: "张三",
-    team: ["张三", "李四", "王五"],
-    startDate: "2024-01-01",
-    endDate: "2024-02-15",
-    issuesCount: { total: 23, completed: 15 },
-  },
-  {
-    id: "2",
-    name: "移动端重构",
-    description: "使用 React Native 重构移动端应用",
-    status: "planning",
-    progress: 15,
-    lead: "李四",
-    team: ["李四", "赵六"],
-    startDate: "2024-02-01",
-    endDate: "2024-04-30",
-    issuesCount: { total: 45, completed: 7 },
-  },
-  {
-    id: "3",
-    name: "用户反馈系统",
-    description: "构建完整的用户反馈收集和处理系统",
-    status: "completed",
-    progress: 100,
-    lead: "王五",
-    team: ["王五", "周七"],
-    startDate: "2023-11-01",
-    endDate: "2024-01-10",
-    issuesCount: { total: 32, completed: 32 },
-  },
-];
+import React, {
+  useDeferredValue,
+  useEffect,
+  useState,
+  useTransition,
+} from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { RiLoader4Line } from "react-icons/ri";
+import { useAuth } from "@/context/AuthContext";
+import { useIssues } from "@/hooks/useIssueApi";
+import {
+  useCreateProject,
+  useDeleteProject,
+  useProject,
+  useProjects,
+  useUpdateProject,
+} from "@/hooks/useProjectApi";
+import { useTeamMembers } from "@/hooks/useTeam";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { ProjectDetailView } from "@/components/projects/ProjectDetailView";
+import { DeleteProjectDialog } from "@/components/projects/DeleteProjectDialog";
+import { ProjectsEmptyState } from "@/components/projects/ProjectsEmptyState";
+import { ProjectsOverviewPage } from "@/components/projects/ProjectsOverviewPage";
+import {
+  ProjectEditorDialog,
+  type ProjectEditorValues,
+} from "@/components/projects/ProjectEditorDialog";
+import {
+  VISIBILITY_META,
+} from "@/components/projects/project-view-utils";
+import WorkflowIssueDetail from "@/components/issue/WorkflowIssueDetail";
+import NormalIssueDetail from "@/components/shared/issue/NormalIssueDetail";
+import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
+import type { Issue } from "@/lib/fetchers/issue";
+import type { Project, ProjectDetail } from "@/lib/fetchers/project";
 
 export default function ProjectsPageContent() {
-  const [projects] = useState<Project[]>(mockProjects);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+  const [isSelectionPending, startTransition] = useTransition();
+  const { currentWorkspace } = useWorkspace();
+  const workspaceId = currentWorkspace?.id || "";
+  const workspaceType = currentWorkspace?.type || "PERSONAL";
+  const { data: projects = [], isLoading, error, isFetching } =
+    useProjects(workspaceId);
+  const { data: allIssues = [] } = useIssues(workspaceId);
+  const { data: teamMembers = [] } = useTeamMembers(currentWorkspace?.teamId);
 
-  return (
-    <div className="h-full flex flex-col bg-app-bg">
-      <div className="border-b border-app-border px-6 py-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-lg font-semibold text-app-text-primary">
-              Projects
-            </h1>
-            <div className="flex items-center gap-0.5 bg-app-button-hover rounded p-0.5">
-              <button
-                className={`px-2 py-0.5 text-sm rounded ${
-                  viewMode === "grid"
-                    ? "bg-app-content-bg text-app-text-primary shadow-sm"
-                    : "text-app-text-secondary hover:text-app-text-primary"
-                }`}
-                onClick={() => setViewMode("grid")}
-              >
-                网格
-              </button>
-              <button
-                className={`px-2 py-0.5 text-sm rounded ${
-                  viewMode === "list"
-                    ? "bg-app-content-bg text-app-text-primary shadow-sm"
-                    : "text-app-text-secondary hover:text-app-text-primary"
-                }`}
-                onClick={() => setViewMode("list")}
-              >
-                列表
-              </button>
-            </div>
-          </div>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
-            <RiAddLine className="w-4 h-4" />
-            新建项目
-          </button>
+  const currentTeamMember = teamMembers.find(
+    (member) =>
+      member.user?.id === session?.user?.id || member.userId === session?.user?.id,
+  );
+  const currentRole = currentTeamMember?.role;
+  const canManageProjects =
+    workspaceType === "PERSONAL" ||
+    currentRole === "OWNER" ||
+    currentRole === "ADMIN";
+
+  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
+  const [projectDialogMode, setProjectDialogMode] = useState<"create" | "edit">(
+    "create",
+  );
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [isCreateIssueOpen, setIsCreateIssueOpen] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const [isWorkflowIssueOpen, setIsWorkflowIssueOpen] = useState(false);
+  const [isNormalIssueOpen, setIsNormalIssueOpen] = useState(false);
+
+  const deferredSearch = useDeferredValue(searchQuery);
+  const createProjectMutation = useCreateProject();
+  const updateProjectMutation = useUpdateProject();
+  const deleteProjectMutation = useDeleteProject();
+  const { data: selectedProjectDetail, isLoading: isLoadingProjectDetail } =
+    useProject(workspaceId, selectedProjectId);
+  const { data: projectIssues = [], isLoading: isLoadingProjectIssues } =
+    useIssues(
+      workspaceId,
+      { projectId: selectedProjectId },
+      { enabled: !!selectedProjectId },
+    );
+
+  useEffect(() => {
+    if (!projects.length || !selectedProjectId) {
+      return;
+    }
+
+    const hasSelection = projects.some(
+      (project) => project.id === selectedProjectId,
+    );
+
+    if (!hasSelection) {
+      setSelectedProjectId("");
+    }
+  }, [projects, selectedProjectId]);
+
+  const normalizedSearch = deferredSearch.trim().toLowerCase();
+  const filteredProjects = [...projects]
+    .filter((project) => {
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      return [project.name, project.description || "", project.visibility]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedSearch);
+    })
+    .sort(
+      (left, right) =>
+        new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+    );
+
+  const issueCountByProject = allIssues.reduce<Record<string, number>>(
+    (counts, issue) => {
+      if (!issue.projectId) {
+        return counts;
+      }
+
+      counts[issue.projectId] = (counts[issue.projectId] || 0) + 1;
+      return counts;
+    },
+    {},
+  );
+
+  const linkedProjectCount = Object.keys(issueCountByProject).length;
+  const unassignedIssueCount = allIssues.filter(
+    (issue) => !issue.projectId,
+  ).length;
+  const emptyProjectCount = Math.max(projects.length - linkedProjectCount, 0);
+
+  const selectedProject =
+    selectedProjectDetail ||
+    projects.find((project) => project.id === selectedProjectId) ||
+    null;
+  const selectedProjectWorkspaceName =
+    selectedProjectDetail?.workspace?.name || currentWorkspace?.name || "";
+  const selectedProjectVisibility = selectedProject
+    ? VISIBILITY_META[selectedProject.visibility]
+    : null;
+
+  const openCreateDialog = () => {
+    setProjectDialogMode("create");
+    setEditingProject(null);
+    setIsProjectDialogOpen(true);
+  };
+
+  const openEditDialog = (project: Project | ProjectDetail) => {
+    setProjectDialogMode("edit");
+    setEditingProject(project);
+    setIsProjectDialogOpen(true);
+  };
+
+  const handleProjectSubmit = async (values: ProjectEditorValues) => {
+    if (!workspaceId) {
+      toast.error("请先选择工作空间");
+      return;
+    }
+
+    try {
+      if (projectDialogMode === "create") {
+        const createdProject = await createProjectMutation.mutateAsync({
+          workspaceId,
+          data: values,
+        });
+
+        startTransition(() => {
+          setSelectedProjectId(createdProject.id);
+        });
+        toast.success("项目创建成功");
+      } else if (editingProject) {
+        const updatedProject = await updateProjectMutation.mutateAsync({
+          workspaceId,
+          projectId: editingProject.id,
+          data: values,
+        });
+
+        startTransition(() => {
+          setSelectedProjectId(updatedProject.id);
+        });
+        toast.success("项目已更新");
+      }
+
+      setIsProjectDialogOpen(false);
+    } catch (submitError) {
+      toast.error(
+        submitError instanceof Error ? submitError.message : "保存项目失败",
+      );
+    }
+  };
+
+  const handleDeleteProject = async (project: Project) => {
+    if (!workspaceId) {
+      toast.error("请先选择工作空间");
+      return;
+    }
+
+    try {
+      const deletedResult = await deleteProjectMutation.mutateAsync({
+        workspaceId,
+        projectId: project.id,
+      });
+
+      startTransition(() => {
+        setSelectedProjectId(
+          project.id === selectedProjectId ? "" : selectedProjectId,
+        );
+      });
+      setProjectToDelete(null);
+      toast.success(
+        `项目已删除，同时删除了 ${deletedResult.deletedIssueCount} 个相关任务`,
+      );
+    } catch (deleteError) {
+      toast.error(
+        deleteError instanceof Error ? deleteError.message : "删除项目失败",
+      );
+    }
+  };
+
+  const handleOpenIssue = (issue: Issue) => {
+    setSelectedIssue(issue);
+
+    if (issue.issueType === "WORKFLOW") {
+      setIsWorkflowIssueOpen(true);
+      return;
+    }
+
+    setIsNormalIssueOpen(true);
+  };
+
+  const invalidateIssues = () => {
+    queryClient.invalidateQueries({ queryKey: ["issues", workspaceId] });
+  };
+
+  if (!workspaceId) {
+    return (
+      <div className="flex h-full items-center justify-center bg-app-bg">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold text-app-text-primary">
+            暂无工作空间
+          </h2>
+          <p className="mt-2 text-sm text-app-text-secondary">
+            选择一个 workspace 后，项目模块会自动按对应空间隔离数据。
+          </p>
         </div>
       </div>
+    );
+  }
 
-      <div className="flex-1 overflow-y-auto p-6">
-        {viewMode === "grid" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => {
-              const status = statusConfig[project.status];
-              const progressPercentage =
-                (project.issuesCount.completed / project.issuesCount.total) *
-                100;
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center bg-app-bg">
+        <div className="flex items-center gap-2 text-app-text-secondary">
+          <RiLoader4Line className="size-5 animate-spin" />
+          正在加载项目...
+        </div>
+      </div>
+    );
+  }
 
-              return (
-                <div
-                  key={project.id}
-                  className="bg-app-content-bg rounded-xl border border-app-border p-6 hover:shadow-lg dark:hover:shadow-black/20 transition-shadow cursor-pointer"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-app-text-primary">
-                      {project.name}
-                    </h3>
-                    <button className="p-1 hover:bg-app-button-hover rounded">
-                      <RiMoreLine className="w-5 h-5 text-app-text-secondary" />
-                    </button>
-                  </div>
+  if (error) {
+    return (
+      <div className="flex h-full items-center justify-center bg-app-bg">
+        <div className="max-w-md text-center">
+          <h2 className="text-lg font-semibold text-app-text-primary">
+            项目加载失败
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-app-text-secondary">
+            {error.message || "获取项目列表失败"}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-                  <p className="text-sm text-app-text-secondary mb-4 line-clamp-2">
-                    {project.description}
-                  </p>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`text-xs px-2 py-1 rounded ${status.color}`}
-                      >
-                        {status.label}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <RiTeamLine className="w-4 h-4 text-app-text-muted" />
-                        <span className="text-xs text-app-text-muted">
-                          {project.team.length}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-app-text-secondary">
-                          进度
-                        </span>
-                        <span className="text-xs text-app-text-secondary">
-                          {project.issuesCount.completed}/
-                          {project.issuesCount.total}
-                        </span>
-                      </div>
-                      <div className="h-2 bg-app-button-hover rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-600 dark:bg-blue-500 transition-all"
-                          style={{ width: `${progressPercentage}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-xs text-app-text-muted">
-                      <RiTimeLine className="w-3.5 h-3.5" />
-                      <span>{project.endDate}</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+  return (
+    <>
+      <div
+        className="flex h-full min-h-0 flex-col bg-app-bg"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 28%)",
+        }}
+      >
+        {!projects.length ? (
+          <ProjectsEmptyState
+            canManageProjects={canManageProjects}
+            onCreate={openCreateDialog}
+          />
+        ) : !selectedProject ? (
+          <ProjectsOverviewPage
+            workspaceType={workspaceType}
+            projects={projects}
+            filteredProjects={filteredProjects}
+            issueCountByProject={issueCountByProject}
+            linkedProjectCount={linkedProjectCount}
+            emptyProjectCount={emptyProjectCount}
+            unassignedIssueCount={unassignedIssueCount}
+            canManageProjects={canManageProjects}
+            isFetching={isFetching}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onCreate={openCreateDialog}
+            onOpenProject={(projectId) =>
+              startTransition(() => {
+                setSelectedProjectId(projectId);
+              })
+            }
+          />
         ) : (
-          <div className="space-y-2">
-            {projects.map((project) => {
-              const status = statusConfig[project.status];
-              const progressPercentage =
-                (project.issuesCount.completed / project.issuesCount.total) *
-                100;
-
-              return (
-                <div
-                  key={project.id}
-                  className="bg-app-content-bg rounded-lg border border-app-border p-4 hover:shadow-md dark:hover:shadow-black/10 transition-shadow cursor-pointer"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-base font-medium text-app-text-primary">
-                          {project.name}
-                        </h3>
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded ${status.color}`}
-                        >
-                          {status.label}
-                        </span>
-                      </div>
-                      <p className="text-sm text-app-text-secondary">
-                        {project.description}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-6">
-                      <div className="text-center">
-                        <div className="text-2xl font-semibold text-app-text-primary">
-                          {Math.round(progressPercentage)}%
-                        </div>
-                        <div className="text-xs text-app-text-muted">
-                          完成度
-                        </div>
-                      </div>
-
-                      <div className="flex -space-x-2">
-                        {project.team.slice(0, 3).map((member, index) => (
-                          <div
-                            key={index}
-                            className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 border-2 border-app-content-bg flex items-center justify-center"
-                          >
-                            <span className="text-xs text-white">
-                              {member[0]}
-                            </span>
-                          </div>
-                        ))}
-                        {project.team.length > 3 && (
-                          <div className="w-8 h-8 rounded-full bg-app-button-hover border-2 border-app-content-bg flex items-center justify-center">
-                            <span className="text-xs text-app-text-secondary">
-                              +{project.team.length - 3}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      <button className="p-2 hover:bg-app-button-hover rounded">
-                        <RiMoreLine className="w-5 h-5 text-app-text-secondary" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <ProjectDetailView
+            selectedProject={selectedProject}
+            workspaceName={selectedProjectWorkspaceName}
+            visibilityLabel={
+              selectedProjectVisibility?.label || selectedProject.visibility
+            }
+            projectIssues={projectIssues}
+            isSelectionPending={isSelectionPending}
+            isLoadingProjectDetail={isLoadingProjectDetail}
+            isLoadingProjectIssues={isLoadingProjectIssues}
+            canManageProjects={canManageProjects}
+            onBack={() => setSelectedProjectId("")}
+            onCreateIssue={() => setIsCreateIssueOpen(true)}
+            onEdit={() => openEditDialog(selectedProject)}
+            onDelete={() => setProjectToDelete(selectedProject)}
+            onOpenIssue={handleOpenIssue}
+          />
         )}
       </div>
-    </div>
+
+      <ProjectEditorDialog
+        open={isProjectDialogOpen}
+        mode={projectDialogMode}
+        workspaceType={workspaceType}
+        initialProject={editingProject}
+        isPending={
+          createProjectMutation.isPending || updateProjectMutation.isPending
+        }
+        onOpenChange={setIsProjectDialogOpen}
+        onSubmit={handleProjectSubmit}
+      />
+
+      <DeleteProjectDialog
+        open={!!projectToDelete}
+        workspaceId={workspaceId}
+        project={projectToDelete}
+        isDeleting={deleteProjectMutation.isPending}
+        onOpenChange={(open) => {
+          if (!open) {
+            setProjectToDelete(null);
+          }
+        }}
+        onConfirm={handleDeleteProject}
+      />
+
+      <CreateIssueModal
+        isOpen={isCreateIssueOpen}
+        onClose={() => setIsCreateIssueOpen(false)}
+        onCreated={() => {
+          invalidateIssues();
+          setIsCreateIssueOpen(false);
+        }}
+        initialProjectId={selectedProject?.id}
+        projectContextName={selectedProject?.name}
+      />
+
+      {selectedIssue && (
+        <>
+          <WorkflowIssueDetail
+            issue={selectedIssue}
+            isOpen={isWorkflowIssueOpen}
+            onClose={() => {
+              setSelectedIssue(null);
+              setIsWorkflowIssueOpen(false);
+            }}
+            onUpdate={invalidateIssues}
+          />
+
+          <NormalIssueDetail
+            issue={selectedIssue}
+            isOpen={isNormalIssueOpen}
+            onClose={() => {
+              setSelectedIssue(null);
+              setIsNormalIssueOpen(false);
+            }}
+            onUpdate={(updatedIssue) => {
+              void updatedIssue;
+              invalidateIssues();
+            }}
+          />
+        </>
+      )}
+    </>
   );
 }
