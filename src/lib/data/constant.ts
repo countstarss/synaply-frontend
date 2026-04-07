@@ -1,13 +1,9 @@
 import {
   BookAIcon,
-  Eye,
-  FileText,
   FolderOpen,
   Inbox,
-  Layers,
   ListCheck,
   MessageSquareCode,
-  User,
   Workflow,
   Bug,
 } from "lucide-react";
@@ -27,12 +23,10 @@ export const mainNavItems = [
   { icon: MessageSquareCode, label: "Chat", href: "/chat" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
   { icon: Bug, label: "Issues", href: "/issues" },
+  { icon: FolderOpen, label: "Projects", href: "/projects" },
+  { icon: Workflow, label: "Workflows", href: "/workflows" },
   // 顶部不再显示setting选项, 因为它会扰乱UI切换逻辑, 代为一个单独按钮打开
   // { icon: Settings, label: "Settings", href: "/settings" },
-];
-export const secondaryNavItems = [
-  { icon: Layers, label: "Team", href: "/team" },
-  { icon: User, label: "Personal", href: "/personal" },
 ];
 
 // MARK: - PERSONAL导航
@@ -45,18 +39,9 @@ export const personalNavItems = [
   // { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
-// NOTE: WorkSpace 子项
-export const workspaceItems = [
-  { icon: FolderOpen, label: "Projects", href: "/team/projects" },
-  { icon: Eye, label: "Views", href: "/team/views" },
-  { icon: Workflow, label: "Workflows", href: "/team/workflows" },
-];
-
 // NOTE: Personal 子项
 export const personalItems = [
-  { icon: FolderOpen, label: "Projects", href: "/personal/projects" },
-  { icon: Eye, label: "Views", href: "/personal/views" },
-  { icon: FileText, label: "Docs", href: "/personal/doc" },
+  { icon: BookAIcon, label: "Docs", href: "/personal/doc" },
 ];
 
 // MARK: mobileMenu

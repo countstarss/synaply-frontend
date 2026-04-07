@@ -15,7 +15,7 @@ import {
 } from "@/lib/fetchers/issue";
 import { WorkflowIssue } from "@/types/team";
 import { IssueStatus } from "@/types/prisma";
-import { workflowIssueStorage } from "@/app/[locale]/(main)/(team)/team/_utils/storage";
+import { workflowIssueStorage } from "@/app/[locale]/(main)/workflows/_utils/storage";
 import { Session } from "@supabase/supabase-js";
 
 interface WorkflowData {

@@ -19,14 +19,10 @@ import { useCurrentTeam, useTeamMembers } from "@/hooks/useTeam";
 import { useIssueStepRecords, useIssueActivities } from "@/hooks/useIssueApi";
 import { NodeStatusUpdate } from "./NodeStatusUpdate";
 import { RecordModal } from "./RecordModal";
-import {
-  createInitialWorkflowIssue,
-  parseWorkflowSnapshot,
-  createFlowNodesAndEdges,
-} from "@/app/[locale]/(main)/(team)/team/_components/utils/workflowUtils";
 import { HistoryTab, DiscussionTab, RecordsTab } from "./tabs";
-import useWorkflowNodeStatus from "@/app/[locale]/(main)/(team)/team/_components/hooks/useWorkflowNodeStatus";
 import CustomNode from "../workflow/CustomNode";
+import useWorkflowNodeStatus from "@/app/[locale]/(main)/workflows/_components/hooks/useWorkflowNodeStatus";
+import { createFlowNodesAndEdges, createInitialWorkflowIssue, parseWorkflowSnapshot } from "@/app/[locale]/(main)/workflows/_components/utils/workflowUtils";
 
 const nodeTypes = {
   custom: CustomNode,

@@ -16,11 +16,9 @@ import {
   mainNavItems,
   personalItems,
   personalNavItems,
-  workspaceItems,
 } from "@/lib/data/constant";
 import { settingMockData } from "@/lib/data/settingData";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
-import { useCurrentTeam } from "@/hooks/useTeam";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { CreateTeamDialog } from "@/components/dialogs/CreateTeamDialog";
 import { Plus } from "lucide-react";
@@ -33,7 +31,6 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
   const { isOpen: sidebarOpen } = useSidebarStore();
   const { mode, switchToMain } = useSidebarMode();
   const router = useRouter();
-  const { team: currentTeam } = useCurrentTeam();
   const { currentWorkspace } = useWorkspace();
 
   const handleBackToMain = useCallback(() => {
@@ -104,22 +101,6 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
                       />
                     ))}
                   </div>
-
-                  {/* Team 部分 */}
-                  <SidebarSection
-                    title={
-                      currentTeam?.name || currentWorkspace?.name || "Team"
-                    }
-                  >
-                    {workspaceItems.map((item) => (
-                      <SidebarNavItem
-                        key={item.href}
-                        icon={item.icon}
-                        label={item.label}
-                        href={item.href}
-                      />
-                    ))}
-                  </SidebarSection>
 
                   {/* Personal 部分 */}
                   <SidebarSection title="Personal">

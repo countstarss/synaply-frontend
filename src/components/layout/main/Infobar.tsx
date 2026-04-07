@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Menu, PanelLeft, PanelRight } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { mainNavItems } from "@/lib/data/constant";
+import { mainNavItems, personalNavItems } from "@/lib/data/constant";
 import Link from "next/link";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
 // import RouterIndicator from "@/components/global/RouterIndicator";
@@ -14,6 +14,7 @@ import TabList from "../infobar/TabList";
 // import ViewToggle, { defaultViews } from "../infobar/ViewToggle";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { DialogTitle } from "@/components/ui/dialog";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface InfoBarProps {
   title?: string;
@@ -27,6 +28,9 @@ const InfoBar = ({ showViewToggle = true, className }: InfoBarProps) => {
   const [open, setOpen] = useState(false);
   // const [activeView, setActiveView] = useState("list");
   const { isOpen, toggleSidebar } = useSidebarStore();
+  const { currentWorkspace } = useWorkspace();
+  const mobileNavItems =
+    currentWorkspace?.type === "TEAM" ? mainNavItems : personalNavItems;
 
   const onGetPayment = async () => {};
 
@@ -102,7 +106,7 @@ const InfoBar = ({ showViewToggle = true, className }: InfoBarProps) => {
                 >
                   <DialogTitle className="sr-only">Menu</DialogTitle>
                   <div className="flex flex-col gap-4 p-4">
-                    {mainNavItems.map((menuItem) => (
+                    {mobileNavItems.map((menuItem) => (
                       <Link
                         href={menuItem.href}
                         key={menuItem.label}

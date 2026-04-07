@@ -7,7 +7,7 @@ import {
 } from "react-icons/ri";
 import { Node } from "reactflow";
 import { CustomNodeData } from "./CustomNode";
-import MentionInput from "@/app/[locale]/(main)/(team)/team/_components/MentionInput";
+import MentionInput from "@/app/[locale]/(main)/workflows/_components/MentionInput";
 
 interface NodeDetailsModalProps {
   isOpen: boolean;

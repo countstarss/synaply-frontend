@@ -1,7 +1,7 @@
 import React, { memo, useState } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { RiEditLine, RiInformationLine } from "react-icons/ri";
-import MentionInput from "@/app/[locale]/(main)/(team)/team/_components/MentionInput";
+import MentionInput from "@/app/[locale]/(main)/workflows/_components/MentionInput";
 
 export interface CustomNodeData {
   label: string;

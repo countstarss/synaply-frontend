@@ -1,6 +1,4 @@
 "use client";
-
-import { usePathname } from "next/navigation";
 import React, { useState } from "react";
 import {
   RiAddLine,
@@ -37,7 +35,6 @@ export default function Workflows() {
 
   // 获取当前工作空间
   const { currentWorkspace } = useWorkspace();
-  const pathname = usePathname(); // 获取当前路由路径
 
   // MARK: 获取工作流数据
   const {
@@ -70,14 +67,8 @@ export default function Workflows() {
     // MARK: 判断默认工作流可见
     let defaultVisibility: "PRIVATE" | "TEAM_EDITABLE" = "PRIVATE";
 
-    if (currentWorkspace?.type === "PERSONAL") {
-      defaultVisibility = "PRIVATE";
-    } else if (currentWorkspace?.type === "TEAM") {
-      if (pathname.includes("/personal/workflows")) {
-        defaultVisibility = "PRIVATE";
-      } else if (pathname.includes("/team/workflows")) {
-        defaultVisibility = "TEAM_EDITABLE";
-      }
+    if (currentWorkspace?.type === "TEAM") {
+      defaultVisibility = "TEAM_EDITABLE";
     }
 
     try {

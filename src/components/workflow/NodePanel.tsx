@@ -5,7 +5,7 @@ import {
   RiSettings3Line,
   RiUserLine,
 } from "react-icons/ri";
-import { getColorClasses } from "@/app/[locale]/(main)/(team)/team/_components/SimpleColorPicker";
+import { getColorClasses } from "@/app/[locale]/(main)/workflows/_components/SimpleColorPicker";
 
 export interface NodeType {
   id: string; // 唯一 ID
