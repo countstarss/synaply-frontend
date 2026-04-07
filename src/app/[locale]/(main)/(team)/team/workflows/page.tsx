@@ -11,9 +11,9 @@ import {
   RiLoader4Line,
   RiSettings3Line,
 } from "react-icons/ri";
-import WorkflowEditor from "../_components/workflow/WorkflowEditor";
-import WorkflowSetupModal from "../_components/workflow/WorkflowSetupModal";
-import WorkflowSettingsModal from "../_components/workflow/WorkflowSettingsModal";
+import WorkflowEditor from "@/components/workflow/WorkflowEditor";
+import WorkflowSetupModal from "@/components/workflow/WorkflowSetupModal";
+import WorkflowSettingsModal from "@/components/workflow/WorkflowSettingsModal";
 import { Workflow } from "@/types/team";
 import {
   useWorkflows,

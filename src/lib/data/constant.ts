@@ -8,7 +8,6 @@ import {
   ListCheck,
   MessageSquareCode,
   User,
-  Settings,
   Workflow,
   Bug,
 } from "lucide-react";

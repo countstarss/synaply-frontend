@@ -30,10 +30,12 @@ export function useWorkspace() {
     data: apiWorkspaces,
     isLoading: loading,
     error,
+    refetch,
   } = useQuery({
-    queryKey: ["workspaces"],
+    queryKey: ["workspaces", session?.user?.id],
     queryFn: () => fetchUserWorkspaces(session!.access_token),
     enabled: !!session?.access_token,
+    retry: 1,
   });
 
   // 转换API数据为前端格式
@@ -107,6 +109,7 @@ export function useWorkspace() {
     currentWorkspace,
     loading,
     error,
+    refetch,
     switchWorkspace,
     createWorkspace,
     inviteMember,
