@@ -17,7 +17,6 @@ const isCachedPage = (pathname: string) => {
   return (
     pathname.includes("/docs") ||
     pathname.includes("/inbox") ||
-    pathname.includes("/settings") ||
     pathname.includes("/dashboard") ||
     pathname.includes("/chat") ||
     pathname.includes("/tasks")
