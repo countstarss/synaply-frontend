@@ -36,8 +36,24 @@ import {
 import WorkflowIssueDetail from "@/components/issue/WorkflowIssueDetail";
 import NormalIssueDetail from "@/components/shared/issue/NormalIssueDetail";
 import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
+import {
+  normalizeIssueStateCategoryOrder,
+  persistIssueBoardCategoryOrderToStorage,
+  readIssueBoardCategoryOrderFromStorage,
+} from "@/lib/issue-board";
 import { isWorkflowIssue, type Issue } from "@/lib/fetchers/issue";
 import type { Project, ProjectDetail } from "@/lib/fetchers/project";
+import { IssueStateCategory } from "@/types/prisma";
+
+function isSameCategoryOrder(
+  left: IssueStateCategory[],
+  right: IssueStateCategory[],
+) {
+  return (
+    left.length === right.length &&
+    left.every((category, index) => category === right[index])
+  );
+}
 
 const getSelectedProjectIdFromPathname = (pathname: string) => {
   const segments = pathname.split("/").filter(Boolean);
@@ -87,6 +103,14 @@ export default function ProjectsPageContent() {
   const [projectDialogMode, setProjectDialogMode] = useState<"create" | "edit">(
     "create",
   );
+  const [issuesViewMode, setIssuesViewMode] = useState<"list" | "board">("list");
+  const [issueBoardCategoryOrder, setIssueBoardCategoryOrder] = useState<
+    IssueStateCategory[]
+  >(() => readIssueBoardCategoryOrderFromStorage(workspaceId));
+  const [savedIssueBoardCategoryOrder, setSavedIssueBoardCategoryOrder] =
+    useState<IssueStateCategory[]>(() =>
+      readIssueBoardCategoryOrderFromStorage(workspaceId),
+    );
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [isCreateIssueOpen, setIsCreateIssueOpen] = useState(false);
@@ -118,6 +142,64 @@ export default function ProjectsPageContent() {
       router.replace("/projects");
     }
   }, [isLoading, projects, router, selectedProjectId, workspaceId]);
+
+  useEffect(() => {
+    const storedOrder = readIssueBoardCategoryOrderFromStorage(workspaceId);
+
+    setIssueBoardCategoryOrder(storedOrder);
+    setSavedIssueBoardCategoryOrder(storedOrder);
+  }, [workspaceId]);
+
+  const hasUnsavedIssueBoardCategoryOrder = !isSameCategoryOrder(
+    savedIssueBoardCategoryOrder,
+    issueBoardCategoryOrder,
+  );
+
+  const handleIssueBoardCategoryOrderChange = (
+    nextOrder: IssueStateCategory[],
+  ) => {
+    const normalizedOrder = normalizeIssueStateCategoryOrder(nextOrder);
+
+    if (isSameCategoryOrder(issueBoardCategoryOrder, normalizedOrder)) {
+      return;
+    }
+
+    setIssueBoardCategoryOrder(normalizedOrder);
+  };
+
+  const handleSaveIssueBoardCategoryOrder = () => {
+    if (!workspaceId) {
+      toast.error("当前工作空间无效，无法保存看板顺序");
+      return;
+    }
+
+    const normalizedOrder = normalizeIssueStateCategoryOrder(
+      issueBoardCategoryOrder,
+    );
+
+    if (
+      isSameCategoryOrder(savedIssueBoardCategoryOrder, normalizedOrder)
+    ) {
+      toast.message("当前看板顺序没有变化");
+      return;
+    }
+
+    const didPersist = persistIssueBoardCategoryOrderToStorage(
+      workspaceId,
+      normalizedOrder,
+    );
+
+    if (!didPersist) {
+      toast.error("看板类型顺序保存失败，请重试");
+      return;
+    }
+
+    const persistedOrder = readIssueBoardCategoryOrderFromStorage(workspaceId);
+
+    setIssueBoardCategoryOrder(persistedOrder);
+    setSavedIssueBoardCategoryOrder(persistedOrder);
+    toast.success("看板类型顺序已更新");
+  };
 
   const normalizedSearch = deferredSearch.trim().toLowerCase();
   const filteredProjects = [...projects]
@@ -376,16 +458,23 @@ export default function ProjectsPageContent() {
           />
         ) : (
           <ProjectDetailView
+            workspaceId={workspaceId}
             selectedProject={selectedProject}
             workspaceName={selectedProjectWorkspaceName}
             visibilityLabel={
               selectedProjectVisibility?.label || selectedProject.visibility
             }
             projectIssues={projectIssues}
+            issuesViewMode={issuesViewMode}
+            issueBoardCategoryOrder={issueBoardCategoryOrder}
             isSelectionPending={isSelectionPending}
             isLoadingProjectDetail={isLoadingProjectDetail}
             isLoadingProjectIssues={isLoadingProjectIssues}
             canManageProjects={canManageProjects}
+            onIssueBoardCategoryOrderChange={handleIssueBoardCategoryOrderChange}
+            onSaveIssueBoardCategoryOrder={handleSaveIssueBoardCategoryOrder}
+            onIssuesViewModeChange={setIssuesViewMode}
+            hasUnsavedIssueBoardCategoryOrder={hasUnsavedIssueBoardCategoryOrder}
             onBack={() => router.push("/projects")}
             onCreateIssue={() => setIsCreateIssueOpen(true)}
             onEdit={() => openEditDialog(selectedProject)}

@@ -5,13 +5,14 @@
   "scripts": {
     "dev": "next dev --turbopack & npx convex dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start & npx convex dev",
     "lint": "next lint"
   },
   "dependencies": {
     "@blocknote/core": "^0.32.0",
     "@blocknote/mantine": "^0.32.0",
     "@blocknote/react": "^0.32.0",
+    "@dnd-kit/react": "^0.3.2",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-checkbox": "^1.3.2",
     "@radix-ui/react-context-menu": "^2.2.15",

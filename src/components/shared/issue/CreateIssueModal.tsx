@@ -27,6 +27,10 @@ import { useWorkflows } from "@/hooks/useWorkflowApi";
 import type { CreateIssueDto } from "@/lib/fetchers/issue";
 import type { TeamMember } from "@/lib/fetchers/team";
 import type { WorkflowResponse } from "@/lib/fetchers/workflow";
+import {
+  ISSUE_STATE_CATEGORY_LABELS,
+  resolveIssueStateForCategory,
+} from "@/lib/issue-board";
 import { cn } from "@/lib/utils";
 import {
   IssuePriority,
@@ -61,11 +65,26 @@ const PRIORITY_OPTIONS = [
 ] as const;
 
 const STATE_CATEGORY_OPTIONS = [
-  { value: IssueStateCategory.BACKLOG, label: "Backlog" },
-  { value: IssueStateCategory.TODO, label: "待处理" },
-  { value: IssueStateCategory.IN_PROGRESS, label: "进行中" },
-  { value: IssueStateCategory.DONE, label: "已完成" },
-  { value: IssueStateCategory.CANCELED, label: "已取消" },
+  {
+    value: IssueStateCategory.BACKLOG,
+    label: ISSUE_STATE_CATEGORY_LABELS[IssueStateCategory.BACKLOG],
+  },
+  {
+    value: IssueStateCategory.TODO,
+    label: ISSUE_STATE_CATEGORY_LABELS[IssueStateCategory.TODO],
+  },
+  {
+    value: IssueStateCategory.IN_PROGRESS,
+    label: ISSUE_STATE_CATEGORY_LABELS[IssueStateCategory.IN_PROGRESS],
+  },
+  {
+    value: IssueStateCategory.DONE,
+    label: ISSUE_STATE_CATEGORY_LABELS[IssueStateCategory.DONE],
+  },
+  {
+    value: IssueStateCategory.CANCELED,
+    label: ISSUE_STATE_CATEGORY_LABELS[IssueStateCategory.CANCELED],
+  },
 ] as const;
 
 function getDefaultVisibility(workspaceType: "PERSONAL" | "TEAM") {
@@ -193,10 +212,7 @@ export default function CreateIssueModal({
   );
   const resolvedState =
     (selectedStateCategory
-      ? issueStates.find(
-          (state) => state.category === selectedStateCategory && state.isDefault,
-        ) ||
-        issueStates.find((state) => state.category === selectedStateCategory)
+      ? resolveIssueStateForCategory(issueStates, selectedStateCategory)
       : issueStates.find((state) => state.isDefault) || issueStates[0]) || null;
   const isProjectContext = !!initialProjectId;
   const visibilityOptions = getVisibilityOptions(workspaceType);
