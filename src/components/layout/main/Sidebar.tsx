@@ -42,7 +42,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
   const readyPersonalNavItems = getReadyNavItems(personalNavItems);
 
   const handleBackToMain = useCallback(() => {
-    router.push("/inbox");
+    router.push("/tasks");
     switchToMain();
   }, [router, switchToMain]);
 
