@@ -71,7 +71,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
     <ContextMenuWrapper>
       <div
         className={cn(
-          "w-64 h-[calc(100vh-16px)] bg-app-bg lg:flex hidden flex-col my-2 ml-2 mr-0 border border-app-border rounded-lg overflow-hidden",
+          "w-64 h-[calc(100vh-16px)] bg-app-bg md:flex hidden flex-col my-2 ml-2 mr-0 border border-app-border rounded-lg overflow-hidden",
           "transition-transform duration-300 ease-in-out",
           !sidebarOpen && "pointer-events-none",
           className,

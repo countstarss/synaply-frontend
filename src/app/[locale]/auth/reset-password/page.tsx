@@ -1,7 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useState } from "react";
 import {
   AlertCircle,
   CheckCircle,
@@ -10,25 +9,38 @@ import {
   Key,
   Loader2,
   Lock,
-} from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/navigation';
-import { AUTH_ROUTE, getAuthParam } from '@/lib/auth-utils';
-import { createClientComponentClient } from '@/lib/supabase';
+} from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+
+import {
+  AuthCard,
+  AuthMessage,
+  AuthShell,
+  AuthStatusCard,
+} from "@/components/auth/auth-shell";
+import { getSiteCopy } from "@/components/marketing/site-copy";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useRouter } from "@/i18n/navigation";
+import { AUTH_ROUTE, getAuthParam } from "@/lib/auth-utils";
+import { createClientComponentClient } from "@/lib/supabase";
 
 export default function ResetPasswordPage() {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{
-    type: 'success' | 'error';
+    type: "success" | "error";
     text: string;
   } | null>(null);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
   const [supabase] = useState(() => createClientComponentClient());
   const router = useRouter();
+  const locale = useLocale();
+  const copy = getSiteCopy(locale);
   const t = useTranslations();
 
   useEffect(() => {
@@ -37,7 +49,7 @@ export default function ResetPasswordPage() {
     let unsubscribe: (() => void) | null = null;
 
     const clearAuthUrl = () => {
-      window.history.replaceState({}, '', window.location.pathname);
+      window.history.replaceState({}, "", window.location.pathname);
     };
 
     const markInvalid = (text: string) => {
@@ -53,7 +65,7 @@ export default function ResetPasswordPage() {
       unsubscribe?.();
       unsubscribe = null;
       setIsValidToken(false);
-      setMessage({ type: 'error', text });
+      setMessage({ type: "error", text });
     };
 
     const markValid = () => {
@@ -79,8 +91,8 @@ export default function ResetPasswordPage() {
       } = await supabase.auth.getSession();
 
       if (error) {
-        console.error('检查重置会话时出错:', error);
-        markInvalid(error.message || t('auth.linkExpired'));
+        console.error("检查重置会话时出错:", error);
+        markInvalid(error.message || t("auth.linkExpired"));
         return true;
       }
 
@@ -95,16 +107,16 @@ export default function ResetPasswordPage() {
 
     const checkResetToken = async () => {
       try {
-        const urlError = getAuthParam('error_description') ?? getAuthParam('error');
+        const urlError = getAuthParam("error_description") ?? getAuthParam("error");
 
         if (urlError) {
           markInvalid(urlError);
           return;
         }
 
-        const code = getAuthParam('code');
-        const accessToken = getAuthParam('access_token');
-        const refreshToken = getAuthParam('refresh_token');
+        const code = getAuthParam("code");
+        const accessToken = getAuthParam("access_token");
+        const refreshToken = getAuthParam("refresh_token");
 
         if (accessToken && refreshToken) {
           const { error: setSessionError } = await supabase.auth.setSession({
@@ -113,8 +125,8 @@ export default function ResetPasswordPage() {
           });
 
           if (setSessionError) {
-            console.error('设置重置会话失败:', setSessionError);
-            markInvalid(setSessionError.message || t('auth.linkExpired'));
+            console.error("设置重置会话失败:", setSessionError);
+            markInvalid(setSessionError.message || t("auth.linkExpired"));
             return;
           }
 
@@ -128,7 +140,7 @@ export default function ResetPasswordPage() {
         }
 
         if (!code) {
-          markInvalid(t('auth.missingResetToken'));
+          markInvalid(t("auth.missingResetToken"));
           return;
         }
 
@@ -150,12 +162,11 @@ export default function ResetPasswordPage() {
             return;
           }
 
-          markInvalid(t('auth.linkExpired'));
+          markInvalid(t("auth.linkExpired"));
         }, 5000);
-
-      } catch (err) {
-        console.error('检查重置令牌时出错:', err);
-        markInvalid(t('auth.linkInvalid'));
+      } catch (tokenError) {
+        console.error("检查重置令牌时出错:", tokenError);
+        markInvalid(t("auth.linkInvalid"));
       }
     };
 
@@ -171,21 +182,21 @@ export default function ResetPasswordPage() {
     };
   }, [supabase, t]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
 
     if (!password || !confirmPassword) {
-      setMessage({ type: 'error', text: t('auth.fillAllFields') });
+      setMessage({ type: "error", text: t("auth.fillAllFields") });
       return;
     }
 
     if (password.length < 6) {
-      setMessage({ type: 'error', text: t('auth.passwordTooShort') });
+      setMessage({ type: "error", text: t("auth.passwordTooShort") });
       return;
     }
 
     if (password !== confirmPassword) {
-      setMessage({ type: 'error', text: t('auth.passwordsNotMatch') });
+      setMessage({ type: "error", text: t("auth.passwordsNotMatch") });
       return;
     }
 
@@ -198,203 +209,162 @@ export default function ResetPasswordPage() {
       });
 
       if (error) {
-        setMessage({ type: 'error', text: error.message });
+        setMessage({ type: "error", text: error.message });
         return;
       }
 
-      setMessage({ type: 'success', text: t('auth.passwordResetSuccess') });
-      await supabase.auth.signOut({ scope: 'local' });
+      setMessage({ type: "success", text: t("auth.passwordResetSuccess") });
+      await supabase.auth.signOut({ scope: "local" });
       window.setTimeout(() => {
         router.replace(AUTH_ROUTE);
       }, 1500);
-    } catch (err) {
-      console.error('重置密码时出错:', err);
-      setMessage({ type: 'error', text: t('auth.linkInvalid') });
+    } catch (resetError) {
+      console.error("重置密码时出错:", resetError);
+      setMessage({ type: "error", text: t("auth.linkInvalid") });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const fadeInUp = {
-    initial: { opacity: 0, y: 60 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -60 },
-  };
-
-  if (isValidToken === null) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-2xl shadow-2xl p-8 w-full max-w-md text-center"
-        >
-          <Loader2 className="w-16 h-16 text-green-400 animate-spin mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-2">{t('auth.verifying')}</h1>
-          <p className="text-gray-400">{t('auth.verifyingAccount')}</p>
-        </motion.div>
-      </div>
-    );
-  }
-
-  if (isValidToken === false) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-2xl shadow-2xl p-8 w-full max-w-md text-center"
-        >
-          <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-2">{t('auth.verificationFailed')}</h1>
-          <p className="text-gray-400 mb-6">
-            {message?.text || t('auth.linkInvalid')}
-          </p>
-          <button
-            onClick={() => router.replace(AUTH_ROUTE)}
-            className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200"
-          >
-            {t('auth.returnToLogin')}
-          </button>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-green-500 rounded-full filter blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500 rounded-full filter blur-3xl animate-pulse delay-1000"></div>
-      </div>
+    <AuthShell copy={copy} homeLabel={t("nav.home")}>
+      {isValidToken === null ? (
+        <AuthStatusCard
+          icon={<Loader2 className="h-7 w-7 animate-spin" />}
+          title={t("auth.verifying")}
+          description={t("auth.verifyingAccount")}
+        />
+      ) : null}
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="relative z-10 w-full max-w-md"
-      >
-        <div className="bg-gray-900/80 backdrop-blur-xl border border-gray-700/50 rounded-2xl shadow-2xl p-8">
-          <motion.div
-            variants={fadeInUp}
-            initial="initial"
-            animate="animate"
-            className="text-center mb-8"
-          >
-            <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl mx-auto flex items-center justify-center mb-4">
-              <Key className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-white mb-2">
-              {t('auth.resetPasswordTitle')}
-            </h1>
-            <p className="text-gray-400">{t('auth.enterNewPassword')}</p>
-          </motion.div>
-
-          {message && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`p-4 rounded-lg mb-6 flex items-center gap-3 ${
-                message.type === 'error'
-                  ? 'bg-red-500/10 border border-red-500/20 text-red-400'
-                  : 'bg-green-500/10 border border-green-500/20 text-green-400'
-              }`}
+      {isValidToken === false ? (
+        <AuthStatusCard
+          icon={<AlertCircle className="h-7 w-7 text-red-300" />}
+          title={t("auth.verificationFailed")}
+          description={message?.text || t("auth.linkInvalid")}
+          footer={
+            <Button
+              onClick={() => router.replace(AUTH_ROUTE)}
+              className="h-11 border border-white/12 bg-white/[0.05] px-6 text-sm font-medium text-white hover:bg-white/[0.08]"
             >
-              {message.type === 'error' ? (
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              ) : (
-                <CheckCircle className="w-5 h-5 flex-shrink-0" />
-              )}
-              <span className="text-sm">{message.text}</span>
-            </motion.div>
-          )}
+              {t("auth.returnToLogin")}
+            </Button>
+          }
+        />
+      ) : null}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <motion.div variants={fadeInUp}>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                {t('auth.newPassword')}
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 bg-gray-800/50 border border-gray-600/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 transition-all duration-200"
-                  placeholder="••••••••"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((value) => !value)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
+      {isValidToken ? (
+        <AuthCard>
+          <div className="space-y-7">
+            <div className="space-y-4">
+              <div className="inline-flex border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-white/62">
+                Secure recovery
               </div>
-            </motion.div>
-
-            <motion.div variants={fadeInUp}>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                {t('auth.confirmNewPassword')}
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 bg-gray-800/50 border border-gray-600/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 transition-all duration-200"
-                  placeholder="••••••••"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword((value) => !value)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
+              <div className="space-y-3">
+                <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white">
+                  {t("auth.resetPasswordTitle")}
+                </h1>
+                <p className="text-sm leading-7 text-white/60">
+                  {t("auth.enterNewPassword")}
+                </p>
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div variants={fadeInUp}>
-              <button
+            {message ? (
+              <AuthMessage tone={message.type}>
+                <div className="flex items-start gap-3">
+                  {message.type === "error" ? (
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  ) : (
+                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  )}
+                  <span>{message.text}</span>
+                </div>
+              </AuthMessage>
+            ) : null}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label className="text-sm text-white/72">{t("auth.newPassword")}</Label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/34" />
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="••••••••"
+                    className="h-12 border-white/10 bg-white/[0.03] pl-11 pr-12 text-white placeholder:text-white/26 focus-visible:border-white/16 focus-visible:ring-white/10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((value) => !value)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/36 transition hover:text-white/78"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm text-white/72">
+                  {t("auth.confirmNewPassword")}
+                </Label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/34" />
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    placeholder="••••••••"
+                    className="h-12 border-white/10 bg-white/[0.03] pl-11 pr-12 text-white placeholder:text-white/26 focus-visible:border-white/16 focus-visible:ring-white/10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((value) => !value)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/36 transition hover:text-white/78"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-600 focus:outline-none focus:ring-2 focus:ring-green-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+                className="h-12 w-full border border-white/12 bg-white/[0.05] text-sm font-medium text-white hover:bg-white/[0.08]"
               >
                 {isSubmitting ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
-                    <Key className="w-5 h-5" />
-                    {t('auth.resetPassword')}
+                    <Key className="h-4 w-4" />
+                    {t("auth.resetPassword")}
                   </>
                 )}
-              </button>
-            </motion.div>
-          </form>
+              </Button>
+            </form>
 
-          <motion.div variants={fadeInUp} className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => router.replace(AUTH_ROUTE)}
-              className="text-gray-400 hover:text-green-400 transition-colors text-sm"
-            >
-              {t('auth.backToLogin')}
-            </button>
-          </motion.div>
-        </div>
-      </motion.div>
-    </div>
+            <div className="text-center text-sm text-white/48">
+              <button
+                type="button"
+                onClick={() => router.replace(AUTH_ROUTE)}
+                className="transition hover:text-white/76"
+              >
+                {t("auth.backToLogin")}
+              </button>
+            </div>
+          </div>
+        </AuthCard>
+      ) : null}
+    </AuthShell>
   );
 }

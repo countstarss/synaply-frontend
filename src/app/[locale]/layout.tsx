@@ -1,9 +1,21 @@
 import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
+import { IBM_Plex_Mono, Manrope } from "next/font/google";
 import { routing } from "@/i18n/routing";
 import "@/app/globals.css";
 import AppProvider from "@/providers/app-provider";
 import { Toaster } from "@/components/ui/sonner"; // 导入 Toaster
+
+const sans = Manrope({
+  subsets: ["latin"],
+  variable: "--font-geist-sans",
+});
+
+const mono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
+  weight: ["400", "500", "600"],
+});
 
 export default async function LocaleLayout({
   children,
@@ -21,7 +33,11 @@ export default async function LocaleLayout({
   }
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html
+      lang={locale}
+      suppressHydrationWarning
+      className={`${sans.variable} ${mono.variable}`}
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -34,7 +50,7 @@ export default async function LocaleLayout({
           }}
         />
       </head>
-      <body>
+      <body className="bg-background font-sans text-foreground antialiased">
         <AppProvider>{children}</AppProvider>
         <Toaster position="top-right" richColors /> {/* 添加 Toaster 组件 */}
       </body>

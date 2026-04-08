@@ -342,7 +342,7 @@ export function ProjectDetailView({
           </div>
         </div>
 
-        <div className="mt-6 flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-3xl">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-3xl">
           <div className="z-10 flex shrink-0 flex-wrap items-center justify-between gap-3 px-1 py-4 backdrop-blur">
             <div className="text-sm font-medium text-app-text-primary">Issues</div>
             <div className="flex flex-wrap items-center justify-end gap-2">
