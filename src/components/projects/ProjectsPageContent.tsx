@@ -9,8 +9,10 @@ import React, {
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { RiLoader4Line } from "react-icons/ri";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useIssues } from "@/hooks/useIssueApi";
+import { useWorkspaceRealtime } from "@/hooks/realtime/useWorkspaceRealtime";
 import {
   useCreateProject,
   useDeleteProject,
@@ -37,13 +39,33 @@ import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
 import { isWorkflowIssue, type Issue } from "@/lib/fetchers/issue";
 import type { Project, ProjectDetail } from "@/lib/fetchers/project";
 
+const getSelectedProjectIdFromPathname = (pathname: string) => {
+  const segments = pathname.split("/").filter(Boolean);
+  const projectsSegmentIndex = segments.indexOf("projects");
+
+  if (projectsSegmentIndex === -1) {
+    return "";
+  }
+
+  return decodeURIComponent(segments[projectsSegmentIndex + 1] || "");
+};
+
 export default function ProjectsPageContent() {
   const { session } = useAuth();
   const queryClient = useQueryClient();
   const [isSelectionPending, startTransition] = useTransition();
+  const pathname = usePathname();
+  const router = useRouter();
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id || "";
   const workspaceType = currentWorkspace?.type || "PERSONAL";
+  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+  const [selectedIssueIsWorkflow, setSelectedIssueIsWorkflow] = useState(false);
+  const [isWorkflowIssueOpen, setIsWorkflowIssueOpen] = useState(false);
+  const [isNormalIssueOpen, setIsNormalIssueOpen] = useState(false);
+  useWorkspaceRealtime(workspaceId, {
+    enabled: !isWorkflowIssueOpen && !isNormalIssueOpen,
+  });
   const { data: projects = [], isLoading, error, isFetching } =
     useProjects(workspaceId);
   const { data: allIssues = [] } = useIssues(workspaceId);
@@ -59,7 +81,7 @@ export default function ProjectsPageContent() {
     currentRole === "OWNER" ||
     currentRole === "ADMIN";
 
-  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const selectedProjectId = getSelectedProjectIdFromPathname(pathname);
   const [searchQuery, setSearchQuery] = useState("");
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   const [projectDialogMode, setProjectDialogMode] = useState<"create" | "edit">(
@@ -68,19 +90,14 @@ export default function ProjectsPageContent() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [isCreateIssueOpen, setIsCreateIssueOpen] = useState(false);
-  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
-  const [isWorkflowIssueOpen, setIsWorkflowIssueOpen] = useState(false);
-  const [isNormalIssueOpen, setIsNormalIssueOpen] = useState(false);
-  const selectedIssueIsWorkflow = selectedIssue
-    ? isWorkflowIssue(selectedIssue)
-    : false;
 
   const deferredSearch = useDeferredValue(searchQuery);
   const createProjectMutation = useCreateProject();
   const updateProjectMutation = useUpdateProject();
   const deleteProjectMutation = useDeleteProject();
+  const detailProjectId = isLoading ? "" : selectedProjectId;
   const { data: selectedProjectDetail, isLoading: isLoadingProjectDetail } =
-    useProject(workspaceId, selectedProjectId);
+    useProject(workspaceId, detailProjectId);
   const { data: projectIssues = [], isLoading: isLoadingProjectIssues } =
     useIssues(
       workspaceId,
@@ -89,7 +106,7 @@ export default function ProjectsPageContent() {
     );
 
   useEffect(() => {
-    if (!projects.length || !selectedProjectId) {
+    if (!workspaceId || !selectedProjectId || isLoading) {
       return;
     }
 
@@ -98,9 +115,9 @@ export default function ProjectsPageContent() {
     );
 
     if (!hasSelection) {
-      setSelectedProjectId("");
+      router.replace("/projects");
     }
-  }, [projects, selectedProjectId]);
+  }, [isLoading, projects, router, selectedProjectId, workspaceId]);
 
   const normalizedSearch = deferredSearch.trim().toLowerCase();
   const filteredProjects = [...projects]
@@ -173,7 +190,7 @@ export default function ProjectsPageContent() {
         });
 
         startTransition(() => {
-          setSelectedProjectId(createdProject.id);
+          router.push(`/projects/${createdProject.id}`);
         });
         toast.success("项目创建成功");
       } else if (editingProject) {
@@ -184,7 +201,7 @@ export default function ProjectsPageContent() {
         });
 
         startTransition(() => {
-          setSelectedProjectId(updatedProject.id);
+          router.push(`/projects/${updatedProject.id}`);
         });
         toast.success("项目已更新");
       }
@@ -210,9 +227,9 @@ export default function ProjectsPageContent() {
       });
 
       startTransition(() => {
-        setSelectedProjectId(
-          project.id === selectedProjectId ? "" : selectedProjectId,
-        );
+        if (project.id === selectedProjectId) {
+          router.push("/projects");
+        }
       });
       setProjectToDelete(null);
       toast.success(
@@ -226,9 +243,12 @@ export default function ProjectsPageContent() {
   };
 
   const handleOpenIssue = (issue: Issue) => {
-    setSelectedIssue(issue);
+    const workflowIssue = isWorkflowIssue(issue);
 
-    if (isWorkflowIssue(issue)) {
+    setSelectedIssueId(issue.id);
+    setSelectedIssueIsWorkflow(workflowIssue);
+
+    if (workflowIssue) {
       setIsWorkflowIssueOpen(true);
       return;
     }
@@ -239,6 +259,45 @@ export default function ProjectsPageContent() {
   const invalidateIssues = () => {
     queryClient.invalidateQueries({ queryKey: ["issues", workspaceId] });
   };
+
+  if (selectedIssueId && selectedIssueIsWorkflow && isWorkflowIssueOpen) {
+    return (
+      <div className="h-full w-full bg-app-bg p-2">
+        <WorkflowIssueDetail
+          issueId={selectedIssueId}
+          workspaceId={workspaceId}
+          isOpen={isWorkflowIssueOpen}
+          onClose={() => {
+            setSelectedIssueId(null);
+            setIsWorkflowIssueOpen(false);
+          }}
+          onUpdate={invalidateIssues}
+          displayMode="page"
+        />
+      </div>
+    );
+  }
+
+  if (selectedIssueId && !selectedIssueIsWorkflow && isNormalIssueOpen) {
+    return (
+      <div className="h-full w-full bg-app-bg p-2">
+        <NormalIssueDetail
+          issueId={selectedIssueId}
+          workspaceId={workspaceId}
+          isOpen={isNormalIssueOpen}
+          onClose={() => {
+            setSelectedIssueId(null);
+            setIsNormalIssueOpen(false);
+          }}
+          onUpdate={(updatedIssue) => {
+            void updatedIssue;
+            invalidateIssues();
+          }}
+          displayMode="page"
+        />
+      </div>
+    );
+  }
 
   if (!workspaceId) {
     return (
@@ -311,7 +370,7 @@ export default function ProjectsPageContent() {
             onCreate={openCreateDialog}
             onOpenProject={(projectId) =>
               startTransition(() => {
-                setSelectedProjectId(projectId);
+                router.push(`/projects/${projectId}`);
               })
             }
           />
@@ -327,7 +386,7 @@ export default function ProjectsPageContent() {
             isLoadingProjectDetail={isLoadingProjectDetail}
             isLoadingProjectIssues={isLoadingProjectIssues}
             canManageProjects={canManageProjects}
-            onBack={() => setSelectedProjectId("")}
+            onBack={() => router.push("/projects")}
             onCreateIssue={() => setIsCreateIssueOpen(true)}
             onEdit={() => openEditDialog(selectedProject)}
             onDelete={() => setProjectToDelete(selectedProject)}
@@ -372,32 +431,6 @@ export default function ProjectsPageContent() {
         projectContextName={selectedProject?.name}
       />
 
-      {selectedIssue && (
-        <>
-          <WorkflowIssueDetail
-            issue={selectedIssue}
-            isOpen={selectedIssueIsWorkflow && isWorkflowIssueOpen}
-            onClose={() => {
-              setSelectedIssue(null);
-              setIsWorkflowIssueOpen(false);
-            }}
-            onUpdate={invalidateIssues}
-          />
-
-          <NormalIssueDetail
-            issue={selectedIssue}
-            isOpen={!selectedIssueIsWorkflow && isNormalIssueOpen}
-            onClose={() => {
-              setSelectedIssue(null);
-              setIsNormalIssueOpen(false);
-            }}
-            onUpdate={(updatedIssue) => {
-              void updatedIssue;
-              invalidateIssues();
-            }}
-          />
-        </>
-      )}
     </>
   );
 }
