@@ -39,6 +39,10 @@ function hasExplicitViewAccess(document: Doc<"documents">, userId: string) {
   );
 }
 
+function hasExplicitEditAccess(document: Doc<"documents">, userId: string) {
+  return document.allowedEditors?.includes(userId) || false;
+}
+
 // 检查用户是否有权限查看文档/文件夹
 async function canViewDocument(
   ctx: QueryCtx | MutationCtx,
@@ -89,20 +93,26 @@ async function canEditDocument(
   // 根据可见性设置检查编辑权限
   switch (document.visibility) {
     case "PRIVATE":
-      // 检查是否在允许编辑者列表中
-      return document.allowedEditors?.includes(userId) || false;
+      return hasExplicitEditAccess(document, userId);
 
     case "TEAM_READONLY":
       // 只有创建者可以编辑
       return false;
 
     case "TEAM_EDITABLE":
-      // TODO: 调用后端API检查用户是否是团队成员
-      return document.allowedEditors?.includes(userId) || true; // 暂时返回true
+      if (hasExplicitEditAccess(document, userId)) {
+        return true;
+      }
+
+      if (document.workspaceType !== "TEAM") {
+        return false;
+      }
+
+      return isWorkspaceTeamMember(ctx, document.workspaceId, userId);
 
     case "PUBLIC":
       // 公开文档的编辑权限由allowedEditors控制
-      return document.allowedEditors?.includes(userId) || false;
+      return hasExplicitEditAccess(document, userId);
 
     default:
       return false;
