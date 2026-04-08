@@ -270,6 +270,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         provider: "google",
         options: {
           redirectTo: buildAbsoluteAppUrl(AUTH_CALLBACK_ROUTE, locale),
+          queryParams: {
+            prompt: "select_account",
+          },
         },
       });
 
