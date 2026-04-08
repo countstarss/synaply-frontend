@@ -8,6 +8,7 @@ import {
   createProject,
   deleteProject,
   getProject,
+  getProjectSummary,
   getProjects,
   updateProject,
 } from "@/lib/fetchers/project";
@@ -41,6 +42,22 @@ export const useProject = (workspaceId: string, projectId: string) => {
   });
 };
 
+export const useProjectSummary = (workspaceId: string, projectId: string) => {
+  const { session } = useAuth();
+
+  return useQuery({
+    queryKey: ["project-summary", workspaceId, projectId],
+    queryFn: async () => {
+      if (!session?.access_token) {
+        throw new Error("未授权");
+      }
+
+      return getProjectSummary(workspaceId, projectId, session.access_token);
+    },
+    enabled: !!session?.access_token && !!workspaceId && !!projectId,
+  });
+};
+
 export const useCreateProject = () => {
   const { session } = useAuth();
   const queryClient = useQueryClient();
@@ -62,6 +79,9 @@ export const useCreateProject = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["projects", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project-summary", variables.workspaceId],
       });
     },
   });
@@ -94,6 +114,9 @@ export const useUpdateProject = () => {
       queryClient.invalidateQueries({
         queryKey: ["project", variables.workspaceId, variables.projectId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["project-summary", variables.workspaceId, variables.projectId],
+      });
     },
   });
 };
@@ -122,6 +145,9 @@ export const useDeleteProject = () => {
       });
       queryClient.invalidateQueries({
         queryKey: ["project", variables.workspaceId, variables.projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project-summary", variables.workspaceId, variables.projectId],
       });
       queryClient.invalidateQueries({
         queryKey: ["issues", variables.workspaceId],

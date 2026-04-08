@@ -35,13 +35,18 @@ const PAGE_ORDER: Record<PageId, number> = {
 };
 
 const getPageIdFromPath = (pathname: string): PageId | null => {
-  if (pathname.includes("/inbox")) return "inbox";
-  if (pathname.includes("/tasks")) return "tasks";
-  if (pathname.includes("/chat")) return "chat";
-  if (pathname.includes("/docs")) return "docs";
-  if (pathname.includes("/issues")) return "issues";
-  if (pathname.includes("/projects")) return "projects";
-  if (pathname.includes("/workflows")) return "workflows";
+  const segments = pathname.split("/").filter(Boolean);
+
+  for (const segment of segments) {
+    if (segment === "inbox") return "inbox";
+    if (segment === "tasks") return "tasks";
+    if (segment === "chat") return "chat";
+    if (segment === "docs") return "docs";
+    if (segment === "issues") return "issues";
+    if (segment === "projects") return "projects";
+    if (segment === "workflows") return "workflows";
+  }
+
   return null;
 };
 

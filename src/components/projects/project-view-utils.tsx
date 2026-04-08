@@ -3,13 +3,26 @@
 import React from "react";
 import { Globe2 } from "lucide-react";
 import {
+  RiAlarmWarningLine,
+  RiCheckboxCircleLine,
+  RiErrorWarningLine,
+  RiFlag2Line,
   RiLockLine,
+  RiRoadMapLine,
   RiSparklingLine,
   RiTeamLine,
+  RiTimeLine,
 } from "react-icons/ri";
 import { priorityConfig, statusConfig } from "@/lib/data/issueConfig";
 import type { Issue } from "@/lib/fetchers/issue";
-import type { ProjectVisibility } from "@/lib/fetchers/project";
+import type {
+  Project,
+  ProjectVisibility,
+} from "@/lib/fetchers/project";
+import {
+  ProjectRiskLevel,
+  ProjectStatus,
+} from "@/types/prisma";
 
 export const VISIBILITY_META: Record<
   ProjectVisibility,
@@ -50,6 +63,86 @@ export const VISIBILITY_META: Record<
   },
 };
 
+export const PROJECT_STATUS_META: Record<
+  ProjectStatus,
+  {
+    label: string;
+    chipClassName: string;
+    icon: React.ReactNode;
+  }
+> = {
+  PLANNING: {
+    label: "规划中",
+    chipClassName:
+      "border-slate-300/70 bg-slate-500/10 text-slate-700 dark:border-slate-700 dark:bg-slate-500/15 dark:text-slate-200",
+    icon: <RiRoadMapLine className="size-3.5" />,
+  },
+  ACTIVE: {
+    label: "推进中",
+    chipClassName:
+      "border-sky-300/70 bg-sky-500/10 text-sky-700 dark:border-sky-800 dark:bg-sky-500/15 dark:text-sky-200",
+    icon: <RiSparklingLine className="size-3.5" />,
+  },
+  BLOCKED: {
+    label: "阻塞中",
+    chipClassName:
+      "border-rose-300/70 bg-rose-500/10 text-rose-700 dark:border-rose-800 dark:bg-rose-500/15 dark:text-rose-200",
+    icon: <RiAlarmWarningLine className="size-3.5" />,
+  },
+  SHIPPING: {
+    label: "发布中",
+    chipClassName:
+      "border-amber-300/70 bg-amber-500/10 text-amber-700 dark:border-amber-800 dark:bg-amber-500/15 dark:text-amber-200",
+    icon: <RiTimeLine className="size-3.5" />,
+  },
+  DONE: {
+    label: "已完成",
+    chipClassName:
+      "border-emerald-300/70 bg-emerald-500/10 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
+    icon: <RiCheckboxCircleLine className="size-3.5" />,
+  },
+  ARCHIVED: {
+    label: "已归档",
+    chipClassName:
+      "border-zinc-300/70 bg-zinc-500/10 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-500/15 dark:text-zinc-200",
+    icon: <RiLockLine className="size-3.5" />,
+  },
+};
+
+export const PROJECT_RISK_META: Record<
+  ProjectRiskLevel,
+  {
+    label: string;
+    chipClassName: string;
+    icon: React.ReactNode;
+  }
+> = {
+  LOW: {
+    label: "低风险",
+    chipClassName:
+      "border-emerald-300/70 bg-emerald-500/10 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
+    icon: <RiFlag2Line className="size-3.5" />,
+  },
+  MEDIUM: {
+    label: "中风险",
+    chipClassName:
+      "border-amber-300/70 bg-amber-500/10 text-amber-700 dark:border-amber-800 dark:bg-amber-500/15 dark:text-amber-200",
+    icon: <RiErrorWarningLine className="size-3.5" />,
+  },
+  HIGH: {
+    label: "高风险",
+    chipClassName:
+      "border-orange-300/70 bg-orange-500/10 text-orange-700 dark:border-orange-800 dark:bg-orange-500/15 dark:text-orange-200",
+    icon: <RiAlarmWarningLine className="size-3.5" />,
+  },
+  CRITICAL: {
+    label: "关键风险",
+    chipClassName:
+      "border-rose-300/70 bg-rose-500/10 text-rose-700 dark:border-rose-800 dark:bg-rose-500/15 dark:text-rose-200",
+    icon: <RiAlarmWarningLine className="size-3.5" />,
+  },
+};
+
 export function formatShortDate(date: string) {
   return new Date(date).toLocaleDateString("zh-CN", {
     month: "short",
@@ -65,6 +158,16 @@ export function formatPreciseDate(date: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+export function getProjectOwnerLabel(project?: Pick<Project, "owner"> | null) {
+  const owner = project?.owner;
+
+  if (!owner) {
+    return "未指定负责人";
+  }
+
+  return owner.user.name || owner.user.email || "未命名成员";
 }
 
 export function getPriorityTone(issue: Issue) {

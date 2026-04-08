@@ -2,18 +2,22 @@
 
 import React from "react";
 import ConvexDocsPage from "@/components/shared/docs/convex/ConvexDocsPage";
+import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useSearchParams } from "next/navigation";
 
 // 主导出组件
 export const CachedDocsPage = React.memo(() => {
   const { currentWorkspace } = useWorkspace();
+  const { session } = useAuth();
+  const searchParams = useSearchParams();
 
   const workspaceId = currentWorkspace?.id || "";
   const workspaceType =
     currentWorkspace?.type === "PERSONAL" ? "PERSONAL" : "TEAM";
-  const userId = currentWorkspace?.userId || "";
+  const userId = session?.user?.id || currentWorkspace?.userId || "";
   const context = currentWorkspace?.type === "PERSONAL" ? "personal" : "team";
-  const projectId = "";
+  const projectId = searchParams.get("projectId") || "";
 
   return (
     <div className="h-full">

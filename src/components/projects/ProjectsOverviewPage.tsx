@@ -13,6 +13,9 @@ import type { Project } from "@/lib/fetchers/project";
 import {
   VISIBILITY_META,
   formatShortDate,
+  getProjectOwnerLabel,
+  PROJECT_RISK_META,
+  PROJECT_STATUS_META,
 } from "@/components/projects/project-view-utils";
 
 interface ProjectsOverviewPageProps {
@@ -74,7 +77,7 @@ export function ProjectsOverviewPage({
             <input
               value={searchQuery}
               onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="搜索项目名称、描述或 visibility..."
+              placeholder="搜索项目名称、brief、阶段、负责人或可见性..."
               className="h-11 w-full rounded-2xl border border-app-border bg-app-bg pl-10 pr-4 text-sm text-app-text-primary outline-none transition focus:border-sky-500/40 focus:ring-2 focus:ring-sky-500/20"
             />
           </div>
@@ -100,6 +103,8 @@ export function ProjectsOverviewPage({
           <div className="overflow-hidden rounded-2xl border border-app-border bg-app-content-bg">
             {filteredProjects.map((project) => {
               const visibilityMeta = VISIBILITY_META[project.visibility];
+              const statusMeta = PROJECT_STATUS_META[project.status];
+              const riskMeta = PROJECT_RISK_META[project.riskLevel];
               const issueCount = issueCountByProject[project.id] || 0;
 
               return (
@@ -114,7 +119,35 @@ export function ProjectsOverviewPage({
                       {project.name}
                     </div>
                     <div className="mt-1 truncate text-xs text-app-text-muted">
-                      {project.description || "这个项目还没有补充描述。"}
+                      {project.brief || project.description || "这个项目还没有补充协作 brief。"}
+                    </div>
+                    <div className="mt-2 hidden flex-wrap items-center gap-2 md:flex">
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium",
+                          statusMeta.chipClassName,
+                        )}
+                      >
+                        {statusMeta.icon}
+                        {statusMeta.label}
+                      </span>
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium",
+                          riskMeta.chipClassName,
+                        )}
+                      >
+                        {riskMeta.icon}
+                        {riskMeta.label}
+                      </span>
+                      {project.phase && (
+                        <span className="rounded-full border border-app-border bg-app-bg px-2 py-1 text-[11px] text-app-text-secondary">
+                          {project.phase}
+                        </span>
+                      )}
+                      <span className="rounded-full border border-app-border bg-app-bg px-2 py-1 text-[11px] text-app-text-secondary">
+                        {getProjectOwnerLabel(project)}
+                      </span>
                     </div>
                   </div>
                   <div className="hidden items-center gap-2 md:flex">

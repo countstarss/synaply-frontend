@@ -17,12 +17,20 @@ import {
   useCreateProject,
   useDeleteProject,
   useProject,
+  useProjectSummary,
   useProjects,
   useUpdateProject,
 } from "@/hooks/useProjectApi";
 import { useTeamMembers } from "@/hooks/useTeam";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { ProjectDetailView } from "@/components/projects/ProjectDetailView";
+import { ProjectRouteShell } from "@/components/projects/ProjectRouteShell";
+import {
+  ProjectDocsSubview,
+  ProjectIssuesSubview,
+  ProjectSyncSubview,
+  ProjectWorkflowSubview,
+} from "@/components/projects/ProjectSubviewContent";
 import { DeleteProjectDialog } from "@/components/projects/DeleteProjectDialog";
 import { ProjectsEmptyState } from "@/components/projects/ProjectsEmptyState";
 import { ProjectsOverviewPage } from "@/components/projects/ProjectsOverviewPage";
@@ -33,6 +41,11 @@ import {
 import {
   VISIBILITY_META,
 } from "@/components/projects/project-view-utils";
+import {
+  buildProjectPath,
+  getProjectViewModeFromPathname,
+  getSelectedProjectIdFromPathname,
+} from "@/components/projects/project-route-utils";
 import WorkflowIssueDetail from "@/components/issue/WorkflowIssueDetail";
 import NormalIssueDetail from "@/components/shared/issue/NormalIssueDetail";
 import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
@@ -42,7 +55,10 @@ import {
   readIssueBoardCategoryOrderFromStorage,
 } from "@/lib/issue-board";
 import { isWorkflowIssue, type Issue } from "@/lib/fetchers/issue";
-import type { Project, ProjectDetail } from "@/lib/fetchers/project";
+import type {
+  Project,
+  ProjectDetail,
+} from "@/lib/fetchers/project";
 import { IssueStateCategory } from "@/types/prisma";
 
 function isSameCategoryOrder(
@@ -54,17 +70,6 @@ function isSameCategoryOrder(
     left.every((category, index) => category === right[index])
   );
 }
-
-const getSelectedProjectIdFromPathname = (pathname: string) => {
-  const segments = pathname.split("/").filter(Boolean);
-  const projectsSegmentIndex = segments.indexOf("projects");
-
-  if (projectsSegmentIndex === -1) {
-    return "";
-  }
-
-  return decodeURIComponent(segments[projectsSegmentIndex + 1] || "");
-};
 
 export default function ProjectsPageContent() {
   const { session } = useAuth();
@@ -98,6 +103,7 @@ export default function ProjectsPageContent() {
     currentRole === "ADMIN";
 
   const selectedProjectId = getSelectedProjectIdFromPathname(pathname);
+  const projectViewMode = getProjectViewModeFromPathname(pathname);
   const [searchQuery, setSearchQuery] = useState("");
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   const [projectDialogMode, setProjectDialogMode] = useState<"create" | "edit">(
@@ -122,6 +128,8 @@ export default function ProjectsPageContent() {
   const detailProjectId = isLoading ? "" : selectedProjectId;
   const { data: selectedProjectDetail, isLoading: isLoadingProjectDetail } =
     useProject(workspaceId, detailProjectId);
+  const { data: projectSummary, isLoading: isLoadingProjectSummary } =
+    useProjectSummary(workspaceId, detailProjectId);
   const { data: projectIssues = [], isLoading: isLoadingProjectIssues } =
     useIssues(
       workspaceId,
@@ -208,7 +216,17 @@ export default function ProjectsPageContent() {
         return true;
       }
 
-      return [project.name, project.description || "", project.visibility]
+      return [
+        project.name,
+        project.description || "",
+        project.brief || "",
+        project.phase || "",
+        project.status,
+        project.riskLevel,
+        project.owner?.user?.name || "",
+        project.owner?.user?.email || "",
+        project.visibility,
+      ]
         .join(" ")
         .toLowerCase()
         .includes(normalizedSearch);
@@ -237,14 +255,20 @@ export default function ProjectsPageContent() {
   const emptyProjectCount = Math.max(projects.length - linkedProjectCount, 0);
 
   const selectedProject =
+    projectSummary?.project ||
     selectedProjectDetail ||
     projects.find((project) => project.id === selectedProjectId) ||
     null;
   const selectedProjectWorkspaceName =
-    selectedProjectDetail?.workspace?.name || currentWorkspace?.name || "";
+    projectSummary?.project.workspace?.name ||
+    selectedProjectDetail?.workspace?.name ||
+    currentWorkspace?.name ||
+    "";
   const selectedProjectVisibility = selectedProject
     ? VISIBILITY_META[selectedProject.visibility]
     : null;
+  const relatedWorkflows = projectSummary?.workflows ?? [];
+  const recentActivity = projectSummary?.recentActivity ?? [];
 
   const openCreateDialog = () => {
     setProjectDialogMode("create");
@@ -272,7 +296,7 @@ export default function ProjectsPageContent() {
         });
 
         startTransition(() => {
-          router.push(`/projects/${createdProject.id}`);
+          router.push(buildProjectPath(createdProject.id));
         });
         toast.success("项目创建成功");
       } else if (editingProject) {
@@ -283,7 +307,7 @@ export default function ProjectsPageContent() {
         });
 
         startTransition(() => {
-          router.push(`/projects/${updatedProject.id}`);
+          router.push(buildProjectPath(updatedProject.id));
         });
         toast.success("项目已更新");
       }
@@ -340,6 +364,28 @@ export default function ProjectsPageContent() {
 
   const invalidateIssues = () => {
     queryClient.invalidateQueries({ queryKey: ["issues", workspaceId] });
+  };
+
+  const handleMarkSync = (projectId: string) => {
+    updateProjectMutation.mutate(
+      {
+        workspaceId,
+        projectId,
+        data: {
+          lastSyncAt: new Date().toISOString(),
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success("项目同步时间已更新");
+        },
+        onError: (error) => {
+          toast.error(
+            error instanceof Error ? error.message : "更新项目同步时间失败",
+          );
+        },
+      },
+    );
   };
 
   if (selectedIssueId && selectedIssueIsWorkflow && isWorkflowIssueOpen) {
@@ -452,35 +498,81 @@ export default function ProjectsPageContent() {
             onCreate={openCreateDialog}
             onOpenProject={(projectId) =>
               startTransition(() => {
-                router.push(`/projects/${projectId}`);
+                router.push(buildProjectPath(projectId));
               })
             }
           />
         ) : (
-          <ProjectDetailView
-            workspaceId={workspaceId}
-            selectedProject={selectedProject}
-            workspaceName={selectedProjectWorkspaceName}
-            visibilityLabel={
-              selectedProjectVisibility?.label || selectedProject.visibility
-            }
-            projectIssues={projectIssues}
-            issuesViewMode={issuesViewMode}
-            issueBoardCategoryOrder={issueBoardCategoryOrder}
-            isSelectionPending={isSelectionPending}
-            isLoadingProjectDetail={isLoadingProjectDetail}
-            isLoadingProjectIssues={isLoadingProjectIssues}
-            canManageProjects={canManageProjects}
-            onIssueBoardCategoryOrderChange={handleIssueBoardCategoryOrderChange}
-            onSaveIssueBoardCategoryOrder={handleSaveIssueBoardCategoryOrder}
-            onIssuesViewModeChange={setIssuesViewMode}
-            hasUnsavedIssueBoardCategoryOrder={hasUnsavedIssueBoardCategoryOrder}
-            onBack={() => router.push("/projects")}
-            onCreateIssue={() => setIsCreateIssueOpen(true)}
-            onEdit={() => openEditDialog(selectedProject)}
-            onDelete={() => setProjectToDelete(selectedProject)}
-            onOpenIssue={handleOpenIssue}
-          />
+          <ProjectRouteShell
+            project={selectedProject}
+            activeView={projectViewMode}
+          >
+            {projectViewMode === "issues" ? (
+              <ProjectIssuesSubview
+                workspaceId={workspaceId}
+                projectIssues={projectIssues}
+                issuesViewMode={issuesViewMode}
+                issueBoardCategoryOrder={issueBoardCategoryOrder}
+                isLoadingProjectIssues={isLoadingProjectIssues}
+                hasUnsavedIssueBoardCategoryOrder={
+                  hasUnsavedIssueBoardCategoryOrder
+                }
+                onCreateIssue={() => setIsCreateIssueOpen(true)}
+                onOpenIssue={handleOpenIssue}
+                onIssueBoardCategoryOrderChange={
+                  handleIssueBoardCategoryOrderChange
+                }
+                onSaveIssueBoardCategoryOrder={
+                  handleSaveIssueBoardCategoryOrder
+                }
+                onIssuesViewModeChange={setIssuesViewMode}
+              />
+            ) : projectViewMode === "docs" ? (
+              <ProjectDocsSubview
+                workspaceId={workspaceId}
+                workspaceType={workspaceType}
+                currentUserId={session?.user?.id}
+                projectId={selectedProject.id}
+              />
+            ) : projectViewMode === "workflow" ? (
+              <ProjectWorkflowSubview relatedWorkflows={relatedWorkflows} />
+            ) : projectViewMode === "sync" ? (
+              <ProjectSyncSubview
+                selectedProject={selectedProject}
+                recentActivity={recentActivity}
+                projectIssues={projectIssues}
+                onMarkSync={() => handleMarkSync(selectedProject.id)}
+                isMarkingSync={updateProjectMutation.isPending}
+                onOpenIssue={handleOpenIssue}
+              />
+            ) : (
+              <ProjectDetailView
+                workspaceId={workspaceId}
+                selectedProject={selectedProject}
+                workspaceType={workspaceType}
+                workspaceName={selectedProjectWorkspaceName}
+                visibilityLabel={
+                  selectedProjectVisibility?.label || selectedProject.visibility
+                }
+                currentUserId={session?.user?.id}
+                projectSummary={projectSummary}
+                projectIssues={projectIssues}
+                isSelectionPending={isSelectionPending}
+                isLoadingProjectDetail={
+                  isLoadingProjectDetail || isLoadingProjectSummary
+                }
+                canManageProjects={canManageProjects}
+                onBack={() => router.push("/projects")}
+                onCreateIssue={() => setIsCreateIssueOpen(true)}
+                onEdit={() => openEditDialog(selectedProject)}
+                onDelete={() => setProjectToDelete(selectedProject)}
+                onOpenIssue={handleOpenIssue}
+                onMarkSync={() => handleMarkSync(selectedProject.id)}
+                isMarkingSync={updateProjectMutation.isPending}
+                showBackButton={false}
+              />
+            )}
+          </ProjectRouteShell>
         )}
       </div>
 
@@ -489,6 +581,8 @@ export default function ProjectsPageContent() {
         mode={projectDialogMode}
         workspaceType={workspaceType}
         initialProject={editingProject}
+        teamMembers={teamMembers}
+        defaultOwnerMemberId={currentTeamMember?.id}
         isPending={
           createProjectMutation.isPending || updateProjectMutation.isPending
         }

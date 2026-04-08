@@ -19,6 +19,24 @@ export enum WorkflowStatus {
   PUBLISHED = "PUBLISHED",
 }
 
+// MARK: 项目状态
+export enum ProjectStatus {
+  PLANNING = "PLANNING",
+  ACTIVE = "ACTIVE",
+  BLOCKED = "BLOCKED",
+  SHIPPING = "SHIPPING",
+  DONE = "DONE",
+  ARCHIVED = "ARCHIVED",
+}
+
+// MARK: 项目风险等级
+export enum ProjectRiskLevel {
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
+  CRITICAL = "CRITICAL",
+}
+
 // MARK: 任务状态
 export enum IssueStatus {
   TODO = "TODO",
