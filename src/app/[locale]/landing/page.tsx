@@ -1,13 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ArrowRight, Shield, Cpu, Globe, CheckCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "@/i18n/navigation";
 import { DEFAULT_POST_LOGIN_ROUTE, getAuthParam } from "@/lib/auth-utils";
-import { createClientComponentClient } from "@/lib/supabase";
 import Image from "next/image";
 import logo from "@/assets/icons/logo.png";
 
@@ -15,34 +14,22 @@ export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const t = useTranslations();
-  const [supabase] = useState(() => createClientComponentClient());
 
-  // 处理OAuth回调
   useEffect(() => {
-    const handleOAuthCallback = async () => {
-      const code = getAuthParam("code");
+    const hasAuthParams = Boolean(
+      getAuthParam("code") ||
+        getAuthParam("access_token") ||
+        getAuthParam("refresh_token")
+    );
 
-      if (code) {
-        try {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(
-            code
-          );
+    if (!user || !hasAuthParams) {
+      return;
+    }
 
-          if (error) {
-            console.error("OAuth代码交换失败:", error);
-          } else if (data?.session) {
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, "", newUrl);
-            router.replace(DEFAULT_POST_LOGIN_ROUTE);
-          }
-        } catch (err) {
-          console.error("处理OAuth回调时出错:", err);
-        }
-      }
-    };
-
-    handleOAuthCallback();
-  }, [router, supabase]);
+    const newUrl = window.location.pathname;
+    window.history.replaceState({}, "", newUrl);
+    router.replace(DEFAULT_POST_LOGIN_ROUTE);
+  }, [router, user]);
 
   const handleGetStarted = () => {
     if (user) {

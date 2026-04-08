@@ -24,12 +24,26 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     let mounted = true;
     let redirectTimer: ReturnType<typeof setTimeout> | null = null;
+    let verificationTimer: ReturnType<typeof setTimeout> | null = null;
+    let unsubscribe: (() => void) | null = null;
+
+    const clearAuthUrl = () => {
+      window.history.replaceState({}, '', window.location.pathname);
+    };
 
     const finishSuccess = () => {
       if (!mounted) {
         return;
       }
 
+      if (verificationTimer) {
+        clearTimeout(verificationTimer);
+        verificationTimer = null;
+      }
+
+      unsubscribe?.();
+      unsubscribe = null;
+      clearAuthUrl();
       setStatus('success');
       setMessage(t('auth.accountVerificationSuccess'));
       redirectTimer = setTimeout(() => {
@@ -42,8 +56,35 @@ export default function AuthCallbackPage() {
         return;
       }
 
+      if (verificationTimer) {
+        clearTimeout(verificationTimer);
+        verificationTimer = null;
+      }
+
+      unsubscribe?.();
+      unsubscribe = null;
       setStatus('error');
       setMessage(nextMessage);
+    };
+
+    const resolveExistingSession = async () => {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error('认证回调错误:', error);
+        finishError(error.message || t('auth.failedToVerify'));
+        return true;
+      }
+
+      if (session) {
+        finishSuccess();
+        return true;
+      }
+
+      return false;
     };
 
     const handleAuthCallback = async () => {
@@ -57,38 +98,34 @@ export default function AuthCallbackPage() {
 
         const code = getAuthParam('code');
 
-        if (code) {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (await resolveExistingSession()) {
+          return;
+        }
 
-          if (error) {
-            console.error('代码交换错误:', error);
-            finishError(error.message || t('auth.failedToVerify'));
-            return;
-          }
-
-          if (data.session) {
-            finishSuccess();
-            return;
-          }
+        if (!code) {
+          finishError(t('auth.failedToVerify'));
+          return;
         }
 
         const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+          if (!mounted || !nextSession) {
+            return;
+          }
 
-        if (error) {
-          console.error('认证回调错误:', error);
-          finishError(error.message || t('auth.failedToVerify'));
-          return;
-        }
-
-        if (session) {
           finishSuccess();
-          return;
-        }
+        });
 
-        finishError(t('auth.failedToVerify'));
+        unsubscribe = () => subscription.unsubscribe();
+
+        verificationTimer = setTimeout(async () => {
+          if (await resolveExistingSession()) {
+            return;
+          }
+
+          finishError(t('auth.failedToVerify'));
+        }, 5000);
       } catch (err) {
         console.error('处理认证回调时出错:', err);
         finishError(t('auth.failedToVerify'));
@@ -103,6 +140,12 @@ export default function AuthCallbackPage() {
       if (redirectTimer) {
         clearTimeout(redirectTimer);
       }
+
+      if (verificationTimer) {
+        clearTimeout(verificationTimer);
+      }
+
+      unsubscribe?.();
     };
   }, [router, supabase, t]);
 

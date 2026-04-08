@@ -1,20 +1,11 @@
 import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 export const SUPABASE_AVATAR_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_AVATAR_BUCKET || "avatars";
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing Supabase URL or Anon Key environment variables.");
-}
-
-// 创建浏览器客户端 - 推荐用于客户端组件
-export const createClientComponentClient = () => {
-  return createBrowserClient(supabaseUrl, supabaseAnonKey);
-};
-
-// 类型定义
 export type Database = {
   public: {
     Tables: {
@@ -46,4 +37,23 @@ export type Database = {
       };
     };
   };
+};
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error("Missing Supabase URL or Anon Key environment variables.");
+}
+
+let browserClient: SupabaseClient<Database> | null = null;
+
+// 复用同一个浏览器端实例，避免 OAuth 回调阶段多个 client 竞争同一份 PKCE 状态。
+export const createClientComponentClient = () => {
+  if (typeof window === "undefined") {
+    return createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+  }
+
+  if (!browserClient) {
+    browserClient = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+  }
+
+  return browserClient;
 };

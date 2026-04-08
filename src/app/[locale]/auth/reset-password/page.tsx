@@ -33,12 +33,25 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     let mounted = true;
+    let verificationTimer: ReturnType<typeof setTimeout> | null = null;
+    let unsubscribe: (() => void) | null = null;
+
+    const clearAuthUrl = () => {
+      window.history.replaceState({}, '', window.location.pathname);
+    };
 
     const markInvalid = (text: string) => {
       if (!mounted) {
         return;
       }
 
+      if (verificationTimer) {
+        clearTimeout(verificationTimer);
+        verificationTimer = null;
+      }
+
+      unsubscribe?.();
+      unsubscribe = null;
       setIsValidToken(false);
       setMessage({ type: 'error', text });
     };
@@ -48,8 +61,36 @@ export default function ResetPasswordPage() {
         return;
       }
 
+      if (verificationTimer) {
+        clearTimeout(verificationTimer);
+        verificationTimer = null;
+      }
+
+      unsubscribe?.();
+      unsubscribe = null;
       setIsValidToken(true);
       setMessage(null);
+    };
+
+    const resolveExistingSession = async () => {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error('检查重置会话时出错:', error);
+        markInvalid(error.message || t('auth.linkExpired'));
+        return true;
+      }
+
+      if (session) {
+        clearAuthUrl();
+        markValid();
+        return true;
+      }
+
+      return false;
     };
 
     const checkResetToken = async () => {
@@ -62,38 +103,6 @@ export default function ResetPasswordPage() {
         }
 
         const code = getAuthParam('code');
-
-        if (code) {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-
-          if (error) {
-            console.error('重置链接代码交换失败:', error);
-            markInvalid(error.message || t('auth.linkExpired'));
-            return;
-          }
-
-          if (data.session) {
-            markValid();
-            return;
-          }
-        }
-
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
-
-        if (error) {
-          console.error('检查重置会话时出错:', error);
-          markInvalid(error.message || t('auth.linkExpired'));
-          return;
-        }
-
-        if (session) {
-          markValid();
-          return;
-        }
-
         const accessToken = getAuthParam('access_token');
         const refreshToken = getAuthParam('refresh_token');
 
@@ -109,11 +118,41 @@ export default function ResetPasswordPage() {
             return;
           }
 
+          clearAuthUrl();
           markValid();
           return;
         }
 
-        markInvalid(t('auth.missingResetToken'));
+        if (await resolveExistingSession()) {
+          return;
+        }
+
+        if (!code) {
+          markInvalid(t('auth.missingResetToken'));
+          return;
+        }
+
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+          if (!mounted || !nextSession) {
+            return;
+          }
+
+          clearAuthUrl();
+          markValid();
+        });
+
+        unsubscribe = () => subscription.unsubscribe();
+
+        verificationTimer = setTimeout(async () => {
+          if (await resolveExistingSession()) {
+            return;
+          }
+
+          markInvalid(t('auth.linkExpired'));
+        }, 5000);
+
       } catch (err) {
         console.error('检查重置令牌时出错:', err);
         markInvalid(t('auth.linkInvalid'));
@@ -124,6 +163,11 @@ export default function ResetPasswordPage() {
 
     return () => {
       mounted = false;
+      unsubscribe?.();
+
+      if (verificationTimer) {
+        clearTimeout(verificationTimer);
+      }
     };
   }, [supabase, t]);
 
