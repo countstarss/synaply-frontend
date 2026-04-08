@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
+import { requireAuthenticatedUserId } from "./auth";
 
 // ============ 权限检查辅助函数 ============
 
@@ -29,6 +30,54 @@ async function isWorkspaceTeamMember(
   }
 
   return false;
+}
+
+async function assertCanCreateDocument(
+  ctx: QueryCtx | MutationCtx,
+  {
+    workspaceId,
+    workspaceType,
+    parentDocument,
+    projectId,
+  }: {
+    workspaceId: string;
+    workspaceType: "PERSONAL" | "TEAM";
+    parentDocument?: Id<"documents">;
+    projectId?: string;
+  },
+  userId: string
+) {
+  if (workspaceType === "TEAM") {
+    const isMember = await isWorkspaceTeamMember(ctx, workspaceId, userId);
+    if (!isMember) {
+      throw new Error("权限不足");
+    }
+  }
+
+  if (!parentDocument) {
+    return;
+  }
+
+  const parent = await ctx.db.get(parentDocument);
+  if (!parent) {
+    throw new Error("父文档不存在");
+  }
+
+  if (
+    parent.workspaceId !== workspaceId ||
+    parent.workspaceType !== workspaceType
+  ) {
+    throw new Error("父文档不属于当前工作空间");
+  }
+
+  if ((parent.projectId ?? undefined) !== (projectId ?? undefined)) {
+    throw new Error("父文档不属于当前项目");
+  }
+
+  const canEditParent = await canEditDocument(ctx, parent, userId);
+  if (!canEditParent) {
+    throw new Error("权限不足");
+  }
 }
 
 function hasExplicitViewAccess(document: Doc<"documents">, userId: string) {
@@ -128,7 +177,7 @@ export const create = mutation({
     type: v.optional(v.union(v.literal("document"), v.literal("folder"))),
     content: v.optional(v.string()),
     description: v.optional(v.string()),
-    creatorId: v.string(),
+    accessToken: v.string(),
     workspaceId: v.string(),
     workspaceType: v.union(v.literal("PERSONAL"), v.literal("TEAM")),
     projectId: v.optional(v.string()), // 后端项目ID引用
@@ -148,6 +197,7 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
 
     // 设置默认值
     const docType = args.type || "document";
@@ -163,12 +213,23 @@ export const create = mutation({
       throw new Error("文档不能有描述，请使用内容字段");
     }
 
+    await assertCanCreateDocument(
+      ctx,
+      {
+        workspaceId: args.workspaceId,
+        workspaceType: args.workspaceType,
+        parentDocument: args.parentDocument,
+        projectId: args.projectId,
+      },
+      currentUserId
+    );
+
     const documentId = await ctx.db.insert("documents", {
       title: args.title,
       type: docType,
       content: docType === "document" ? args.content : undefined,
       description: docType === "folder" ? args.description : undefined,
-      creatorId: args.creatorId,
+      creatorId: currentUserId,
       workspaceId: args.workspaceId,
       workspaceType: args.workspaceType,
       projectId: args.projectId,
@@ -191,7 +252,7 @@ export const create = mutation({
     // 记录文档访问
     await ctx.db.insert("documentAccess", {
       documentId,
-      userId: args.creatorId,
+      userId: currentUserId,
       accessType: "edit",
       accessedAt: now,
       source: "direct",
@@ -206,7 +267,7 @@ export const createFolder = mutation({
   args: {
     title: v.string(),
     description: v.optional(v.string()),
-    creatorId: v.string(),
+    accessToken: v.string(),
     workspaceId: v.string(),
     workspaceType: v.union(v.literal("PERSONAL"), v.literal("TEAM")),
     projectId: v.optional(v.string()), // 后端项目ID引用
@@ -222,15 +283,27 @@ export const createFolder = mutation({
     order: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     const defaultVisibility =
       args.visibility ??
       (args.workspaceType === "PERSONAL" ? "PRIVATE" : "TEAM_READONLY");
+
+    await assertCanCreateDocument(
+      ctx,
+      {
+        workspaceId: args.workspaceId,
+        workspaceType: args.workspaceType,
+        parentDocument: args.parentDocument,
+        projectId: args.projectId,
+      },
+      currentUserId
+    );
 
     return await ctx.db.insert("documents", {
       title: args.title,
       type: "folder",
       description: args.description,
-      creatorId: args.creatorId,
+      creatorId: currentUserId,
       workspaceId: args.workspaceId,
       workspaceType: args.workspaceType,
       projectId: args.projectId,
@@ -251,10 +324,11 @@ export const createFolder = mutation({
 export const updateFolderDescription = mutation({
   args: {
     id: v.id("documents"),
-    userId: v.string(),
+    accessToken: v.string(),
     description: v.string(),
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     const document = await ctx.db.get(args.id);
     if (!document) {
       throw new Error("文档不存在");
@@ -265,7 +339,11 @@ export const updateFolderDescription = mutation({
     }
 
     // 检查编辑权限
-    const hasEditPermission = await canEditDocument(ctx, document, args.userId);
+    const hasEditPermission = await canEditDocument(
+      ctx,
+      document,
+      currentUserId
+    );
     if (!hasEditPermission) {
       throw new Error("权限不足");
     }
@@ -283,23 +361,28 @@ export const updateFolderDescription = mutation({
 export const getById = query({
   args: {
     documentId: v.id("documents"),
-    userId: v.string(),
+    accessToken: v.string(),
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     const document = await ctx.db.get(args.documentId);
     if (!document) {
       return null;
     }
 
     // 检查权限
-    const hasViewPermission = await canViewDocument(ctx, document, args.userId);
+    const hasViewPermission = await canViewDocument(
+      ctx,
+      document,
+      currentUserId
+    );
     if (!hasViewPermission) {
       return null;
     }
 
     return {
       ...document,
-      canEdit: await canEditDocument(ctx, document, args.userId),
+      canEdit: await canEditDocument(ctx, document, currentUserId),
     };
   },
 });
@@ -308,7 +391,7 @@ export const getById = query({
 export const getDocumentTree = query({
   args: {
     workspaceId: v.string(),
-    userId: v.string(),
+    accessToken: v.string(),
     workspaceType: v.optional(
       v.union(v.literal("PERSONAL"), v.literal("TEAM"))
     ),
@@ -324,6 +407,7 @@ export const getDocumentTree = query({
     includeArchived: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     // 根据条件构建查询
     let documents;
     if (args.workspaceType) {
@@ -368,7 +452,7 @@ export const getDocumentTree = query({
           // 个人工作区：只显示用户自己创建的文档
           documents = documents.filter(
             (doc) =>
-              doc.creatorId === args.userId && doc.workspaceType === "PERSONAL"
+              doc.creatorId === currentUserId && doc.workspaceType === "PERSONAL"
           );
           break;
 
@@ -387,7 +471,7 @@ export const getDocumentTree = query({
           // 团队工作区的个人文档：只显示用户自己创建的私有文档
           documents = documents.filter(
             (doc) =>
-              doc.creatorId === args.userId &&
+              doc.creatorId === currentUserId &&
               doc.workspaceType === "TEAM" &&
               doc.visibility === "PRIVATE"
           );
@@ -398,11 +482,11 @@ export const getDocumentTree = query({
     // 权限过滤
     const accessibleDocuments = [];
     for (const doc of documents) {
-      const hasAccess = await canViewDocument(ctx, doc, args.userId);
+      const hasAccess = await canViewDocument(ctx, doc, currentUserId);
       if (hasAccess) {
         accessibleDocuments.push({
           ...doc,
-          canEdit: await canEditDocument(ctx, doc, args.userId),
+          canEdit: await canEditDocument(ctx, doc, currentUserId),
         });
       }
     }
@@ -430,16 +514,21 @@ export const getDocumentTree = query({
 export const getFolderChildren = query({
   args: {
     folderId: v.id("documents"),
-    userId: v.string(),
+    accessToken: v.string(),
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     const folder = await ctx.db.get(args.folderId);
     if (!folder || folder.type !== "folder") {
       throw new Error("文件夹不存在");
     }
 
     // 检查权限
-    const hasViewPermission = await canViewDocument(ctx, folder, args.userId);
+    const hasViewPermission = await canViewDocument(
+      ctx,
+      folder,
+      currentUserId
+    );
     if (!hasViewPermission) {
       throw new Error("权限不足");
     }
@@ -453,11 +542,11 @@ export const getFolderChildren = query({
     // 权限过滤和排序
     const accessibleChildren = [];
     for (const child of children) {
-      const hasAccess = await canViewDocument(ctx, child, args.userId);
+      const hasAccess = await canViewDocument(ctx, child, currentUserId);
       if (hasAccess) {
         accessibleChildren.push({
           ...child,
-          canEdit: await canEditDocument(ctx, child, args.userId),
+          canEdit: await canEditDocument(ctx, child, currentUserId),
         });
       }
     }
@@ -481,7 +570,7 @@ export const getFolderChildren = query({
 export const update = mutation({
   args: {
     id: v.id("documents"),
-    userId: v.string(),
+    accessToken: v.string(),
     title: v.optional(v.string()),
     content: v.optional(v.string()),
     description: v.optional(v.string()),
@@ -506,7 +595,8 @@ export const update = mutation({
     order: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const { id, userId, saveVersion, changeDescription, ...updateData } = args;
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
+    const { id, accessToken: _accessToken, saveVersion, changeDescription, ...updateData } = args;
 
     const existingDocument = await ctx.db.get(id);
     if (!existingDocument) {
@@ -517,7 +607,7 @@ export const update = mutation({
     const hasEditPermission = await canEditDocument(
       ctx,
       existingDocument,
-      userId
+      currentUserId
     );
     if (!hasEditPermission) {
       throw new Error("权限不足");
@@ -557,7 +647,7 @@ export const update = mutation({
         version: newVersion,
         content: updateData.content || existingDocument.content || "",
         title: updateData.title || existingDocument.title,
-        createdBy: userId,
+        createdBy: currentUserId,
         changeDescription: changeDescription,
         createdAt: now,
       });
@@ -572,7 +662,7 @@ export const update = mutation({
     // 记录编辑操作
     await ctx.db.insert("documentAccess", {
       documentId: id,
-      userId,
+      userId: currentUserId,
       accessType: "edit",
       accessedAt: now,
       source: "direct",
@@ -586,7 +676,7 @@ export const update = mutation({
 export const getByWorkspace = query({
   args: {
     workspaceId: v.string(),
-    userId: v.string(),
+    accessToken: v.string(),
     workspaceType: v.optional(
       v.union(v.literal("PERSONAL"), v.literal("TEAM"))
     ),
@@ -597,6 +687,7 @@ export const getByWorkspace = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     const limit = args.limit ?? 100;
 
     // 根据条件构建查询
@@ -624,7 +715,7 @@ export const getByWorkspace = query({
 
     if (args.onlyFavorites) {
       documents = documents.filter(
-        (doc) => doc.isFavorite && doc.creatorId === args.userId
+        (doc) => doc.isFavorite && doc.creatorId === currentUserId
       );
     }
 
@@ -643,11 +734,11 @@ export const getByWorkspace = query({
     // 权限过滤
     const accessibleDocuments = [];
     for (const doc of documents) {
-      const hasAccess = await canViewDocument(ctx, doc, args.userId);
+      const hasAccess = await canViewDocument(ctx, doc, currentUserId);
       if (hasAccess) {
         accessibleDocuments.push({
           ...doc,
-          canEdit: await canEditDocument(ctx, doc, args.userId),
+          canEdit: await canEditDocument(ctx, doc, currentUserId),
         });
       }
     }
@@ -675,17 +766,18 @@ export const getByWorkspace = query({
 // MARK: 获取用户的文档列表
 export const getByCreator = query({
   args: {
-    creatorId: v.string(),
+    accessToken: v.string(),
     workspaceId: v.optional(v.string()),
     includeArchived: v.optional(v.boolean()),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     const limit = args.limit ?? 100;
 
     const query = ctx.db
       .query("documents")
-      .withIndex("by_creator", (q) => q.eq("creatorId", args.creatorId));
+      .withIndex("by_creator", (q) => q.eq("creatorId", currentUserId));
 
     const documents = await query.collect();
 
@@ -711,16 +803,17 @@ export const getByCreator = query({
 // MARK: 获取最近访问的文档
 export const getRecentlyAccessed = query({
   args: {
-    userId: v.string(),
+    accessToken: v.string(),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     const limit = args.limit ?? 20;
 
     // 获取最近访问记录
     const recentAccesses = await ctx.db
       .query("documentAccess")
-      .withIndex("by_recent", (q) => q.eq("userId", args.userId))
+      .withIndex("by_recent", (q) => q.eq("userId", currentUserId))
       .order("desc")
       .take(limit * 2); // 多取一些，因为可能有重复文档
 
@@ -734,11 +827,11 @@ export const getRecentlyAccessed = query({
       const doc = await ctx.db.get(docId);
       if (doc && doc.type && !doc.isArchived) {
         // 确保是文档类型且有 type 字段
-        const hasAccess = await canViewDocument(ctx, doc, args.userId);
+        const hasAccess = await canViewDocument(ctx, doc, currentUserId);
         if (hasAccess) {
           documents.push({
             ...doc,
-            canEdit: await canEditDocument(ctx, doc, args.userId),
+            canEdit: await canEditDocument(ctx, doc, currentUserId),
             lastAccessedAt: recentAccesses.find(
               (access) => access.documentId === docId
             )?.accessedAt,
@@ -755,7 +848,7 @@ export const getRecentlyAccessed = query({
 export const search = query({
   args: {
     query: v.string(),
-    userId: v.string(),
+    accessToken: v.string(),
     workspaceId: v.optional(v.string()),
     projectId: v.optional(v.string()),
     tags: v.optional(v.array(v.string())),
@@ -763,6 +856,7 @@ export const search = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     const limit = args.limit ?? 50;
     const searchTerm = args.query.toLowerCase();
 
@@ -815,11 +909,11 @@ export const search = query({
     // 权限过滤
     const accessibleDocuments = [];
     for (const doc of tagFilteredDocs) {
-      const hasAccess = await canViewDocument(ctx, doc, args.userId);
+      const hasAccess = await canViewDocument(ctx, doc, currentUserId);
       if (hasAccess) {
         accessibleDocuments.push({
           ...doc,
-          canEdit: await canEditDocument(ctx, doc, args.userId),
+          canEdit: await canEditDocument(ctx, doc, currentUserId),
         });
       }
     }
@@ -840,7 +934,7 @@ export const search = query({
 export const shareDocument = mutation({
   args: {
     documentId: v.id("documents"),
-    sharedBy: v.string(),
+    accessToken: v.string(),
     sharedWith: v.string(),
     permission: v.union(
       v.literal("view"),
@@ -851,14 +945,15 @@ export const shareDocument = mutation({
     expiresAt: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     const document = await ctx.db.get(args.documentId);
     if (!document) {
       throw new Error("文档不存在");
     }
 
     // 检查分享者是否有权限
-    const canShare = await canEditDocument(ctx, document, args.sharedBy);
-    if (!canShare && document.creatorId !== args.sharedBy) {
+    const canShare = await canEditDocument(ctx, document, currentUserId);
+    if (!canShare && document.creatorId !== currentUserId) {
       throw new Error("权限不足");
     }
 
@@ -867,7 +962,7 @@ export const shareDocument = mutation({
     // 创建分享记录
     const shareId = await ctx.db.insert("documentShares", {
       documentId: args.documentId,
-      sharedBy: args.sharedBy,
+      sharedBy: currentUserId,
       sharedWith: args.sharedWith,
       permission: args.permission,
       sharedAt: now,
@@ -895,9 +990,10 @@ export const shareDocument = mutation({
 export const archive = mutation({
   args: {
     id: v.id("documents"),
-    userId: v.string(),
+    accessToken: v.string(),
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     const existingDocument = await ctx.db.get(args.id);
 
     if (!existingDocument) {
@@ -905,7 +1001,7 @@ export const archive = mutation({
     }
 
     // 检查权限
-    const canEdit = await canEditDocument(ctx, existingDocument, args.userId);
+    const canEdit = await canEditDocument(ctx, existingDocument, currentUserId);
     if (!canEdit) {
       throw new Error("权限不足");
     }
@@ -923,16 +1019,17 @@ export const archive = mutation({
 export const restore = mutation({
   args: {
     id: v.id("documents"),
-    userId: v.string(),
+    accessToken: v.string(),
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     const existingDocument = await ctx.db.get(args.id);
 
     if (!existingDocument) {
       throw new Error("文档不存在");
     }
 
-    if (existingDocument.creatorId !== args.userId) {
+    if (existingDocument.creatorId !== currentUserId) {
       throw new Error("权限不足");
     }
 
@@ -949,17 +1046,18 @@ export const restore = mutation({
 export const remove = mutation({
   args: {
     id: v.id("documents"),
-    userId: v.string(),
+    accessToken: v.string(),
     force: v.optional(v.boolean()), // 强制删除，不检查子项
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     const existingDocument = await ctx.db.get(args.id);
 
     if (!existingDocument) {
       throw new Error("文档不存在");
     }
 
-    if (existingDocument.creatorId !== args.userId) {
+    if (existingDocument.creatorId !== currentUserId) {
       throw new Error("权限不足");
     }
 
@@ -1012,14 +1110,15 @@ export const remove = mutation({
 // MARK: 获取回收站文档
 export const getTrash = query({
   args: {
-    userId: v.string(),
+    accessToken: v.string(),
     workspaceId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     const query = ctx.db
       .query("documents")
       .withIndex("by_creator_archived", (q) =>
-        q.eq("creatorId", args.userId).eq("isArchived", true)
+        q.eq("creatorId", currentUserId).eq("isArchived", true)
       );
 
     const documents = await query.collect();
@@ -1037,16 +1136,17 @@ export const getTrash = query({
 export const removeIcon = mutation({
   args: {
     id: v.id("documents"),
-    userId: v.string(),
+    accessToken: v.string(),
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     const existingDocument = await ctx.db.get(args.id);
 
     if (!existingDocument) {
       throw new Error("文档不存在");
     }
 
-    const canEdit = await canEditDocument(ctx, existingDocument, args.userId);
+    const canEdit = await canEditDocument(ctx, existingDocument, currentUserId);
     if (!canEdit) {
       throw new Error("权限不足");
     }
@@ -1064,7 +1164,7 @@ export const removeIcon = mutation({
 export const recordDocumentAccess = mutation({
   args: {
     documentId: v.id("documents"),
-    userId: v.string(),
+    accessToken: v.string(),
     accessType: v.union(
       v.literal("view"),
       v.literal("edit"),
@@ -1080,9 +1180,19 @@ export const recordDocumentAccess = mutation({
     ),
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     const document = await ctx.db.get(args.documentId);
     if (!document) {
       throw new Error("文档不存在");
+    }
+
+    const hasAccess =
+      args.accessType === "edit"
+        ? await canEditDocument(ctx, document, currentUserId)
+        : await canViewDocument(ctx, document, currentUserId);
+
+    if (!hasAccess) {
+      throw new Error("权限不足");
     }
 
     const now = Date.now();
@@ -1095,7 +1205,7 @@ export const recordDocumentAccess = mutation({
     // 记录访问历史
     await ctx.db.insert("documentAccess", {
       documentId: args.documentId,
-      userId: args.userId,
+      userId: currentUserId,
       accessType: args.accessType,
       accessedAt: now,
       source: args.source || "direct",
@@ -1109,16 +1219,17 @@ export const recordDocumentAccess = mutation({
 export const removeCoverImage = mutation({
   args: {
     id: v.id("documents"),
-    userId: v.string(),
+    accessToken: v.string(),
   },
   handler: async (ctx, args) => {
+    const currentUserId = await requireAuthenticatedUserId(args.accessToken);
     const existingDocument = await ctx.db.get(args.id);
 
     if (!existingDocument) {
       throw new Error("文档不存在");
     }
 
-    const canEdit = await canEditDocument(ctx, existingDocument, args.userId);
+    const canEdit = await canEditDocument(ctx, existingDocument, currentUserId);
     if (!canEdit) {
       throw new Error("权限不足");
     }
