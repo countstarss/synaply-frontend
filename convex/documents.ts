@@ -4,6 +4,41 @@ import { Doc, Id } from "./_generated/dataModel";
 
 // ============ 权限检查辅助函数 ============
 
+async function isWorkspaceTeamMember(
+  ctx: QueryCtx | MutationCtx,
+  workspaceId: string,
+  userId: string
+): Promise<boolean> {
+  const channels = await ctx.db
+    .query("channels")
+    .withIndex("by_workspace", (q) => q.eq("workspaceId", workspaceId))
+    .filter((q) => q.eq(q.field("isArchived"), false))
+    .collect();
+
+  for (const channel of channels) {
+    const membership = await ctx.db
+      .query("channelMembers")
+      .withIndex("by_channel_user", (q) =>
+        q.eq("channelId", channel._id).eq("userId", userId)
+      )
+      .first();
+
+    if (membership) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function hasExplicitViewAccess(document: Doc<"documents">, userId: string) {
+  return (
+    document.allowedUsers?.includes(userId) ||
+    document.allowedEditors?.includes(userId) ||
+    false
+  );
+}
+
 // 检查用户是否有权限查看文档/文件夹
 async function canViewDocument(
   ctx: QueryCtx | MutationCtx,
@@ -18,14 +53,19 @@ async function canViewDocument(
   // 根据可见性设置检查权限
   switch (document.visibility) {
     case "PRIVATE":
-      // 检查是否在允许用户列表中
-      return document.allowedUsers?.includes(userId) || false;
+      return hasExplicitViewAccess(document, userId);
 
     case "TEAM_READONLY":
     case "TEAM_EDITABLE":
-      // TODO: 调用后端API检查用户是否是团队成员
-      // 现在暂时检查允许用户列表
-      return document.allowedUsers?.includes(userId) || true; // 暂时返回true
+      if (hasExplicitViewAccess(document, userId)) {
+        return true;
+      }
+
+      if (document.workspaceType !== "TEAM") {
+        return false;
+      }
+
+      return isWorkspaceTeamMember(ctx, document.workspaceId, userId);
 
     case "PUBLIC":
       return true;
