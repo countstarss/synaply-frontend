@@ -45,6 +45,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 let browserClient: SupabaseClient<Database> | null = null;
 
+function createRealtimeDebugOptions() {
+  return undefined;
+}
+
 // 复用同一个浏览器端实例，避免 OAuth 回调阶段多个 client 竞争同一份 PKCE 状态。
 export const createClientComponentClient = () => {
   if (typeof window === "undefined") {
@@ -52,8 +56,23 @@ export const createClientComponentClient = () => {
   }
 
   if (!browserClient) {
-    browserClient = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+    browserClient = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey, {
+      realtime: createRealtimeDebugOptions(),
+    });
   }
 
   return browserClient;
 };
+
+export function getSupabasePublicConfig() {
+  return {
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
+  };
+}
+
+export async function removeAllRealtimeChannels(
+  client: SupabaseClient<Database> = createClientComponentClient(),
+) {
+  await Promise.all(client.getChannels().map((channel) => client.removeChannel(channel)));
+}

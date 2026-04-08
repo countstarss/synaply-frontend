@@ -16,33 +16,39 @@ import NormalIssueDetail from "@/components/shared/issue/NormalIssueDetail";
 import WorkflowIssueDetail from "@/components/issue/WorkflowIssueDetail";
 import { Issue, isWorkflowIssue } from "@/lib/fetchers/issue";
 import { useIssues, useDeleteIssue } from "@/hooks/useIssueApi";
+import { useWorkspaceRealtime } from "@/hooks/realtime/useWorkspaceRealtime";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { priorityConfig, statusConfig } from "@/lib/data/issueConfig";
 
 export default function IssuesPageContent() {
   const [selectedView, setSelectedView] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+  const [selectedIssueIsWorkflow, setSelectedIssueIsWorkflow] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isNormalDetailOpen, setIsNormalDetailOpen] = useState(false);
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id || "";
+  useWorkspaceRealtime(workspaceId, {
+    enabled: !isDetailModalOpen && !isNormalDetailOpen,
+  });
   const { data: issues = [], isLoading: isLoadingIssues } =
     useIssues(workspaceId);
   const queryClient = useQueryClient();
   const deleteIssueMutation = useDeleteIssue();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isNormalDetailOpen, setIsNormalDetailOpen] = useState(false);
-  const selectedIssueIsWorkflow = selectedIssue
-    ? isWorkflowIssue(selectedIssue)
-    : false;
 
   const handleCreateIssue = () => {
     queryClient.invalidateQueries({ queryKey: ["issues", workspaceId] });
   };
 
   const handleViewIssue = (issue: Issue) => {
-    setSelectedIssue(issue);
-    if (isWorkflowIssue(issue)) {
+    const workflowIssue = isWorkflowIssue(issue);
+
+    setSelectedIssueId(issue.id);
+    setSelectedIssueIsWorkflow(workflowIssue);
+
+    if (workflowIssue) {
       setIsDetailModalOpen(true);
     } else {
       setIsNormalDetailOpen(true);
@@ -54,12 +60,12 @@ export default function IssuesPageContent() {
   );
 
   const handleCloseDetail = () => {
-    setSelectedIssue(null);
+    setSelectedIssueId(null);
     setIsDetailModalOpen(false);
   };
 
   const handleCloseNormalDetail = () => {
-    setSelectedIssue(null);
+    setSelectedIssueId(null);
     setIsNormalDetailOpen(false);
   };
 
@@ -89,11 +95,12 @@ export default function IssuesPageContent() {
     }
   };
 
-  if (selectedIssue && selectedIssueIsWorkflow && isDetailModalOpen) {
+  if (selectedIssueId && selectedIssueIsWorkflow && isDetailModalOpen) {
     return (
       <div className="h-full w-full bg-app-bg p-2">
         <WorkflowIssueDetail
-          issue={selectedIssue}
+          issueId={selectedIssueId}
+          workspaceId={workspaceId}
           isOpen={isDetailModalOpen}
           onClose={handleCloseDetail}
           onUpdate={handleUpdateWorkflowIssue}
@@ -103,11 +110,12 @@ export default function IssuesPageContent() {
     );
   }
 
-  if (selectedIssue && !selectedIssueIsWorkflow && isNormalDetailOpen) {
+  if (selectedIssueId && !selectedIssueIsWorkflow && isNormalDetailOpen) {
     return (
       <div className="h-full w-full bg-app-bg p-2">
         <NormalIssueDetail
-          issue={selectedIssue}
+          issueId={selectedIssueId}
+          workspaceId={workspaceId}
           isOpen={isNormalDetailOpen}
           onClose={handleCloseNormalDetail}
           onUpdate={handleUpdateNormalIssue}

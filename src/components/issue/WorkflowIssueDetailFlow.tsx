@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
 import { useIssueActivities, useIssueStepRecords } from "@/hooks/useIssueApi";
+import { useIssueRealtime } from "@/hooks/realtime/useIssueRealtime";
 import { useCurrentTeam, useTeamMembers } from "@/hooks/useTeam";
 import { Issue } from "@/lib/fetchers/issue";
 import useWorkflowNodeStatus from "@/app/[locale]/(main)/workflows/_components/hooks/useWorkflowNodeStatus";
@@ -56,6 +57,13 @@ export function WorkflowIssueDetailFlow({
   const { team } = useCurrentTeam();
   const { data: teamMembers = [] } = useTeamMembers(team?.id);
   const { user, session } = useAuth();
+  const {
+    getFocusedUsersForNode,
+    setFocusingNode,
+  } = useIssueRealtime(issue.id, issue.workspaceId, {
+    enabled: true,
+    workflow: true,
+  });
 
   const initialWorkflowIssue = React.useMemo(
     () => createInitialWorkflowIssue(issue),
@@ -96,12 +104,29 @@ export function WorkflowIssueDetailFlow({
     setFlowEdges(edges);
   }, [nodes, edges, setFlowNodes, setFlowEdges]);
 
+  React.useEffect(() => {
+    setWorkflowIssue(initialWorkflowIssue);
+  }, [initialWorkflowIssue]);
+
   const currentNode = useMemo(() => {
     if (!workflowIssue || !workflow) return null;
     return workflow.nodes.find(
       (node: Node) => node.id === workflowIssue.currentNodeId,
     );
   }, [workflow, workflowIssue]);
+  const workflowMembers = useMemo(
+    () =>
+      teamMembers.map((member) => ({
+        id: member.id,
+        name:
+          member.user?.name?.trim() ||
+          member.user?.email?.split("@")[0] ||
+          `成员 ${member.id.slice(0, 6)}`,
+        email: member.user?.email,
+        avatarUrl: member.user?.avatar_url || member.user?.avatarUrl,
+      })),
+    [teamMembers],
+  );
 
   const {
     handleStatusUpdate,
@@ -122,6 +147,10 @@ export function WorkflowIssueDetailFlow({
     session,
     onUpdate,
   });
+
+  React.useEffect(() => {
+    setFocusingNode(currentNode?.id || null);
+  }, [currentNode?.id, setFocusingNode]);
 
   if (!workflowIssue || !workflow) {
     return (
@@ -150,6 +179,9 @@ export function WorkflowIssueDetailFlow({
   };
 
   const isCurrentAssignee = currentNodeStatus?.assigneeId === user?.id;
+  const currentNodeFocusUsers = currentNode
+    ? getFocusedUsersForNode(currentNode.id)
+    : [];
 
   return (
     <div className="flex h-full flex-col gap-2">
@@ -240,6 +272,15 @@ export function WorkflowIssueDetailFlow({
             />
           )}
 
+          {currentNodeFocusUsers.length > 0 && (
+            <Card className="border-app-border bg-app-content-bg shadow-none">
+              <CardContent className="p-3 text-xs text-app-text-muted">
+                {currentNodeFocusUsers.map((participant) => participant.name).join("、")}
+                正在关注当前节点
+              </CardContent>
+            </Card>
+          )}
+
           <Tabs
             value={activeTab}
             onValueChange={(value) =>
@@ -282,7 +323,7 @@ export function WorkflowIssueDetailFlow({
                   <DiscussionTab
                     issueId={issue.id}
                     workspaceId={issue.workspaceId}
-                    teamMembers={teamMembers}
+                    members={workflowMembers}
                   />
                 </TabsContent>
                 <TabsContent value="records" className="mt-0 h-full">

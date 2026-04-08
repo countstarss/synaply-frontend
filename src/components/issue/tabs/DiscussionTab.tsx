@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { RiAtLine, RiLoader4Line, RiSendPlaneLine } from "react-icons/ri";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -9,25 +9,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
 import { useComments, useCreateComment } from "@/hooks/useComment";
 
-interface TeamMember {
+export interface DiscussionMember {
   id: string;
-  user?: {
-    name?: string;
-    email?: string;
-    avatar_url?: string;
-  };
+  name: string;
+  email?: string;
+  avatarUrl?: string;
 }
 
 interface DiscussionTabProps {
   issueId: string;
   workspaceId: string;
-  teamMembers: TeamMember[];
+  members: DiscussionMember[];
 }
 
 export const DiscussionTab: React.FC<DiscussionTabProps> = ({
   issueId,
   workspaceId,
-  teamMembers,
+  members,
 }) => {
   const { session } = useAuth();
   const { data: comments = [], isLoading } = useComments(issueId);
@@ -38,6 +36,34 @@ export const DiscussionTab: React.FC<DiscussionTabProps> = ({
   const [mentionQuery, setMentionQuery] = useState("");
   const [cursorPosition, setCursorPosition] = useState(0);
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
+  const latestCommentAnchorRef = useRef<HTMLDivElement>(null);
+  const lastCommentIdRef = useRef<string | null>(null);
+
+  const scrollToLatestComment = (behavior: ScrollBehavior = "smooth") => {
+    requestAnimationFrame(() => {
+      latestCommentAnchorRef.current?.scrollIntoView({
+        behavior,
+        block: "end",
+      });
+    });
+  };
+
+  useEffect(() => {
+    if (isLoading || comments.length === 0) {
+      return;
+    }
+
+    const latestCommentId = comments[comments.length - 1]?.id;
+    if (!latestCommentId) {
+      return;
+    }
+
+    const behavior = lastCommentIdRef.current ? "smooth" : "auto";
+    if (lastCommentIdRef.current !== latestCommentId) {
+      scrollToLatestComment(behavior);
+      lastCommentIdRef.current = latestCommentId;
+    }
+  }, [comments, isLoading]);
 
   const handleCommentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = event.target.value;
@@ -58,11 +84,11 @@ export const DiscussionTab: React.FC<DiscussionTabProps> = ({
     setShowMentionList(false);
   };
 
-  const handleMentionSelect = (member: TeamMember) => {
+  const handleMentionSelect = (member: DiscussionMember) => {
     const atIndex = commentText.lastIndexOf("@", cursorPosition);
     const beforeAt = commentText.substring(0, atIndex);
     const afterCursor = commentText.substring(cursorPosition);
-    const memberName = member.user?.name || member.user?.email?.split("@")[0] || "";
+    const memberName = member.name || member.email?.split("@")[0] || "";
     const newText = `${beforeAt}@${memberName} ${afterCursor}`;
 
     setCommentText(newText);
@@ -91,8 +117,8 @@ export const DiscussionTab: React.FC<DiscussionTabProps> = ({
     setShowMentionList(false);
   };
 
-  const filteredMembers = teamMembers.filter((member) =>
-    (member.user?.name || member.user?.email || "")
+  const filteredMembers = members.filter((member) =>
+    `${member.name} ${member.email || ""}`
       .toLowerCase()
       .includes(mentionQuery.toLowerCase()),
   );
@@ -102,8 +128,8 @@ export const DiscussionTab: React.FC<DiscussionTabProps> = ({
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <ScrollArea className="flex-1">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <ScrollArea className="min-h-0 flex-1">
         <div className="p-4">
           {isLoading ? (
             <div className="flex justify-center py-8">
@@ -145,12 +171,13 @@ export const DiscussionTab: React.FC<DiscussionTabProps> = ({
                   </div>
                 </div>
               ))}
+              <div ref={latestCommentAnchorRef} aria-hidden="true" />
             </div>
           )}
         </div>
       </ScrollArea>
 
-      <div className="relative border-t border-app-border p-4">
+      <div className="relative shrink-0 border-t border-app-border p-4">
         <div className="flex gap-3">
           <Avatar className="h-8 w-8">
             <AvatarImage src={session?.user?.user_metadata?.avatar_url || ""} />
@@ -184,17 +211,17 @@ export const DiscussionTab: React.FC<DiscussionTabProps> = ({
                       onClick={() => handleMentionSelect(member)}
                     >
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={member.user?.avatar_url || ""} />
+                        <AvatarImage src={member.avatarUrl || ""} />
                         <AvatarFallback>
-                          {member.user?.name?.[0] || member.user?.email?.[0] || "?"}
+                          {member.name?.[0] || member.email?.[0] || "?"}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="text-sm font-medium text-app-text-primary">
-                          {member.user?.name || member.user?.email?.split("@")[0]}
+                          {member.name || member.email?.split("@")[0]}
                         </div>
                         <div className="text-xs text-app-text-muted">
-                          {member.user?.email}
+                          {member.email}
                         </div>
                       </div>
                     </Button>

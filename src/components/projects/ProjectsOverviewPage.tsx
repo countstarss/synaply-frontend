@@ -48,7 +48,7 @@ export function ProjectsOverviewPage({
 }: ProjectsOverviewPageProps) {
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="mx-auto max-w-5xl px-8 py-8">
+      <div className="mx-auto w-full px-8 py-8">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-semibold text-app-text-primary">

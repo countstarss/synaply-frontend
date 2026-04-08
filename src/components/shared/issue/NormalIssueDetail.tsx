@@ -1,26 +1,23 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import {
-  RiAtLine,
+  RiArrowLeftLine,
   RiCalendarLine,
   RiCloseLine,
   RiEditLine,
   RiFileTextLine,
   RiPriceTagLine,
   RiSaveLine,
-  RiSendPlaneLine,
   RiTimeLine,
 } from "react-icons/ri";
 import { toast } from "sonner";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -34,31 +31,25 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
-import { useUpdateIssue } from "@/hooks/useIssueApi";
+import { useIssue, useUpdateIssue } from "@/hooks/useIssueApi";
 import { useIssueStates } from "@/hooks/useIssueStates";
 import { useProjects } from "@/hooks/useProjectApi";
+import { useIssueRealtime } from "@/hooks/realtime/useIssueRealtime";
 import { useTeamMemberByUserId, useTeamMembers } from "@/hooks/useTeam";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import DiscussionTab from "@/components/issue/tabs/DiscussionTab";
 import { Issue, IssueAssigneeMember } from "@/lib/fetchers/issue";
 import type { TeamMember } from "@/lib/fetchers/team";
 import { cn } from "@/lib/utils";
 import { IssuePriority, VisibilityType } from "@/types/prisma";
 
 interface NormalIssueDetailProps {
-  issue: Issue;
+  issueId: string;
+  workspaceId: string;
   isOpen: boolean;
   onClose: () => void;
   onUpdate: (updatedIssue: Issue) => void;
   displayMode?: "dialog" | "page";
-}
-
-interface Comment {
-  id: string;
-  content: string;
-  author: string;
-  authorAvatar?: string;
-  createdAt: string;
-  mentions: string[];
 }
 
 interface MemberOption {
@@ -114,14 +105,6 @@ function getIssueMemberName(member?: IssueAssigneeMember | null) {
   );
 }
 
-function getCommentAuthorName(author?: string | null) {
-  return author?.trim() || "匿名用户";
-}
-
-function getAvatarFallback(value?: string | null) {
-  return value?.trim()?.[0] || "?";
-}
-
 function formatDate(dateString?: string | null) {
   if (!dateString) {
     return "未设置";
@@ -148,50 +131,33 @@ function getPriorityOption(priority?: IssuePriority | null) {
   return PRIORITY_OPTIONS.find((option) => option.value === priority) || null;
 }
 
-function buildInitialComments(
-  currentUserName: string,
-  currentUserAvatar?: string,
-): Comment[] {
-  return [
-    {
-      id: "1",
-      content: "这里可以继续补充处理思路、同步上下文或给协作者留言。",
-      author: currentUserName,
-      authorAvatar: currentUserAvatar,
-      createdAt: new Date().toISOString(),
-      mentions: [],
-    },
-  ];
-}
-
 // TO AGENTS: 不要破坏这个组件的整体布局和样式, 增减一些内容或者字段是 OK 的。
 export default function NormalIssueDetail({
-  issue,
+  issueId,
+  workspaceId,
   isOpen,
   onClose,
   onUpdate,
-  displayMode = "dialog",
 }: NormalIssueDetailProps) {
   const { user } = useAuth();
+  const { data: issue, isLoading: isLoadingIssue } = useIssue(workspaceId, issueId, {
+    enabled: isOpen,
+  });
   const { currentWorkspace } = useWorkspace();
-  const workspaceId = currentWorkspace?.id || "";
   const workspaceType = currentWorkspace?.type || "PERSONAL";
   const teamId = currentWorkspace?.teamId;
   const currentUserName =
     user?.user_metadata?.name?.trim() || user?.email?.split("@")[0] || "匿名用户";
-  const currentUserAvatar = user?.user_metadata?.avatar_url || undefined;
+  const {
+    getEditorsForField,
+    setEditingField: setRealtimeEditingField,
+  } = useIssueRealtime(issueId, workspaceId, {
+    enabled: isOpen,
+  });
 
   const [editingField, setEditingField] = useState<string | null>(null);
-  const [committedIssue, setCommittedIssue] = useState<Issue>(issue);
-  const [localIssue, setLocalIssue] = useState<Issue>(issue);
-  const [commentText, setCommentText] = useState("");
-  const [comments, setComments] = useState<Comment[]>(
-    buildInitialComments(currentUserName, currentUserAvatar),
-  );
-  const [showMentionList, setShowMentionList] = useState(false);
-  const [mentionQuery, setMentionQuery] = useState("");
-  const [cursorPosition, setCursorPosition] = useState(0);
-  const commentInputRef = useRef<HTMLTextAreaElement>(null);
+  const [committedIssue, setCommittedIssue] = useState<Issue | null>(issue ?? null);
+  const [localIssue, setLocalIssue] = useState<Issue | null>(issue ?? null);
 
   const { data: projects = [] } = useProjects(workspaceId);
   const { data: issueStates = [] } = useIssueStates(workspaceId, {
@@ -212,7 +178,7 @@ export default function NormalIssueDetail({
     });
   }
 
-  for (const assignee of localIssue.assignees || []) {
+  for (const assignee of localIssue?.assignees || []) {
     if (!memberMap.has(assignee.memberId)) {
       memberMap.set(assignee.memberId, {
         id: assignee.memberId,
@@ -229,10 +195,24 @@ export default function NormalIssueDetail({
   const memberOptions = Array.from(memberMap.values()).sort((left, right) =>
     left.name.localeCompare(right.name, "zh-CN"),
   );
+  const discussionMembers = React.useMemo(() => {
+    const members = new Map(memberOptions.map((member) => [member.id, member]));
+
+    if (currentUserTeamMember?.id) {
+      members.set(currentUserTeamMember.id, {
+        id: currentUserTeamMember.id,
+        name: currentUserName,
+        email: user?.email || "",
+        avatarUrl: user?.user_metadata?.avatar_url,
+      });
+    }
+
+    return Array.from(members.values());
+  }, [currentUserName, currentUserTeamMember?.id, memberOptions, user?.email, user?.user_metadata?.avatar_url]);
   const personalDirectAssignee =
     workspaceType === "PERSONAL" &&
-    localIssue.directAssigneeId &&
-    currentUserTeamMember?.id === localIssue.directAssigneeId
+    localIssue?.directAssigneeId &&
+    currentUserTeamMember?.id === localIssue?.directAssigneeId
       ? {
           id: currentUserTeamMember.id,
           name: currentUserName,
@@ -240,115 +220,67 @@ export default function NormalIssueDetail({
         }
       : null;
   const directAssignee = memberOptions.find(
-    (member) => member.id === localIssue.directAssigneeId,
+    (member) => member.id === localIssue?.directAssigneeId,
   ) || personalDirectAssignee;
   const selectedProject = projects.find(
-    (project) => project.id === localIssue.projectId,
+    (project) => project.id === localIssue?.projectId,
   );
-  const selectedState = issueStates.find((state) => state.id === localIssue.stateId);
-  const currentPriority = getPriorityOption(localIssue.priority);
-  const dueDateValue = localIssue.dueDate
-    ? new Date(localIssue.dueDate)
+  const selectedState = issueStates.find((state) => state.id === localIssue?.stateId);
+  const currentPriority = getPriorityOption(localIssue?.priority);
+  const dueDateValue = localIssue?.dueDate
+    ? new Date(localIssue.dueDate ?? "")
     : undefined;
 
   useEffect(() => {
-    setCommittedIssue(issue);
-    setLocalIssue(issue);
-    setEditingField(null);
-  }, [issue]);
+    if (issue) {
+      setCommittedIssue(issue);
+      setLocalIssue((current) => (editingField ? current ?? issue : issue));
+      return;
+    }
+
+    if (!isLoadingIssue) {
+      setCommittedIssue(null);
+      setLocalIssue(null);
+      setEditingField(null);
+    }
+  }, [editingField, isLoadingIssue, issue]);
 
   useEffect(() => {
-    setComments(buildInitialComments(currentUserName, currentUserAvatar));
-    setCommentText("");
-    setShowMentionList(false);
-    setMentionQuery("");
-  }, [currentUserAvatar, currentUserName, issue.id]);
+    const realtimeField =
+      editingField === "stateId"
+        ? "state"
+        : editingField === "directAssigneeId"
+          ? "assignee"
+          : editingField === "title" ||
+              editingField === "description" ||
+              editingField === "priority" ||
+              editingField === "dueDate"
+            ? editingField
+            : null;
+
+    setRealtimeEditingField(realtimeField);
+
+    return () => {
+      setRealtimeEditingField(null);
+    };
+  }, [editingField, setRealtimeEditingField]);
 
   const handleFieldEdit = (field: string) => {
     setEditingField(field);
   };
 
   const handleCancelEdit = () => {
-    setLocalIssue(committedIssue);
+    if (committedIssue) {
+      setLocalIssue(committedIssue);
+    }
     setEditingField(null);
   };
-
-  const handleCommentChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = event.target.value;
-    const nextCursorPosition = event.target.selectionStart;
-
-    setCommentText(value);
-    setCursorPosition(nextCursorPosition);
-
-    const atIndex = value.lastIndexOf("@", nextCursorPosition);
-    if (atIndex !== -1 && (atIndex === 0 || value[atIndex - 1] === " ")) {
-      const query = value.substring(atIndex + 1, nextCursorPosition);
-      if (!query.includes(" ")) {
-        setMentionQuery(query);
-        setShowMentionList(true);
-        return;
-      }
-    }
-
-    setShowMentionList(false);
-  };
-
-  const handleMentionSelect = (member: MemberOption) => {
-    const atIndex = commentText.lastIndexOf("@", cursorPosition);
-    const beforeAt = commentText.substring(0, atIndex);
-    const afterCursor = commentText.substring(cursorPosition);
-    const nextText = `${beforeAt}@${member.name} ${afterCursor}`;
-
-    setCommentText(nextText);
-    setShowMentionList(false);
-    setMentionQuery("");
-
-    setTimeout(() => {
-      if (!commentInputRef.current) {
-        return;
-      }
-
-      const nextCursorPosition = atIndex + member.name.length + 2;
-      commentInputRef.current.focus();
-      commentInputRef.current.setSelectionRange(
-        nextCursorPosition,
-        nextCursorPosition,
-      );
-    }, 0);
-  };
-
-  const handleSendComment = () => {
-    if (!commentText.trim()) {
-      return;
-    }
-
-    const mentions =
-      commentText.match(/@([^\s]+)/g)?.map((mention) => mention.substring(1)) ||
-      [];
-
-    const nextComment: Comment = {
-      id: Date.now().toString(),
-      content: commentText,
-      author: currentUserName,
-      authorAvatar: currentUserAvatar,
-      createdAt: new Date().toISOString(),
-      mentions,
-    };
-
-    setComments((previousComments) => [...previousComments, nextComment]);
-    setCommentText("");
-    setShowMentionList(false);
-  };
-
-  const filteredMembers = memberOptions.filter((member) =>
-    member.name.toLowerCase().includes(mentionQuery.toLowerCase()),
-  );
 
   const persistIssuePatch = async (
     patch: Partial<Issue>,
     relationOverrides: Partial<Issue> = {},
   ) => {
-    if (!workspaceId) {
+    if (!workspaceId || !committedIssue) {
       toast.error("当前工作空间无效，无法保存 Issue");
       return;
     }
@@ -387,8 +319,41 @@ export default function NormalIssueDetail({
     }
   };
 
+  const renderEditingHint = (field: "title" | "state" | "priority" | "assignee" | "dueDate" | "description") => {
+    const editors = getEditorsForField(field);
+
+    if (editors.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="text-xs text-amber-600">
+        {editors.map((participant) => participant.name).join("、")} 正在编辑该字段
+      </div>
+    );
+  };
+
   if (!isOpen) {
     return null;
+  }
+
+  if (isLoadingIssue || !localIssue || !committedIssue) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4 rounded-lg border border-app-border bg-app-content-bg text-app-text-muted">
+        <div>{isLoadingIssue ? "正在加载 Issue..." : "Issue 不存在或已被删除"}</div>
+        {!isLoadingIssue && (
+          <Button
+            type="button"
+            variant="outline"
+            className="border-app-border bg-transparent text-app-text-primary"
+            onClick={onClose}
+          >
+            <RiArrowLeftLine className="h-4 w-4" />
+            返回列表
+          </Button>
+        )}
+      </div>
+    );
   }
 
   const content = (
@@ -456,6 +421,7 @@ export default function NormalIssueDetail({
                     </Button>
                   )}
                 </div>
+                {renderEditingHint("title")}
 
                 {editingField === "title" ? (
                   <div className="flex gap-2">
@@ -506,6 +472,7 @@ export default function NormalIssueDetail({
                     <Label className="text-xs text-app-text-secondary">
                       状态
                     </Label>
+                    {renderEditingHint("state")}
                     {editingField === "stateId" ? (
                       <div className="flex gap-2">
                         <Select
@@ -565,6 +532,7 @@ export default function NormalIssueDetail({
                     <Label className="text-xs text-app-text-secondary">
                       优先级
                     </Label>
+                    {renderEditingHint("priority")}
                     {editingField === "priority" ? (
                       <div className="flex gap-2">
                         <Select
@@ -735,6 +703,7 @@ export default function NormalIssueDetail({
                     <Label className="text-xs text-app-text-secondary">
                       主负责人
                     </Label>
+                    {renderEditingHint("assignee")}
                     {workspaceType === "PERSONAL" ? (
                       <Badge
                         variant="outline"
@@ -800,6 +769,7 @@ export default function NormalIssueDetail({
                       <RiCalendarLine className="h-3 w-3" />
                       截止日期
                     </Label>
+                    {renderEditingHint("dueDate")}
                     {editingField === "dueDate" ? (
                       <div className="flex flex-wrap gap-2">
                         <Popover>
@@ -906,6 +876,7 @@ export default function NormalIssueDetail({
                       </Button>
                     )}
                   </div>
+                  {renderEditingHint("description")}
 
                   {editingField === "description" ? (
                     <div className="space-y-2">
@@ -968,155 +939,24 @@ export default function NormalIssueDetail({
           </ScrollArea>
         </Card>
 
-        <Card className="flex w-1/3 flex-col border-app-border bg-app-content-bg shadow-none">
+        <Card className="flex min-h-0 w-1/3 flex-col overflow-hidden border-app-border bg-app-content-bg shadow-none">
           <CardHeader className="border-b border-app-border p-4">
             <CardTitle className="flex items-center gap-2 text-lg text-app-text-primary">
               <RiFileTextLine className="h-5 w-5" />
-              讨论 ({comments.length})
+              讨论
             </CardTitle>
           </CardHeader>
-
-          <ScrollArea className="flex-1">
-            <CardContent className="p-4">
-              <div className="space-y-4">
-                {comments.map((comment) => {
-                  const authorName = getCommentAuthorName(comment.author);
-
-                  return (
-                    <div key={comment.id} className="flex gap-3">
-                      <Avatar className="size-8">
-                        <AvatarImage src={comment.authorAvatar} alt={authorName} />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-400 to-violet-500 text-white">
-                          {getAvatarFallback(authorName)}
-                        </AvatarFallback>
-                      </Avatar>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="mb-1 flex items-center gap-2">
-                          <span className="text-sm font-medium text-app-text-primary">
-                            {authorName}
-                          </span>
-                          <span className="text-xs text-app-text-muted">
-                            {formatDate(comment.createdAt)}
-                          </span>
-                        </div>
-                        <div className="text-sm text-app-text-secondary">
-                          {comment.content
-                            .split(/(@[^\s]+)/)
-                            .map((part, index) => (
-                              <span
-                                key={index}
-                                className={
-                                  part.startsWith("@")
-                                    ? "font-medium text-sky-600"
-                                    : ""
-                                }
-                              >
-                                {part}
-                              </span>
-                            ))}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </ScrollArea>
-
-          <div className="border-t border-app-border p-4">
-            <div className="flex gap-3">
-              <Avatar className="size-8">
-                <AvatarImage src={currentUserAvatar} alt={currentUserName} />
-                <AvatarFallback className="bg-gradient-to-br from-emerald-400 to-sky-500 text-white">
-                  {getAvatarFallback(currentUserName)}
-                </AvatarFallback>
-              </Avatar>
-
-              <div className="relative flex-1">
-                <Textarea
-                  ref={commentInputRef}
-                  value={commentText}
-                  onChange={handleCommentChange}
-                  placeholder="添加评论... 使用 @ 提及团队成员"
-                  className="min-h-24 resize-none border-app-border bg-app-bg text-app-text-primary placeholder:text-app-text-muted"
-                  rows={3}
-                />
-
-                {showMentionList && filteredMembers.length > 0 && (
-                  <div className="absolute inset-x-0 bottom-full z-10 mb-2 max-h-48 overflow-y-auto rounded-md border border-app-border bg-app-content-bg shadow-lg">
-                    {filteredMembers.map((member) => (
-                      <Button
-                        key={member.id}
-                        type="button"
-                        variant="ghost"
-                        className="h-auto w-full justify-start rounded-none px-3 py-2 text-left hover:bg-app-button-hover"
-                        onClick={() => handleMentionSelect(member)}
-                      >
-                        <Avatar className="size-8">
-                          <AvatarImage src={member.avatarUrl} alt={member.name} />
-                          <AvatarFallback className="bg-app-button-hover text-app-text-primary">
-                            {getAvatarFallback(member.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium text-app-text-primary">
-                            {member.name}
-                          </div>
-                          <div className="truncate text-xs text-app-text-muted">
-                            {member.email || member.id}
-                          </div>
-                        </div>
-                      </Button>
-                    ))}
-                  </div>
-                )}
-
-                <div className="mt-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs text-app-text-muted">
-                    <RiAtLine className="h-3 w-3" />
-                    <span>使用 @ 提及当前工作空间成员</span>
-                  </div>
-                  <Button
-                    type="button"
-                    className="bg-sky-600 text-white hover:bg-sky-500"
-                    onClick={handleSendComment}
-                    disabled={!commentText.trim()}
-                  >
-                    <RiSendPlaneLine className="h-3 w-3" />
-                    发送
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <CardContent className="min-h-0 flex-1 p-0">
+            <DiscussionTab
+              issueId={issueId}
+              workspaceId={workspaceId}
+              members={discussionMembers}
+            />
+          </CardContent>
         </Card>
       </div>
     </div>
   );
 
-  if (displayMode === "page") {
-    return <div className="h-full w-full overflow-hidden">{content}</div>;
-  }
-
-  return (
-    <Dialog
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
-    >
-      <DialogContent
-        className="h-[calc(100vh-64px)] max-w-[calc(100vw-16px)] border-app-border bg-app-bg p-2 shadow-2xl"
-        showCloseButton={false}
-      >
-        <DialogTitle className="sr-only">
-          {localIssue.title || "Issue 详情"}
-        </DialogTitle>
-        {content}
-      </DialogContent>
-    </Dialog>
-  );
+  return <div className="h-full w-full overflow-hidden">{content}</div>;
 }

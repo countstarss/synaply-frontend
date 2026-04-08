@@ -22,7 +22,10 @@ import {
   buildAbsoluteAppUrl,
   buildAuthRouteWithReason,
 } from "@/lib/auth-utils";
-import { createClientComponentClient } from "@/lib/supabase";
+import {
+  createClientComponentClient,
+  removeAllRealtimeChannels,
+} from "@/lib/supabase";
 
 const SESSION_REFRESH_INTERVAL_MS = 60_000;
 const SESSION_REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
@@ -68,6 +71,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
+    const syncRealtimeAuthToken = async (accessToken?: string | null) => {
+      if (!accessToken) {
+        await removeAllRealtimeChannels(supabase);
+        return;
+      }
+
+      await supabase.realtime.setAuth(accessToken);
+    };
+
+    const scheduleRealtimeAuthTokenSync = (accessToken?: string | null) => {
+      window.setTimeout(() => {
+        void syncRealtimeAuthToken(accessToken);
+      }, 0);
+    };
+
     const handleSessionExpiry = async () => {
       forcedRedirectReasonRef.current = SESSION_EXPIRED_REASON;
 
@@ -105,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        await syncRealtimeAuthToken(initialSession?.access_token);
         setSession(initialSession);
         setUser(initialSession?.user ?? null);
 
@@ -130,6 +149,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // Supabase 官方文档明确提到：不要在 onAuthStateChange 回调里直接执行异步 Supabase 调用，
+      // 否则可能导致后续请求挂起。这里把 Realtime token 同步延后到事件循环下一轮。
+      scheduleRealtimeAuthTokenSync(nextSession?.access_token);
+
       if (!mounted) {
         return;
       }
@@ -193,6 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (mounted && data.session) {
+          await syncRealtimeAuthToken(data.session.access_token);
           setSession(data.session);
           setUser(data.session.user);
         }

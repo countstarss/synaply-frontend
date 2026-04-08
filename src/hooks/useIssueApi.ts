@@ -19,6 +19,13 @@ import {
   getIssueActivities,
   CreateIssueActivityDto,
 } from "@/lib/fetchers/issue";
+import {
+  broadcastIssueCreated,
+  broadcastIssueDeleted,
+  broadcastIssueActivityCreated,
+  broadcastIssueStepRecordCreated,
+  broadcastIssueUpdated,
+} from "@/lib/realtime/broadcast";
 import { IssueStatus, IssueType } from "@/types/prisma";
 
 function buildWorkflowIssuePatch(issue: Partial<CreateIssueDto>) {
@@ -79,6 +86,30 @@ export const useIssues = (
   });
 };
 
+export const useIssue = (
+  workspaceId: string,
+  issueId: string,
+  options: { enabled?: boolean } = {},
+) => {
+  const { session } = useAuth();
+
+  return useQuery({
+    queryKey: ["issue", workspaceId, issueId],
+    queryFn: async () => {
+      if (!session?.access_token) {
+        return null;
+      }
+
+      return getIssue(workspaceId, issueId, session.access_token);
+    },
+    enabled:
+      (options.enabled ?? true) &&
+      !!session?.access_token &&
+      !!workspaceId &&
+      !!issueId,
+  });
+};
+
 /**
  * MARK: 创建普通Issue
  */
@@ -114,10 +145,23 @@ export const useCreateIssue = () => {
 
       return createIssue(issueData, session.access_token);
     },
-    onSuccess: (_, variables) => {
+    onSuccess: async (createdIssue, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issues", variables.workspaceId],
       });
+
+      if (!session?.access_token || !createdIssue?.id) {
+        return;
+      }
+
+      await broadcastIssueCreated(
+        {
+          issueId: createdIssue.id,
+          workspaceId: variables.workspaceId,
+          issueType: createdIssue.issueType ?? null,
+        },
+        session.access_token,
+      );
     },
   });
 };
@@ -227,10 +271,23 @@ export const useCreateWorkflowIssue = () => {
             issueType: IssueType.WORKFLOW,
           };
     },
-    onSuccess: (_, variables) => {
+    onSuccess: async (createdIssue, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issues", variables.workspaceId],
       });
+
+      if (!session?.access_token || !createdIssue?.id) {
+        return;
+      }
+
+      await broadcastIssueCreated(
+        {
+          issueId: createdIssue.id,
+          workspaceId: variables.workspaceId,
+          issueType: createdIssue.issueType ?? null,
+        },
+        session.access_token,
+      );
     },
   });
 };
@@ -258,10 +315,24 @@ export const useUpdateIssue = () => {
 
       return updateIssue(workspaceId, issueId, data, session.access_token);
     },
-    onSuccess: (_, variables) => {
+    onSuccess: async (updatedIssue, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issues", variables.workspaceId],
       });
+
+      if (!session?.access_token) {
+        return;
+      }
+
+      await broadcastIssueUpdated(
+        {
+          issueId: variables.issueId,
+          workspaceId: variables.workspaceId,
+          changedFields: Object.keys(variables.data),
+          issueType: updatedIssue.issueType ?? null,
+        },
+        session.access_token,
+      );
     },
   });
 };
@@ -286,10 +357,22 @@ export const useDeleteIssue = () => {
       }
       await deleteIssue(workspaceId, issueId, session.access_token);
     },
-    onSuccess: (_, variables) => {
+    onSuccess: async (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issues", variables.workspaceId],
       });
+
+      if (!session?.access_token) {
+        return;
+      }
+
+      await broadcastIssueDeleted(
+        {
+          issueId: variables.issueId,
+          workspaceId: variables.workspaceId,
+        },
+        session.access_token,
+      );
     },
   });
 };
@@ -330,10 +413,25 @@ export const useCreateIssueStepRecord = () => {
         session.access_token,
       );
     },
-    onSuccess: (_, variables) => {
+    onSuccess: async (createdStepRecord, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issue-step-records", variables.issueId],
       });
+
+      if (!session?.access_token) {
+        return;
+      }
+
+      await broadcastIssueStepRecordCreated(
+        {
+          issueId: variables.issueId,
+          workspaceId: variables.workspaceId,
+          stepRecordId: createdStepRecord.id,
+          stepId: createdStepRecord.stepId,
+          assigneeId: createdStepRecord.assigneeId,
+        },
+        session.access_token,
+      );
     },
   });
 };
@@ -372,10 +470,25 @@ export const useCreateIssueActivity = () => {
         session.access_token
       );
     },
-    onSuccess: (_, variables) => {
+    onSuccess: async (createdActivity, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issue-activities", variables.issueId],
       });
+
+      if (!session?.access_token) {
+        return;
+      }
+
+      await broadcastIssueActivityCreated(
+        {
+          issueId: variables.issueId,
+          workspaceId: variables.workspaceId,
+          activityId: createdActivity.id,
+          actorId: createdActivity.actorId,
+          action: createdActivity.action,
+        },
+        session.access_token,
+      );
     },
   });
 };
