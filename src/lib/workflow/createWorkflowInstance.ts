@@ -1,4 +1,5 @@
 import { IssueStatus } from "@/types/prisma";
+import { getBackendBaseUrl } from "@/lib/backend-url";
 import { CreateWorkflowIssueDto } from "../fetchers/issue";
 import { WorkflowResponse } from "../fetchers/workflow";
 
@@ -74,11 +75,8 @@ export async function createWorkflowInstance(
     dueDate
   );
 
-  const API_BASE_URL =
-    process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
-
   return fetch(
-    `${API_BASE_URL}/workspaces/${issueData.workspaceId}/issues/workflow`,
+    `${getBackendBaseUrl()}/workspaces/${issueData.workspaceId}/issues/workflow`,
     {
       method: "POST",
       headers: {

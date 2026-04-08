@@ -1,3 +1,5 @@
+import { getBackendBaseUrl } from "@/lib/backend-url";
+
 export interface CreateCommentDto {
   content: string;
   issueId: string;
@@ -21,8 +23,7 @@ export interface Comment {
   };
 }
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
+const BACKEND_URL = getBackendBaseUrl();
 
 /**
  * 创建评论

@@ -26,6 +26,8 @@ type RealtimePayload =
   | IssueStepRecordCreatedPayload;
 
 function logBroadcastDebug(message: string, payload?: unknown) {
+  void message;
+  void payload;
   return;
 }
 
@@ -82,7 +84,9 @@ async function sendBroadcast(
       errorMessage = errorText || errorMessage;
     }
 
-  } catch (error) {
+    void errorMessage;
+
+  } catch {
     return;
   }
 }

@@ -1,3 +1,5 @@
+import { getBackendBaseUrl } from "@/lib/backend-url";
+
 // MARK: - ✅工作区
 export interface Workspace {
   id: string;
@@ -28,8 +30,7 @@ export interface Workspace {
   };
 }
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
+const API_BASE_URL = getBackendBaseUrl();
 
 /**
  * MARK: - ✅获取用户所有空间

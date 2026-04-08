@@ -1,7 +1,7 @@
 import { CreateWorkflowDto, UpdateWorkflowDto } from "@/api";
+import { getBackendBaseUrl } from "@/lib/backend-url";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
+const API_BASE_URL = getBackendBaseUrl();
 
 // MARK: - ✅工作流
 export interface WorkflowResponse {

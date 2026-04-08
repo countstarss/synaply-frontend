@@ -11,8 +11,9 @@ export interface Task {
   updatedAt: string;
 }
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
+import { getBackendBaseUrl } from "@/lib/backend-url";
+
+const API_BASE_URL = getBackendBaseUrl();
 
 // 获取某工作空间全部任务
 export const fetchTasksByWorkspace = async (

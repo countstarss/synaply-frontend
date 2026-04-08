@@ -6,9 +6,9 @@ import {
   IssueType,
   VisibilityType,
 } from "@/types/prisma";
+import { getBackendBaseUrl } from "@/lib/backend-url";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
+const API_BASE_URL = getBackendBaseUrl();
 
 // MARK: Issue
 export interface IssueStateSummary {

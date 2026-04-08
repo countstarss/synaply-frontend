@@ -26,6 +26,7 @@ import {
   broadcastIssueStepRecordCreated,
   broadcastIssueUpdated,
 } from "@/lib/realtime/broadcast";
+import { getBackendBaseUrl } from "@/lib/backend-url";
 import { IssueStatus, IssueType } from "@/types/prisma";
 
 function buildWorkflowIssuePatch(issue: Partial<CreateIssueDto>) {
@@ -189,9 +190,7 @@ export const useCreateWorkflowIssue = () => {
 
       // 获取工作流数据
       const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678"
-        }/workspaces/${workspaceId}/workflows/${workflowId}`,
+        `${getBackendBaseUrl()}/workspaces/${workspaceId}/workflows/${workflowId}`,
         {
           headers: {
             Authorization: `Bearer ${session.access_token}`,
