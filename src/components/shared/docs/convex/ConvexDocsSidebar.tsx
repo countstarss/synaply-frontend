@@ -18,7 +18,6 @@ import { useConvexDocs, ConvexDocument } from "./ConvexDocsContext";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
-import { useAuth } from "@/context/AuthContext";
 
 interface ConvexDocsSidebarProps {
   onSelectDoc: (doc: ConvexDocument) => void;
@@ -51,9 +50,8 @@ function TreeNode({
     updateDocTitle,
     openDoc,
     activeDocId,
+    userId,
   } = useConvexDocs();
-  const { session } = useAuth();
-  const accessToken = session?.access_token;
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(doc.title);
   const [showMenu, setShowMenu] = useState(false);
@@ -67,10 +65,10 @@ function TreeNode({
   const childDocs =
     useQuery(
       api.documents.getFolderChildren,
-      doc.type === "folder" && accessToken
+      doc.type === "folder"
         ? {
             folderId: doc._id,
-            accessToken,
+            userId,
           }
         : "skip"
     ) || [];

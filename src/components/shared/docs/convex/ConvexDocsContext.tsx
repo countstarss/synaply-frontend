@@ -5,7 +5,6 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import { Id } from "../../../../../convex/_generated/dataModel";
 import { useDocStore } from "@/stores/doc-store";
-import { useAuth } from "@/context/AuthContext";
 
 // 定义文档上下文类型
 export type DocumentContext =
@@ -103,19 +102,16 @@ export default function ConvexDocsProvider({
 }: ConvexDocsProviderProps) {
   const [openDocs, setOpenDocs] = useState<ConvexDocument[]>([]);
   const [docsRestored, setDocsRestored] = useState(false);
-  const { session } = useAuth();
-  const accessToken = session?.access_token;
-  const authenticatedUserId = session?.user?.id ?? userId;
 
   // 从 Zustand store 获取 activeDocId 和 setActiveDocId
   const activeDocId = useDocStore((state) => state.activeDocId);
   const setActiveDocId = useDocStore((state) => state.setActiveDocId);
 
   // 根据上下文获取不同的文档查询参数
-  const getQueryParams = (token: string) => {
+  const getQueryParams = () => {
     const baseParams = {
       workspaceId,
-      accessToken: token,
+      userId,
       workspaceType,
       context,
       parentDocument: undefined,
@@ -152,11 +148,8 @@ export default function ConvexDocsProvider({
   };
 
   // 获取文档树结构
-  const documentsResult = useQuery(
-    api.documents.getDocumentTree,
-    accessToken ? getQueryParams(accessToken) : "skip"
-  );
-  const documents = documentsResult || [];
+  const documents =
+    useQuery(api.documents.getDocumentTree, getQueryParams()) || [];
 
   // Convex mutations
   const createDocMutation = useMutation(api.documents.create);
@@ -168,15 +161,7 @@ export default function ConvexDocsProvider({
   const deleteDocMutation = useMutation(api.documents.remove);
   const recordAccessMutation = useMutation(api.documents.recordDocumentAccess);
 
-  const isLoading = !accessToken || documentsResult === undefined;
-
-  const getAccessTokenOrThrow = () => {
-    if (!accessToken) {
-      throw new Error("请先登录后再操作文档");
-    }
-
-    return accessToken;
-  };
+  const isLoading = documents === undefined;
 
   // 根据上下文获取文档的可见性设置
   const getDocumentVisibility = (): ConvexDocument["visibility"] => {
@@ -267,10 +252,10 @@ export default function ConvexDocsProvider({
     setActiveDocId(doc._id);
 
     // 记录文档访问
-    if (doc.type === "document" && accessToken) {
+    if (doc.type === "document") {
       recordAccessMutation({
         documentId: doc._id,
-        accessToken,
+        userId,
         accessType: "view",
         source: "direct",
       });
@@ -290,17 +275,13 @@ export default function ConvexDocsProvider({
     parentId?: string,
     docProjectId?: string
   ) => {
-    if (!accessToken) {
-      throw new Error("请先登录后再创建文档");
-    }
-
     const parentDocument = parentId ? (parentId as Id<"documents">) : undefined;
     const finalProjectId = docProjectId || projectId; // 优先使用传入的项目ID
 
     const docId = await createDocMutation({
       title,
       type: "document",
-      accessToken,
+      creatorId: userId,
       workspaceId,
       workspaceType,
       projectId: finalProjectId,
@@ -328,7 +309,7 @@ export default function ConvexDocsProvider({
           content: [],
         },
       ]),
-      creatorId: authenticatedUserId,
+      creatorId: userId,
       workspaceId,
       workspaceType,
       projectId: finalProjectId,
@@ -351,16 +332,12 @@ export default function ConvexDocsProvider({
     parentId?: string,
     docProjectId?: string
   ) => {
-    if (!accessToken) {
-      throw new Error("请先登录后再创建文件夹");
-    }
-
     const parentDocument = parentId ? (parentId as Id<"documents">) : undefined;
     const finalProjectId = docProjectId || projectId; // 优先使用传入的项目ID
 
     await createFolderMutation({
       title,
-      accessToken,
+      creatorId: userId,
       workspaceId,
       workspaceType,
       projectId: finalProjectId,
@@ -374,7 +351,7 @@ export default function ConvexDocsProvider({
   const deleteDoc = async (docId: string) => {
     await deleteDocMutation({
       id: docId as Id<"documents">,
-      accessToken: getAccessTokenOrThrow(),
+      userId,
     });
     closeDoc(docId);
   };
@@ -382,7 +359,7 @@ export default function ConvexDocsProvider({
   const updateDocTitle = async (docId: string, title: string) => {
     await updateDocMutation({
       id: docId as Id<"documents">,
-      accessToken: getAccessTokenOrThrow(),
+      userId,
       title,
     });
   };
@@ -390,7 +367,7 @@ export default function ConvexDocsProvider({
   const updateDocContent = async (docId: string, content: string) => {
     await updateDocMutation({
       id: docId as Id<"documents">,
-      accessToken: getAccessTokenOrThrow(),
+      userId,
       content,
     });
   };
@@ -401,7 +378,7 @@ export default function ConvexDocsProvider({
   ) => {
     await updateFolderDescMutation({
       id: docId as Id<"documents">,
-      accessToken: getAccessTokenOrThrow(),
+      userId,
       description,
     });
   };
@@ -422,7 +399,7 @@ export default function ConvexDocsProvider({
         updateFolderDescription,
         workspaceId,
         workspaceType,
-        userId: authenticatedUserId,
+        userId,
         context,
         projectId,
         isLoading,
