@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useParams } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Loader2, Save, Trash2, Upload } from "lucide-react";
+import { Loader2, Save, Shield, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import {
   Avatar,
@@ -23,18 +24,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/context/AuthContext";
-import {
-  fetchCurrentUser,
-  getUserNameFallback,
-  updateCurrentUser,
-  type UserInfo,
-} from "@/lib/fetchers/user";
+import { useTeamById, useUpdateTeam } from "@/hooks/useTeam";
 import {
   createClientComponentClient,
   SUPABASE_AVATAR_BUCKET,
 } from "@/lib/supabase";
+import type { Team } from "@/lib/fetchers/team";
 
-const CURRENT_USER_QUERY_KEY = ["current-user-profile"] as const;
 const MAX_AVATAR_SIZE_BYTES = 3 * 1024 * 1024;
 const ACCEPTED_AVATAR_TYPES = new Set([
   "image/jpeg",
@@ -42,20 +38,22 @@ const ACCEPTED_AVATAR_TYPES = new Set([
   "image/webp",
 ]);
 
-const getInitials = (profile?: Pick<UserInfo, "name" | "email"> | null) => {
-  const nameSource = profile?.name?.trim();
-  const emailSource = profile?.email ? getUserNameFallback(profile.email) : "U";
-  const firstCharacter = (nameSource || emailSource).charAt(0);
-  return firstCharacter ? firstCharacter.toUpperCase() : "U";
+const getInitials = (team?: Pick<Team, "name"> | null) => {
+  const source = team?.name?.trim() || "T";
+  return source.charAt(0).toUpperCase();
 };
 
-interface UploadedAvatarState {
+interface UploadedTeamAvatarState {
   fileName: string;
   path: string;
   url: string;
 }
 
-const createAvatarPath = (userId: string, fileName: string) => {
+const createTeamAvatarPath = (
+  userId: string,
+  teamId: string,
+  fileName: string,
+) => {
   const normalizedFileName = fileName
     .trim()
     .toLowerCase()
@@ -68,7 +66,7 @@ const createAvatarPath = (userId: string, fileName: string) => {
       ? crypto.randomUUID()
       : `${Date.now()}`;
 
-  return `${userId}/${uniqueId}-${safeFileName}`;
+  return `${userId}/teams/${teamId}/${uniqueId}-${safeFileName}`;
 };
 
 const getStoragePathFromUrl = (avatarUrl: string | null) => {
@@ -87,66 +85,58 @@ const getStoragePathFromUrl = (avatarUrl: string | null) => {
   return decodeURIComponent(cleanUrl.slice(markerIndex + bucketMarker.length));
 };
 
-const resolveProfileErrorMessage = (error: unknown) => {
+const resolveTeamErrorMessage = (error: unknown) => {
   if (!(error instanceof Error)) {
-    return "更新资料失败";
+    return "更新团队资料失败";
   }
 
   if (error.message.includes("Bucket not found")) {
-    return "头像存储桶不存在，请先执行 Supabase migration，或在 Storage 中创建 avatars bucket。";
+    return "头像存储桶不存在，请先在 Supabase Storage 中创建 avatars bucket。";
   }
 
   if (error.message.includes("row-level security policy")) {
-    return "头像上传被 Storage 的权限策略拦截了。请确认当前用户已登录，并使用最新代码重新上传。";
+    return "团队头像上传被 Storage 权限策略拦截了。我已经把上传路径改成兼容当前策略的格式，刷新页面后再试一次。";
   }
 
   return error.message;
 };
 
-export default function ProfileSettingsPage() {
+export default function TeamSettingsPage() {
+  const params = useParams<{ teamId: string }>();
+  const teamId = Array.isArray(params.teamId) ? params.teamId[0] : params.teamId;
   const { session, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const supabase = React.useMemo(() => createClientComponentClient(), []);
-  const initializedUserIdRef = React.useRef<string | null>(null);
+  const initializedTeamIdRef = React.useRef<string | null>(null);
 
-  const [displayName, setDisplayName] = React.useState("");
-  const [savedDisplayName, setSavedDisplayName] = React.useState("");
+  const [teamName, setTeamName] = React.useState("");
+  const [savedTeamName, setSavedTeamName] = React.useState("");
   const [storedAvatarUrl, setStoredAvatarUrl] = React.useState<string | null>(
     null,
   );
   const [pendingUploadedAvatar, setPendingUploadedAvatar] =
-    React.useState<UploadedAvatarState | null>(null);
+    React.useState<UploadedTeamAvatarState | null>(null);
   const [avatarMarkedForRemoval, setAvatarMarkedForRemoval] =
     React.useState(false);
 
-  const profileQuery = useQuery({
-    queryKey: [...CURRENT_USER_QUERY_KEY, session?.user?.id],
-    queryFn: async () => {
-      if (!session?.access_token) {
-        throw new Error("登录状态已过期，请重新登录后再试");
-      }
-
-      return fetchCurrentUser(session.access_token);
-    },
-    enabled: !!session?.access_token,
-    staleTime: 60 * 1000,
-  });
+  const teamQuery = useTeamById(teamId);
+  const updateTeamMutation = useUpdateTeam(teamId);
 
   React.useEffect(() => {
-    const profile = profileQuery.data;
+    const team = teamQuery.data;
 
-    if (!profile?.id || initializedUserIdRef.current === profile.id) {
+    if (!team?.id || initializedTeamIdRef.current === team.id) {
       return;
     }
 
-    initializedUserIdRef.current = profile.id;
-    setDisplayName(profile.name ?? "");
-    setSavedDisplayName(profile.name ?? "");
-    setStoredAvatarUrl(profile.avatarUrl ?? null);
+    initializedTeamIdRef.current = team.id;
+    setTeamName(team.name);
+    setSavedTeamName(team.name);
+    setStoredAvatarUrl(team.avatarUrl ?? null);
     setPendingUploadedAvatar(null);
     setAvatarMarkedForRemoval(false);
-  }, [profileQuery.data]);
+  }, [teamQuery.data]);
 
   const uploadAvatarMutation = useMutation({
     onMutate: (file: File) => {
@@ -154,7 +144,7 @@ export default function ProfileSettingsPage() {
       return { toastId };
     },
     mutationFn: async (file: File) => {
-      if (!session?.user?.id) {
+      if (!session?.user?.id || !teamId) {
         throw new Error("登录状态已失效，请重新登录");
       }
 
@@ -164,11 +154,11 @@ export default function ProfileSettingsPage() {
           .remove([pendingUploadedAvatar.path]);
 
         if (cleanupError) {
-          console.warn("清理未保存头像失败:", cleanupError);
+          console.warn("清理未保存团队头像失败:", cleanupError);
         }
       }
 
-      const nextPath = createAvatarPath(session.user.id, file.name);
+      const nextPath = createTeamAvatarPath(session.user.id, teamId, file.name);
       const { error: uploadError } = await supabase.storage
         .from(SUPABASE_AVATAR_BUCKET)
         .upload(nextPath, file, {
@@ -177,7 +167,7 @@ export default function ProfileSettingsPage() {
         });
 
       if (uploadError) {
-        throw new Error(uploadError.message || "头像上传失败");
+        throw new Error(uploadError.message || "团队头像上传失败");
       }
 
       const { data: publicUrlData } = supabase.storage
@@ -188,19 +178,17 @@ export default function ProfileSettingsPage() {
         fileName: file.name,
         path: nextPath,
         url: `${publicUrlData.publicUrl}?v=${Date.now()}`,
-      } satisfies UploadedAvatarState;
+      } satisfies UploadedTeamAvatarState;
     },
     onSuccess: (uploadedAvatar, _file, context) => {
       setPendingUploadedAvatar(uploadedAvatar);
       setAvatarMarkedForRemoval(false);
-      toast.success("头像上传成功，点击“保存更改”以应用到个人资料", {
+      toast.success("团队头像上传成功，点击“保存更改”后生效", {
         id: context?.toastId,
       });
     },
     onError: (error, _file, context) => {
-      toast.error(resolveProfileErrorMessage(error), {
-        id: context?.toastId,
-      });
+      toast.error(resolveTeamErrorMessage(error), { id: context?.toastId });
     },
   });
 
@@ -214,12 +202,12 @@ export default function ProfileSettingsPage() {
       }
 
       if (!ACCEPTED_AVATAR_TYPES.has(file.type)) {
-        toast.error("头像仅支持 JPG、PNG 或 WebP 格式");
+        toast.error("团队头像仅支持 JPG、PNG 或 WebP 格式");
         return;
       }
 
       if (file.size > MAX_AVATAR_SIZE_BYTES) {
-        toast.error("头像大小不能超过 3MB");
+        toast.error("团队头像大小不能超过 3MB");
         return;
       }
 
@@ -228,94 +216,8 @@ export default function ProfileSettingsPage() {
     [uploadAvatarMutation],
   );
 
-  const currentProfile = profileQuery.data;
-  const normalizedDisplayName = displayName.trim();
-  const hasAvatarChange = avatarMarkedForRemoval || !!pendingUploadedAvatar;
-  const isDirty =
-    normalizedDisplayName !== savedDisplayName.trim() || hasAvatarChange;
-  const resolvedAvatarUrl = avatarMarkedForRemoval
-    ? null
-    : pendingUploadedAvatar?.url ?? storedAvatarUrl ?? null;
-
-  const updateProfileMutation = useMutation({
-    onMutate: () => {
-      const toastId = toast.loading(
-        avatarMarkedForRemoval
-          ? "正在移除头像并保存资料..."
-          : "正在保存资料...",
-      );
-
-      return { toastId };
-    },
-    mutationFn: async () => {
-      if (!session?.access_token || !session.user?.id) {
-        throw new Error("登录状态已失效，请重新登录");
-      }
-
-      const normalizedName = normalizedDisplayName || null;
-      const nextAvatarUrl = avatarMarkedForRemoval
-        ? null
-        : pendingUploadedAvatar?.url ?? storedAvatarUrl;
-
-      const { error: authUpdateError } = await supabase.auth.updateUser({
-        data: {
-          full_name: normalizedName,
-          name: normalizedName,
-          avatar_url: nextAvatarUrl,
-        },
-      });
-
-      if (authUpdateError) {
-        throw new Error(authUpdateError.message || "同步登录资料失败");
-      }
-
-      return updateCurrentUser(session.access_token, {
-        name: normalizedName,
-        avatarUrl: nextAvatarUrl,
-      });
-    },
-    onSuccess: (updatedProfile, _variables, context) => {
-      const previousStoredAvatarPath = getStoragePathFromUrl(storedAvatarUrl);
-      const nextAvatarPath = pendingUploadedAvatar?.path ?? null;
-
-      queryClient.setQueryData(
-        [...CURRENT_USER_QUERY_KEY, session?.user?.id],
-        updatedProfile,
-      );
-      queryClient.invalidateQueries({
-        queryKey: ["user", session?.user?.id],
-      });
-
-      setDisplayName(updatedProfile.name ?? "");
-      setSavedDisplayName(updatedProfile.name ?? "");
-      setStoredAvatarUrl(updatedProfile.avatarUrl ?? null);
-      setPendingUploadedAvatar(null);
-      setAvatarMarkedForRemoval(false);
-
-      if (
-        previousStoredAvatarPath &&
-        ((avatarMarkedForRemoval && previousStoredAvatarPath) ||
-          (nextAvatarPath && previousStoredAvatarPath !== nextAvatarPath))
-      ) {
-        void supabase.storage
-          .from(SUPABASE_AVATAR_BUCKET)
-          .remove([previousStoredAvatarPath])
-          .then(({ error }) => {
-            if (error) {
-              console.warn("清理旧头像失败:", error);
-            }
-          });
-      }
-
-      toast.success("资料保存成功", { id: context?.toastId });
-    },
-    onError: (error, _variables, context) => {
-      toast.error(resolveProfileErrorMessage(error), { id: context?.toastId });
-    },
-  });
-
   const handleRemoveAvatar = React.useCallback(() => {
-    if (uploadAvatarMutation.isPending || updateProfileMutation.isPending) {
+    if (uploadAvatarMutation.isPending || updateTeamMutation.isPending) {
       return;
     }
 
@@ -325,7 +227,7 @@ export default function ProfileSettingsPage() {
         .remove([pendingUploadedAvatar.path])
         .then(({ error }) => {
           if (error) {
-            console.warn("清理未保存头像失败:", error);
+            console.warn("清理未保存团队头像失败:", error);
           }
         });
 
@@ -352,19 +254,107 @@ export default function ProfileSettingsPage() {
     pendingUploadedAvatar,
     storedAvatarUrl,
     supabase.storage,
-    updateProfileMutation.isPending,
+    updateTeamMutation.isPending,
     uploadAvatarMutation.isPending,
   ]);
 
-  const isAvatarOperationPending =
-    uploadAvatarMutation.isPending || (updateProfileMutation.isPending && hasAvatarChange);
-  const avatarStatusMessage = uploadAvatarMutation.isPending
-    ? "头像上传中，请稍候..."
-    : pendingUploadedAvatar
-      ? `头像 ${pendingUploadedAvatar.fileName} 已上传，点击“保存更改”后生效。`
-    : avatarMarkedForRemoval
-      ? "已标记移除头像，保存后生效。"
-      : "选择图片后会立即上传；上传成功后，再点击“保存更改”应用到个人资料。";
+  const currentTeam = teamQuery.data;
+  const currentMember = currentTeam?.members.find(
+    (member) => member.user.id === session?.user?.id,
+  );
+  const canManageTeam =
+    currentMember?.role === "OWNER" || currentMember?.role === "ADMIN";
+  const normalizedTeamName = teamName.trim();
+  const teamPageTitle = normalizedTeamName || currentTeam?.name || "未命名团队";
+  const hasAvatarChange = avatarMarkedForRemoval || !!pendingUploadedAvatar;
+  const isDirty =
+    normalizedTeamName !== savedTeamName.trim() || hasAvatarChange;
+  const resolvedAvatarUrl = avatarMarkedForRemoval
+    ? null
+    : pendingUploadedAvatar?.url ?? storedAvatarUrl ?? null;
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!canManageTeam) {
+      toast.error("只有 team owner 或 admin 可以修改团队资料");
+      return;
+    }
+
+    if (!normalizedTeamName) {
+      toast.error("请输入团队名称");
+      return;
+    }
+
+    if (!session?.access_token || !teamId) {
+      toast.error("登录状态已失效，请重新登录");
+      return;
+    }
+
+    if (uploadAvatarMutation.isPending) {
+      toast.error("头像仍在上传中，请稍候再保存");
+      return;
+    }
+
+    const toastId = toast.loading(
+      avatarMarkedForRemoval
+        ? "正在移除团队头像并保存资料..."
+        : "正在保存团队资料...",
+    );
+
+    try {
+      const nextAvatarUrl = avatarMarkedForRemoval
+        ? null
+        : pendingUploadedAvatar?.url ?? storedAvatarUrl;
+
+      const updatedTeam = await updateTeamMutation.mutateAsync({
+        name: normalizedTeamName,
+        avatarUrl: nextAvatarUrl,
+      });
+
+      const previousStoredAvatarPath = getStoragePathFromUrl(storedAvatarUrl);
+      const nextAvatarPath = pendingUploadedAvatar?.path ?? null;
+
+      queryClient.setQueryData(["team", teamId], updatedTeam);
+      setTeamName(updatedTeam.name);
+      setSavedTeamName(updatedTeam.name);
+      setStoredAvatarUrl(updatedTeam.avatarUrl ?? null);
+      setPendingUploadedAvatar(null);
+      setAvatarMarkedForRemoval(false);
+
+      if (
+        previousStoredAvatarPath &&
+        ((avatarMarkedForRemoval && previousStoredAvatarPath) ||
+          (nextAvatarPath && previousStoredAvatarPath !== nextAvatarPath))
+      ) {
+        void supabase.storage
+          .from(SUPABASE_AVATAR_BUCKET)
+          .remove([previousStoredAvatarPath])
+          .then(({ error }) => {
+            if (error) {
+              console.warn("清理旧团队头像失败:", error);
+            }
+          });
+      }
+
+      toast.success("团队资料已更新", { id: toastId });
+    } catch (error) {
+      toast.error(resolveTeamErrorMessage(error), { id: toastId });
+    }
+  };
+
+  if (!teamId) {
+    return (
+      <div className="p-0">
+        <Card className="border-none">
+          <CardHeader>
+            <CardTitle>团队不存在</CardTitle>
+            <CardDescription>缺少 teamId，无法加载团队资料。</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   if (!session && !authLoading) {
     return (
@@ -373,7 +363,7 @@ export default function ProfileSettingsPage() {
           <CardHeader>
             <CardTitle>需要先登录</CardTitle>
             <CardDescription>
-              登录后才能上传头像并修改你的个人资料。
+              登录后才能查看并管理团队资料。
             </CardDescription>
           </CardHeader>
         </Card>
@@ -381,27 +371,27 @@ export default function ProfileSettingsPage() {
     );
   }
 
-  if (authLoading || profileQuery.isLoading) {
+  if (authLoading || teamQuery.isLoading) {
     return (
       <div className="p-0">
         <Card className="border-none">
           <CardContent className="flex items-center gap-3 py-8 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
-            正在加载个人资料...
+            正在加载团队资料...
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  if (profileQuery.error) {
+  if (teamQuery.error || !currentTeam) {
     return (
       <div className="p-0">
         <Card className="border-none">
           <CardHeader>
             <CardTitle>加载失败</CardTitle>
             <CardDescription>
-              {(profileQuery.error as Error).message || "暂时无法读取个人资料"}
+              {(teamQuery.error as Error)?.message || "暂时无法读取团队资料"}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -409,49 +399,55 @@ export default function ProfileSettingsPage() {
     );
   }
 
+  const isAvatarOperationPending =
+    uploadAvatarMutation.isPending || (updateTeamMutation.isPending && hasAvatarChange);
+  const avatarStatusMessage = uploadAvatarMutation.isPending
+    ? "团队头像上传中，请稍候..."
+    : pendingUploadedAvatar
+      ? `团队头像 ${pendingUploadedAvatar.fileName} 已上传，点击“保存更改”后生效。`
+    : avatarMarkedForRemoval
+      ? "已标记移除头像，保存后生效。"
+      : "选择图片后会立即上传；上传成功后，再点击“保存更改”应用到团队资料。";
+
   return (
     <div className="space-y-6 p-4">
-      <Card className="overflow-hidden border-none bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.22),_transparent_42%),linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(30,41,59,0.88))] text-slate-50">
+      <Card className="overflow-hidden border-none bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_42%),linear-gradient(135deg,_rgba(10,37,64,0.96),_rgba(15,118,110,0.88))] text-white">
         <CardHeader className="gap-3">
           <CardTitle className="text-2xl font-semibold tracking-tight">
-            个人资料
+            {teamPageTitle}
           </CardTitle>
-          <CardDescription className="max-w-2xl text-slate-300">
-            这里管理会在 Synaply 内展示的基础账号信息。头像会上传到
-            Supabase Storage，并同步到当前登录账户的资料元数据里。
+          <CardDescription className="max-w-2xl text-emerald-50/80">
+            当前团队的资料与身份信息会显示在这里。只有 team owner 和 admin 可以修改团队名称和头像。
           </CardDescription>
         </CardHeader>
       </Card>
 
-      <form
-        className="space-y-6"
-        onSubmit={(event) => {
-          event.preventDefault();
+      {!canManageTeam && (
+        <Card className="border-none">
+          <CardContent className="flex items-start gap-3 py-5 text-sm text-muted-foreground">
+            <Shield className="mt-0.5 size-4 shrink-0" />
+            <div>
+              你当前是 <span className="font-medium text-foreground">{currentMember?.role ?? "MEMBER"}</span>
+              ，可以查看团队资料，但只有 owner/admin 才能保存更改。
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-          if (
-            !isDirty ||
-            uploadAvatarMutation.isPending ||
-            updateProfileMutation.isPending
-          ) {
-            return;
-          }
-
-          updateProfileMutation.mutate();
-        }}
-      >
+      <form className="space-y-6" onSubmit={handleSubmit}>
         <Card className="border-none">
           <CardHeader>
-            <CardTitle>头像</CardTitle>
+            <CardTitle>团队头像</CardTitle>
             <CardDescription>
-              上传一张清晰的头像，团队成员会在评论、聊天和协作视图里看到它。
+              团队头像会用于工作空间切换、设置页和团队相关的协作视图展示。
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-6 md:grid-cols-[auto,1fr] md:items-center pb-6">
+          <CardContent className="grid gap-6 pb-6 md:grid-cols-[auto,1fr] md:items-center">
             <div className="relative">
               <Avatar className="size-24 border border-border/70 shadow-sm">
-                <AvatarImage src={resolvedAvatarUrl ?? undefined} alt="个人头像" />
+                <AvatarImage src={resolvedAvatarUrl ?? undefined} alt={currentTeam.name} />
                 <AvatarFallback className="text-lg font-semibold">
-                  {getInitials(currentProfile)}
+                  {getInitials(currentTeam)}
                 </AvatarFallback>
               </Avatar>
               {isAvatarOperationPending && (
@@ -464,7 +460,7 @@ export default function ProfileSettingsPage() {
             <div className="space-y-4">
               <div className="space-y-1">
                 <div className="text-sm font-medium text-foreground">
-                  建议使用正方形图片
+                  建议使用清晰的品牌或团队标识
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {avatarStatusMessage}
@@ -483,7 +479,11 @@ export default function ProfileSettingsPage() {
                   type="button"
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadAvatarMutation.isPending || updateProfileMutation.isPending}
+                  disabled={
+                    uploadAvatarMutation.isPending ||
+                    updateTeamMutation.isPending ||
+                    !canManageTeam
+                  }
                 >
                   {uploadAvatarMutation.isPending ? (
                     <Loader2 className="size-4 animate-spin" />
@@ -498,7 +498,8 @@ export default function ProfileSettingsPage() {
                   onClick={handleRemoveAvatar}
                   disabled={
                     uploadAvatarMutation.isPending ||
-                    updateProfileMutation.isPending ||
+                    updateTeamMutation.isPending ||
+                    !canManageTeam ||
                     (!storedAvatarUrl &&
                       !pendingUploadedAvatar &&
                       !avatarMarkedForRemoval)
@@ -520,68 +521,73 @@ export default function ProfileSettingsPage() {
           <CardHeader>
             <CardTitle>基础信息</CardTitle>
             <CardDescription>
-              目前可修改展示名称，邮箱作为登录标识暂时保持只读。
+              团队名称可以随时调整，创建时间和成员数量用于只读展示。
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="display-name">显示名称</Label>
+              <Label htmlFor="team-name">团队名称</Label>
               <Input
-                id="display-name"
-                value={displayName}
-                onChange={(event) => setDisplayName(event.target.value)}
-                maxLength={80}
-                placeholder="给自己起个在团队里更容易识别的名字"
-                disabled={updateProfileMutation.isPending}
+                id="team-name"
+                value={teamName}
+                onChange={(event) => setTeamName(event.target.value)}
+                maxLength={100}
+                placeholder="输入团队名称"
+                disabled={updateTeamMutation.isPending || !canManageTeam}
               />
             </div>
 
             <Separator />
 
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-5 md:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor="email">登录邮箱</Label>
+                <Label htmlFor="team-created-at">创建时间</Label>
                 <Input
-                  id="email"
-                  value={currentProfile?.email ?? session?.user?.email ?? ""}
+                  id="team-created-at"
+                  value={format(new Date(currentTeam.createdAt), "yyyy-MM-dd HH:mm")}
                   readOnly
                   disabled
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="created-at">注册时间</Label>
+                <Label htmlFor="team-members-count">成员数量</Label>
                 <Input
-                  id="created-at"
-                  value={
-                    currentProfile?.createdAt
-                      ? format(
-                          new Date(currentProfile.createdAt),
-                          "yyyy-MM-dd HH:mm",
-                        )
-                      : "-"
-                  }
+                  id="team-members-count"
+                  value={`${currentTeam.members.length}`}
+                  readOnly
+                  disabled
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="team-role">你的角色</Label>
+                <Input
+                  id="team-role"
+                  value={currentMember?.role || "MEMBER"}
                   readOnly
                   disabled
                 />
               </div>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between p-6">
+          <CardFooter className="flex flex-col items-start gap-3 p-6 md:flex-row md:items-center md:justify-between">
             <div className="text-sm text-muted-foreground">
-              {isDirty
-                ? "你有尚未保存的更改。"
-                : "资料已是最新状态。"}
+              {!canManageTeam
+                ? "当前账号只有查看权限。"
+                : isDirty
+                  ? "你有尚未保存的团队资料更改。"
+                  : "团队资料已是最新状态。"}
             </div>
 
             <Button
               type="submit"
               disabled={
+                !canManageTeam ||
                 !isDirty ||
                 uploadAvatarMutation.isPending ||
-                updateProfileMutation.isPending
+                updateTeamMutation.isPending
               }
             >
-              {updateProfileMutation.isPending ? (
+              {updateTeamMutation.isPending ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
                 <Save className="size-4" />

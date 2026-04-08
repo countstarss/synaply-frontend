@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,9 +18,13 @@ import {
   personalItems,
   personalNavItems,
 } from "@/lib/data/constant";
-import { settingMockData } from "@/lib/data/settingData";
+import { buildSettingsSections } from "@/lib/data/settingData";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useTeam } from "@/hooks/useTeam";
+import { CreateTeamDialog } from "@/components/dialogs/CreateTeamDialog";
+import { useWorkspaceStore } from "@/stores/workspace";
+import type { Team } from "@/lib/fetchers/team";
 
 interface SidebarProps {
   className?: string;
@@ -31,6 +35,9 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
   const { mode, switchToMain } = useSidebarMode();
   const router = useRouter();
   const { currentWorkspace } = useWorkspace();
+  const { teams = [] } = useTeam();
+  const { setCurrentWorkspaceId } = useWorkspaceStore();
+  const [isCreateTeamDialogOpen, setIsCreateTeamDialogOpen] = useState(false);
   const readyMainNavItems = getReadyNavItems(mainNavItems);
   const readyPersonalNavItems = getReadyNavItems(personalNavItems);
 
@@ -38,6 +45,27 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
     router.push("/inbox");
     switchToMain();
   }, [router, switchToMain]);
+
+  const handleOpenCreateTeamDialog = useCallback(() => {
+    setIsCreateTeamDialogOpen(true);
+  }, []);
+
+  const handleTeamCreated = useCallback(
+    async (team: Team) => {
+      if (team.workspace?.id) {
+        setCurrentWorkspaceId(team.workspace.id);
+        localStorage.setItem("currentWorkspaceId", team.workspace.id);
+      }
+
+      router.push(`/settings/team/${team.id}`);
+    },
+    [router, setCurrentWorkspaceId],
+  );
+
+  const settingSections = useMemo(
+    () => buildSettingsSections(teams, handleOpenCreateTeamDialog),
+    [handleOpenCreateTeamDialog, teams],
+  );
 
   return (
     <ContextMenuWrapper>
@@ -131,7 +159,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
 
               {/* 设置分组 */}
               <div className="py-2 px-2">
-                {settingMockData.map((section) => (
+                {settingSections.map((section) => (
                   <SettingSection key={section.id} section={section} />
                 ))}
               </div>
@@ -141,6 +169,12 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
 
         {/* 底部品牌信息 - 始终显示 */}
         <SidebarFooter />
+
+        <CreateTeamDialog
+          open={isCreateTeamDialogOpen}
+          onOpenChange={setIsCreateTeamDialogOpen}
+          onCreated={handleTeamCreated}
+        />
       </div>
     </ContextMenuWrapper>
   );

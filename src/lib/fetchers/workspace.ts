@@ -13,13 +13,17 @@ export interface Workspace {
   user?: {
     id: string;
     email: string;
+    name?: string | null;
+    avatarUrl?: string | null;
   };
   team?: {
     id: string;
     name: string;
+    avatarUrl?: string | null;
     members: Array<{
       id: string;
       role: string;
+      userId: string;
     }>;
   };
 }

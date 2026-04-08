@@ -11,6 +11,7 @@ import {
   Plus,
   type LucideIcon,
 } from "lucide-react";
+import type { Team } from "@/lib/fetchers/team";
 
 export interface SettingItem {
   id: string;
@@ -26,7 +27,7 @@ export interface SettingSection {
   items: SettingItem[];
 }
 
-export const settingMockData: SettingSection[] = [
+export const baseSettingSections: SettingSection[] = [
   {
     id: "general",
     title: "General",
@@ -93,27 +94,28 @@ export const settingMockData: SettingSection[] = [
       },
     ],
   },
+];
+
+export const buildSettingsSections = (
+  teams: Team[] = [],
+  onCreateTeam?: () => void,
+): SettingSection[] => [
+  ...baseSettingSections,
   {
     id: "team",
     title: "Team",
     items: [
-      {
-        id: "insightlab",
-        label: "InsightLab",
+      ...teams.map((team) => ({
+        id: team.id,
+        label: team.name,
         icon: Building2,
-        href: "/settings/team/insightlab",
-      },
-      {
-        id: "wizlab",
-        label: "wiz lab",
-        icon: Building2,
-        href: "/settings/team/wizlab",
-      },
+        href: `/settings/team/${team.id}`,
+      })),
       {
         id: "create-team",
         label: "Create new team",
         icon: Plus,
-        action: () => console.log("创建新团队"),
+        action: onCreateTeam,
       },
     ],
   },

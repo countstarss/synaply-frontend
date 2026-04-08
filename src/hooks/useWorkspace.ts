@@ -42,11 +42,18 @@ export function useWorkspace() {
   const workspaces: Workspace[] = (apiWorkspaces || []).map(
     (workspace: APIWorkspace) => ({
       id: workspace.id,
-      name: workspace.name,
+      name:
+        workspace.type === "TEAM"
+          ? workspace.team?.name || workspace.name
+          : workspace.name,
       type: workspace.type,
-      memberCount: workspace.team?.members?.length || 1,
+      memberCount:
+        workspace.type === "TEAM" ? workspace.team?.members?.length || 1 : 1,
       isActive: workspace.id === currentWorkspaceId,
-      avatarUrl: undefined,
+      avatarUrl:
+        workspace.type === "TEAM"
+          ? workspace.team?.avatarUrl || undefined
+          : workspace.user?.avatarUrl || undefined,
       teamId: workspace.teamId,
       userId: workspace.userId,
     })

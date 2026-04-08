@@ -1,31 +1,101 @@
-import { CreateTeamDto, InviteMemberDto } from "@/api";
+import { InviteMemberDto } from "@/api";
+
+export interface CreateTeamPayload {
+  name: string;
+}
+
+export interface UpdateTeamPayload {
+  name?: string | null;
+  avatarUrl?: string | null;
+}
 
 // MARK: - ✅团队
 export interface Team {
   id: string;
   name: string;
+  avatarUrl: string | null;
   createdAt: string;
   updatedAt: string;
-  workspace: {
+  workspace?: {
     id: string;
     name: string;
     type: string;
-    user_id: string;
-    team_id: string;
+    userId?: string | null;
+    teamId?: string | null;
   };
-  members: Array<{
+  members: TeamMember[];
+}
+
+export interface TeamMember {
+  id: string;
+  teamId: string;
+  userId: string;
+  role: "OWNER" | "ADMIN" | "MEMBER";
+  user: {
     id: string;
-    role: string;
-    user: {
-      id: string;
-      email: string;
-      user_id: string;
-    };
-  }>;
+    name?: string;
+    email: string;
+    avatarUrl?: string;
+    avatar_url?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_DEV_URL || "http://localhost:5678";
+
+const getErrorMessage = async (
+  response: Response,
+  fallbackMessage: string,
+): Promise<string> => {
+  const rawText = await response.text();
+
+  if (!rawText) {
+    return fallbackMessage;
+  }
+
+  try {
+    const parsed = JSON.parse(rawText) as {
+      message?: string | string[];
+      error?: string;
+    };
+
+    if (Array.isArray(parsed.message)) {
+      return parsed.message.join(", ");
+    }
+
+    if (typeof parsed.message === "string") {
+      return parsed.message;
+    }
+
+    if (typeof parsed.error === "string") {
+      return parsed.error;
+    }
+  } catch {
+    return rawText;
+  }
+
+  return fallbackMessage;
+};
+
+const normalizeTeamMember = (member: TeamMember): TeamMember => ({
+  ...member,
+  user: {
+    ...member.user,
+    name: member.user.name ?? undefined,
+    avatarUrl: member.user.avatarUrl ?? member.user.avatar_url ?? undefined,
+    avatar_url: member.user.avatar_url ?? member.user.avatarUrl ?? undefined,
+  },
+});
+
+const normalizeTeam = (team: Team): Team => ({
+  ...team,
+  avatarUrl: team.avatarUrl ?? null,
+  members: Array.isArray(team.members)
+    ? team.members.map(normalizeTeamMember)
+    : [],
+});
 
 /**
  * MARK: - ✅获取用户团队
@@ -40,17 +110,18 @@ export const fetchUserTeams = async (token: string): Promise<Team[]> => {
   });
 
   if (!response.ok) {
-    throw new Error("获取团队列表失败");
+    throw new Error(await getErrorMessage(response, "获取团队列表失败"));
   }
 
-  return response.json();
+  const teams = (await response.json()) as Team[];
+  return teams.map(normalizeTeam);
 };
 
 /**
  * MARK: - ✅创建新团队
  */
 export const createTeam = async (
-  data: CreateTeamDto,
+  data: CreateTeamPayload,
   token: string
 ): Promise<Team> => {
   const response = await fetch(`${API_BASE_URL}/teams`, {
@@ -63,10 +134,34 @@ export const createTeam = async (
   });
 
   if (!response.ok) {
-    throw new Error("创建团队失败");
+    throw new Error(await getErrorMessage(response, "创建团队失败"));
   }
 
-  return response.json();
+  return normalizeTeam((await response.json()) as Team);
+};
+
+/**
+ * MARK: - ✅更新团队资料
+ */
+export const updateTeam = async (
+  teamId: string,
+  data: UpdateTeamPayload,
+  token: string
+): Promise<Team> => {
+  const response = await fetch(`${API_BASE_URL}/teams/${teamId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    throw new Error(await getErrorMessage(response, "更新团队资料失败"));
+  }
+
+  return normalizeTeam((await response.json()) as Team);
 };
 
 /**
@@ -88,28 +183,11 @@ export const inviteTeamMember = async (
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.message || "邀请成员失败");
+    throw new Error(await getErrorMessage(response, "邀请成员失败"));
   }
 
   return response.json();
 };
-
-// 团队成员相关接口
-export interface TeamMember {
-  id: string;
-  teamId: string;
-  userId: string;
-  role: "OWNER" | "ADMIN" | "MEMBER";
-  user: {
-    id: string;
-    name?: string;
-    email: string;
-    avatar_url?: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
 
 /**
  * MARK: - ✅获取团队成员
@@ -127,10 +205,11 @@ export const fetchTeamMembers = async (
   });
 
   if (!response.ok) {
-    throw new Error(response.statusText);
+    throw new Error(await getErrorMessage(response, "获取团队成员失败"));
   }
 
-  return response.json();
+  const members = (await response.json()) as TeamMember[];
+  return members.map(normalizeTeamMember);
 };
 
 /**
@@ -153,11 +232,10 @@ export const fetchTeamMemberByUserId = async (
   }
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.message || "获取默认成员失败");
+    throw new Error(await getErrorMessage(response, "获取默认成员失败"));
   }
 
-  return response.json();
+  return normalizeTeamMember((await response.json()) as TeamMember);
 };
 
 /**
@@ -182,11 +260,10 @@ export const updateTeamMemberRole = async (
   );
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.message || "更新成员角色失败");
+    throw new Error(await getErrorMessage(response, "更新成员角色失败"));
   }
 
-  return response.json();
+  return normalizeTeamMember((await response.json()) as TeamMember);
 };
 
 /**
@@ -209,8 +286,7 @@ export const removeTeamMember = async (
   );
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.message || "移除成员失败");
+    throw new Error(await getErrorMessage(response, "移除成员失败"));
   }
 
   return response.json();
@@ -232,8 +308,8 @@ export const fetchTeamById = async (
   });
 
   if (!response.ok) {
-    throw new Error("获取团队详情失败");
+    throw new Error(await getErrorMessage(response, "获取团队详情失败"));
   }
 
-  return response.json();
+  return normalizeTeam((await response.json()) as Team);
 };

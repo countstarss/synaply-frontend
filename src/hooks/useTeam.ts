@@ -6,13 +6,15 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import {
   fetchUserTeams,
   createTeam,
+  updateTeam,
   fetchTeamMembers,
   fetchTeamById,
   fetchTeamMemberByUserId,
+  CreateTeamPayload,
+  UpdateTeamPayload,
   Team,
   TeamMember,
 } from "@/lib/fetchers/team";
-import { CreateTeamDto } from "@/api";
 
 export const useTeam = () => {
   const { session } = useAuth();
@@ -25,18 +27,19 @@ export const useTeam = () => {
     isLoading: isLoadingTeams,
     error: teamsError,
   } = useQuery({
-    queryKey: ["teams"],
+    queryKey: ["teams", session?.user?.id],
     queryFn: () => fetchUserTeams(session!.access_token),
     enabled: !!session?.access_token,
   });
 
   // MARK: - 创建团队
   const createTeamMutation = useMutation({
-    mutationFn: (data: CreateTeamDto) =>
+    mutationFn: (data: CreateTeamPayload) =>
       createTeam(data, session!.access_token),
     onSuccess: () => {
       // 成功后重新获取团队列表
       queryClient.invalidateQueries({ queryKey: ["teams"] });
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
     },
   });
 
@@ -64,6 +67,21 @@ export const useTeam = () => {
     currentTeam,
     // currentTeamMember,
   };
+};
+
+export const useUpdateTeam = (teamId: string | undefined) => {
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateTeamPayload) =>
+      updateTeam(teamId!, data, session!.access_token),
+    onSuccess: (updatedTeam) => {
+      queryClient.setQueryData(["team", teamId], updatedTeam);
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+    },
+  });
 };
 
 /**

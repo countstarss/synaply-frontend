@@ -15,17 +15,37 @@ import { Label } from "@/components/ui/label";
 import { useTeam } from "@/hooks/useTeam";
 import { toast } from "sonner";
 import { Users } from "lucide-react";
+import type { Team } from "@/lib/fetchers/team";
 
 interface CreateTeamDialogProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onCreated?: (team: Team) => void | Promise<void>;
 }
 
 export const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
   children,
+  open,
+  onOpenChange,
+  onCreated,
 }) => {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [teamName, setTeamName] = useState("");
   const { createTeam, isCreatingTeam } = useTeam();
+  const resolvedOpen = open ?? internalOpen;
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (open === undefined) {
+      setInternalOpen(nextOpen);
+    }
+
+    if (!nextOpen) {
+      setTeamName("");
+    }
+
+    onOpenChange?.(nextOpen);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,19 +55,21 @@ export const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
     }
 
     try {
-      await createTeam({ name: teamName.trim() });
+      const createdTeam = await createTeam({ name: teamName.trim() });
       toast.success("团队创建成功！");
-      setOpen(false);
-      setTeamName("");
+      handleOpenChange(false);
+      await onCreated?.(createdTeam);
     } catch (error) {
       console.error("创建团队失败:", error);
-      toast.error(`创建团队失败，请重试: ${error}`);
+      toast.error(
+        error instanceof Error ? error.message : "创建团队失败，请稍后重试",
+      );
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={resolvedOpen} onOpenChange={handleOpenChange}>
+      {children ? <DialogTrigger asChild>{children}</DialogTrigger> : null}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -73,7 +95,7 @@ export const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => handleOpenChange(false)}
               disabled={isCreatingTeam}
             >
               取消
