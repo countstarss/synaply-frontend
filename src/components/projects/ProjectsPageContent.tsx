@@ -34,7 +34,7 @@ import {
 import WorkflowIssueDetail from "@/components/issue/WorkflowIssueDetail";
 import NormalIssueDetail from "@/components/shared/issue/NormalIssueDetail";
 import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
-import type { Issue } from "@/lib/fetchers/issue";
+import { isWorkflowIssue, type Issue } from "@/lib/fetchers/issue";
 import type { Project, ProjectDetail } from "@/lib/fetchers/project";
 
 export default function ProjectsPageContent() {
@@ -71,6 +71,9 @@ export default function ProjectsPageContent() {
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [isWorkflowIssueOpen, setIsWorkflowIssueOpen] = useState(false);
   const [isNormalIssueOpen, setIsNormalIssueOpen] = useState(false);
+  const selectedIssueIsWorkflow = selectedIssue
+    ? isWorkflowIssue(selectedIssue)
+    : false;
 
   const deferredSearch = useDeferredValue(searchQuery);
   const createProjectMutation = useCreateProject();
@@ -225,7 +228,7 @@ export default function ProjectsPageContent() {
   const handleOpenIssue = (issue: Issue) => {
     setSelectedIssue(issue);
 
-    if (issue.issueType === "WORKFLOW") {
+    if (isWorkflowIssue(issue)) {
       setIsWorkflowIssueOpen(true);
       return;
     }
@@ -373,7 +376,7 @@ export default function ProjectsPageContent() {
         <>
           <WorkflowIssueDetail
             issue={selectedIssue}
-            isOpen={isWorkflowIssueOpen}
+            isOpen={selectedIssueIsWorkflow && isWorkflowIssueOpen}
             onClose={() => {
               setSelectedIssue(null);
               setIsWorkflowIssueOpen(false);
@@ -383,7 +386,7 @@ export default function ProjectsPageContent() {
 
           <NormalIssueDetail
             issue={selectedIssue}
-            isOpen={isNormalIssueOpen}
+            isOpen={!selectedIssueIsWorkflow && isNormalIssueOpen}
             onClose={() => {
               setSelectedIssue(null);
               setIsNormalIssueOpen(false);

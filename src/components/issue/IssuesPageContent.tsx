@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
 import NormalIssueDetail from "@/components/shared/issue/NormalIssueDetail";
 import WorkflowIssueDetail from "@/components/issue/WorkflowIssueDetail";
-import { Issue } from "@/lib/fetchers/issue";
+import { Issue, isWorkflowIssue } from "@/lib/fetchers/issue";
 import { useIssues, useDeleteIssue } from "@/hooks/useIssueApi";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { priorityConfig, statusConfig } from "@/lib/data/issueConfig";
@@ -32,6 +32,9 @@ export default function IssuesPageContent() {
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isNormalDetailOpen, setIsNormalDetailOpen] = useState(false);
+  const selectedIssueIsWorkflow = selectedIssue
+    ? isWorkflowIssue(selectedIssue)
+    : false;
 
   const handleCreateIssue = () => {
     queryClient.invalidateQueries({ queryKey: ["issues", workspaceId] });
@@ -39,7 +42,7 @@ export default function IssuesPageContent() {
 
   const handleViewIssue = (issue: Issue) => {
     setSelectedIssue(issue);
-    if (issue.issueType === "WORKFLOW") {
+    if (isWorkflowIssue(issue)) {
       setIsDetailModalOpen(true);
     } else {
       setIsNormalDetailOpen(true);
@@ -85,6 +88,34 @@ export default function IssuesPageContent() {
       );
     }
   };
+
+  if (selectedIssue && selectedIssueIsWorkflow && isDetailModalOpen) {
+    return (
+      <div className="h-full w-full bg-app-bg p-2">
+        <WorkflowIssueDetail
+          issue={selectedIssue}
+          isOpen={isDetailModalOpen}
+          onClose={handleCloseDetail}
+          onUpdate={handleUpdateWorkflowIssue}
+          displayMode="page"
+        />
+      </div>
+    );
+  }
+
+  if (selectedIssue && !selectedIssueIsWorkflow && isNormalDetailOpen) {
+    return (
+      <div className="h-full w-full bg-app-bg p-2">
+        <NormalIssueDetail
+          issue={selectedIssue}
+          isOpen={isNormalDetailOpen}
+          onClose={handleCloseNormalDetail}
+          onUpdate={handleUpdateNormalIssue}
+          displayMode="page"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col bg-app-bg">
@@ -192,7 +223,7 @@ export default function IssuesPageContent() {
                         <h3 className="text-sm font-medium text-app-text-primary truncate">
                           {issue.title}
                         </h3>
-                        {issue.issueType === "WORKFLOW" && (
+                        {isWorkflowIssue(issue) && (
                           <div className="flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 rounded text-xs">
                             <RiFlowChart className="w-3 h-3" />
                             <span>工作流</span>
@@ -249,23 +280,6 @@ export default function IssuesPageContent() {
         onCreated={handleCreateIssue}
       />
 
-      {selectedIssue && selectedIssue.issueType === "WORKFLOW" && (
-        <WorkflowIssueDetail
-          issue={selectedIssue}
-          isOpen={isDetailModalOpen}
-          onClose={handleCloseDetail}
-          onUpdate={handleUpdateWorkflowIssue}
-        />
-      )}
-
-      {selectedIssue && selectedIssue.issueType === "NORMAL" && (
-        <NormalIssueDetail
-          issue={selectedIssue}
-          isOpen={isNormalDetailOpen}
-          onClose={handleCloseNormalDetail}
-          onUpdate={handleUpdateNormalIssue}
-        />
-      )}
     </div>
   );
 }

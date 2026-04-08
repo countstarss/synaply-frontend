@@ -1,28 +1,41 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import ReactFlow, {
-  MiniMap,
-  Controls,
   Background,
-  useNodesState,
-  useEdgesState,
   BackgroundVariant,
+  Controls,
+  MiniMap,
   Node,
+  useEdgesState,
+  useNodesState,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { RiCloseLine, RiHistoryLine, RiFileTextLine } from "react-icons/ri";
-import { Issue } from "@/lib/fetchers/issue";
-import { WorkflowIssue } from "@/types/team";
+import { RiCloseLine, RiFileTextLine, RiHistoryLine } from "react-icons/ri";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
+import { useIssueActivities, useIssueStepRecords } from "@/hooks/useIssueApi";
 import { useCurrentTeam, useTeamMembers } from "@/hooks/useTeam";
-import { useIssueStepRecords, useIssueActivities } from "@/hooks/useIssueApi";
+import { Issue } from "@/lib/fetchers/issue";
+import useWorkflowNodeStatus from "@/app/[locale]/(main)/workflows/_components/hooks/useWorkflowNodeStatus";
+import {
+  createFlowNodesAndEdges,
+  createInitialWorkflowIssue,
+  parseWorkflowSnapshot,
+} from "@/app/[locale]/(main)/workflows/_components/utils/workflowUtils";
+import { WorkflowIssue } from "@/types/team";
 import { NodeStatusUpdate } from "./NodeStatusUpdate";
 import { RecordModal } from "./RecordModal";
-import { HistoryTab, DiscussionTab, RecordsTab } from "./tabs";
+import { DiscussionTab, HistoryTab, RecordsTab } from "./tabs";
 import CustomNode from "../workflow/CustomNode";
-import useWorkflowNodeStatus from "@/app/[locale]/(main)/workflows/_components/hooks/useWorkflowNodeStatus";
-import { createFlowNodesAndEdges, createInitialWorkflowIssue, parseWorkflowSnapshot } from "@/app/[locale]/(main)/workflows/_components/utils/workflowUtils";
 
 const nodeTypes = {
   custom: CustomNode,
@@ -41,12 +54,9 @@ export function WorkflowIssueDetailFlow({
   onUpdate,
 }: WorkflowIssueDetailProps) {
   const { team } = useCurrentTeam();
-
-  // 获取团队成员
   const { data: teamMembers = [] } = useTeamMembers(team?.id);
   const { user, session } = useAuth();
 
-  // MARK: 解析工作流快照
   const initialWorkflowIssue = React.useMemo(
     () => createInitialWorkflowIssue(issue),
     [issue],
@@ -60,27 +70,19 @@ export function WorkflowIssueDetailFlow({
   const [workflowIssue, setWorkflowIssue] = useState<WorkflowIssue | null>(
     initialWorkflowIssue,
   );
+  const [activeTab, setActiveTab] = useState<"history" | "discussion" | "records">(
+    "history",
+  );
 
-  // MARK: Tabs
-  const [activeTab, setActiveTab] = useState<
-    "history" | "discussion" | "records"
-  >("history");
-
-  // MARK: TabContent
-  // Records data
   const { data: stepRecords = [] } = useIssueStepRecords(
     issue.workspaceId,
     issue.id,
   );
-
-  // Activities data
   const { data: activities = [] } = useIssueActivities(
     issue.workspaceId,
     issue.id,
   );
 
-  // MARK: 节点和边计算
-  // 使用工具函数转换为ReactFlow的nodes和edges
   const { nodes, edges } = useMemo(
     () => createFlowNodesAndEdges(workflow, workflowIssue),
     [workflow, workflowIssue],
@@ -89,7 +91,6 @@ export function WorkflowIssueDetailFlow({
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setFlowEdges, onEdgesChange] = useEdgesState(edges);
 
-  // Update flow nodes when nodes change
   React.useEffect(() => {
     setFlowNodes(nodes);
     setFlowEdges(edges);
@@ -98,11 +99,10 @@ export function WorkflowIssueDetailFlow({
   const currentNode = useMemo(() => {
     if (!workflowIssue || !workflow) return null;
     return workflow.nodes.find(
-      (n: Node) => n.id === workflowIssue.currentNodeId,
+      (node: Node) => node.id === workflowIssue.currentNodeId,
     );
   }, [workflow, workflowIssue]);
 
-  // 使用自定义hook替代原来的状态管理逻辑
   const {
     handleStatusUpdate,
     handleNext,
@@ -125,9 +125,19 @@ export function WorkflowIssueDetailFlow({
 
   if (!workflowIssue || !workflow) {
     return (
-      <div className="text-center py-8">
-        <p className="text-app-text-muted">加载工作流数据失败</p>
-      </div>
+      <Card className="border-app-border bg-app-content-bg shadow-none">
+        <CardContent className="flex min-h-[240px] flex-col items-center justify-center gap-4 py-8 text-center">
+          <div className="text-app-text-muted">加载工作流数据失败</div>
+          <Button
+            type="button"
+            variant="outline"
+            className="border-app-border bg-transparent text-app-text-primary"
+            onClick={onClose}
+          >
+            返回列表
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -142,68 +152,80 @@ export function WorkflowIssueDetailFlow({
   const isCurrentAssignee = currentNodeStatus?.assigneeId === user?.id;
 
   return (
-    <div className="h-full flex flex-col gap-2">
-      {/* Issue Info */}
-      <div className="bg-app-content-bg rounded-lg border border-app-border p-4 flex-shrink-0">
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-app-text-primary mb-2">
+    <div className="flex h-full flex-col gap-2">
+      <Card className="flex-shrink-0 border-app-border bg-app-content-bg shadow-none">
+        <CardHeader className="flex flex-row items-start justify-between gap-4 p-4">
+          <div className="space-y-2">
+            <CardTitle className="text-xl text-app-text-primary">
               {issue.title}
-            </h2>
-            {/* <p className="text-app-text-secondary mb-2">{issue.description}</p> */}
-            <div className="flex items-center gap-4 text-sm text-app-text-muted">
-              <span>工作流: {workflowIssue.workflowName}</span>
-              <span>优先级: {issue.priority}</span>
+            </CardTitle>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-app-text-muted">
+              <Badge
+                variant="secondary"
+                className="bg-app-button-hover text-app-text-primary"
+              >
+                工作流: {workflowIssue.workflowName}
+              </Badge>
+              <Badge
+                variant="outline"
+                className="border-app-border text-app-text-primary"
+              >
+                优先级: {issue.priority}
+              </Badge>
             </div>
           </div>
-          <button
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="rounded-lg text-app-text-secondary hover:bg-app-button-hover hover:text-app-text-primary"
             onClick={onClose}
-            className="p-2 hover:bg-app-button-hover rounded-lg transition-colors"
           >
-            <RiCloseLine className="w-5 h-5 text-app-text-secondary" />
-          </button>
-        </div>
-      </div>
+            <RiCloseLine className="h-5 w-5" />
+          </Button>
+        </CardHeader>
+      </Card>
 
-      {/* Main Content */}
-      <div className="flex-1 gap-2 min-h-0 flex flex-row">
-        {/* Workflow Visualization */}
-        <div className="bg-app-content-bg rounded-lg border border-app-border flex flex-col flex-2">
-          <div className="p-4 border-b border-app-border flex-shrink-0">
-            <h3 className="text-lg font-semibold text-app-text-primary">
+      <div className="flex min-h-0 flex-1 flex-row gap-2">
+        <Card className="flex flex-[2] flex-col border-app-border bg-app-content-bg shadow-none">
+          <CardHeader className="border-b border-app-border p-4">
+            <CardTitle className="text-lg text-app-text-primary">
               工作流进度
-            </h3>
-          </div>
-          <div className="flex-1 min-h-0">
-            <ReactFlow
-              nodes={flowNodes}
-              edges={flowEdges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              nodeTypes={nodeTypes}
-              fitView
-              proOptions={{ hideAttribution: true }}
-              nodesDraggable={false} // 禁止节点拖动
-              nodesConnectable={true} // 禁止创建新连接
-              elementsSelectable={true} // 允许选择元素，但不允许修改
-              zoomOnDoubleClick={false} // 禁止双击缩放
-              edgesFocusable={false} // 边不可聚焦
-              edgesUpdatable={false} // 边不可更新
-            >
-              <Controls className="!bg-app-content-bg !border-app-border" />
-              <MiniMap className="!bg-app-content-bg !border-app-border" />
-              <Background
-                variant={BackgroundVariant.Dots}
-                gap={12}
-                size={1}
-                className="!bg-transparent"
-              />
-            </ReactFlow>
-          </div>
-        </div>
+            </CardTitle>
+          </CardHeader>
 
-        {/* Current Node Control */}
-        <div className="flex flex-col h-[calc(100vh-170px)] gap-2 flex-1">
+          <CardContent className="min-h-0 flex-1 p-0">
+            <div className="h-full min-h-0">
+              <ReactFlow
+                nodes={flowNodes}
+                edges={flowEdges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                nodeTypes={nodeTypes}
+                fitView
+                proOptions={{ hideAttribution: true }}
+                nodesDraggable={false}
+                nodesConnectable={true}
+                elementsSelectable={true}
+                zoomOnDoubleClick={false}
+                edgesFocusable={false}
+                edgesUpdatable={false}
+              >
+                <Controls className="!border-app-border !bg-app-content-bg" />
+                <MiniMap className="!border-app-border !bg-app-content-bg" />
+                <Background
+                  variant={BackgroundVariant.Dots}
+                  gap={12}
+                  size={1}
+                  className="!bg-transparent"
+                />
+              </ReactFlow>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex h-[calc(100vh-170px)] flex-1 flex-col gap-2">
           {currentNode && (
             <NodeStatusUpdate
               nodeId={currentNode.id}
@@ -218,64 +240,60 @@ export function WorkflowIssueDetailFlow({
             />
           )}
 
-          {/* Tabs for History and Discussion */}
-          <div className="flex-1 h-[calc(100vh-520px)] bg-app-content-bg rounded-lg border border-app-border flex flex-col">
-            {/* Tab Header */}
-            <div className="p-4 border-b border-app-border flex-shrink-0">
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => setActiveTab("history")}
-                  className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-medium transition-colors ${
-                    activeTab === "history"
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
-                      : "text-app-text-secondary hover:text-app-text-primary hover:bg-app-button-hover"
-                  }`}
-                >
-                  <RiHistoryLine className="w-4 h-4" />
-                  操作历史
-                </button>
-                <button
-                  onClick={() => setActiveTab("discussion")}
-                  className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-medium transition-colors ${
-                    activeTab === "discussion"
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
-                      : "text-app-text-secondary hover:text-app-text-primary hover:bg-app-button-hover"
-                  }`}
-                >
-                  <RiFileTextLine className="w-4 h-4" />
-                  讨论
-                </button>
-                <button
-                  onClick={() => setActiveTab("records")}
-                  className={`flex items-center gap-2 px-3 py-1 rounded text-sm font-medium transition-colors ${
-                    activeTab === "records"
-                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
-                      : "text-app-text-secondary hover:text-app-text-primary hover:bg-app-button-hover"
-                  }`}
-                >
-                  <RiFileTextLine className="w-4 h-4" />
-                  成果 ({stepRecords.length})
-                </button>
-              </div>
-            </div>
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) =>
+              setActiveTab(value as "history" | "discussion" | "records")
+            }
+            className="min-h-0 flex-1"
+          >
+            <Card className="flex min-h-0 flex-1 flex-col border-app-border bg-app-content-bg shadow-none">
+              <CardHeader className="border-b border-app-border p-4">
+                <TabsList variant="line" className="h-auto gap-2 bg-transparent p-0">
+                  <TabsTrigger
+                    value="history"
+                    className="data-[state=active]:bg-sky-500/10 data-[state=active]:text-sky-700"
+                  >
+                    <RiHistoryLine className="h-4 w-4" />
+                    操作历史
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="discussion"
+                    className="data-[state=active]:bg-sky-500/10 data-[state=active]:text-sky-700"
+                  >
+                    <RiFileTextLine className="h-4 w-4" />
+                    讨论
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="records"
+                    className="data-[state=active]:bg-sky-500/10 data-[state=active]:text-sky-700"
+                  >
+                    <RiFileTextLine className="h-4 w-4" />
+                    成果 ({stepRecords.length})
+                  </TabsTrigger>
+                </TabsList>
+              </CardHeader>
 
-            {/* Tab Content */}
-            <div className="flex-1 overflow-y-auto">
-              {activeTab === "history" ? (
-                <HistoryTab activities={activities} />
-              ) : activeTab === "discussion" ? (
-                <DiscussionTab
-                  issueId={issue.id}
-                  workspaceId={issue.workspaceId}
-                  teamMembers={teamMembers}
-                />
-              ) : (
-                <RecordsTab records={stepRecords} />
-              )}
-            </div>
-          </div>
+              <CardContent className="min-h-0 flex-1 p-0">
+                <TabsContent value="history" className="mt-0 h-full">
+                  <HistoryTab activities={activities} />
+                </TabsContent>
+                <TabsContent value="discussion" className="mt-0 h-full">
+                  <DiscussionTab
+                    issueId={issue.id}
+                    workspaceId={issue.workspaceId}
+                    teamMembers={teamMembers}
+                  />
+                </TabsContent>
+                <TabsContent value="records" className="mt-0 h-full">
+                  <RecordsTab records={stepRecords} />
+                </TabsContent>
+              </CardContent>
+            </Card>
+          </Tabs>
         </div>
       </div>
+
       <RecordModal
         isOpen={isRecordModalOpen}
         onClose={() => setIsRecordModalOpen(false)}

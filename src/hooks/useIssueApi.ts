@@ -11,6 +11,7 @@ import {
   updateIssue,
   deleteIssue,
   Issue,
+  isWorkflowIssue,
   createIssueStepRecord,
   getIssueStepRecords,
   CreateIssueStepRecordDto,
@@ -18,7 +19,7 @@ import {
   getIssueActivities,
   CreateIssueActivityDto,
 } from "@/lib/fetchers/issue";
-import { IssueStatus } from "@/types/prisma";
+import { IssueStatus, IssueType } from "@/types/prisma";
 
 function buildWorkflowIssuePatch(issue: Partial<CreateIssueDto>) {
   const patch: Partial<Issue> = {};
@@ -48,6 +49,13 @@ function buildWorkflowIssuePatch(issue: Partial<CreateIssueDto>) {
   }
 
   return patch;
+}
+
+function workflowIssueNeedsPatch(issue: Issue | null, patch: Partial<Issue>) {
+  return Object.entries(patch).some(([key, value]) => {
+    const currentValue = issue?.[key as keyof Issue];
+    return (currentValue ?? null) !== (value ?? null);
+  });
 }
 
 /**
@@ -171,6 +179,13 @@ export const useCreateWorkflowIssue = () => {
         description: issue.description,
         workspaceId,
         dueDate: issue.dueDate,
+        projectId: issue.projectId,
+        directAssigneeId: issue.directAssigneeId,
+        stateId: issue.stateId,
+        priority: issue.priority,
+        visibility: issue.visibility,
+        assigneeIds: issue.assigneeIds,
+        labelIds: issue.labelIds,
         workflowId,
         workflowSnapshot: JSON.stringify(workflowJson),
         totalSteps: nodes.length,
@@ -180,17 +195,37 @@ export const useCreateWorkflowIssue = () => {
       };
 
       const createdIssue = await createWorkflowIssue(issueData, session.access_token);
-      const patch = buildWorkflowIssuePatch(issue);
-
-      if (createdIssue?.id && Object.keys(patch).length > 0) {
-        await updateIssue(workspaceId, createdIssue.id, patch, session.access_token);
-      }
 
       if (!createdIssue?.id) {
         return createdIssue;
       }
 
-      return getIssue(workspaceId, createdIssue.id, session.access_token);
+      const freshIssue = await getIssue(
+        workspaceId,
+        createdIssue.id,
+        session.access_token,
+      );
+      const patch = buildWorkflowIssuePatch(issue);
+
+      if (
+        freshIssue?.id &&
+        Object.keys(patch).length > 0 &&
+        workflowIssueNeedsPatch(freshIssue, patch)
+      ) {
+        await updateIssue(workspaceId, freshIssue.id, patch, session.access_token);
+        return getIssue(workspaceId, freshIssue.id, session.access_token);
+      }
+
+      if (!freshIssue) {
+        return freshIssue;
+      }
+
+      return isWorkflowIssue(freshIssue)
+        ? freshIssue
+        : {
+            ...freshIssue,
+            issueType: IssueType.WORKFLOW,
+          };
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({

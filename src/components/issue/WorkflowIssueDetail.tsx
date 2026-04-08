@@ -3,6 +3,7 @@
 import React from "react";
 import { ReactFlowProvider } from "reactflow";
 import "reactflow/dist/style.css";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 // 使用新的 Issue 类型
 import { Issue } from "@/lib/fetchers/issue";
 
@@ -13,6 +14,7 @@ interface WorkflowIssueDetailProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: () => void;
+  displayMode?: "dialog" | "page";
 }
 
 export default function WorkflowIssueDetail({
@@ -20,23 +22,41 @@ export default function WorkflowIssueDetail({
   isOpen,
   onClose,
   onUpdate,
+  displayMode = "dialog",
 }: WorkflowIssueDetailProps) {
   if (!isOpen) return null;
 
+  const content = (
+    <ReactFlowProvider>
+      <WorkflowIssueDetailFlow
+        issue={issue}
+        isOpen={isOpen}
+        onClose={onClose}
+        onUpdate={onUpdate}
+      />
+    </ReactFlowProvider>
+  );
+
+  if (displayMode === "page") {
+    return <div className="h-full w-full overflow-hidden">{content}</div>;
+  }
+
   return (
-    <div className="fixed inset-0 w-full  dark:bg-black/50 bg-white/80 flex items-center justify-center z-50">
-      <div className="bg-app-bg rounded-lg shadow-xl w-full max-w-screen h-[calc(100vh-56px)] overflow-hidden">
-        <div className="h-full p-2">
-          <ReactFlowProvider>
-            <WorkflowIssueDetailFlow
-              issue={issue}
-              isOpen={isOpen}
-              onClose={onClose}
-              onUpdate={onUpdate}
-            />
-          </ReactFlowProvider>
-        </div>
-      </div>
-    </div>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <DialogContent
+        className="h-[calc(100vh-56px)] max-w-[calc(100vw-16px)] border-app-border bg-app-bg p-2 shadow-xl"
+        showCloseButton={false}
+      >
+        <DialogTitle className="sr-only">{issue.title || "工作流 Issue 详情"}</DialogTitle>
+        {content}
+      </DialogContent>
+    </Dialog>
   );
 }

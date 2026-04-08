@@ -111,6 +111,13 @@ export interface Issue {
   labels?: IssueLabel[];
 }
 
+type WorkflowIssueIdentity = Pick<
+  Issue,
+  | "issueType"
+  | "workflowId"
+  | "workflowSnapshot"
+>;
+
 // MARK: CreateDTO
 export interface CreateIssueDto {
   title: string;
@@ -147,6 +154,13 @@ export interface CreateWorkflowIssueDto {
   description?: string;
   workspaceId: string;
   dueDate?: string;
+  projectId?: string;
+  directAssigneeId?: string;
+  stateId?: string;
+  priority?: IssuePriority;
+  visibility?: VisibilityType;
+  assigneeIds?: string[];
+  labelIds?: string[];
 
   workflowId: string;
   workflowSnapshot: string;
@@ -154,6 +168,37 @@ export interface CreateWorkflowIssueDto {
   currentStepId: string;
   currentStepIndex: number;
   currentStepStatus: IssueStatus;
+}
+
+export function isWorkflowIssue(issue: WorkflowIssueIdentity | null | undefined) {
+  if (!issue) {
+    return false;
+  }
+
+  return Boolean(
+    issue.issueType === IssueType.WORKFLOW ||
+      issue.workflowId ||
+      issue.workflowSnapshot,
+  );
+}
+
+function normalizeIssueType(issue: Issue) {
+  const normalizedIssueType = isWorkflowIssue(issue)
+    ? IssueType.WORKFLOW
+    : IssueType.NORMAL;
+
+  if (issue.issueType === normalizedIssueType) {
+    return issue;
+  }
+
+  return {
+    ...issue,
+    issueType: normalizedIssueType,
+  };
+}
+
+function normalizeIssueList(issues: Issue[]) {
+  return issues.map(normalizeIssueType);
 }
 
 /**
@@ -234,7 +279,7 @@ export async function createIssue(
   token: string,
 ): Promise<Issue> {
   const { workspaceId } = issueData;
-  return fetchApi<Issue>(
+  const issue = await fetchApi<Issue>(
     `/workspaces/${workspaceId}/issues/direct-assignee`,
     token,
     {
@@ -242,6 +287,8 @@ export async function createIssue(
       body: JSON.stringify(issueData),
     },
   );
+
+  return normalizeIssueType(issue);
 }
 
 /**
@@ -255,10 +302,16 @@ export async function createWorkflowIssue(
   token: string,
 ): Promise<Issue> {
   const { workspaceId } = issueData;
-  return fetchApi<Issue>(`/workspaces/${workspaceId}/issues/workflow`, token, {
-    method: "POST",
-    body: JSON.stringify(issueData),
-  });
+  const issue = await fetchApi<Issue>(
+    `/workspaces/${workspaceId}/issues/workflow`,
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(issueData),
+    },
+  );
+
+  return normalizeIssueType(issue);
 }
 
 /**
@@ -276,10 +329,12 @@ export async function getIssues(
     params.limit !== undefined || params.cursor !== undefined;
 
   if (shouldFetchSinglePage) {
-    return fetchApi<Issue[]>(
+    const issues = await fetchApi<Issue[]>(
       `/workspaces/${workspaceId}/issues${buildIssueQueryString(params)}`,
       token,
     );
+
+    return normalizeIssueList(issues);
   }
 
   const pageSize = 100;
@@ -309,7 +364,7 @@ export async function getIssues(
     }
   }
 
-  return issues;
+  return normalizeIssueList(issues);
 }
 
 export async function getIssue(
@@ -317,7 +372,12 @@ export async function getIssue(
   issueId: string,
   token: string,
 ): Promise<Issue | null> {
-  return fetchApi<Issue | null>(`/workspaces/${workspaceId}/issues/${issueId}`, token);
+  const issue = await fetchApi<Issue | null>(
+    `/workspaces/${workspaceId}/issues/${issueId}`,
+    token,
+  );
+
+  return issue ? normalizeIssueType(issue) : issue;
 }
 
 /**
@@ -329,7 +389,7 @@ export async function updateIssue(
   data: Partial<Issue>,
   token: string,
 ): Promise<Issue> {
-  return fetchApi<Issue>(
+  const issue = await fetchApi<Issue>(
     `/workspaces/${workspaceId}/issues/${issueId}`,
     token,
     {
@@ -337,6 +397,8 @@ export async function updateIssue(
       body: JSON.stringify(data),
     },
   );
+
+  return normalizeIssueType(issue);
 }
 
 /**

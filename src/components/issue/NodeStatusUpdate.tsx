@@ -2,10 +2,16 @@
 
 import React, { useState } from "react";
 import {
-  RiArrowRightLine,
   RiArrowLeftLine,
+  RiArrowRightLine,
   RiMessageLine,
 } from "react-icons/ri";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 interface NodeStatusUpdateProps {
   nodeId: string;
@@ -34,10 +40,10 @@ export function NodeStatusUpdate({
   const [showCommentInput, setShowCommentInput] = useState(false);
 
   const statusOptions = [
-    { value: "TODO", label: "待处理", color: "gray" },
-    { value: "IN_PROGRESS", label: "进行中", color: "blue" },
-    { value: "AMOST_DONE", label: "接近完成", color: "yellow" },
-    { value: "DONE", label: "已完成", color: "green" },
+    { value: "TODO", label: "待处理" },
+    { value: "IN_PROGRESS", label: "进行中" },
+    { value: "AMOST_DONE", label: "接近完成" },
+    { value: "DONE", label: "已完成" },
   ];
 
   const handleStatusChange = (newStatus: string) => {
@@ -57,92 +63,107 @@ export function NodeStatusUpdate({
   };
 
   return (
-    <div className="bg-app-content-bg rounded-lg border border-app-border p-4">
-      <h3 className="text-lg font-semibold text-app-text-primary mb-4">
-        节点状态更新
-      </h3>
+    <Card className="border-app-border bg-app-content-bg shadow-none">
+      <CardHeader className="p-4">
+        <CardTitle className="text-lg text-app-text-primary">节点状态更新</CardTitle>
+      </CardHeader>
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-app-text-primary mb-2">
-            当前负责人: {assignee || "未分配"}
-          </label>
+      <CardContent className="space-y-4 px-4 pb-4">
+        <div className="space-y-2">
+          <Label className="text-sm text-app-text-primary">当前负责人</Label>
+          <Badge
+            variant="outline"
+            className="rounded-md border-app-border px-3 py-1.5 text-sm font-normal text-app-text-primary"
+          >
+            {assignee || "未分配"}
+          </Badge>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-app-text-primary mb-2">
-            状态
-          </label>
+        <div className="space-y-2">
+          <Label className="text-sm text-app-text-primary">状态</Label>
           <div className="grid grid-cols-2 gap-2">
-            {statusOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => handleStatusChange(option.value)}
-                className={`p-2 text-sm rounded border transition-colors ${
-                  currentStatus === option.value
-                    ? "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-600"
-                    : "bg-app-bg hover:bg-app-button-hover border-app-border"
-                }`}
-                disabled={!canEdit}
-              >
-                {option.label}
-              </button>
-            ))}
+            {statusOptions.map((option) => {
+              const isActive = currentStatus === option.value;
+
+              return (
+                <Button
+                  key={option.value}
+                  type="button"
+                  variant={isActive ? "default" : "outline"}
+                  className={cn(
+                    "justify-center border-app-border",
+                    isActive
+                      ? "bg-sky-600 text-white hover:bg-sky-500"
+                      : "bg-app-bg text-app-text-primary hover:bg-app-button-hover",
+                  )}
+                  disabled={!canEdit}
+                  onClick={() => handleStatusChange(option.value)}
+                >
+                  {option.label}
+                </Button>
+              );
+            })}
           </div>
         </div>
 
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-app-text-primary">
-              添加备注
-            </label>
-            <button
-              onClick={() => setShowCommentInput(!showCommentInput)}
-              className="p-1 hover:bg-app-button-hover rounded transition-colors"
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm text-app-text-primary">添加备注</Label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-8 rounded-md text-app-text-secondary hover:bg-app-button-hover hover:text-app-text-primary"
+              onClick={() => setShowCommentInput((value) => !value)}
             >
-              <RiMessageLine className="w-4 h-4 text-app-text-secondary" />
-            </button>
+              <RiMessageLine className="h-4 w-4" />
+            </Button>
           </div>
+
           {showCommentInput && (
             <div className="space-y-2">
-              <textarea
+              <Textarea
                 value={comment}
-                onChange={(e) => setComment(e.target.value)}
+                onChange={(event) => setComment(event.target.value)}
                 placeholder="输入备注..."
                 rows={3}
-                className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="border-app-border bg-app-bg text-app-text-primary"
               />
-              <button
-                onClick={handleAddComment}
+              <Button
+                type="button"
+                className="bg-sky-600 text-white hover:bg-sky-500"
                 disabled={!canEdit || !comment.trim()}
-                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm rounded transition-colors disabled:cursor-not-allowed"
+                onClick={handleAddComment}
               >
                 添加备注
-              </button>
+              </Button>
             </div>
           )}
         </div>
 
-        <div className="flex justify-between pt-4 border-t border-app-border">
-          <button
-            onClick={onPrevious}
+        <div className="flex justify-between border-t border-app-border pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            className="border-app-border bg-transparent text-app-text-primary"
             disabled={!canPrevious}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-app-text-secondary hover:text-app-text-primary disabled:opacity-50 disabled:cursor-not-allowed border border-app-border rounded transition-colors"
+            onClick={onPrevious}
           >
-            <RiArrowLeftLine className="w-4 h-4" />
+            <RiArrowLeftLine className="h-4 w-4" />
             上一步
-          </button>
-          <button
-            onClick={onNext}
+          </Button>
+          <Button
+            type="button"
+            className="bg-sky-600 text-white hover:bg-sky-500"
             disabled={!canEdit || !canNext || currentStatus !== "DONE"}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded transition-colors disabled:cursor-not-allowed"
+            onClick={onNext}
           >
             下一步
-            <RiArrowRightLine className="w-4 h-4" />
-          </button>
+            <RiArrowRightLine className="h-4 w-4" />
+          </Button>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 

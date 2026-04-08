@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import {
   RiAtLine,
   RiCalendarLine,
@@ -12,6 +14,25 @@ import {
   RiSendPlaneLine,
   RiTimeLine,
 } from "react-icons/ri";
+import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
 import { useUpdateIssue } from "@/hooks/useIssueApi";
 import { useIssueStates } from "@/hooks/useIssueStates";
@@ -20,6 +41,7 @@ import { useTeamMemberByUserId, useTeamMembers } from "@/hooks/useTeam";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { Issue, IssueAssigneeMember } from "@/lib/fetchers/issue";
 import type { TeamMember } from "@/lib/fetchers/team";
+import { cn } from "@/lib/utils";
 import { IssuePriority, VisibilityType } from "@/types/prisma";
 
 interface NormalIssueDetailProps {
@@ -27,6 +49,7 @@ interface NormalIssueDetailProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: (updatedIssue: Issue) => void;
+  displayMode?: "dialog" | "page";
 }
 
 interface Comment {
@@ -71,6 +94,10 @@ const VISIBILITY_OPTIONS = [
   { value: VisibilityType.PUBLIC, label: "公开可见" },
 ] as const;
 
+const EMPTY_PRIORITY_VALUE = "__empty_priority__";
+const EMPTY_PROJECT_VALUE = "__empty_project__";
+const EMPTY_ASSIGNEE_VALUE = "__empty_assignee__";
+
 function getTeamMemberName(member: TeamMember) {
   return (
     member.user.name?.trim() ||
@@ -111,6 +138,12 @@ function formatDateOnly(dateString?: string | null) {
   return new Date(dateString).toLocaleDateString("zh-CN");
 }
 
+function toUtcMidnightIso(date: Date) {
+  return new Date(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
+  ).toISOString();
+}
+
 function getPriorityOption(priority?: IssuePriority | null) {
   return PRIORITY_OPTIONS.find((option) => option.value === priority) || null;
 }
@@ -137,6 +170,7 @@ export default function NormalIssueDetail({
   isOpen,
   onClose,
   onUpdate,
+  displayMode = "dialog",
 }: NormalIssueDetailProps) {
   const { user } = useAuth();
   const { currentWorkspace } = useWorkspace();
@@ -212,6 +246,10 @@ export default function NormalIssueDetail({
     (project) => project.id === localIssue.projectId,
   );
   const selectedState = issueStates.find((state) => state.id === localIssue.stateId);
+  const currentPriority = getPriorityOption(localIssue.priority);
+  const dueDateValue = localIssue.dueDate
+    ? new Date(localIssue.dueDate)
+    : undefined;
 
   useEffect(() => {
     setCommittedIssue(issue);
@@ -311,7 +349,7 @@ export default function NormalIssueDetail({
     relationOverrides: Partial<Issue> = {},
   ) => {
     if (!workspaceId) {
-      alert("当前工作空间无效，无法保存 Issue");
+      toast.error("当前工作空间无效，无法保存 Issue");
       return;
     }
 
@@ -342,9 +380,10 @@ export default function NormalIssueDetail({
       setLocalIssue(mergedIssue);
       setEditingField(null);
       onUpdate(mergedIssue);
+      toast.success("Issue 已保存");
     } catch (error) {
       console.error("更新 Issue 失败:", error);
-      alert(error instanceof Error ? error.message : "更新 Issue 失败，请重试");
+      toast.error(error instanceof Error ? error.message : "更新 Issue 失败，请重试");
     }
   };
 
@@ -352,642 +391,732 @@ export default function NormalIssueDetail({
     return null;
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex w-full items-center justify-center bg-white/80 dark:bg-black/50">
-      <div className="relative h-[calc(100vh-64px)] w-full max-w-screen overflow-hidden rounded-lg bg-app-bg shadow-xl">
-        <div className="h-full p-2">
-          <div className="flex h-full flex-col gap-2">
-            <div className="flex-shrink-0 rounded-lg border border-app-border bg-app-content-bg p-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="mb-2 text-xl font-semibold text-app-text-primary">
+  const content = (
+    <div className="flex h-full flex-col gap-2">
+      <Card className="flex-shrink-0 border-app-border bg-app-content-bg shadow-none">
+        <CardHeader className="flex flex-row items-start justify-between gap-4 p-4">
+          <div className="space-y-2">
+            <CardTitle className="text-xl text-app-text-primary">
+              {localIssue.title}
+            </CardTitle>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-app-text-muted">
+              <span>{localIssue.key || `#${localIssue.id}`}</span>
+              {selectedState && (
+                <Badge
+                  variant="secondary"
+                  className="bg-app-button-hover text-app-text-primary"
+                >
+                  {selectedState.name}
+                </Badge>
+              )}
+              {currentPriority && (
+                <Badge
+                  variant="outline"
+                  className={cn("border-transparent", currentPriority.color)}
+                >
+                  {currentPriority.label}
+                </Badge>
+              )}
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="rounded-lg text-app-text-secondary hover:bg-app-button-hover hover:text-app-text-primary"
+            onClick={onClose}
+          >
+            <RiCloseLine className="h-5 w-5" />
+          </Button>
+        </CardHeader>
+      </Card>
+
+      <div className="flex min-h-0 flex-1 gap-2">
+        <Card className="flex w-2/3 flex-col border-app-border bg-app-content-bg shadow-none">
+          <CardHeader className="border-b border-app-border p-4">
+            <CardTitle className="text-lg text-app-text-primary">
+              Issue 详情
+            </CardTitle>
+          </CardHeader>
+
+          <ScrollArea className="flex-1">
+            <CardContent className="space-y-6 p-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-app-text-primary">标题</Label>
+                  {editingField !== "title" && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-8 rounded-md text-app-text-secondary hover:bg-app-button-hover hover:text-app-text-primary"
+                      onClick={() => handleFieldEdit("title")}
+                    >
+                      <RiEditLine className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {editingField === "title" ? (
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      value={localIssue.title}
+                      onChange={(event) =>
+                        setLocalIssue({
+                          ...localIssue,
+                          title: event.target.value,
+                        })
+                      }
+                      className="flex-1 border-app-border bg-app-bg text-app-text-primary"
+                      autoFocus
+                    />
+                    <Button
+                      type="button"
+                      className="bg-sky-600 text-white hover:bg-sky-500"
+                      onClick={() =>
+                        persistIssuePatch({ title: localIssue.title })
+                      }
+                    >
+                      <RiSaveLine className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-app-border bg-transparent text-app-text-primary"
+                      onClick={handleCancelEdit}
+                    >
+                      <RiCloseLine className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <h3 className="text-lg font-medium text-app-text-primary">
                     {localIssue.title}
-                  </h2>
-                  <div className="flex items-center gap-4 text-sm text-app-text-muted">
-                    <span>{localIssue.key || `#${localIssue.id}`}</span>
-                    {selectedState && (
-                      <span className="rounded-full bg-app-button-hover px-2 py-1 text-xs">
-                        {selectedState.name}
-                      </span>
+                  </h3>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="border-b border-app-border pb-2 text-sm font-medium text-app-text-primary">
+                  Issue 属性
+                </h4>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-app-text-secondary">
+                      状态
+                    </Label>
+                    {editingField === "stateId" ? (
+                      <div className="flex gap-2">
+                        <Select
+                          value={localIssue.stateId ?? undefined}
+                          onValueChange={(value) => {
+                            const nextState = issueStates.find(
+                              (state) => state.id === value,
+                            );
+
+                            setLocalIssue({
+                              ...localIssue,
+                              stateId: value,
+                              state: nextState || null,
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="w-full border-app-border bg-app-bg text-app-text-primary">
+                            <SelectValue placeholder="选择状态" />
+                          </SelectTrigger>
+                          <SelectContent className="border-app-border bg-app-content-bg">
+                            {issueStates.map((state) => (
+                              <SelectItem key={state.id} value={state.id}>
+                                {state.name} ({state.category})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          className="bg-sky-600 text-white hover:bg-sky-500"
+                          onClick={() =>
+                            persistIssuePatch(
+                              { stateId: localIssue.stateId || undefined },
+                              { state: localIssue.state || null },
+                            )
+                          }
+                        >
+                          <RiSaveLine className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-auto w-full justify-start px-2 py-1 text-left text-sm text-app-text-primary hover:bg-app-button-hover"
+                        onClick={() => handleFieldEdit("stateId")}
+                      >
+                        {localIssue.state?.name || "未设置"}
+                        {localIssue.state?.category
+                          ? ` · ${localIssue.state.category}`
+                          : ""}
+                      </Button>
                     )}
                   </div>
-                </div>
-                <button
-                  onClick={onClose}
-                  className="rounded-lg p-2 transition-colors hover:bg-app-button-hover"
-                >
-                  <RiCloseLine className="h-5 w-5 text-app-text-secondary" />
-                </button>
-              </div>
-            </div>
 
-            <div className="flex min-h-0 flex-1 gap-2">
-              <div className="flex w-2/3 flex-col rounded-lg border border-app-border bg-app-content-bg">
-                <div className="flex-shrink-0 border-b border-app-border p-4">
-                  <h3 className="text-lg font-semibold text-app-text-primary">
-                    Issue 详情
-                  </h3>
-                </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-app-text-secondary">
+                      优先级
+                    </Label>
+                    {editingField === "priority" ? (
+                      <div className="flex gap-2">
+                        <Select
+                          value={localIssue.priority ?? EMPTY_PRIORITY_VALUE}
+                          onValueChange={(value) =>
+                            setLocalIssue({
+                              ...localIssue,
+                              priority:
+                                value === EMPTY_PRIORITY_VALUE
+                                  ? undefined
+                                  : (value as IssuePriority),
+                            })
+                          }
+                        >
+                          <SelectTrigger className="w-full border-app-border bg-app-bg text-app-text-primary">
+                            <SelectValue placeholder="选择优先级" />
+                          </SelectTrigger>
+                          <SelectContent className="border-app-border bg-app-content-bg">
+                            <SelectItem value={EMPTY_PRIORITY_VALUE}>
+                              未设置
+                            </SelectItem>
+                            {PRIORITY_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          className="bg-sky-600 text-white hover:bg-sky-500"
+                          onClick={() =>
+                            persistIssuePatch({
+                              priority: localIssue.priority,
+                            })
+                          }
+                        >
+                          <RiSaveLine className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-auto w-full justify-start px-2 py-1 text-left text-sm text-app-text-primary hover:bg-app-button-hover"
+                        onClick={() => handleFieldEdit("priority")}
+                      >
+                        {currentPriority?.label || "未设置"}
+                      </Button>
+                    )}
+                  </div>
 
-                <div className="flex-1 overflow-y-auto p-4">
-                  <div className="flex flex-col gap-6">
-                    <div className="space-y-6">
-                      <div>
-                        <div className="mb-2 flex items-center justify-between">
-                          <label className="text-sm font-medium text-app-text-primary">
-                            标题
-                          </label>
-                          {editingField !== "title" && (
-                            <button
-                              onClick={() => handleFieldEdit("title")}
-                              className="rounded p-1 hover:bg-app-button-hover"
+                  <div className="space-y-2">
+                    <Label className="gap-1 text-xs text-app-text-secondary">
+                      <RiPriceTagLine className="h-3 w-3" />
+                      项目
+                    </Label>
+                    {editingField === "projectId" ? (
+                      <div className="flex gap-2">
+                        <Select
+                          value={localIssue.projectId ?? EMPTY_PROJECT_VALUE}
+                          onValueChange={(value) => {
+                            const nextProjectId =
+                              value === EMPTY_PROJECT_VALUE ? null : value;
+                            const nextProject = projects.find(
+                              (project) => project.id === nextProjectId,
+                            );
+
+                            setLocalIssue({
+                              ...localIssue,
+                              projectId: nextProjectId,
+                              project: nextProject || null,
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="w-full border-app-border bg-app-bg text-app-text-primary">
+                            <SelectValue placeholder="选择项目" />
+                          </SelectTrigger>
+                          <SelectContent className="border-app-border bg-app-content-bg">
+                            <SelectItem value={EMPTY_PROJECT_VALUE}>
+                              不归属任何项目
+                            </SelectItem>
+                            {projects.map((project) => (
+                              <SelectItem key={project.id} value={project.id}>
+                                {project.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          className="bg-sky-600 text-white hover:bg-sky-500"
+                          onClick={() =>
+                            persistIssuePatch(
+                              { projectId: localIssue.projectId ?? null },
+                              { project: localIssue.project || null },
+                            )
+                          }
+                        >
+                          <RiSaveLine className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-auto w-full justify-start px-2 py-1 text-left text-sm text-app-text-primary hover:bg-app-button-hover"
+                        onClick={() => handleFieldEdit("projectId")}
+                      >
+                        {selectedProject?.name || localIssue.project?.name || "未设置"}
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs text-app-text-secondary">
+                      可见性
+                    </Label>
+                    {editingField === "visibility" ? (
+                      <div className="flex gap-2">
+                        <Select
+                          value={localIssue.visibility ?? undefined}
+                          onValueChange={(value) =>
+                            setLocalIssue({
+                              ...localIssue,
+                              visibility: value as VisibilityType,
+                            })
+                          }
+                        >
+                          <SelectTrigger className="w-full border-app-border bg-app-bg text-app-text-primary">
+                            <SelectValue placeholder="选择可见性" />
+                          </SelectTrigger>
+                          <SelectContent className="border-app-border bg-app-content-bg">
+                            {VISIBILITY_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          className="bg-sky-600 text-white hover:bg-sky-500"
+                          onClick={() =>
+                            persistIssuePatch({
+                              visibility: localIssue.visibility,
+                            })
+                          }
+                        >
+                          <RiSaveLine className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-auto w-full justify-start px-2 py-1 text-left text-sm text-app-text-primary hover:bg-app-button-hover"
+                        onClick={() => handleFieldEdit("visibility")}
+                      >
+                        {VISIBILITY_OPTIONS.find(
+                          (option) => option.value === localIssue.visibility,
+                        )?.label || "未设置"}
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs text-app-text-secondary">
+                      主负责人
+                    </Label>
+                    {workspaceType === "PERSONAL" ? (
+                      <Badge
+                        variant="outline"
+                        className="h-auto w-fit rounded-md border-app-border px-3 py-2 text-sm font-normal text-app-text-primary"
+                      >
+                        {directAssignee?.name || currentUserName}
+                      </Badge>
+                    ) : editingField === "directAssigneeId" ? (
+                      <div className="flex gap-2">
+                        <Select
+                          value={
+                            localIssue.directAssigneeId ?? EMPTY_ASSIGNEE_VALUE
+                          }
+                          onValueChange={(value) =>
+                            setLocalIssue({
+                              ...localIssue,
+                              directAssigneeId:
+                                value === EMPTY_ASSIGNEE_VALUE ? null : value,
+                            })
+                          }
+                        >
+                          <SelectTrigger className="w-full border-app-border bg-app-bg text-app-text-primary">
+                            <SelectValue placeholder="选择负责人" />
+                          </SelectTrigger>
+                          <SelectContent className="border-app-border bg-app-content-bg">
+                            <SelectItem value={EMPTY_ASSIGNEE_VALUE}>
+                              暂不指定负责人
+                            </SelectItem>
+                            {memberOptions.map((member) => (
+                              <SelectItem key={member.id} value={member.id}>
+                                {member.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          className="bg-sky-600 text-white hover:bg-sky-500"
+                          onClick={() =>
+                            persistIssuePatch({
+                              directAssigneeId:
+                                localIssue.directAssigneeId ?? null,
+                            })
+                          }
+                        >
+                          <RiSaveLine className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-auto w-full justify-start px-2 py-1 text-left text-sm text-app-text-primary hover:bg-app-button-hover"
+                        onClick={() => handleFieldEdit("directAssigneeId")}
+                      >
+                        {directAssignee?.name || "未分配"}
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="gap-1 text-xs text-app-text-secondary">
+                      <RiCalendarLine className="h-3 w-3" />
+                      截止日期
+                    </Label>
+                    {editingField === "dueDate" ? (
+                      <div className="flex flex-wrap gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="flex-1 justify-start border-app-border bg-app-bg text-left font-normal text-app-text-primary hover:bg-app-bg"
                             >
-                              <RiEditLine className="h-4 w-4 text-app-text-secondary" />
-                            </button>
-                          )}
-                        </div>
-                        {editingField === "title" ? (
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              value={localIssue.title}
-                              onChange={(event) =>
+                              <CalendarIcon className="h-4 w-4 text-app-text-secondary" />
+                              {dueDateValue
+                                ? format(dueDateValue, "yyyy-MM-dd")
+                                : "选择日期"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            align="start"
+                            className="w-auto border-app-border bg-app-content-bg p-0"
+                          >
+                            <Calendar
+                              mode="single"
+                              selected={dueDateValue}
+                              onSelect={(date) =>
                                 setLocalIssue({
                                   ...localIssue,
-                                  title: event.target.value,
+                                  dueDate: date ? toUtcMidnightIso(date) : null,
                                 })
                               }
-                              className="flex-1 rounded-md border border-app-border bg-app-bg px-3 py-2 text-app-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              autoFocus
+                              initialFocus
                             />
-                            <button
-                              onClick={() =>
-                                persistIssuePatch({ title: localIssue.title })
-                              }
-                              className="rounded-md bg-blue-600 px-3 py-2 text-white transition-colors hover:bg-blue-700"
-                            >
-                              <RiSaveLine className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={handleCancelEdit}
-                              className="rounded-md border border-app-border px-3 py-2 transition-colors hover:bg-app-button-hover"
-                            >
-                              <RiCloseLine className="h-4 w-4 text-app-text-secondary" />
-                            </button>
-                          </div>
-                        ) : (
-                          <h3 className="text-lg font-medium text-app-text-primary">
-                            {localIssue.title}
-                          </h3>
-                        )}
+                          </PopoverContent>
+                        </Popover>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="border-app-border bg-transparent text-app-text-primary"
+                          onClick={() =>
+                            setLocalIssue({
+                              ...localIssue,
+                              dueDate: null,
+                            })
+                          }
+                        >
+                          清空
+                        </Button>
+                        <Button
+                          type="button"
+                          className="bg-sky-600 text-white hover:bg-sky-500"
+                          onClick={() =>
+                            persistIssuePatch({
+                              dueDate: localIssue.dueDate ?? null,
+                            })
+                          }
+                        >
+                          <RiSaveLine className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-auto w-full justify-start px-2 py-1 text-left text-sm text-app-text-primary hover:bg-app-button-hover"
+                        onClick={() => handleFieldEdit("dueDate")}
+                      >
+                        {formatDateOnly(localIssue.dueDate)}
+                      </Button>
+                    )}
+                  </div>
+
+                  {(localIssue.assignees?.length || 0) > 0 && (
+                    <div className="col-span-2 space-y-2">
+                      <Label className="text-xs text-app-text-secondary">
+                        协作成员
+                      </Label>
+                      <div className="flex flex-wrap gap-2">
+                        {localIssue.assignees?.map((assignee) => (
+                          <Badge
+                            key={assignee.id}
+                            variant="secondary"
+                            className="bg-app-button-hover text-app-text-primary"
+                          >
+                            {memberOptions.find(
+                              (member) => member.id === assignee.memberId,
+                            )?.name || getIssueMemberName(assignee.member)}
+                          </Badge>
+                        ))}
                       </div>
                     </div>
+                  )}
+                </div>
 
-                    <div className="space-y-4">
-                      <h4 className="border-b border-app-border pb-2 text-sm font-medium text-app-text-primary">
-                        Issue 属性
-                      </h4>
+                <div className="space-y-3 border-t border-app-border pt-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm text-app-text-primary">描述</Label>
+                    {editingField !== "description" && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 rounded-md text-app-text-secondary hover:bg-app-button-hover hover:text-app-text-primary"
+                        onClick={() => handleFieldEdit("description")}
+                      >
+                        <RiEditLine className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="mb-1 block text-xs font-medium text-app-text-secondary">
-                            状态
-                          </label>
-                          {editingField === "stateId" ? (
-                            <div className="flex gap-2">
-                              <select
-                                value={localIssue.stateId || ""}
-                                onChange={(event) => {
-                                  const nextStateId = event.target.value;
-                                  const nextState = issueStates.find(
-                                    (state) => state.id === nextStateId,
-                                  );
+                  {editingField === "description" ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={localIssue.description || ""}
+                        onChange={(event) =>
+                          setLocalIssue({
+                            ...localIssue,
+                            description: event.target.value,
+                          })
+                        }
+                        className="min-h-[200px] max-h-[600px] border-app-border bg-app-bg text-app-text-primary"
+                        rows={4}
+                        placeholder="添加描述..."
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          className="bg-sky-600 text-white hover:bg-sky-500"
+                          onClick={() =>
+                            persistIssuePatch({
+                              description: localIssue.description,
+                            })
+                          }
+                        >
+                          保存
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="border-app-border bg-transparent text-app-text-primary"
+                          onClick={handleCancelEdit}
+                        >
+                          取消
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="whitespace-pre-wrap text-sm text-app-text-secondary">
+                      {localIssue.description || "暂无描述"}
+                    </div>
+                  )}
+                </div>
 
-                                  setLocalIssue({
-                                    ...localIssue,
-                                    stateId: nextStateId || null,
-                                    state: nextState || null,
-                                  });
-                                }}
-                                className="w-full rounded bg-app-bg px-2 py-1 text-sm text-app-text-primary ring-1 ring-app-border focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                autoFocus
-                              >
-                                {issueStates.map((state) => (
-                                  <option key={state.id} value={state.id}>
-                                    {state.name} ({state.category})
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                onClick={() =>
-                                  persistIssuePatch(
-                                    { stateId: localIssue.stateId || undefined },
-                                    { state: localIssue.state || null },
-                                  )
-                                }
-                                className="rounded bg-blue-600 px-2 text-white transition-colors hover:bg-blue-700"
-                              >
-                                <RiSaveLine className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => handleFieldEdit("stateId")}
-                              className="w-full rounded px-2 py-1 text-left text-sm text-app-text-primary transition-colors hover:bg-app-button-hover"
-                            >
-                              {localIssue.state?.name || "未设置"}
-                              {localIssue.state?.category
-                                ? ` · ${localIssue.state.category}`
-                                : ""}
-                            </button>
-                          )}
+                <div className="space-y-2 border-t border-app-border pt-4 text-xs text-app-text-muted">
+                  <div className="flex items-center gap-2">
+                    <RiTimeLine className="h-3 w-3" />
+                    <span>创建时间: {formatDate(localIssue.createdAt)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RiTimeLine className="h-3 w-3" />
+                    <span>更新时间: {formatDate(localIssue.updatedAt)}</span>
+                  </div>
+                  {updateIssueMutation.isPending && (
+                    <div className="text-sky-600">正在保存变更...</div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </ScrollArea>
+        </Card>
+
+        <Card className="flex w-1/3 flex-col border-app-border bg-app-content-bg shadow-none">
+          <CardHeader className="border-b border-app-border p-4">
+            <CardTitle className="flex items-center gap-2 text-lg text-app-text-primary">
+              <RiFileTextLine className="h-5 w-5" />
+              讨论 ({comments.length})
+            </CardTitle>
+          </CardHeader>
+
+          <ScrollArea className="flex-1">
+            <CardContent className="p-4">
+              <div className="space-y-4">
+                {comments.map((comment) => {
+                  const authorName = getCommentAuthorName(comment.author);
+
+                  return (
+                    <div key={comment.id} className="flex gap-3">
+                      <Avatar className="size-8">
+                        <AvatarImage src={comment.authorAvatar} alt={authorName} />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-400 to-violet-500 text-white">
+                          {getAvatarFallback(authorName)}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-center gap-2">
+                          <span className="text-sm font-medium text-app-text-primary">
+                            {authorName}
+                          </span>
+                          <span className="text-xs text-app-text-muted">
+                            {formatDate(comment.createdAt)}
+                          </span>
                         </div>
-
-                        <div>
-                          <label className="mb-1 block text-xs font-medium text-app-text-secondary">
-                            优先级
-                          </label>
-                          {editingField === "priority" ? (
-                            <div className="flex gap-2">
-                              <select
-                                value={localIssue.priority || ""}
-                                onChange={(event) =>
-                                  setLocalIssue({
-                                    ...localIssue,
-                                    priority:
-                                      (event.target.value as IssuePriority) ||
-                                      undefined,
-                                  })
-                                }
-                                className="w-full rounded bg-app-bg px-2 py-1 text-sm text-app-text-primary ring-1 ring-app-border focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                autoFocus
-                              >
-                                <option value="">未设置</option>
-                                {PRIORITY_OPTIONS.map((option) => (
-                                  <option key={option.value} value={option.value}>
-                                    {option.label}
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                onClick={() =>
-                                  persistIssuePatch({
-                                    priority: localIssue.priority,
-                                  })
-                                }
-                                className="rounded bg-blue-600 px-2 text-white transition-colors hover:bg-blue-700"
-                              >
-                                <RiSaveLine className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => handleFieldEdit("priority")}
-                              className="w-full rounded px-2 py-1 text-left text-sm text-app-text-primary transition-colors hover:bg-app-button-hover"
-                            >
-                              {getPriorityOption(localIssue.priority)?.label || "未设置"}
-                            </button>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="mb-1 flex items-center gap-1 text-xs font-medium text-app-text-secondary">
-                            <RiPriceTagLine className="h-3 w-3" />
-                            项目
-                          </label>
-                          {editingField === "projectId" ? (
-                            <div className="flex gap-2">
-                              <select
-                                value={localIssue.projectId || ""}
-                                onChange={(event) => {
-                                  const nextProjectId = event.target.value;
-                                  const nextProject = projects.find(
-                                    (project) => project.id === nextProjectId,
-                                  );
-
-                                  setLocalIssue({
-                                    ...localIssue,
-                                    projectId: nextProjectId || null,
-                                    project: nextProject || null,
-                                  });
-                                }}
-                                className="w-full rounded bg-app-bg px-2 py-1 text-sm text-app-text-primary ring-1 ring-app-border focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                autoFocus
-                              >
-                                <option value="">不归属任何项目</option>
-                                {projects.map((project) => (
-                                  <option key={project.id} value={project.id}>
-                                    {project.name}
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                onClick={() =>
-                                  persistIssuePatch(
-                                    { projectId: localIssue.projectId ?? null },
-                                    { project: localIssue.project || null },
-                                  )
-                                }
-                                className="rounded bg-blue-600 px-2 text-white transition-colors hover:bg-blue-700"
-                              >
-                                <RiSaveLine className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => handleFieldEdit("projectId")}
-                              className="w-full rounded px-2 py-1 text-left text-sm text-app-text-primary transition-colors hover:bg-app-button-hover"
-                            >
-                              {selectedProject?.name || localIssue.project?.name || "未设置"}
-                            </button>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="mb-1 block text-xs font-medium text-app-text-secondary">
-                            可见性
-                          </label>
-                          {editingField === "visibility" ? (
-                            <div className="flex gap-2">
-                              <select
-                                value={localIssue.visibility || ""}
-                                onChange={(event) =>
-                                  setLocalIssue({
-                                    ...localIssue,
-                                    visibility:
-                                      (event.target.value as VisibilityType) ||
-                                      undefined,
-                                  })
-                                }
-                                className="w-full rounded bg-app-bg px-2 py-1 text-sm text-app-text-primary ring-1 ring-app-border focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                autoFocus
-                              >
-                                {VISIBILITY_OPTIONS.map((option) => (
-                                  <option key={option.value} value={option.value}>
-                                    {option.label}
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                onClick={() =>
-                                  persistIssuePatch({
-                                    visibility: localIssue.visibility,
-                                  })
-                                }
-                                className="rounded bg-blue-600 px-2 text-white transition-colors hover:bg-blue-700"
-                              >
-                                <RiSaveLine className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => handleFieldEdit("visibility")}
-                              className="w-full rounded px-2 py-1 text-left text-sm text-app-text-primary transition-colors hover:bg-app-button-hover"
-                            >
-                              {VISIBILITY_OPTIONS.find(
-                                (option) => option.value === localIssue.visibility,
-                              )?.label || "未设置"}
-                            </button>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="mb-1 block text-xs font-medium text-app-text-secondary">
-                            主负责人
-                          </label>
-                          {workspaceType === "PERSONAL" ? (
-                            <div className="w-full rounded px-2 py-1 text-left text-sm text-app-text-primary">
-                              {directAssignee?.name || currentUserName}
-                            </div>
-                          ) : editingField === "directAssigneeId" ? (
-                            <div className="flex gap-2">
-                              <select
-                                value={localIssue.directAssigneeId || ""}
-                                onChange={(event) =>
-                                  setLocalIssue({
-                                    ...localIssue,
-                                    directAssigneeId: event.target.value || null,
-                                  })
-                                }
-                                className="w-full rounded bg-app-bg px-2 py-1 text-sm text-app-text-primary ring-1 ring-app-border focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                autoFocus
-                              >
-                                <option value="">暂不指定负责人</option>
-                                {memberOptions.map((member) => (
-                                  <option key={member.id} value={member.id}>
-                                    {member.name}
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                onClick={() =>
-                                  persistIssuePatch({
-                                    directAssigneeId:
-                                      localIssue.directAssigneeId ?? null,
-                                  })
-                                }
-                                className="rounded bg-blue-600 px-2 text-white transition-colors hover:bg-blue-700"
-                              >
-                                <RiSaveLine className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => handleFieldEdit("directAssigneeId")}
-                              className="w-full rounded px-2 py-1 text-left text-sm text-app-text-primary transition-colors hover:bg-app-button-hover"
-                            >
-                              {directAssignee?.name || "未分配"}
-                            </button>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="mb-1 flex items-center gap-1 text-xs font-medium text-app-text-secondary">
-                            <RiCalendarLine className="h-3 w-3" />
-                            截止日期
-                          </label>
-                          {editingField === "dueDate" ? (
-                            <div className="flex gap-2">
-                              <input
-                                type="date"
-                                value={
-                                  localIssue.dueDate
-                                    ? new Date(localIssue.dueDate)
-                                        .toISOString()
-                                        .slice(0, 10)
+                        <div className="text-sm text-app-text-secondary">
+                          {comment.content
+                            .split(/(@[^\s]+)/)
+                            .map((part, index) => (
+                              <span
+                                key={index}
+                                className={
+                                  part.startsWith("@")
+                                    ? "font-medium text-sky-600"
                                     : ""
                                 }
-                                onChange={(event) =>
-                                  setLocalIssue({
-                                    ...localIssue,
-                                    dueDate: event.target.value
-                                      ? `${event.target.value}T00:00:00.000Z`
-                                      : null,
-                                  })
-                                }
-                                className="w-full rounded bg-app-bg px-2 py-1 text-sm text-app-text-primary ring-1 ring-app-border focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                autoFocus
-                              />
-                              <button
-                                onClick={() =>
-                                  persistIssuePatch({
-                                    dueDate: localIssue.dueDate ?? null,
-                                  })
-                                }
-                                className="rounded bg-blue-600 px-2 text-white transition-colors hover:bg-blue-700"
                               >
-                                <RiSaveLine className="h-4 w-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => handleFieldEdit("dueDate")}
-                              className="w-full rounded px-2 py-1 text-left text-sm text-app-text-primary transition-colors hover:bg-app-button-hover"
-                            >
-                              {formatDateOnly(localIssue.dueDate)}
-                            </button>
-                          )}
-                        </div>
-
-                        {(localIssue.assignees?.length || 0) > 0 && (
-                          <div className="col-span-2">
-                            <label className="mb-1 block text-xs font-medium text-app-text-secondary">
-                              协作成员
-                            </label>
-                            <div className="flex flex-wrap gap-2">
-                              {localIssue.assignees?.map((assignee) => (
-                                <span
-                                  key={assignee.id}
-                                  className="rounded-full bg-app-button-hover px-3 py-1 text-xs text-app-text-primary"
-                                >
-                                  {memberOptions.find(
-                                    (member) => member.id === assignee.memberId,
-                                  )?.name || getIssueMemberName(assignee.member)}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="border-t border-app-border p-2">
-                        <div className="mb-2 flex items-center justify-between">
-                          <label className="text-sm font-medium text-app-text-primary">
-                            描述
-                          </label>
-                          {editingField !== "description" && (
-                            <button
-                              onClick={() => handleFieldEdit("description")}
-                              className="rounded p-1 hover:bg-app-button-hover"
-                            >
-                              <RiEditLine className="h-4 w-4 text-app-text-secondary" />
-                            </button>
-                          )}
-                        </div>
-                        {editingField === "description" ? (
-                          <div className="space-y-2">
-                            <textarea
-                              value={localIssue.description || ""}
-                              onChange={(event) =>
-                                setLocalIssue({
-                                  ...localIssue,
-                                  description: event.target.value,
-                                })
-                              }
-                              className="min-h-[200px] max-h-[600px] w-full rounded-md border border-app-border bg-app-bg px-3 py-2 text-app-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              rows={4}
-                              placeholder="添加描述..."
-                            />
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() =>
-                                  persistIssuePatch({
-                                    description: localIssue.description,
-                                  })
-                                }
-                                className="rounded bg-blue-600 px-3 py-1 text-sm text-white transition-colors hover:bg-blue-700"
-                              >
-                                保存
-                              </button>
-                              <button
-                                onClick={handleCancelEdit}
-                                className="rounded border border-app-border px-3 py-1 text-sm transition-colors hover:bg-app-button-hover"
-                              >
-                                取消
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="whitespace-pre-wrap text-app-text-secondary">
-                            {localIssue.description || "暂无描述"}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="absolute bottom-4">
-                        <div className="space-y-2 text-xs text-app-text-muted">
-                          <div className="flex items-center gap-1">
-                            <RiTimeLine className="h-3 w-3" />
-                            <span>创建时间: {formatDate(localIssue.createdAt)}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <RiTimeLine className="h-3 w-3" />
-                            <span>更新时间: {formatDate(localIssue.updatedAt)}</span>
-                          </div>
-                          {updateIssueMutation.isPending && (
-                            <div className="text-blue-600">正在保存变更...</div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex w-1/3 flex-col rounded-lg border border-app-border bg-app-content-bg">
-                <div className="flex-shrink-0 border-b border-app-border p-4">
-                  <h4 className="flex items-center gap-2 text-lg font-semibold text-app-text-primary">
-                    <RiFileTextLine className="h-5 w-5" />
-                    讨论 ({comments.length})
-                  </h4>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4">
-                  <div className="mb-4 space-y-4">
-                    {comments.map((comment) => {
-                      const authorName = getCommentAuthorName(comment.author);
-
-                      return (
-                        <div key={comment.id} className="flex gap-3">
-                          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-blue-400 to-purple-500 text-sm text-white">
-                            {comment.authorAvatar ? (
-                              <img
-                                src={comment.authorAvatar}
-                                alt="avatar"
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-sm">
-                                {getAvatarFallback(authorName)}
+                                {part}
                               </span>
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="mb-1 flex items-center gap-2">
-                              <span className="text-sm font-medium text-app-text-primary">
-                                {authorName}
-                              </span>
-                              <span className="text-xs text-app-text-muted">
-                                {formatDate(comment.createdAt)}
-                              </span>
-                            </div>
-                            <div className="text-sm text-app-text-secondary">
-                              {comment.content
-                                .split(/(@[^\s]+)/)
-                                .map((part, index) => (
-                                  <span
-                                    key={index}
-                                    className={
-                                      part.startsWith("@")
-                                        ? "font-medium text-blue-600"
-                                        : ""
-                                    }
-                                  >
-                                    {part}
-                                  </span>
-                                ))}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="border-t border-app-border p-4">
-                  <div className="relative">
-                    <div className="flex gap-3">
-                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-green-400 to-blue-500 text-sm text-white">
-                        {currentUserAvatar ? (
-                          <img
-                            src={currentUserAvatar}
-                            alt="avatar"
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-sm">
-                            {getAvatarFallback(currentUserName)}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="relative flex-1">
-                        <textarea
-                          ref={commentInputRef}
-                          value={commentText}
-                          onChange={handleCommentChange}
-                          placeholder="添加评论... 使用 @ 提及团队成员"
-                          className="w-full resize-none rounded-md border border-app-border bg-app-bg px-3 py-2 text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          rows={3}
-                        />
-
-                        {showMentionList && filteredMembers.length > 0 && (
-                          <div className="absolute bottom-full left-0 right-0 z-10 max-h-48 overflow-y-auto rounded-md border border-app-border bg-app-content-bg shadow-lg">
-                            {filteredMembers.map((member) => (
-                              <button
-                                key={member.id}
-                                onClick={() => handleMentionSelect(member)}
-                                className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-app-button-hover"
-                              >
-                                <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-app-button-hover">
-                                  {member.avatarUrl ? (
-                                    <img
-                                      src={member.avatarUrl}
-                                      alt={member.name}
-                                      className="h-full w-full object-cover"
-                                    />
-                                  ) : (
-                                    <span className="text-xs text-app-text-primary">
-                                      {getAvatarFallback(member.name)}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="text-sm font-medium text-app-text-primary">
-                                    {member.name}
-                                  </div>
-                                  <div className="truncate text-xs text-app-text-muted">
-                                    {member.email || member.id}
-                                  </div>
-                                </div>
-                              </button>
                             ))}
-                          </div>
-                        )}
-
-                        <div className="mt-2 flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-xs text-app-text-muted">
-                            <RiAtLine className="h-3 w-3" />
-                            <span>使用 @ 提及当前工作空间成员</span>
-                          </div>
-                          <button
-                            onClick={handleSendComment}
-                            disabled={!commentText.trim()}
-                            className="flex items-center gap-1 rounded bg-blue-600 px-3 py-1 text-sm text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <RiSendPlaneLine className="h-3 w-3" />
-                            发送
-                          </button>
                         </div>
                       </div>
                     </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </ScrollArea>
+
+          <div className="border-t border-app-border p-4">
+            <div className="flex gap-3">
+              <Avatar className="size-8">
+                <AvatarImage src={currentUserAvatar} alt={currentUserName} />
+                <AvatarFallback className="bg-gradient-to-br from-emerald-400 to-sky-500 text-white">
+                  {getAvatarFallback(currentUserName)}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="relative flex-1">
+                <Textarea
+                  ref={commentInputRef}
+                  value={commentText}
+                  onChange={handleCommentChange}
+                  placeholder="添加评论... 使用 @ 提及团队成员"
+                  className="min-h-24 resize-none border-app-border bg-app-bg text-app-text-primary placeholder:text-app-text-muted"
+                  rows={3}
+                />
+
+                {showMentionList && filteredMembers.length > 0 && (
+                  <div className="absolute inset-x-0 bottom-full z-10 mb-2 max-h-48 overflow-y-auto rounded-md border border-app-border bg-app-content-bg shadow-lg">
+                    {filteredMembers.map((member) => (
+                      <Button
+                        key={member.id}
+                        type="button"
+                        variant="ghost"
+                        className="h-auto w-full justify-start rounded-none px-3 py-2 text-left hover:bg-app-button-hover"
+                        onClick={() => handleMentionSelect(member)}
+                      >
+                        <Avatar className="size-8">
+                          <AvatarImage src={member.avatarUrl} alt={member.name} />
+                          <AvatarFallback className="bg-app-button-hover text-app-text-primary">
+                            {getAvatarFallback(member.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-app-text-primary">
+                            {member.name}
+                          </div>
+                          <div className="truncate text-xs text-app-text-muted">
+                            {member.email || member.id}
+                          </div>
+                        </div>
+                      </Button>
+                    ))}
                   </div>
+                )}
+
+                <div className="mt-2 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs text-app-text-muted">
+                    <RiAtLine className="h-3 w-3" />
+                    <span>使用 @ 提及当前工作空间成员</span>
+                  </div>
+                  <Button
+                    type="button"
+                    className="bg-sky-600 text-white hover:bg-sky-500"
+                    onClick={handleSendComment}
+                    disabled={!commentText.trim()}
+                  >
+                    <RiSendPlaneLine className="h-3 w-3" />
+                    发送
+                  </Button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
+  );
+
+  if (displayMode === "page") {
+    return <div className="h-full w-full overflow-hidden">{content}</div>;
+  }
+
+  return (
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <DialogContent
+        className="h-[calc(100vh-64px)] max-w-[calc(100vw-16px)] border-app-border bg-app-bg p-2 shadow-2xl"
+        showCloseButton={false}
+      >
+        <DialogTitle className="sr-only">
+          {localIssue.title || "Issue 详情"}
+        </DialogTitle>
+        {content}
+      </DialogContent>
+    </Dialog>
   );
 }
