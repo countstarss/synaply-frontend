@@ -4,14 +4,28 @@
 import {
   createContext,
   useContext,
-  useState,
   useEffect,
-  ReactNode,
+  useRef,
+  useState,
+  type ReactNode,
 } from "react";
-import { Session, User, AuthError } from "@supabase/supabase-js";
-import { createClientComponentClient } from "@/lib/supabase";
-import { useRouter, usePathname } from "@/i18n/navigation";
+import { type AuthError, type Session, type User } from "@supabase/supabase-js";
 import { useLocale } from "next-intl";
+import { usePathname, useRouter } from "@/i18n/navigation";
+import {
+  AUTH_CALLBACK_ROUTE,
+  AUTH_ROUTE,
+  DEFAULT_POST_LOGIN_ROUTE,
+  DEFAULT_SIGNED_OUT_ROUTE,
+  RESET_PASSWORD_ROUTE,
+  SESSION_EXPIRED_REASON,
+  buildAbsoluteAppUrl,
+  buildAuthRouteWithReason,
+} from "@/lib/auth-utils";
+import { createClientComponentClient } from "@/lib/supabase";
+
+const SESSION_REFRESH_INTERVAL_MS = 60_000;
+const SESSION_REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
 
 interface AuthContextType {
   session: Session | null;
@@ -39,40 +53,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [supabase] = useState(() => createClientComponentClient());
+  const forcedRedirectReasonRef = useRef<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale();
 
-  // 创建 Supabase 客户端实例
-  const supabase = createClientComponentClient();
-
   useEffect(() => {
-    let mounted = true; // 防止内存泄漏的标志
+    let mounted = true;
 
-    // 获取初始会话
+    const redirectAuthenticatedUser = () => {
+      if (pathname === AUTH_ROUTE) {
+        router.replace(DEFAULT_POST_LOGIN_ROUTE);
+      }
+    };
+
+    const handleSessionExpiry = async () => {
+      forcedRedirectReasonRef.current = SESSION_EXPIRED_REASON;
+
+      if (mounted) {
+        setSession(null);
+        setUser(null);
+        setError(null);
+      }
+
+      const { error: signOutError } = await supabase.auth.signOut({
+        scope: "local",
+      });
+
+      if (signOutError) {
+        console.error("清理过期会话时出错:", signOutError);
+        forcedRedirectReasonRef.current = null;
+        router.replace(buildAuthRouteWithReason(SESSION_EXPIRED_REASON));
+      }
+    };
+
     const getInitialSession = async () => {
       try {
         const {
-          data: { session },
-          error,
+          data: { session: initialSession },
+          error: sessionError,
         } = await supabase.auth.getSession();
 
-        if (!mounted) return; // 组件已卸载，忽略结果
+        if (!mounted) {
+          return;
+        }
 
-        if (error) {
-          console.error("获取会话时出错:", error);
-          setError(error.message);
-        } else {
-          setSession(session);
-          setUser(session?.user || null);
-          // FIXME: 临时输出用来测试
-          if (session?.access_token) {
-            console.log("Supabase Access Token:", session.access_token);
-            console.log("Supabase User ID:", session.user);
-          }
+        if (sessionError) {
+          console.error("获取会话时出错:", sessionError);
+          setError(sessionError.message);
+          return;
+        }
+
+        setSession(initialSession);
+        setUser(initialSession?.user ?? null);
+
+        if (initialSession) {
+          redirectAuthenticatedUser();
         }
       } catch (err) {
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
+
         console.error("获取会话时发生异常:", err);
         setError("获取会话时发生未知错误");
       } finally {
@@ -82,100 +125,89 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    getInitialSession();
+    void getInitialSession();
 
-    // 监听认证状态变化
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
-
-      console.log("认证状态变化:", event, session?.user?.email);
-
-      setSession(session);
-      setUser(session?.user || null);
-      setLoading(false);
-      setError(null); // 清除之前的错误
-
-      // 处理各种认证事件
-      if (event === "SIGNED_OUT") {
-        // 退出登录后重定向到首页，让用户选择是否重新登录
-        router.push("/");
-      } else if (event === "SIGNED_IN") {
-        // 如果用户已登录且当前在认证页面，则重定向到仪表盘
-        if (pathname === "/auth") {
-          router.push("/tasks");
-        }
-      } else if (event === "INITIAL_SESSION" && session) {
-        // 初始会话存在且当前在认证页面，重定向到仪表盘
-        if (pathname === "/auth") {
-          router.push("/tasks");
-        }
-      } else if (event === "TOKEN_REFRESHED") {
-        // Token 刷新成功
-        console.log("Token 刷新成功");
-        if (session?.access_token) {
-          console.log("新的 Access Token:", session.access_token);
-        }
-      } else if (event === "USER_UPDATED") {
-        console.log("用户信息已更新");
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!mounted) {
+        return;
       }
-    });
 
-    // 设置定期检查和刷新 token
-    const refreshInterval = setInterval(async () => {
-      try {
-        const {
-          data: { session: currentSession },
-          error,
-        } = await supabase.auth.getSession();
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+      setLoading(false);
+      setError(null);
 
-        if (error) {
-          console.error("检查会话时出错:", error);
+      if (event === "SIGNED_OUT") {
+        const reason = forcedRedirectReasonRef.current;
+        forcedRedirectReasonRef.current = null;
+
+        if (reason) {
+          router.replace(buildAuthRouteWithReason(reason));
           return;
         }
 
-        if (currentSession) {
-          // 检查 token 是否即将过期（提前5分钟刷新）
-          const tokenExp = currentSession.expires_at
-            ? currentSession.expires_at * 1000
-            : 0;
-          const now = Date.now();
-          const fiveMinutes = 5 * 60 * 1000;
+        if (!pathname.startsWith(AUTH_ROUTE)) {
+          router.replace(DEFAULT_SIGNED_OUT_ROUTE);
+        }
 
-          if (tokenExp - now < fiveMinutes) {
-            console.log("Token 即将过期，尝试刷新...");
-            const { data, error: refreshError } =
-              await supabase.auth.refreshSession();
+        return;
+      }
 
-            if (refreshError) {
-              console.error("Token 刷新失败:", refreshError);
-              // 如果刷新失败，清除会话并重定向到登录页
-              setSession(null);
-              setUser(null);
-              setError("会话已过期，请重新登录");
-              router.push("/auth");
-            } else if (data.session) {
-              console.log("Token 刷新成功");
-              setSession(data.session);
-              setUser(data.session.user);
-            }
-          }
+      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && nextSession) {
+        redirectAuthenticatedUser();
+      }
+    });
+
+    const refreshInterval = window.setInterval(async () => {
+      try {
+        const {
+          data: { session: currentSession },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (sessionError) {
+          console.error("检查会话时出错:", sessionError);
+          return;
+        }
+
+        if (!currentSession?.expires_at) {
+          return;
+        }
+
+        const tokenExpiry = currentSession.expires_at * 1000;
+        const expiresSoon =
+          tokenExpiry - Date.now() < SESSION_REFRESH_THRESHOLD_MS;
+
+        if (!expiresSoon) {
+          return;
+        }
+
+        const { data, error: refreshError } = await supabase.auth.refreshSession();
+
+        if (refreshError) {
+          console.error("Token 刷新失败:", refreshError);
+          await handleSessionExpiry();
+          return;
+        }
+
+        if (mounted && data.session) {
+          setSession(data.session);
+          setUser(data.session.user);
         }
       } catch (err) {
         console.error("检查 token 状态时出错:", err);
       }
-    }, 60000); // 每分钟检查一次
+    }, SESSION_REFRESH_INTERVAL_MS);
 
-    // 清理函数
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      clearInterval(refreshInterval);
+      window.clearInterval(refreshInterval);
     };
-  }, [router, pathname, locale, supabase.auth]);
+  }, [pathname, router, supabase]);
 
-  // MARK: 注册函数
   const signUp = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
@@ -185,9 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}${
-            locale === "en" ? "" : `/${locale}`
-          }/auth/callback`,
+          emailRedirectTo: buildAbsoluteAppUrl(AUTH_CALLBACK_ROUTE, locale),
         },
       });
 
@@ -206,7 +236,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // MARK: 登录函数
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
@@ -232,7 +261,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // MARK: Google登录函数
   const signInWithGoogle = async () => {
     setLoading(true);
     setError(null);
@@ -241,9 +269,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}${
-            locale === "en" ? "" : `/${locale}`
-          }/auth/callback`,
+          redirectTo: buildAbsoluteAppUrl(AUTH_CALLBACK_ROUTE, locale),
         },
       });
 
@@ -262,7 +288,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // MARK: 登出函数
   const signOut = async () => {
     setLoading(true);
     setError(null);
@@ -285,16 +310,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // MARK: 重置密码函数
   const resetPassword = async (email: string) => {
     setLoading(true);
     setError(null);
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}${
-          locale === "en" ? "" : `/${locale}`
-        }/auth/reset-password`,
+        redirectTo: buildAbsoluteAppUrl(RESET_PASSWORD_ROUTE, locale),
       });
 
       if (error) {
@@ -312,29 +334,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // MARK: 清除错误
   const clearError = () => setError(null);
 
-  const value = {
-    session,
-    user,
-    loading,
-    error,
-    signUp,
-    signIn,
-    signInWithGoogle,
-    signOut,
-    resetPassword,
-    clearError,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        session,
+        user,
+        loading,
+        error,
+        signUp,
+        signIn,
+        signInWithGoogle,
+        signOut,
+        resetPassword,
+        clearError,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
+
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
+
   return context;
 }

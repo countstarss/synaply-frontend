@@ -1,83 +1,115 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from '@/i18n/navigation';
 import { motion } from 'framer-motion';
-import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useRouter } from '@/i18n/navigation';
+import {
+  AUTH_ROUTE,
+  DEFAULT_POST_LOGIN_ROUTE,
+  getAuthParam,
+} from '@/lib/auth-utils';
 import { createClientComponentClient } from '@/lib/supabase';
 
+type CallbackStatus = 'loading' | 'success' | 'error';
+
 export default function AuthCallbackPage() {
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [status, setStatus] = useState<CallbackStatus>('loading');
   const [message, setMessage] = useState('');
+  const [supabase] = useState(() => createClientComponentClient());
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const t = useTranslations();
 
   useEffect(() => {
+    let mounted = true;
+    let redirectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const finishSuccess = () => {
+      if (!mounted) {
+        return;
+      }
+
+      setStatus('success');
+      setMessage(t('auth.accountVerificationSuccess'));
+      redirectTimer = setTimeout(() => {
+        router.replace(DEFAULT_POST_LOGIN_ROUTE);
+      }, 1500);
+    };
+
+    const finishError = (nextMessage: string) => {
+      if (!mounted) {
+        return;
+      }
+
+      setStatus('error');
+      setMessage(nextMessage);
+    };
+
     const handleAuthCallback = async () => {
       try {
-        // 从 URL 获取当前会话
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
+        const urlError = getAuthParam('error_description') ?? getAuthParam('error');
+
+        if (urlError) {
+          finishError(urlError);
+          return;
+        }
+
+        const code = getAuthParam('code');
+
+        if (code) {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+          if (error) {
+            console.error('代码交换错误:', error);
+            finishError(error.message || t('auth.failedToVerify'));
+            return;
+          }
+
+          if (data.session) {
+            finishSuccess();
+            return;
+          }
+        }
+
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
         if (error) {
           console.error('认证回调错误:', error);
-          setStatus('error');
-          setMessage(error.message || '认证过程中发生错误');
+          finishError(error.message || t('auth.failedToVerify'));
           return;
         }
 
         if (session) {
-          setStatus('success');
-          setMessage('账户验证成功！正在跳转到主页...');
-          
-          // 延迟跳转以显示成功消息
-          setTimeout(() => {
-            router.push('/dashboard');
-          }, 2000);
-        } else {
-          // 如果没有会话，尝试从 URL 交换代码
-          const urlParams = new URLSearchParams(window.location.search);
-          const code = urlParams.get('code');
-          
-          if (code) {
-            const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-            
-            if (exchangeError) {
-              console.error('代码交换错误:', exchangeError);
-              setStatus('error');
-              setMessage(exchangeError.message || '验证过程中发生错误');
-              return;
-            }
-
-            if (data?.session) {
-              setStatus('success');
-              setMessage('账户验证成功！正在跳转到主页...');
-              
-              setTimeout(() => {
-                router.push('/dashboard');
-              }, 2000);
-            } else {
-              setStatus('error');
-              setMessage('未能验证您的账户，请重试');
-            }
-          } else {
-            setStatus('error');
-            setMessage('缺少验证代码，请重试');
-          }
+          finishSuccess();
+          return;
         }
+
+        finishError(t('auth.failedToVerify'));
       } catch (err) {
         console.error('处理认证回调时出错:', err);
-        setStatus('error');
-        setMessage('处理认证时发生未知错误');
+        finishError(t('auth.failedToVerify'));
       }
     };
 
-    handleAuthCallback();
-  }, [router, supabase.auth]);
+    void handleAuthCallback();
+
+    return () => {
+      mounted = false;
+
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
+      }
+    };
+  }, [router, supabase, t]);
 
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },
     animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -60 }
+    exit: { opacity: 0, y: -60 },
   };
 
   return (
@@ -92,15 +124,17 @@ export default function AuthCallbackPage() {
           {status === 'loading' && (
             <>
               <Loader2 className="w-16 h-16 text-green-400 animate-spin mx-auto mb-4" />
-              <h1 className="text-2xl font-bold text-white mb-2">验证中...</h1>
-              <p className="text-gray-400">正在验证您的账户，请稍候</p>
+              <h1 className="text-2xl font-bold text-white mb-2">{t('auth.verifying')}</h1>
+              <p className="text-gray-400">{t('auth.verifyingAccount')}</p>
             </>
           )}
 
           {status === 'success' && (
             <>
               <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
-              <h1 className="text-2xl font-bold text-white mb-2">验证成功！</h1>
+              <h1 className="text-2xl font-bold text-white mb-2">
+                {t('auth.verificationSuccess')}
+              </h1>
               <p className="text-gray-400">{message}</p>
             </>
           )}
@@ -108,13 +142,15 @@ export default function AuthCallbackPage() {
           {status === 'error' && (
             <>
               <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-              <h1 className="text-2xl font-bold text-white mb-2">验证失败</h1>
+              <h1 className="text-2xl font-bold text-white mb-2">
+                {t('auth.verificationFailed')}
+              </h1>
               <p className="text-gray-400 mb-6">{message}</p>
               <button
-                onClick={() => router.push('/auth')}
+                onClick={() => router.replace(AUTH_ROUTE)}
                 className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200"
               >
-                返回登录页面
+                {t('auth.returnToLogin')}
               </button>
             </>
           )}
@@ -122,4 +158,4 @@ export default function AuthCallbackPage() {
       </motion.div>
     </div>
   );
-} 
+}

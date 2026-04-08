@@ -1,11 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight, Shield, Cpu, Globe, CheckCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "@/i18n/navigation";
+import { DEFAULT_POST_LOGIN_ROUTE, getAuthParam } from "@/lib/auth-utils";
 import { createClientComponentClient } from "@/lib/supabase";
 import Image from "next/image";
 import logo from "@/assets/icons/logo.png";
@@ -14,19 +15,15 @@ export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const t = useTranslations();
-  const supabase = createClientComponentClient();
+  const [supabase] = useState(() => createClientComponentClient());
 
   // 处理OAuth回调
   useEffect(() => {
     const handleOAuthCallback = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get("code");
+      const code = getAuthParam("code");
 
       if (code) {
         try {
-          console.log("检测到OAuth回调代码，正在处理...");
-
-          // 使用code交换session
           const { data, error } = await supabase.auth.exchangeCodeForSession(
             code
           );
@@ -34,12 +31,9 @@ export default function HomePage() {
           if (error) {
             console.error("OAuth代码交换失败:", error);
           } else if (data?.session) {
-            console.log("OAuth登录成功！");
-            // 清除URL中的code参数
             const newUrl = window.location.pathname;
             window.history.replaceState({}, "", newUrl);
-            // 重定向到仪表盘
-            router.push("/dashboard");
+            router.replace(DEFAULT_POST_LOGIN_ROUTE);
           }
         } catch (err) {
           console.error("处理OAuth回调时出错:", err);
@@ -48,11 +42,11 @@ export default function HomePage() {
     };
 
     handleOAuthCallback();
-  }, [router, supabase.auth]);
+  }, [router, supabase]);
 
   const handleGetStarted = () => {
     if (user) {
-      router.push("/dashboard");
+      router.push(DEFAULT_POST_LOGIN_ROUTE);
     } else {
       router.push("/auth");
     }
@@ -132,7 +126,7 @@ export default function HomePage() {
                   {user ? (
                     <button
                       type="button"
-                      onClick={() => router.push("/dashboard")}
+                      onClick={() => router.push(DEFAULT_POST_LOGIN_ROUTE)}
                       className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200"
                     >
                       {t("nav.dashboard")}

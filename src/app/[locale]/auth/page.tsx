@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 import { 
   Mail, 
   Lock, 
@@ -18,6 +19,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/context/AuthContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { SESSION_EXPIRED_REASON } from '@/lib/auth-utils';
 
 // Google图标组件
 const GoogleIcon = ({ className }: { className?: string }) => (
@@ -42,12 +44,14 @@ export default function AuthPage() {
   // MARK: useAuth
   const { signIn, signUp, signInWithGoogle, resetPassword, error, clearError, loading } = useAuth();
   const t = useTranslations();
+  const searchParams = useSearchParams();
 
-  // 清除错误信息当切换模式时
   useEffect(() => {
-    clearError();
-    setMessage(null);
-  }, [mode, clearError]);
+    if (searchParams.get('reason') === SESSION_EXPIRED_REASON) {
+      setMode('login');
+      setMessage({ type: 'error', text: t('auth.sessionExpired') });
+    }
+  }, [searchParams, t]);
 
   // 清除消息在一定时间后
   useEffect(() => {
@@ -121,6 +125,12 @@ export default function AuthPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleModeChange = (nextMode: AuthMode) => {
+    clearError();
+    setMessage(null);
+    setMode(nextMode);
   };
 
   const fadeInUp = {
@@ -343,7 +353,7 @@ export default function AuthPage() {
               <>
                 <button
                   type="button"
-                  onClick={() => setMode('register')}
+                  onClick={() => handleModeChange('register')}
                   className="text-gray-400 hover:text-green-400 transition-colors text-sm"
                 >
                   {t('auth.noAccount')} <span className="font-semibold">{t('auth.registerNow')}</span>
@@ -351,7 +361,7 @@ export default function AuthPage() {
                 <br />
                 <button
                   type="button"
-                  onClick={() => setMode('reset')}
+                  onClick={() => handleModeChange('reset')}
                   className="text-gray-400 hover:text-green-400 transition-colors text-sm"
                 >
                   {t('auth.forgotPassword')}
@@ -362,7 +372,7 @@ export default function AuthPage() {
             {mode === 'register' && (
               <button
                 type="button"
-                onClick={() => setMode('login')}
+                onClick={() => handleModeChange('login')}
                 className="text-gray-400 hover:text-green-400 transition-colors text-sm"
               >
                 {t('auth.hasAccount')} <span className="font-semibold">{t('auth.loginNow')}</span>
@@ -372,7 +382,7 @@ export default function AuthPage() {
             {mode === 'reset' && (
               <button
                 type="button"
-                onClick={() => setMode('login')}
+                onClick={() => handleModeChange('login')}
                 className="text-gray-400 hover:text-green-400 transition-colors text-sm"
               >
                 {t('auth.backToLogin')}
