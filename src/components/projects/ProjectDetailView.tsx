@@ -5,13 +5,11 @@ import {
   RiAddLine,
   RiAlarmWarningLine,
   RiArrowLeftLine,
-  RiArrowRightLine,
   RiArrowRightSLine,
   RiDeleteBinLine,
   RiEdit2Line,
   RiFileList3Line,
   RiLoader4Line,
-  RiLoopLeftLine,
 } from "react-icons/ri";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
@@ -270,23 +268,6 @@ function buildFallbackMetrics(
   };
 }
 
-function buildFallbackIssueBreakdown(issues: Issue[]) {
-  return issues.reduce<Record<IssueStateCategory, number>>(
-    (accumulator, issue) => {
-      const category = issue.state?.category || IssueStateCategory.BACKLOG;
-      accumulator[category] += 1;
-      return accumulator;
-    },
-    {
-      [IssueStateCategory.BACKLOG]: 0,
-      [IssueStateCategory.TODO]: 0,
-      [IssueStateCategory.IN_PROGRESS]: 0,
-      [IssueStateCategory.DONE]: 0,
-      [IssueStateCategory.CANCELED]: 0,
-    },
-  );
-}
-
 function buildFallbackAttentionItems(
   project: Project | ProjectDetail,
   metrics: ProjectSummary["metrics"],
@@ -486,8 +467,6 @@ export function ProjectDetailView({
   onEdit,
   onDelete,
   onOpenIssue,
-  onMarkSync,
-  isMarkingSync = false,
   showBackButton = true,
 }: ProjectDetailViewProps) {
   const router = useRouter();
@@ -518,9 +497,6 @@ export function ProjectDetailView({
     [displayedIssues, selectedProject.lastSyncAt],
   );
   const metrics = projectSummary?.metrics ?? fallbackMetrics;
-  const issueBreakdown =
-    projectSummary?.issueBreakdown ?? buildFallbackIssueBreakdown(displayedIssues);
-  const keyIssues = projectSummary?.keyIssues ?? displayedIssues.slice(0, 6).map(normalizeIssueForSummary);
   const blockedIssues =
     projectSummary?.blockedIssues ??
     displayedIssues
@@ -601,7 +577,7 @@ export function ProjectDetailView({
   };
 
   return (
-    <div className="flex flex-1 h-full flex-col">
+    <div className="flex flex-1 h-full flex-col select-none">
       <div className="mx-auto flex h-full min-h-0 w-full flex-col overflow-y-auto px-4 pb-8 pt-6">
         <div className="shrink-0">
           {showBackButton && (
@@ -831,76 +807,6 @@ export function ProjectDetailView({
                     : "未记录"}
                 </div>
               </button>
-            </div>
-          </ProjectPanel>
-        </div>
-
-        <div className="mt-4 grid gap-4 xl:grid-cols-[1.25fr,1fr]">
-          <ProjectPanel
-            title="Progress"
-            // MARK: Progress
-          >
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-3">
-                  <div className="text-xs text-app-text-muted">Open</div>
-                  <div className="mt-2 text-xl font-semibold text-app-text-primary">
-                    {metrics.openIssues}
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-3">
-                  <div className="text-xs text-app-text-muted">Done</div>
-                  <div className="mt-2 text-xl font-semibold text-app-text-primary">
-                    {metrics.completedIssues}
-                  </div>
-                </div>
-              </div>
-
-              {/* <div className="space-y-2">
-                {(
-                  Object.entries(issueBreakdown) as Array<
-                    [IssueStateCategory, number]
-                  >
-                ).map(([category, count]) => (
-                  <div key={category}>
-                    <div className="flex items-center justify-between text-xs text-app-text-secondary">
-                      <span>{category}</span>
-                      <span>{count}</span>
-                    </div>
-                    <div className="mt-1 h-2 rounded-full bg-app-bg">
-                      <div
-                        className="h-2 rounded-full bg-sky-500/70"
-                        style={{
-                          width:
-                            metrics.totalIssues > 0
-                              ? `${(count / metrics.totalIssues) * 100}%`
-                              : "0%",
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div> */}
-
-              <div className="space-y-2">
-                <div className="text-xs uppercase tracking-[0.18em] text-app-text-muted">
-                  Key Issues
-                </div>
-                {keyIssues.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-app-border bg-app-bg/60 px-4 py-6 text-sm text-app-text-secondary">
-                    当前还没有关键 Issue，创建第一条任务后这里会开始形成推进脉络。
-                  </div>
-                ) : (
-                  keyIssues.map((issue, index) => (
-                    <ProjectIssueRow
-                      key={issue.id}
-                      issue={issue}
-                      isHighlighted={index === 0}
-                      onOpenIssue={openSummaryIssue}
-                    />
-                  ))
-                )}
-              </div>
             </div>
           </ProjectPanel>
         </div>
