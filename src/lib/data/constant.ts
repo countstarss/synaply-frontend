@@ -2,7 +2,6 @@ import {
   BookAIcon,
   FolderOpen,
   ListCheck,
-  MessageSquareCode,
   Workflow,
   Bug,
   type LucideIcon,
@@ -29,7 +28,6 @@ export const getReadyNavItems = (items: NavItem[]) =>
 
 export const mainNavItems: NavItem[] = [
   { icon: ListCheck, label: "My Task", href: "/tasks", isReady: false },
-  { icon: MessageSquareCode, label: "Chat", href: "/chat" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
   { icon: Bug, label: "Issues", href: "/issues" },
   { icon: FolderOpen, label: "Projects", href: "/projects" },

@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
 import { CachedDocsPage } from "./pages/CachedDocsPage";
-import { CachedChatPage } from "./pages/CachedChatPage";
 import { CachedTasksPage } from "./pages/CachedTasksPage";
 import { CachedIssuesPage } from "./pages/CachedIssuesPage";
 import { CachedProjectsPage } from "./pages/CachedProjectsPage";
@@ -12,7 +11,6 @@ import { CachedWorkflowsPage } from "./pages/CachedWorkflowsPage";
 
 const PAGE_COMPONENTS = {
   tasks: CachedTasksPage,
-  chat: CachedChatPage,
   docs: CachedDocsPage,
   issues: CachedIssuesPage,
   projects: CachedProjectsPage,
@@ -24,11 +22,10 @@ type PagePosition = "left" | "center" | "right" | "hidden";
 
 const PAGE_ORDER: Record<PageId, number> = {
   tasks: 1,
-  chat: 2,
-  docs: 3,
-  issues: 4,
-  projects: 5,
-  workflows: 6,
+  docs: 2,
+  issues: 3,
+  projects: 4,
+  workflows: 5,
 };
 
 const getPageIdFromPath = (pathname: string): PageId | null => {
@@ -36,7 +33,6 @@ const getPageIdFromPath = (pathname: string): PageId | null => {
 
   for (const segment of segments) {
     if (segment === "tasks") return "tasks";
-    if (segment === "chat") return "chat";
     if (segment === "docs") return "docs";
     if (segment === "issues") return "issues";
     if (segment === "projects") return "projects";

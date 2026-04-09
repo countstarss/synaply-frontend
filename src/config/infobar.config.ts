@@ -14,15 +14,10 @@ export interface InfobarConfig {
 
 export const infobarConfig: InfobarConfig = {
   // 精确匹配的路由
-  hiddenRoutes: [
-    "/chat", // 聊天主页
-    "/chat/", // 聊天主页（带斜杠）
-  ],
+  hiddenRoutes: [],
 
   // 前缀匹配的路由
-  hiddenPrefixes: [
-    "/chat/", // 所有聊天子页面 (/chat/room1, /chat/room2 等)
-  ],
+  hiddenPrefixes: [],
 
   // 可选：正则表达式匹配
   hiddenPatterns: [
