@@ -103,7 +103,7 @@ const resolveProfileErrorMessage = (error: unknown) => {
   return error.message;
 };
 
-export default function ProfileSettingsPage() {
+export default function ProfileSettingsSection() {
   const { session, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -410,21 +410,9 @@ export default function ProfileSettingsPage() {
   }
 
   return (
-    <div className="space-y-6 p-4">
-      <Card className="overflow-hidden border-none bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.22),_transparent_42%),linear-gradient(135deg,_rgba(15,23,42,0.96),_rgba(30,41,59,0.88))] text-slate-50">
-        <CardHeader className="gap-3">
-          <CardTitle className="text-2xl font-semibold tracking-tight">
-            个人资料
-          </CardTitle>
-          <CardDescription className="max-w-2xl text-slate-300">
-            这里管理会在 Synaply 内展示的基础账号信息。头像会上传到
-            Supabase Storage，并同步到当前登录账户的资料元数据里。
-          </CardDescription>
-        </CardHeader>
-      </Card>
-
+    <div className="space-y-5 py-1">
       <form
-        className="space-y-6"
+        className="space-y-5"
         onSubmit={(event) => {
           event.preventDefault();
 

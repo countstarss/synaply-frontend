@@ -26,7 +26,7 @@ const getInitials = (teamName: string) => {
   return normalized ? normalized.charAt(0).toUpperCase() : "T";
 };
 
-export default function TeamsSettingsPage() {
+export default function TeamsSettingsSection() {
   const router = useRouter();
   const { setCurrentWorkspaceId } = useWorkspaceStore();
   const { teams = [], isLoadingTeams, teamsError } = useTeam();
@@ -45,28 +45,16 @@ export default function TeamsSettingsPage() {
   );
 
   return (
-    <div className="space-y-6 p-4">
-      <Card className="overflow-hidden border-none bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.22),_transparent_42%),linear-gradient(135deg,_rgba(17,24,39,0.98),_rgba(30,41,59,0.9))] text-white">
-        <CardHeader className="gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-2">
-            <CardTitle className="text-2xl font-semibold tracking-tight">
-              Teams
-            </CardTitle>
-            <CardDescription className="max-w-2xl text-slate-200/80">
-              这里展示你当前所属的全部团队。点击任意团队可进入它的设置页，owner/admin 可以继续编辑资料与成员权限。
-            </CardDescription>
-          </div>
-
-          <Button
-            type="button"
-            className="bg-white text-slate-900 hover:bg-white/90"
-            onClick={() => setIsCreateTeamDialogOpen(true)}
-          >
-            <Plus className="size-4" />
-            Create new team
-          </Button>
-        </CardHeader>
-      </Card>
+    <div className="space-y-5 py-1">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="max-w-2xl text-sm leading-6 text-muted-foreground">
+          这里展示你当前所属的全部团队。点击任意团队可进入对应的 team settings，owner/admin 可以继续编辑资料与成员权限。
+        </div>
+        <Button type="button" onClick={() => setIsCreateTeamDialogOpen(true)}>
+          <Plus className="size-4" />
+          Create new team
+        </Button>
+      </div>
 
       {isLoadingTeams ? (
         <Card className="border-none">

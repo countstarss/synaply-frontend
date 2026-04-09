@@ -6,7 +6,7 @@ import { GlobalPageCache } from "@/components/cache/GlobalPageCache";
 import React from "react";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/stores/sidebar";
-import { useSelectedLayoutSegments } from "next/navigation";
+import { usePathname, useSelectedLayoutSegments } from "next/navigation";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,7 +15,16 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const { isOpen: sidebarOpen } = useSidebarStore();
   const segments = useSelectedLayoutSegments();
+  const pathname = usePathname();
   const showCachedPage = segments.includes("(cached)");
+  const previousPathnameRef = React.useRef(pathname);
+  const shouldBypassShellAnimation =
+    pathname.includes("/settings") ||
+    previousPathnameRef.current.includes("/settings");
+
+  React.useEffect(() => {
+    previousPathnameRef.current = pathname;
+  }, [pathname]);
 
   return (
     <div className="flex h-screen bg-app-bg overflow-hidden">
@@ -44,7 +53,9 @@ const Layout = ({ children }: LayoutProps) => {
           {/* 常规页面内容 - 正确的从左向右滑动 */}
           <div
             className={cn(
-              "absolute inset-0 transition-all duration-300 ease-in-out",
+              "absolute inset-0",
+              !shouldBypassShellAnimation &&
+                "transition-all duration-300 ease-in-out",
               showCachedPage
                 ? "opacity-0 translate-x-full pointer-events-none" // 向右退出
                 : "opacity-100 translate-x-0 pointer-events-auto"
@@ -60,7 +71,9 @@ const Layout = ({ children }: LayoutProps) => {
           {/* 全局页面缓存系统 - 正确的从左向右滑动 */}
           <div
             className={cn(
-              "absolute inset-0 transition-all duration-300 ease-in-out",
+              "absolute inset-0",
+              !shouldBypassShellAnimation &&
+                "transition-all duration-300 ease-in-out",
               showCachedPage
                 ? "opacity-100 translate-x-0 pointer-events-auto" // 从左滑入到中央
                 : "opacity-0 translate-x-[-100%] pointer-events-none" // 在左侧待命

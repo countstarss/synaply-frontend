@@ -45,7 +45,7 @@ const ROLE_BADGE: Record<string, "default" | "secondary" | "outline"> = {
 const resolveMemberUserId = (member: TeamMember) =>
   member.user?.id ?? member.userId;
 
-export default function MembersSettingsPage() {
+export default function MembersSettingsSection() {
   const { session } = useAuth();
   const { currentWorkspace } = useWorkspace();
   const teamId = currentWorkspace?.teamId;
@@ -99,7 +99,7 @@ export default function MembersSettingsPage() {
   }
 
   return (
-    <div className="p-0 space-y-6">
+    <div className="space-y-5 py-1">
       {!isOwner && (
         <Card className="border-none">
           <CardHeader>

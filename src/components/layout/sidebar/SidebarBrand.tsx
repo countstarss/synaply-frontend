@@ -69,8 +69,7 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
   };
 
   const handleSettings = () => {
-    // TODO: 导航到设置页面
-    router.push("/settings");
+    router.push("/settings/general");
   };
 
   // 包装switchWorkspace函数，添加日志记录并刷新页面
