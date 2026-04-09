@@ -2,14 +2,14 @@
 
 import React, { useState } from "react";
 import { RiFileTextLine, RiFolder3Line, RiAddLine } from "react-icons/ri";
-import ConvexDocsProvider, {
-  useConvexDocs,
-  ConvexDocument,
+import DocsProvider, {
+  useDocs,
+  DocsDocument,
   DocumentContext,
-} from "./ConvexDocsContext";
-import ConvexDocsSidebar from "./ConvexDocsSidebar";
-import ConvexDocsTabs from "./ConvexDocsTabs";
-import ConvexDocsEditor from "./ConvexDocsEditor";
+} from "./DocsContext";
+import DocsSidebar from "./DocsSidebar";
+import DocsTabs from "./DocsTabs";
+import DocsEditor from "./DocsEditor";
 import { useWorkspace } from "@/hooks/useWorkspace";
 // import {
 //   ResizablePanelGroup,
@@ -17,7 +17,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 //   ResizableHandle,
 // } from "@/components/ui/resizable";
 
-interface ConvexDocsPageProps {
+interface DocsPageProps {
   workspaceId: string;
   workspaceType: "PERSONAL" | "TEAM";
   userId: string;
@@ -27,7 +27,7 @@ interface ConvexDocsPageProps {
 
 // MARK: - 文档概览页面组件
 function PersonalDocsOverviewPage() {
-  const { documents, createDoc, openDoc } = useConvexDocs();
+  const { documents, createDoc, openDoc } = useDocs();
 
   // 获取根文档和最近更新的文档
   const rootDocs = documents.filter((doc) => !doc.parentDocument);
@@ -35,7 +35,7 @@ function PersonalDocsOverviewPage() {
     .sort((a, b) => b.updatedAt - a.updatedAt)
     .slice(0, 5);
 
-  const handleSelectDoc = (doc: ConvexDocument) => {
+  const handleSelectDoc = (doc: DocsDocument) => {
     openDoc(doc);
   };
 
@@ -231,7 +231,7 @@ function PersonalDocsOverviewPage() {
 
 // MARK: - 团队文档概览
 function TeamDocsOverviewPage() {
-  const { documents, createDoc, openDoc } = useConvexDocs();
+  const { documents, createDoc, openDoc } = useDocs();
 
   // 获取根文档和最近更新的文档
   const rootDocs = documents.filter((doc) => !doc.parentDocument);
@@ -239,7 +239,7 @@ function TeamDocsOverviewPage() {
     .sort((a, b) => b.updatedAt - a.updatedAt)
     .slice(0, 5);
 
-  const handleSelectDoc = (doc: ConvexDocument) => {
+  const handleSelectDoc = (doc: DocsDocument) => {
     openDoc(doc);
   };
 
@@ -435,7 +435,7 @@ function TeamDocsOverviewPage() {
 
 // MARK: - 团队个人文档概览
 function TeamPersonalDocsOverviewPage() {
-  const { documents, createDoc, openDoc } = useConvexDocs();
+  const { documents, createDoc, openDoc } = useDocs();
 
   // 获取根文档和最近更新的文档
   const rootDocs = documents.filter((doc) => !doc.parentDocument);
@@ -443,7 +443,7 @@ function TeamPersonalDocsOverviewPage() {
     .sort((a, b) => b.updatedAt - a.updatedAt)
     .slice(0, 5);
 
-  const handleSelectDoc = (doc: ConvexDocument) => {
+  const handleSelectDoc = (doc: DocsDocument) => {
     openDoc(doc);
   };
 
@@ -656,12 +656,12 @@ function DocsOverviewPage({ context }: { context: DocumentContext }) {
 // MARK: - 内部文档页面组件
 function DocsPageContent() {
   const { documents, openDocs, activeDocId, openDoc, isLoading, context } =
-    useConvexDocs();
+    useDocs();
   const [isExpanded, setIsExpanded] = useState(false);
 
   const activeDoc = openDocs.find((doc) => doc._id === activeDocId);
 
-  const handleSelectDoc = (doc: ConvexDocument) => {
+  const handleSelectDoc = (doc: DocsDocument) => {
     openDoc(doc);
   };
 
@@ -690,19 +690,19 @@ function DocsPageContent() {
       {/* Sidebar */}
       {!isExpanded && (
         <div className="w-64 flex-shrink-0">
-          <ConvexDocsSidebar onSelectDoc={handleSelectDoc} />
+          <DocsSidebar onSelectDoc={handleSelectDoc} />
         </div>
       )}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Tabs */}
-        <ConvexDocsTabs onSelectDoc={handleSelectDoc} />
+        <DocsTabs onSelectDoc={handleSelectDoc} />
 
         {/* Content */}
         <div className="flex-1">
           {activeDoc ? (
-            <ConvexDocsEditor
+            <DocsEditor
               doc={activeDoc}
               isExpanded={isExpanded}
               onToggleExpand={handleToggleExpand}
@@ -742,13 +742,13 @@ function DocsPageContent() {
   );
 }
 
-export default function ConvexDocsPage({
+export default function DocsPage({
   workspaceId,
   workspaceType,
   userId,
   context,
   projectId,
-}: ConvexDocsPageProps) {
+}: DocsPageProps) {
   const { currentWorkspace } = useWorkspace();
 
   // 如果没有提供 context，则根据工作空间类型自动检测
@@ -761,7 +761,7 @@ export default function ConvexDocsPage({
       : "team-personal");
 
   return (
-    <ConvexDocsProvider
+    <DocsProvider
       context={documentContext}
       workspaceId={workspaceId}
       workspaceType={workspaceType}
@@ -769,6 +769,6 @@ export default function ConvexDocsPage({
       projectId={projectId}
     >
       <DocsPageContent />
-    </ConvexDocsProvider>
+    </DocsProvider>
   );
 }

@@ -2,14 +2,14 @@
 
 import React from "react";
 import { RiCloseLine, RiFileTextLine, RiFolder3Line } from "react-icons/ri";
-import { useConvexDocs, ConvexDocument } from "./ConvexDocsContext";
+import { useDocs, DocsDocument } from "./DocsContext";
 
-interface ConvexDocsTabsProps {
-  onSelectDoc: (doc: ConvexDocument) => void;
+interface DocsTabsProps {
+  onSelectDoc: (doc: DocsDocument) => void;
 }
 
-export default function ConvexDocsTabs({ onSelectDoc }: ConvexDocsTabsProps) {
-  const { openDocs, activeDocId, closeDoc } = useConvexDocs();
+export default function DocsTabs({ onSelectDoc }: DocsTabsProps) {
+  const { openDocs, activeDocId, closeDoc } = useDocs();
 
   if (openDocs.length === 0) {
     return null;

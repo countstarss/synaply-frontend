@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { useMutation, useQuery } from "convex/react";
 import {
   RiAddLine,
   RiAlarmWarningLine,
@@ -15,7 +14,6 @@ import {
   RiLoopLeftLine,
 } from "react-icons/ri";
 import { toast } from "sonner";
-import { api } from "../../../convex/_generated/api";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -37,7 +35,13 @@ import {
 } from "@/components/projects/project-view-utils";
 import { buildProjectPath } from "@/components/projects/project-route-utils";
 import { useDocStore } from "@/stores/doc-store";
-import { IssuePriority, IssueStateCategory, IssueStatus } from "@/types/prisma";
+import { useCreateDocMutation, useDocsTree } from "@/hooks/useDocApi";
+import {
+  IssuePriority,
+  IssueStateCategory,
+  IssueStatus,
+  VisibilityType,
+} from "@/types/prisma";
 
 interface ProjectDetailViewProps {
   workspaceId: string;
@@ -488,24 +492,21 @@ export function ProjectDetailView({
 }: ProjectDetailViewProps) {
   const router = useRouter();
   const setActiveDocId = useDocStore((state) => state.setActiveDocId);
-  const createProjectDoc = useMutation(api.documents.create);
+  const createProjectDoc = useCreateDocMutation();
 
   const docsContext = workspaceType === "PERSONAL" ? "personal" : "team";
-  const projectDocs =
-    useQuery(
-      api.documents.getDocumentTree,
-      workspaceId && currentUserId
-        ? {
-            workspaceId,
-            userId: currentUserId,
-            workspaceType,
-            context: docsContext,
-            projectId: selectedProject.id,
-            parentDocument: undefined,
-            includeArchived: false,
-          }
-        : "skip",
-    ) || [];
+  const { data: projectDocs = [] } = useDocsTree(
+    workspaceId,
+    {
+      workspaceType,
+      context: docsContext,
+      projectId: selectedProject.id,
+      includeArchived: false,
+    },
+    {
+      enabled: !!workspaceId && !!currentUserId,
+    }
+  );
 
   const displayedIssues = useMemo(
     () => sortIssuesByUrgency(projectIssues),
@@ -539,7 +540,7 @@ export function ProjectDetailView({
 
   const statusMeta = PROJECT_STATUS_META[selectedProject.status];
   const riskMeta = PROJECT_RISK_META[selectedProject.riskLevel];
-  const docsStorageKey = `convex-docs-open-${workspaceId}-${workspaceType}-${docsContext}-${selectedProject.id}`;
+  const docsStorageKey = `docs-open-${workspaceId}-${workspaceType}-${docsContext}-${selectedProject.id}`;
   const projectDocsRoute = buildProjectPath(selectedProject.id, "docs");
 
   const openSummaryIssue = (issueId: string) => {
@@ -573,17 +574,27 @@ export function ProjectDetailView({
     }
 
     try {
-      const createdDocId = await createProjectDoc({
-        title: `${selectedProject.name} 项目文档`,
-        creatorId: currentUserId,
+      const createdDoc = await createProjectDoc.mutateAsync({
         workspaceId,
-        workspaceType,
-        projectId: selectedProject.id,
-        visibility: workspaceType === "TEAM" ? "TEAM_EDITABLE" : "PRIVATE",
+        data: {
+          title: `${selectedProject.name} 项目文档`,
+          projectId: selectedProject.id,
+          visibility:
+            workspaceType === "TEAM"
+              ? VisibilityType.TEAM_EDITABLE
+              : VisibilityType.PRIVATE,
+          content: JSON.stringify([
+            {
+              id: "initial",
+              type: "paragraph",
+              content: [],
+            },
+          ]),
+        },
       });
 
       toast.success("已创建项目文档");
-      openProjectDoc(createdDocId);
+      openProjectDoc(createdDoc._id);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "创建文档失败");
     }

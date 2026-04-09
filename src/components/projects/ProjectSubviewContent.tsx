@@ -11,7 +11,7 @@ import {
   RiLoopLeftLine,
   RiTimeLine,
 } from "react-icons/ri";
-import ConvexDocsPage from "@/components/shared/docs/convex/ConvexDocsPage";
+import DocsPage from "@/components/shared/docs/DocsPage";
 import { ProjectIssuesKanbanBoard } from "@/components/projects/ProjectIssuesKanbanBoard";
 import { useIssueStates } from "@/hooks/useIssueStates";
 import { useUpdateIssue } from "@/hooks/useIssueApi";
@@ -449,7 +449,7 @@ export function ProjectDocsSubview({
   return (
     <div className="h-full px-6 pb-6 pt-4">
       <div className="h-full overflow-hidden rounded-[28px] border border-app-border bg-app-content-bg/95 shadow-sm">
-        <ConvexDocsPage
+        <DocsPage
           workspaceId={workspaceId}
           workspaceType={workspaceType}
           userId={currentUserId}

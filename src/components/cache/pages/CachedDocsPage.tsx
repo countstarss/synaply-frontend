@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import ConvexDocsPage from "@/components/shared/docs/convex/ConvexDocsPage";
+import DocsPage from "@/components/shared/docs/DocsPage";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useSearchParams } from "next/navigation";
@@ -17,11 +17,11 @@ export const CachedDocsPage = React.memo(() => {
     currentWorkspace?.type === "PERSONAL" ? "PERSONAL" : "TEAM";
   const userId = session?.user?.id || currentWorkspace?.userId || "";
   const context = currentWorkspace?.type === "PERSONAL" ? "personal" : "team";
-  const projectId = searchParams.get("projectId") || "";
+  const projectId = searchParams.get("projectId")?.trim() || undefined;
 
   return (
     <div className="h-full">
-      <ConvexDocsPage
+      <DocsPage
         workspaceId={workspaceId}
         workspaceType={workspaceType}
         userId={userId}

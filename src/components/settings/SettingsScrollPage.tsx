@@ -22,7 +22,6 @@ interface SettingsScrollPageProps {
 
 export default function SettingsScrollPage({
   title,
-  description,
   sections,
   sectionGroupLabel,
 }: SettingsScrollPageProps) {

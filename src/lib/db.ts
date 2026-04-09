@@ -14,8 +14,48 @@ export interface Doc {
   order: number;
 }
 
+export interface DocsCacheEntry {
+  docId: string;
+  latestRevisionId?: string | null;
+  contentSnapshot: string;
+  metadataSnapshot?: string | null;
+  updatedAt: number;
+}
+
+export interface DocDraftEntry {
+  docId: string;
+  baseRevisionId?: string | null;
+  localContentSnapshot: string;
+  localMetadataSnapshot?: string | null;
+  updatedAt: number;
+}
+
+export interface DocSyncStateEntry {
+  docId: string;
+  lastSyncedRevisionId?: string | null;
+  lastSyncAt?: number | null;
+  syncStatus: "idle" | "draft" | "saving" | "saved" | "error" | "conflict";
+  lastError?: string | null;
+  updatedAt: number;
+}
+
+export interface DocConflictEntry {
+  id?: number;
+  docId: string;
+  serverRevisionId?: string | null;
+  clientMutationId?: string | null;
+  serverSnapshot?: string | null;
+  localSnapshot: string;
+  resolvedAt?: number | null;
+  updatedAt: number;
+}
+
 export class AppDatabase extends Dexie {
   docs!: Table<Doc>;
+  docsCache!: Table<DocsCacheEntry>;
+  docDrafts!: Table<DocDraftEntry>;
+  docSyncStates!: Table<DocSyncStateEntry>;
+  docConflicts!: Table<DocConflictEntry>;
 
   constructor() {
     super("SynaplyDB");
@@ -60,6 +100,14 @@ export class AppDatabase extends Dexie {
             }
           });
       });
+
+    this.version(4).stores({
+      docs: "++id, uid, parentId, workspaceType, type, createdAt, updatedAt",
+      docsCache: "&docId, latestRevisionId, updatedAt",
+      docDrafts: "&docId, baseRevisionId, updatedAt",
+      docSyncStates: "&docId, syncStatus, updatedAt",
+      docConflicts: "++id, docId, serverRevisionId, updatedAt",
+    });
   }
 }
 

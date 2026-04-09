@@ -14,19 +14,17 @@ import {
   RiFolderAddLine,
   RiFileAddLine,
 } from "react-icons/ri";
-import { useConvexDocs, ConvexDocument } from "./ConvexDocsContext";
+import { useDocs, DocsDocument } from "./DocsContext";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
-import { useQuery } from "convex/react";
-import { api } from "../../../../../convex/_generated/api";
 
-interface ConvexDocsSidebarProps {
-  onSelectDoc: (doc: ConvexDocument) => void;
+interface DocsSidebarProps {
+  onSelectDoc: (doc: DocsDocument) => void;
 }
 
 interface TreeNodeProps {
-  doc: ConvexDocument;
+  doc: DocsDocument;
   level: number;
-  onSelectDoc: (doc: ConvexDocument) => void;
+  onSelectDoc: (doc: DocsDocument) => void;
   expandedIds: Set<string>;
   onToggleExpand: (uid: string) => void;
   newlyCreatedDocId?: string;
@@ -50,8 +48,8 @@ function TreeNode({
     updateDocTitle,
     openDoc,
     activeDocId,
-    userId,
-  } = useConvexDocs();
+    documents,
+  } = useDocs();
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(doc.title);
   const [showMenu, setShowMenu] = useState(false);
@@ -62,16 +60,7 @@ function TreeNode({
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 获取子文档
-  const childDocs =
-    useQuery(
-      api.documents.getFolderChildren,
-      doc.type === "folder"
-        ? {
-            folderId: doc._id,
-            userId,
-          }
-        : "skip"
-    ) || [];
+  const childDocs = documents.filter((child) => child.parentDocument === doc._id);
 
   const hasChildren = childDocs.length > 0;
   const isExpanded = expandedIds.has(doc._id);
@@ -157,7 +146,8 @@ function TreeNode({
   const handleCreateChild = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowMenu(false);
-    await createDoc("新文档", doc._id);
+    const createdDoc = await createDoc("新文档", doc._id);
+    onNewDocCreated?.(createdDoc._id);
     // 确保文件夹是展开状态
     if (!isExpanded) {
       onToggleExpand(doc._id);
@@ -359,10 +349,10 @@ function TreeNode({
   );
 }
 
-export default function ConvexDocsSidebar({
+export default function DocsSidebar({
   onSelectDoc,
-}: ConvexDocsSidebarProps) {
-  const { documents, createDoc, createFolder, isLoading } = useConvexDocs();
+}: DocsSidebarProps) {
+  const { documents, createDoc, createFolder, isLoading } = useDocs();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [newlyCreatedDocId, setNewlyCreatedDocId] = useState<
@@ -408,6 +398,7 @@ export default function ConvexDocsSidebar({
         doc.title.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : null;
+  const rootDocs = documents.filter((doc) => !doc.parentDocument);
 
   if (isLoading) {
     return (
@@ -492,7 +483,7 @@ export default function ConvexDocsSidebar({
                   <p className="mt-2">点击上方 + 按钮创建</p>
                 </div>
               ) : (
-                documents.map((doc) => (
+                rootDocs.map((doc) => (
                   <TreeNode
                     key={doc._id}
                     doc={doc}

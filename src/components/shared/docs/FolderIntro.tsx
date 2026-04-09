@@ -2,14 +2,14 @@
 
 import React, { useState } from "react";
 import { RiFolder3Line, RiEditLine, RiSaveLine } from "react-icons/ri";
-import { useConvexDocs, ConvexDocument } from "./ConvexDocsContext";
+import { useDocs, DocsDocument } from "./DocsContext";
 
-interface ConvexFolderIntroProps {
-  folder: ConvexDocument;
+interface FolderIntroProps {
+  folder: DocsDocument;
 }
 
-export default function ConvexFolderIntro({ folder }: ConvexFolderIntroProps) {
-  const { updateFolderDescription } = useConvexDocs();
+export default function FolderIntro({ folder }: FolderIntroProps) {
+  const { updateFolderDescription } = useDocs();
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [description, setDescription] = useState(folder.description || "");
   const [isSaving, setIsSaving] = useState(false);

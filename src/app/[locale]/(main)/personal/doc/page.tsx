@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import ConvexDocsPage from "@/components/shared/docs/convex/ConvexDocsPage";
+import DocsPage from "@/components/shared/docs/DocsPage";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useAuth } from "@/context/AuthContext";
 
@@ -18,7 +18,7 @@ export default function PersonalDocPage() {
 
   return (
     <div className="h-full">
-      <ConvexDocsPage
+      <DocsPage
         workspaceId={workspaceId}
         workspaceType={workspaceType}
         userId={userId}

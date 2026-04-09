@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { useConvexDocs, ConvexDocument } from "./ConvexDocsContext";
-import DocsToolbar from "../DocsToolbar";
-import ConvexFolderIntro from "./ConvexFolderIntro";
+import { useDocs, DocsDocument } from "./DocsContext";
+import DocsToolbar from "./DocsToolbar";
+import FolderIntro from "./FolderIntro";
 
 // 动态导入 BlockNote 编辑器以避免 SSR 问题
-const ConvexBlockNoteEditor = dynamic(() => import("./ConvexBlockNoteEditor"), {
+const DocsBlockNoteEditor = dynamic(() => import("./BlockNoteEditor"), {
   ssr: false,
   loading: () => (
     <div className="h-full flex items-center justify-center">
@@ -16,18 +16,18 @@ const ConvexBlockNoteEditor = dynamic(() => import("./ConvexBlockNoteEditor"), {
   ),
 });
 
-interface ConvexDocsEditorProps {
-  doc: ConvexDocument;
+interface DocsEditorProps {
+  doc: DocsDocument;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
 }
 
-export default function ConvexDocsEditor({
+export default function DocsEditor({
   doc,
   isExpanded = false,
   onToggleExpand,
-}: ConvexDocsEditorProps) {
-  const { updateDocTitle } = useConvexDocs();
+}: DocsEditorProps) {
+  const { updateDocTitle } = useDocs();
   const [title, setTitle] = useState(doc.title);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isSavingTitle, setIsSavingTitle] = useState(false);
@@ -150,9 +150,9 @@ export default function ConvexDocsEditor({
       {/* Content */}
       <div className="flex-1 overflow-hidden">
         {doc.type === "folder" ? (
-          <ConvexFolderIntro folder={doc} />
+          <FolderIntro folder={doc} />
         ) : (
-          <ConvexBlockNoteEditor doc={doc} />
+          <DocsBlockNoteEditor doc={doc} />
         )}
       </div>
     </div>
