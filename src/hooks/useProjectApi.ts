@@ -83,6 +83,12 @@ export const useCreateProject = () => {
       queryClient.invalidateQueries({
         queryKey: ["project-summary", variables.workspaceId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["inbox", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["inbox-summary", variables.workspaceId],
+      });
     },
   });
 };
@@ -116,6 +122,12 @@ export const useUpdateProject = () => {
       });
       queryClient.invalidateQueries({
         queryKey: ["project-summary", variables.workspaceId, variables.projectId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["inbox", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["inbox-summary", variables.workspaceId],
       });
     },
   });
@@ -151,6 +163,12 @@ export const useDeleteProject = () => {
       });
       queryClient.invalidateQueries({
         queryKey: ["issues", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["inbox", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["inbox-summary", variables.workspaceId],
       });
     },
   });

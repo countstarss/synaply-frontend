@@ -1,5 +1,6 @@
 import { getBackendBaseUrl } from "@/lib/backend-url";
 import { IssuePriority } from "@/types/prisma";
+import { MyWorkInboxSignal } from "@/lib/fetchers/inbox";
 
 const API_BASE_URL = getBackendBaseUrl();
 
@@ -57,7 +58,7 @@ export interface MyWorkResponse {
   inProgress: MyWorkItem[];
   blocked: MyWorkItem[];
   completedToday: MyWorkItem[];
-  inboxSignals: unknown[];
+  inboxSignals: MyWorkInboxSignal[];
 }
 
 export async function fetchMyWork(

@@ -162,6 +162,12 @@ export const useCreateIssue = () => {
         queryKey: ["my-work", variables.workspaceId],
       });
       queryClient.invalidateQueries({
+        queryKey: ["inbox", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["inbox-summary", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
         queryKey: ["project-summary", variables.workspaceId],
       });
 
@@ -234,6 +240,12 @@ export const useCreateWorkflowIssue = () => {
         queryKey: ["my-work", variables.workspaceId],
       });
       queryClient.invalidateQueries({
+        queryKey: ["inbox", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["inbox-summary", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
         queryKey: ["project-summary", variables.workspaceId],
       });
 
@@ -269,6 +281,12 @@ function invalidateWorkflowRunQueries(
   });
   queryClient.invalidateQueries({
     queryKey: ["my-work", workspaceId],
+  });
+  queryClient.invalidateQueries({
+    queryKey: ["inbox", workspaceId],
+  });
+  queryClient.invalidateQueries({
+    queryKey: ["inbox-summary", workspaceId],
   });
   queryClient.invalidateQueries({
     queryKey: ["issue-step-records", issueId],
@@ -782,6 +800,12 @@ export const useUpdateIssue = () => {
         queryKey: ["my-work", variables.workspaceId],
       });
       queryClient.invalidateQueries({
+        queryKey: ["inbox", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["inbox-summary", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
         queryKey: ["project-summary", variables.workspaceId],
       });
 
@@ -828,6 +852,12 @@ export const useDeleteIssue = () => {
       });
       queryClient.invalidateQueries({
         queryKey: ["my-work", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["inbox", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["inbox-summary", variables.workspaceId],
       });
       queryClient.invalidateQueries({
         queryKey: ["project-summary", variables.workspaceId],

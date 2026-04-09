@@ -1,6 +1,7 @@
 import {
   BookAIcon,
   FolderOpen,
+  Inbox,
   ListCheck,
   Workflow,
   Bug,
@@ -28,6 +29,7 @@ export const getReadyNavItems = (items: NavItem[]) =>
 
 export const mainNavItems: NavItem[] = [
   { icon: ListCheck, label: "My Work", href: "/tasks" },
+  { icon: Inbox, label: "Inbox", href: "/inbox" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
   { icon: Bug, label: "Issues", href: "/issues" },
   { icon: FolderOpen, label: "Projects", href: "/projects" },
@@ -39,6 +41,7 @@ export const mainNavItems: NavItem[] = [
 // MARK: - PERSONAL导航
 export const personalNavItems: NavItem[] = [
   { icon: ListCheck, label: "My Work", href: "/tasks" },
+  { icon: Inbox, label: "Inbox", href: "/inbox" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
   { icon: Bug, label: "Issues", href: "/issues" },
   { icon: FolderOpen, label: "Projects", href: "/projects" },
