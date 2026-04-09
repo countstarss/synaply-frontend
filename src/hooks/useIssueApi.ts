@@ -159,6 +159,9 @@ export const useCreateIssue = () => {
         queryKey: ["issues", variables.workspaceId],
       });
       queryClient.invalidateQueries({
+        queryKey: ["my-work", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
         queryKey: ["project-summary", variables.workspaceId],
       });
 
@@ -228,6 +231,9 @@ export const useCreateWorkflowIssue = () => {
         queryKey: ["issues", variables.workspaceId],
       });
       queryClient.invalidateQueries({
+        queryKey: ["my-work", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
         queryKey: ["project-summary", variables.workspaceId],
       });
 
@@ -260,6 +266,9 @@ function invalidateWorkflowRunQueries(
   });
   queryClient.invalidateQueries({
     queryKey: ["issues", workspaceId],
+  });
+  queryClient.invalidateQueries({
+    queryKey: ["my-work", workspaceId],
   });
   queryClient.invalidateQueries({
     queryKey: ["issue-step-records", issueId],
@@ -770,6 +779,9 @@ export const useUpdateIssue = () => {
         queryKey: ["issues", variables.workspaceId],
       });
       queryClient.invalidateQueries({
+        queryKey: ["my-work", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
         queryKey: ["project-summary", variables.workspaceId],
       });
 
@@ -813,6 +825,9 @@ export const useDeleteIssue = () => {
     onSuccess: async (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issues", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["my-work", variables.workspaceId],
       });
       queryClient.invalidateQueries({
         queryKey: ["project-summary", variables.workspaceId],

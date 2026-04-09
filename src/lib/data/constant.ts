@@ -27,7 +27,7 @@ export const getReadyNavItems = (items: NavItem[]) =>
   items.filter((item) => item.isReady !== false);
 
 export const mainNavItems: NavItem[] = [
-  { icon: ListCheck, label: "My Task", href: "/tasks", isReady: false },
+  { icon: ListCheck, label: "My Work", href: "/tasks" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
   { icon: Bug, label: "Issues", href: "/issues" },
   { icon: FolderOpen, label: "Projects", href: "/projects" },
@@ -38,7 +38,7 @@ export const mainNavItems: NavItem[] = [
 
 // MARK: - PERSONAL导航
 export const personalNavItems: NavItem[] = [
-  { icon: ListCheck, label: "Tasks", href: "/tasks", isReady: false },
+  { icon: ListCheck, label: "My Work", href: "/tasks" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
   { icon: Bug, label: "Issues", href: "/issues" },
   { icon: FolderOpen, label: "Projects", href: "/projects" },

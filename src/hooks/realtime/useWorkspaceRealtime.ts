@@ -22,6 +22,9 @@ export function useWorkspaceRealtime(
         queryKey: ["issues", workspaceId],
       });
       void queryClient.invalidateQueries({
+        queryKey: ["my-work", workspaceId],
+      });
+      void queryClient.invalidateQueries({
         queryKey: ["project-summary", workspaceId],
       });
     },
