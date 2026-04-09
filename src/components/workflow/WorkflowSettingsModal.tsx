@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { RiCloseLine, RiSaveLine, RiLoader4Line } from "react-icons/ri";
 import { useUpdateWorkflow, usePublishWorkflow } from "@/hooks/useWorkflowApi";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { toast } from "sonner";
+import { WorkflowResponse } from "@/lib/fetchers/workflow";
 
 interface WorkflowSettingsModalProps {
   isOpen: boolean;
@@ -11,11 +12,12 @@ interface WorkflowSettingsModalProps {
     id: string;
     name: string;
     status: string;
-    visibility: string;
+    visibility: "PRIVATE" | "TEAM_READONLY" | "TEAM_EDITABLE" | "PUBLIC";
     totalSteps: number;
     description?: string;
+    version?: string;
   };
-  onUpdate: (updatedWorkflow: unknown) => void;
+  onUpdate: (updatedWorkflow: WorkflowResponse) => void;
 }
 
 export default function WorkflowSettingsModal({
@@ -25,8 +27,16 @@ export default function WorkflowSettingsModal({
   onUpdate,
 }: WorkflowSettingsModalProps) {
   const [name, setName] = useState(workflow.name);
-  const [visibility, setVisibility] = useState(workflow.visibility);
+  const [visibility, setVisibility] = useState<
+    "PRIVATE" | "TEAM_READONLY" | "TEAM_EDITABLE" | "PUBLIC"
+  >(workflow.visibility);
   const [description, setDescription] = useState(workflow.description || "");
+
+  useEffect(() => {
+    setName(workflow.name);
+    setVisibility(workflow.visibility);
+    setDescription(workflow.description || "");
+  }, [workflow.description, workflow.name, workflow.visibility]);
 
   const { currentWorkspace } = useWorkspace();
   const updateWorkflowMutation = useUpdateWorkflow();
@@ -43,7 +53,9 @@ export default function WorkflowSettingsModal({
         workspaceId: currentWorkspace.id,
         workflowId: workflow.id,
         data: {
-          // 这里需要根据后端API调整字段
+          name: name.trim() || workflow.name,
+          visibility,
+          description: description.trim(),
           status: workflow.status,
         },
       });
@@ -53,7 +65,7 @@ export default function WorkflowSettingsModal({
       toast.success("工作流设置已保存");
     } catch (error) {
       console.error("保存工作流设置失败:", error);
-      toast.error("保存设置失败");
+      toast.error(error instanceof Error ? error.message : "保存设置失败");
     }
   };
 
@@ -69,6 +81,26 @@ export default function WorkflowSettingsModal({
     }
 
     try {
+      const trimmedName = name.trim() || workflow.name;
+      const trimmedDescription = description.trim();
+      const hasMetadataChanges =
+        trimmedName !== workflow.name ||
+        visibility !== workflow.visibility ||
+        trimmedDescription !== (workflow.description || "");
+
+      if (hasMetadataChanges) {
+        await updateWorkflowMutation.mutateAsync({
+          workspaceId: currentWorkspace.id,
+          workflowId: workflow.id,
+          data: {
+            name: trimmedName,
+            visibility,
+            description: trimmedDescription,
+            status: workflow.status,
+          },
+        });
+      }
+
       const publishedWorkflow = await publishWorkflowMutation.mutateAsync({
         workspaceId: currentWorkspace.id,
         workflowId: workflow.id,
@@ -79,7 +111,7 @@ export default function WorkflowSettingsModal({
       toast.success("工作流已发布");
     } catch (error) {
       console.error("发布工作流失败:", error);
-      toast.error("发布失败");
+      toast.error(error instanceof Error ? error.message : "发布失败");
     }
   };
 
@@ -135,7 +167,15 @@ export default function WorkflowSettingsModal({
             </label>
             <select
               value={visibility}
-              onChange={(e) => setVisibility(e.target.value)}
+              onChange={(e) =>
+                setVisibility(
+                  e.target.value as
+                    | "PRIVATE"
+                    | "TEAM_READONLY"
+                    | "TEAM_EDITABLE"
+                    | "PUBLIC",
+                )
+              }
               className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="PRIVATE">私有</option>
@@ -165,6 +205,10 @@ export default function WorkflowSettingsModal({
                 {workflow.totalSteps}
               </span>
             </div>
+            <div className="flex items-center justify-between text-sm mt-2">
+              <span className="text-app-text-secondary">版本:</span>
+              <span className="text-app-text-primary">{workflow.version || "v1"}</span>
+            </div>
           </div>
         </div>
 
@@ -173,10 +217,14 @@ export default function WorkflowSettingsModal({
             {workflow.status === "DRAFT" && workflow.totalSteps > 0 && (
               <button
                 onClick={handlePublish}
-                disabled={publishWorkflowMutation.isPending}
+                disabled={
+                  publishWorkflowMutation.isPending ||
+                  updateWorkflowMutation.isPending
+                }
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-sm rounded-lg transition-colors"
               >
-                {publishWorkflowMutation.isPending ? (
+                {publishWorkflowMutation.isPending ||
+                updateWorkflowMutation.isPending ? (
                   <RiLoader4Line className="w-4 h-4 animate-spin" />
                 ) : (
                   <RiSaveLine className="w-4 h-4" />

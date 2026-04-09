@@ -9,6 +9,7 @@ import {
   type IssueActivityCreatedPayload,
   type IssueStepRecordCreatedPayload,
   type IssueUpdatedPayload,
+  type WorkflowRunEventPayload,
   type RealtimeEventName,
 } from "./events";
 import {
@@ -23,7 +24,8 @@ type RealtimePayload =
   | IssueDeletedPayload
   | IssueUpdatedPayload
   | IssueActivityCreatedPayload
-  | IssueStepRecordCreatedPayload;
+  | IssueStepRecordCreatedPayload
+  | WorkflowRunEventPayload;
 
 function logBroadcastDebug(message: string, payload?: unknown) {
   void message;
@@ -177,4 +179,24 @@ export async function broadcastIssueStepRecordCreated(
     payload,
     accessToken,
   );
+}
+
+export async function broadcastWorkflowRunEvent(
+  payload: WorkflowRunEventPayload,
+  accessToken: string,
+) {
+  await Promise.all([
+    sendBroadcast(
+      buildWorkflowIssueTopic(payload.issueId),
+      payload.event as RealtimeEventName,
+      payload,
+      accessToken,
+    ),
+    sendBroadcast(
+      buildWorkspaceTopic(payload.workspaceId),
+      payload.event as RealtimeEventName,
+      payload,
+      accessToken,
+    ),
+  ]);
 }

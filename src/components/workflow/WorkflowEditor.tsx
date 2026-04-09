@@ -38,7 +38,7 @@ const getId = () => `${id++}`;
 
 interface WorkflowEditorProps {
   workflow?: Workflow | null;
-  onSave?: (workflow: Workflow) => void;
+  onSave?: (workflow: Workflow) => Promise<void> | void;
   onCancel?: () => void;
 }
 
@@ -207,7 +207,7 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
   };
 
   // MARK: 验证工作流
-  const validateWorkflow = (): boolean => {
+  const validateWorkflow = (): string[] => {
     const errors: string[] = [];
 
     // 1. 验证是否有节点
@@ -257,52 +257,53 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
     }
 
     setValidationErrors(errors);
-    return errors.length === 0;
+    return errors;
   };
 
   // MARK: 保存工作流
   const handleSave = async (saveAsDraft = false) => {
     setIsSaving(true);
 
-    // 如果是正式发布（非草稿），则进行验证
-    if (!saveAsDraft) {
-      const isValid = validateWorkflow();
-      if (!isValid) {
-        // 显示验证错误
-        alert(`工作流验证失败:\n${validationErrors.join("\n")}`);
-        setIsSaving(false);
-        return;
+    try {
+      // 如果是正式发布（非草稿），则进行验证
+      if (!saveAsDraft) {
+        const errors = validateWorkflow();
+        if (errors.length > 0) {
+          alert(`工作流验证失败:\n${errors.join("\n")}`);
+          return;
+        }
+      } else {
+        setValidationErrors([]);
       }
+
+      const finalName = workflowName.trim() || "未命名工作流";
+
+      const workflowData: Workflow = {
+        id: workflow?.id || generateId(),
+        name: finalName,
+        description: workflowDescription.trim(),
+        nodes: nodes as WorkflowNode[],
+        edges: edges as WorkflowEdge[],
+        createdAt: workflow?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        createdBy: workflow?.createdBy || "当前用户",
+        tags: workflow?.tags || [],
+        isDraft: saveAsDraft,
+        version: workflow?.version,
+        assigneeMap: workflow?.assigneeMap,
+        totalSteps: nodes.length,
+      };
+
+      logSavedWorkflow(workflowData);
+
+      await onSave?.(workflowData);
+      setIsDraft(saveAsDraft);
+    } catch (error) {
+      console.error("保存工作流失败:", error);
+      toast.error(error instanceof Error ? error.message : "保存工作流失败");
+    } finally {
+      setIsSaving(false);
     }
-
-    const finalName = workflowName.trim() || "未命名工作流";
-
-    const workflowData: Workflow = {
-      id: workflow?.id || generateId(),
-      name: finalName,
-      description: workflowDescription.trim(),
-      nodes: nodes as WorkflowNode[],
-      edges: edges as WorkflowEdge[],
-      createdAt: workflow?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdBy: workflow?.createdBy || "当前用户", // 这里应该从用户上下文获取
-      tags: workflow?.tags || [],
-      isDraft: saveAsDraft,
-    };
-
-    // 使用hook中的函数记录保存的工作流数据
-    logSavedWorkflow(workflowData);
-
-    if (onSave) {
-      onSave(workflowData);
-    }
-
-    setIsDraft(saveAsDraft);
-    setIsSaving(false);
-
-    toast.success("保存成功", {
-      description: `工作流${saveAsDraft ? "草稿" : ""}已保存`,
-    });
   };
 
   const handleSaveWorkflow = () => handleSave(false);

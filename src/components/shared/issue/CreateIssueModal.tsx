@@ -163,7 +163,7 @@ export default function CreateIssueModal({
       const workflow: Workflow = {
         id: workflowResponse.id,
         name: workflowResponse.name,
-        description: "",
+        description: workflowResponse.description || "",
         nodes: [],
         edges: [],
         createdAt: workflowResponse.createdAt,
@@ -190,6 +190,9 @@ export default function CreateIssueModal({
 
       return workflow;
     },
+  );
+  const availableWorkflowTemplates = workflows.filter(
+    (workflow) => !workflow.isDraft && (workflow.totalSteps || 0) > 0,
   );
 
   const teamMemberOptions = useMemo<MemberOption[]>(
@@ -363,9 +366,7 @@ export default function CreateIssueModal({
           })()
         : undefined,
       assigneeIds:
-        workspaceType === "TEAM" &&
-        issueType === "normal" &&
-        normalizedAssigneeIds.length > 0
+        workspaceType === "TEAM" && normalizedAssigneeIds.length > 0
           ? normalizedAssigneeIds
           : undefined,
     };
@@ -471,7 +472,7 @@ export default function CreateIssueModal({
                   <SelectValue placeholder="选择工作流" />
                 </SelectTrigger>
                 <SelectContent className="border-app-border bg-app-content-bg">
-                  {workflows.map((workflow) => (
+                  {availableWorkflowTemplates.map((workflow) => (
                     <SelectItem key={workflow.id} value={workflow.id}>
                       {workflow.name}
                     </SelectItem>

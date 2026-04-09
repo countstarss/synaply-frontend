@@ -1,4 +1,3 @@
-import { IssueStatus } from "@/types/prisma";
 import { getBackendBaseUrl } from "@/lib/backend-url";
 import { CreateWorkflowIssueDto } from "../fetchers/issue";
 import { WorkflowResponse } from "../fetchers/workflow";
@@ -19,33 +18,12 @@ export function prepareWorkflowInstance(
   workspaceId?: string,
   dueDate?: string
 ): CreateWorkflowIssueDto {
-  // 解析工作流JSON
-  const workflowJson = workflowResponse.json
-    ? typeof workflowResponse.json === "string"
-      ? JSON.parse(workflowResponse.json)
-      : workflowResponse.json
-    : { nodes: [], edges: [] };
-
-  // 找到第一个节点作为起始节点
-  const nodes = workflowJson.nodes || [];
-  const firstNode = nodes.length > 0 ? nodes[0] : null;
-
-  if (!firstNode) {
-    throw new Error("工作流没有定义节点");
-  }
-
-  // 构造创建工作流Issue的DTO
   return {
     title: issueTitle,
     description: issueDescription,
     workspaceId: workspaceId || workflowResponse.workspaceId,
     dueDate,
     workflowId: workflowResponse.id,
-    workflowSnapshot: JSON.stringify(workflowJson),
-    totalSteps: nodes.length,
-    currentStepId: firstNode.id,
-    currentStepIndex: 0,
-    currentStepStatus: IssueStatus.TODO,
   };
 }
 

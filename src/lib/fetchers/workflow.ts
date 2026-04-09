@@ -3,6 +3,40 @@ import { getBackendBaseUrl } from "@/lib/backend-url";
 
 const API_BASE_URL = getBackendBaseUrl();
 
+const getWorkflowErrorMessage = async (
+  response: Response,
+  fallbackMessage: string,
+): Promise<string> => {
+  const rawText = await response.text().catch(() => "");
+
+  if (!rawText) {
+    return fallbackMessage;
+  }
+
+  try {
+    const parsed = JSON.parse(rawText) as {
+      message?: string | string[];
+      error?: string;
+    };
+
+    if (Array.isArray(parsed.message)) {
+      return parsed.message.join(", ");
+    }
+
+    if (typeof parsed.message === "string") {
+      return parsed.message;
+    }
+
+    if (typeof parsed.error === "string") {
+      return parsed.error;
+    }
+  } catch {
+    return rawText;
+  }
+
+  return fallbackMessage;
+};
+
 // MARK: - ✅工作流
 export interface WorkflowResponse {
   id: string;
@@ -14,9 +48,10 @@ export interface WorkflowResponse {
   status: string;
   creatorId: string;
 
-  visibility: string;
+  visibility: "PRIVATE" | "TEAM_READONLY" | "TEAM_EDITABLE" | "PUBLIC";
   assigneeMap?: Record<string, string>;
-  json?: string;
+  description?: string;
+  json?: Record<string, unknown> | string | null;
 
   totalSteps: number;
   version: string;
@@ -33,6 +68,11 @@ export interface WorkflowResponse {
       email: string;
       avatarUrl?: string;
     };
+  };
+  usage?: {
+    totalRunCount: number;
+    activeRunCount: number;
+    projectCount: number;
   };
 }
 
@@ -55,7 +95,7 @@ export const fetchWorkflows = async (
   );
 
   if (!response.ok) {
-    throw new Error("获取工作流列表失败");
+    throw new Error(await getWorkflowErrorMessage(response, "获取工作流列表失败"));
   }
 
   return response.json();
@@ -81,7 +121,7 @@ export const fetchWorkflowById = async (
   );
 
   if (!response.ok) {
-    throw new Error("获取工作流详情失败");
+    throw new Error(await getWorkflowErrorMessage(response, "获取工作流详情失败"));
   }
 
   return response.json();
@@ -108,7 +148,7 @@ export const createWorkflow = async (
   );
 
   if (!response.ok) {
-    throw new Error("创建工作流失败");
+    throw new Error(await getWorkflowErrorMessage(response, "创建工作流失败"));
   }
 
   return response.json();
@@ -136,7 +176,7 @@ export const updateWorkflow = async (
   );
 
   if (!response.ok) {
-    throw new Error("更新工作流失败");
+    throw new Error(await getWorkflowErrorMessage(response, "更新工作流失败"));
   }
 
   return response.json();
@@ -162,7 +202,7 @@ export const deleteWorkflow = async (
   );
 
   if (!response.ok) {
-    throw new Error("删除工作流失败");
+    throw new Error(await getWorkflowErrorMessage(response, "删除工作流失败"));
   }
 };
 
@@ -186,7 +226,7 @@ export const publishWorkflow = async (
   );
 
   if (!response.ok) {
-    throw new Error("发布工作流失败");
+    throw new Error(await getWorkflowErrorMessage(response, "发布工作流失败"));
   }
 
   return response.json();
@@ -199,11 +239,14 @@ export const updateWorkflowJson = async (
   workspaceId: string,
   workflowId: string,
   workflowData: {
+    name?: string;
+    description?: string;
     nodes: unknown[];
     edges: unknown[];
     assigneeMap?: Record<string, string>;
   },
-  token: string
+  token: string,
+  status?: "DRAFT" | "PUBLISHED",
 ): Promise<WorkflowResponse> => {
   const response = await fetch(
     `${API_BASE_URL}/workspaces/${workspaceId}/workflows/${workflowId}`,
@@ -214,15 +257,14 @@ export const updateWorkflowJson = async (
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        json: JSON.stringify(workflowData),
-        // totalSteps: workflowData.nodes.length,
-        // assigneeMap: workflowData.assigneeMap,
+        json: workflowData,
+        status,
       }),
     }
   );
 
   if (!response.ok) {
-    throw new Error("更新工作流数据失败");
+    throw new Error(await getWorkflowErrorMessage(response, "更新工作流数据失败"));
   }
 
   return response.json();

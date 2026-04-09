@@ -33,6 +33,9 @@ export default function WorkflowEditorToolbar({
   onViewJSON,
   disabled = false,
 }: WorkflowEditorToolbarProps) {
+  const primaryActionLabel = isDraft ? "发布工作流" : "保存并发布";
+  const primaryActionTitle = isDraft ? "发布工作流" : "保存并发布";
+
   return (
     <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
       <div className="bg-app-content-bg rounded-lg shadow-lg dark:shadow-black/20 p-2 border border-app-border">
@@ -92,25 +95,27 @@ export default function WorkflowEditorToolbar({
             )}
 
             {/* 存为草稿按钮 */}
-            <button
-              onClick={onSaveAsDraft}
-              disabled={isSaving || disabled}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="存为草稿"
-            >
-              <RiDraftLine className="w-4 h-4" />
-              存为草稿
-            </button>
+            {isDraft && (
+              <button
+                onClick={onSaveAsDraft}
+                disabled={isSaving || disabled}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="存为草稿"
+              >
+                <RiDraftLine className="w-4 h-4" />
+                存为草稿
+              </button>
+            )}
 
-            {/* 保存工作流按钮 */}
+            {/* 发布工作流按钮 */}
             <button
               onClick={onSave}
               disabled={isSaving || disabled}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
-              title="保存工作流"
+              title={primaryActionTitle}
             >
               <RiSaveLine className="w-4 h-4" />
-              {isSaving ? "保存中..." : "保存工作流"}
+              {isSaving ? "处理中..." : primaryActionLabel}
             </button>
 
             {/* 返回按钮 */}

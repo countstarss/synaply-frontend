@@ -195,14 +195,18 @@ export const useUpdateWorkflowJson = () => {
       workspaceId,
       workflowId,
       workflowData,
+      status,
     }: {
       workspaceId: string;
       workflowId: string;
       workflowData: {
+        name?: string;
+        description?: string;
         nodes: unknown[];
         edges: unknown[];
         assigneeMap?: Record<string, string>;
       };
+      status?: "DRAFT" | "PUBLISHED";
     }) => {
       if (!session?.access_token) {
         throw new Error("用户token不能为空");
@@ -211,7 +215,8 @@ export const useUpdateWorkflowJson = () => {
         workspaceId,
         workflowId,
         workflowData,
-        session.access_token
+        session.access_token,
+        status
       );
     },
     onSuccess: (data, variables) => {
@@ -279,7 +284,9 @@ export const useWorkflowStats = (workspaceId?: string) => {
     published: workflows?.filter((w) => w.status === "PUBLISHED").length || 0,
     draft: workflows?.filter((w) => w.status === "DRAFT").length || 0,
     active:
-      workflows?.filter((w) => w.status === "PUBLISHED" && w.totalSteps > 0)
+      workflows?.filter(
+        (w) => (w.usage?.activeRunCount || 0) > 0
+      )
         .length || 0,
   };
 

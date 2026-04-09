@@ -18,6 +18,7 @@ import {
   useWorkflows,
   useCreateWorkflow,
   useDeleteWorkflow,
+  usePublishWorkflow,
   useWorkflowStats,
   useUpdateWorkflowJson,
 } from "@/hooks/useWorkflowApi";
@@ -44,6 +45,7 @@ export default function WorkflowsPageContent() {
 
   const createWorkflowMutation = useCreateWorkflow();
   const deleteWorkflowMutation = useDeleteWorkflow();
+  const publishWorkflowMutation = usePublishWorkflow();
   const updateWorkflowJsonMutation = useUpdateWorkflowJson();
 
   const handleCreateNew = () => {
@@ -71,6 +73,7 @@ export default function WorkflowsPageContent() {
         workspaceId: currentWorkspace.id,
         data: {
           name: workflowInfo.name,
+          description: workflowInfo.description,
           visibility: defaultVisibility,
         },
       });
@@ -96,15 +99,15 @@ export default function WorkflowsPageContent() {
       toast.success("工作流创建成功");
     } catch (error) {
       console.error("创建工作流失败:", error);
-      toast.error("创建工作流失败");
+      toast.error(error instanceof Error ? error.message : "创建工作流失败");
     }
   };
 
   const handleEditWorkflow = (workflowResponse: WorkflowResponse) => {
-    const workflow: Workflow = {
+      const workflow: Workflow = {
       id: workflowResponse.id,
       name: workflowResponse.name,
-      description: "",
+      description: workflowResponse.description || "",
       nodes: [],
       edges: [],
       createdAt: workflowResponse.createdAt,
@@ -118,10 +121,14 @@ export default function WorkflowsPageContent() {
 
     if (workflowResponse.json) {
       try {
-        const parsedData = JSON.parse(workflowResponse.json);
+        const parsedData =
+          typeof workflowResponse.json === "string"
+            ? JSON.parse(workflowResponse.json)
+            : workflowResponse.json;
         workflow.nodes = parsedData.nodes || [];
         workflow.edges = parsedData.edges || [];
-        workflow.description = parsedData.description || "";
+        workflow.description =
+          workflowResponse.description || parsedData.description || "";
       } catch (error) {
         console.error("解析工作流JSON失败:", error);
       }
@@ -142,17 +149,28 @@ export default function WorkflowsPageContent() {
         workspaceId: currentWorkspace.id,
         workflowId: workflow.id,
         workflowData: {
+          name: workflow.name,
+          description: workflow.description,
           nodes: workflow.nodes,
           edges: workflow.edges,
           assigneeMap: workflow.assigneeMap,
         },
+        status: workflow.isDraft ? "DRAFT" : undefined,
       });
+
+      if (!workflow.isDraft) {
+        await publishWorkflowMutation.mutateAsync({
+          workspaceId: currentWorkspace.id,
+          workflowId: workflow.id,
+        });
+      }
 
       setEditingWorkflow(null);
       setViewMode("list");
+      toast.success(workflow.isDraft ? "草稿已保存" : "工作流已发布");
     } catch (error) {
       console.error("保存工作流失败:", error);
-      toast.error("保存工作流失败");
+      throw error;
     }
   };
 
@@ -171,13 +189,35 @@ export default function WorkflowsPageContent() {
         toast.success("工作流删除成功");
       } catch (error) {
         console.error("删除工作流失败:", error);
-        toast.error("删除工作流失败");
+        toast.error(error instanceof Error ? error.message : "删除工作流失败");
       }
     }
   };
 
   const handleOpenSettings = (workflow: WorkflowResponse) => {
-    setSelectedWorkflow(workflow);
+    if (!workflow.json) {
+      setSelectedWorkflow(workflow);
+      setIsSettingsModalOpen(true);
+      return;
+    }
+
+    try {
+      const parsedData =
+        typeof workflow.json === "string"
+          ? JSON.parse(workflow.json)
+          : workflow.json;
+
+      setSelectedWorkflow({
+        ...workflow,
+        description:
+          workflow.description ||
+          (typeof parsedData?.description === "string"
+            ? parsedData.description
+            : undefined),
+      });
+    } catch {
+      setSelectedWorkflow(workflow);
+    }
     setIsSettingsModalOpen(true);
   };
 
@@ -186,7 +226,24 @@ export default function WorkflowsPageContent() {
     setIsSettingsModalOpen(false);
   };
 
-  const handleWorkflowUpdate = () => {};
+  const handleWorkflowUpdate = (updatedWorkflow: WorkflowResponse) => {
+    setSelectedWorkflow(updatedWorkflow);
+    setEditingWorkflow((current) => {
+      if (!current || current.id !== updatedWorkflow.id) {
+        return current;
+      }
+
+      return {
+        ...current,
+        name: updatedWorkflow.name,
+        description: updatedWorkflow.description || current.description,
+        isDraft: updatedWorkflow.status === "DRAFT",
+        version: updatedWorkflow.version,
+        totalSteps: updatedWorkflow.totalSteps,
+        assigneeMap: updatedWorkflow.assigneeMap || current.assigneeMap,
+      };
+    });
+  };
 
   const handleBackToList = () => {
     setEditingWorkflow(null);
@@ -344,6 +401,13 @@ export default function WorkflowsPageContent() {
                         </h3>
                         <div className="flex items-center gap-3 text-xs text-app-text-muted">
                           <span>节点: {workflow.totalSteps}</span>
+                          <span>版本: {workflow.version}</span>
+                          <span>
+                            运行中: {workflow.usage?.activeRunCount || 0}
+                          </span>
+                          <span>
+                            总运行: {workflow.usage?.totalRunCount || 0}
+                          </span>
                           <span>
                             创建者: {workflow.creator?.user?.name || "未知"}
                           </span>

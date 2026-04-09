@@ -105,6 +105,7 @@ export interface Issue {
   currentStepIndex?: number | null;
   currentStepStatus?: IssueStatus | null;
   workflowSnapshot?: Record<string, unknown> | null;
+  workflowRun?: WorkflowRunSummary | null;
   state?: IssueStateSummary | null;
   project?: IssueProject | null;
   assignees?: IssueAssignee[];
@@ -161,13 +162,62 @@ export interface CreateWorkflowIssueDto {
   visibility?: VisibilityType;
   assigneeIds?: string[];
   labelIds?: string[];
-
   workflowId: string;
-  workflowSnapshot: string;
-  totalSteps: number;
-  currentStepId: string;
-  currentStepIndex: number;
-  currentStepStatus: IssueStatus;
+}
+
+export type WorkflowRunStatus =
+  | "ACTIVE"
+  | "BLOCKED"
+  | "WAITING_REVIEW"
+  | "HANDOFF_PENDING"
+  | "DONE";
+
+export type WorkflowRunActionType =
+  | "execution"
+  | "blocked"
+  | "review"
+  | "handoff"
+  | "done";
+
+export interface WorkflowRunSummary {
+  templateId?: string | null;
+  templateVersion?: string | null;
+  runStatus: WorkflowRunStatus;
+  currentActionType: WorkflowRunActionType;
+  currentStepId?: string | null;
+  currentStepIndex?: number | null;
+  currentStepStatus?: IssueStatus | null;
+  currentStepName?: string | null;
+  currentAssigneeUserId?: string | null;
+  currentAssigneeName?: string | null;
+  totalSteps?: number | null;
+  lastEventType?: string | null;
+  blockedReason?: string | null;
+  targetUserId?: string | null;
+  targetName?: string | null;
+}
+
+export interface WorkflowRunActivityMetadata {
+  kind: "workflow";
+  eventType: string;
+  runStatus: WorkflowRunStatus;
+  actionType: WorkflowRunActionType;
+  templateId?: string | null;
+  templateVersion?: string | null;
+  currentStepId?: string | null;
+  currentStepName?: string | null;
+  currentStepIndex?: number | null;
+  previousStepId?: string | null;
+  previousStepName?: string | null;
+  nextStepId?: string | null;
+  nextStepName?: string | null;
+  assigneeUserId?: string | null;
+  assigneeName?: string | null;
+  targetUserId?: string | null;
+  targetName?: string | null;
+  reason?: string | null;
+  comment?: string | null;
+  resultText?: string | null;
 }
 
 export function isWorkflowIssue(issue: WorkflowIssueIdentity | null | undefined) {
@@ -426,6 +476,7 @@ export interface IssueStepRecord {
   attachments?: unknown;
   assigneeId: string;
   createdAt: string;
+  assignee?: IssueAssigneeMember | null;
 }
 // MARK: StepRecordDto
 export interface CreateIssueStepRecordDto {
@@ -470,8 +521,9 @@ export interface IssueActivity {
   issueId: string;
   actorId: string;
   action: string;
-  metadata?: unknown;
+  metadata?: WorkflowRunActivityMetadata | Record<string, unknown>;
   createdAt: string;
+  actor?: IssueAssigneeMember | null;
 }
 
 export interface CreateIssueActivityDto {
@@ -504,4 +556,256 @@ export async function getIssueActivities(
     `/workspaces/${workspaceId}/issues/${issueId}/activities`,
     token,
   );
+}
+
+export interface UpdateWorkflowRunStatusDto {
+  status: IssueStatus;
+  comment?: string;
+}
+
+export interface AdvanceWorkflowRunDto {
+  resultText?: string;
+  comment?: string;
+  attachments?: unknown;
+}
+
+export interface RevertWorkflowRunDto {
+  comment?: string;
+}
+
+export interface BlockWorkflowRunDto {
+  reason?: string;
+}
+
+export interface UnblockWorkflowRunDto {
+  comment?: string;
+  restoreStatus?: IssueStatus;
+}
+
+export interface RequestWorkflowReviewDto {
+  targetUserId?: string;
+  targetName?: string;
+  comment?: string;
+}
+
+export type WorkflowReviewOutcome = "APPROVED" | "CHANGES_REQUESTED";
+
+export interface RespondWorkflowReviewDto {
+  outcome: WorkflowReviewOutcome;
+  comment?: string;
+}
+
+export interface RequestWorkflowHandoffDto {
+  targetUserId?: string;
+  targetName?: string;
+  comment?: string;
+}
+
+export interface AcceptWorkflowHandoffDto {
+  comment?: string;
+}
+
+export interface SubmitWorkflowRecordDto {
+  resultText?: string;
+  attachments?: unknown;
+}
+
+async function postWorkflowRunAction<TResponse, TPayload extends object | undefined>(
+  workspaceId: string,
+  issueId: string,
+  action: string,
+  token: string,
+  payload?: TPayload,
+): Promise<TResponse> {
+  return fetchApi<TResponse>(
+    `/workspaces/${workspaceId}/workflow-runs/${issueId}/${action}`,
+    token,
+    {
+      method: "POST",
+      body: JSON.stringify(payload ?? {}),
+    },
+  );
+}
+
+export async function getWorkflowRun(
+  workspaceId: string,
+  issueId: string,
+  token: string,
+): Promise<Issue> {
+  const issue = await fetchApi<Issue>(
+    `/workspaces/${workspaceId}/workflow-runs/${issueId}`,
+    token,
+  );
+
+  return normalizeIssueType(issue);
+}
+
+export async function updateWorkflowRunStatus(
+  workspaceId: string,
+  issueId: string,
+  data: UpdateWorkflowRunStatusDto,
+  token: string,
+): Promise<Issue> {
+  const issue = await postWorkflowRunAction<Issue, UpdateWorkflowRunStatusDto>(
+    workspaceId,
+    issueId,
+    "status",
+    token,
+    data,
+  );
+
+  return normalizeIssueType(issue);
+}
+
+export async function advanceWorkflowRun(
+  workspaceId: string,
+  issueId: string,
+  data: AdvanceWorkflowRunDto,
+  token: string,
+): Promise<Issue> {
+  const issue = await postWorkflowRunAction<Issue, AdvanceWorkflowRunDto>(
+    workspaceId,
+    issueId,
+    "advance",
+    token,
+    data,
+  );
+
+  return normalizeIssueType(issue);
+}
+
+export async function revertWorkflowRun(
+  workspaceId: string,
+  issueId: string,
+  data: RevertWorkflowRunDto,
+  token: string,
+): Promise<Issue> {
+  const issue = await postWorkflowRunAction<Issue, RevertWorkflowRunDto>(
+    workspaceId,
+    issueId,
+    "revert",
+    token,
+    data,
+  );
+
+  return normalizeIssueType(issue);
+}
+
+export async function blockWorkflowRun(
+  workspaceId: string,
+  issueId: string,
+  data: BlockWorkflowRunDto,
+  token: string,
+): Promise<Issue> {
+  const issue = await postWorkflowRunAction<Issue, BlockWorkflowRunDto>(
+    workspaceId,
+    issueId,
+    "block",
+    token,
+    data,
+  );
+
+  return normalizeIssueType(issue);
+}
+
+export async function unblockWorkflowRun(
+  workspaceId: string,
+  issueId: string,
+  data: UnblockWorkflowRunDto,
+  token: string,
+): Promise<Issue> {
+  const issue = await postWorkflowRunAction<Issue, UnblockWorkflowRunDto>(
+    workspaceId,
+    issueId,
+    "unblock",
+    token,
+    data,
+  );
+
+  return normalizeIssueType(issue);
+}
+
+export async function requestWorkflowReview(
+  workspaceId: string,
+  issueId: string,
+  data: RequestWorkflowReviewDto,
+  token: string,
+): Promise<Issue> {
+  const issue = await postWorkflowRunAction<Issue, RequestWorkflowReviewDto>(
+    workspaceId,
+    issueId,
+    "request-review",
+    token,
+    data,
+  );
+
+  return normalizeIssueType(issue);
+}
+
+export async function requestWorkflowHandoff(
+  workspaceId: string,
+  issueId: string,
+  data: RequestWorkflowHandoffDto,
+  token: string,
+): Promise<Issue> {
+  const issue = await postWorkflowRunAction<Issue, RequestWorkflowHandoffDto>(
+    workspaceId,
+    issueId,
+    "request-handoff",
+    token,
+    data,
+  );
+
+  return normalizeIssueType(issue);
+}
+
+export async function respondWorkflowReview(
+  workspaceId: string,
+  issueId: string,
+  data: RespondWorkflowReviewDto,
+  token: string,
+): Promise<Issue> {
+  const issue = await postWorkflowRunAction<Issue, RespondWorkflowReviewDto>(
+    workspaceId,
+    issueId,
+    "respond-review",
+    token,
+    data,
+  );
+
+  return normalizeIssueType(issue);
+}
+
+export async function acceptWorkflowHandoff(
+  workspaceId: string,
+  issueId: string,
+  data: AcceptWorkflowHandoffDto,
+  token: string,
+): Promise<Issue> {
+  const issue = await postWorkflowRunAction<Issue, AcceptWorkflowHandoffDto>(
+    workspaceId,
+    issueId,
+    "accept-handoff",
+    token,
+    data,
+  );
+
+  return normalizeIssueType(issue);
+}
+
+export async function submitWorkflowRecord(
+  workspaceId: string,
+  issueId: string,
+  data: SubmitWorkflowRecordDto,
+  token: string,
+): Promise<Issue> {
+  const issue = await postWorkflowRunAction<Issue, SubmitWorkflowRecordDto>(
+    workspaceId,
+    issueId,
+    "submit-record",
+    token,
+    data,
+  );
+
+  return normalizeIssueType(issue);
 }

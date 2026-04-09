@@ -162,6 +162,8 @@ export interface CreateWorkflowDto {
    * @example "Workflow 1"
    */
   name: string;
+  /** The description of the workflow */
+  description?: string;
   /**
    * The visibility of the workflow
    * @default "PRIVATE"
@@ -170,10 +172,26 @@ export interface CreateWorkflowDto {
 }
 
 export interface UpdateWorkflowDto {
+  /** The name of the workflow */
+  name?: string;
+  /** The description of the workflow */
+  description?: string;
   /** The status of the workflow */
   status?: string;
-  /** The steps of the workflow */
-  steps?: string[];
+  /** The JSON data of the workflow */
+  json?: Record<string, unknown> | string;
+  /** The visibility of the workflow */
+  visibility?: "PRIVATE" | "TEAM_READONLY" | "TEAM_EDITABLE" | "PUBLIC";
+  /** The assignee map of the workflow */
+  assigneeMap?: Record<string, string>;
+  /** Total number of steps in the workflow */
+  totalSteps?: number;
+  /** Current step index */
+  currentStepIndex?: number;
+  /** Workflow version */
+  version?: string;
+  /** Whether this is a system template */
+  isSystemTemplate?: boolean;
 }
 
 export interface CreateIssueDto {

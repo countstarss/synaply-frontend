@@ -124,12 +124,25 @@ export function useIssueRealtime(
     (event: RealtimeEventName) => {
       if (
         event === REALTIME_EVENTS.ISSUE_STEP_RECORD_CREATED ||
-        event === REALTIME_EVENTS.WORKFLOW_NODE_STATUS_CHANGED ||
-        event === REALTIME_EVENTS.WORKFLOW_NODE_MOVED_NEXT ||
-        event === REALTIME_EVENTS.WORKFLOW_NODE_MOVED_PREVIOUS
+        event === REALTIME_EVENTS.WORKFLOW_RUN_CREATED ||
+        event === REALTIME_EVENTS.WORKFLOW_STEP_STATUS_CHANGED ||
+        event === REALTIME_EVENTS.WORKFLOW_STEP_COMPLETED ||
+        event === REALTIME_EVENTS.WORKFLOW_STEP_REVERTED ||
+        event === REALTIME_EVENTS.WORKFLOW_RECORD_SUBMITTED ||
+        event === REALTIME_EVENTS.WORKFLOW_REVIEW_REQUESTED ||
+        event === REALTIME_EVENTS.WORKFLOW_REVIEW_APPROVED ||
+        event === REALTIME_EVENTS.WORKFLOW_REVIEW_CHANGES_REQUESTED ||
+        event === REALTIME_EVENTS.WORKFLOW_HANDOFF_REQUESTED ||
+        event === REALTIME_EVENTS.WORKFLOW_HANDOFF_ACCEPTED ||
+        event === REALTIME_EVENTS.WORKFLOW_BLOCKED ||
+        event === REALTIME_EVENTS.WORKFLOW_UNBLOCKED ||
+        event === REALTIME_EVENTS.WORKFLOW_RUN_COMPLETED
       ) {
         void queryClient.invalidateQueries({
           queryKey: ["issue", workspaceId, issueId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["workflow-run", workspaceId, issueId],
         });
         void queryClient.invalidateQueries({
           queryKey: ["issue-step-records", issueId],
@@ -139,6 +152,9 @@ export function useIssueRealtime(
         });
         void queryClient.invalidateQueries({
           queryKey: ["issues", workspaceId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["project-summary", workspaceId],
         });
       }
     },

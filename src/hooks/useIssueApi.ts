@@ -1,23 +1,44 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import {
+  AdvanceWorkflowRunDto,
+  advanceWorkflowRun,
+  acceptWorkflowHandoff,
+  AcceptWorkflowHandoffDto,
+  BlockWorkflowRunDto,
+  blockWorkflowRun,
   CreateIssueDto,
   CreateWorkflowIssueDto,
-  getIssue,
-  IssueQueryParams,
   createIssue,
   createWorkflowIssue,
-  getIssues,
-  updateIssue,
-  deleteIssue,
-  Issue,
-  isWorkflowIssue,
-  createIssueStepRecord,
-  getIssueStepRecords,
   CreateIssueStepRecordDto,
-  createIssueActivity,
-  getIssueActivities,
   CreateIssueActivityDto,
+  deleteIssue,
+  getIssue,
+  getIssueActivities,
+  getIssueStepRecords,
+  getIssues,
+  getWorkflowRun,
+  Issue,
+  IssueQueryParams,
+  isWorkflowIssue,
+  RespondWorkflowReviewDto,
+  RequestWorkflowHandoffDto,
+  requestWorkflowHandoff,
+  RequestWorkflowReviewDto,
+  requestWorkflowReview,
+  respondWorkflowReview,
+  RevertWorkflowRunDto,
+  revertWorkflowRun,
+  SubmitWorkflowRecordDto,
+  submitWorkflowRecord,
+  unblockWorkflowRun,
+  UnblockWorkflowRunDto,
+  updateIssue,
+  updateWorkflowRunStatus,
+  UpdateWorkflowRunStatusDto,
+  createIssueActivity,
+  createIssueStepRecord,
 } from "@/lib/fetchers/issue";
 import {
   broadcastIssueCreated,
@@ -25,46 +46,9 @@ import {
   broadcastIssueActivityCreated,
   broadcastIssueStepRecordCreated,
   broadcastIssueUpdated,
+  broadcastWorkflowRunEvent,
 } from "@/lib/realtime/broadcast";
-import { getBackendBaseUrl } from "@/lib/backend-url";
-import { IssueStatus, IssueType } from "@/types/prisma";
-
-function buildWorkflowIssuePatch(issue: Partial<CreateIssueDto>) {
-  const patch: Partial<Issue> = {};
-
-  if (issue.stateId !== undefined) {
-    patch.stateId = issue.stateId;
-  }
-
-  if (issue.projectId !== undefined) {
-    patch.projectId = issue.projectId ?? null;
-  }
-
-  if (issue.directAssigneeId !== undefined) {
-    patch.directAssigneeId = issue.directAssigneeId ?? null;
-  }
-
-  if (issue.dueDate !== undefined) {
-    patch.dueDate = issue.dueDate ?? null;
-  }
-
-  if (issue.priority !== undefined) {
-    patch.priority = issue.priority;
-  }
-
-  if (issue.visibility !== undefined) {
-    patch.visibility = issue.visibility;
-  }
-
-  return patch;
-}
-
-function workflowIssueNeedsPatch(issue: Issue | null, patch: Partial<Issue>) {
-  return Object.entries(patch).some(([key, value]) => {
-    const currentValue = issue?.[key as keyof Issue];
-    return (currentValue ?? null) !== (value ?? null);
-  });
-}
+import { IssueType } from "@/types/prisma";
 
 /**
  * MARK: 获取工作空间Issue
@@ -102,6 +86,30 @@ export const useIssue = (
       }
 
       return getIssue(workspaceId, issueId, session.access_token);
+    },
+    enabled:
+      (options.enabled ?? true) &&
+      !!session?.access_token &&
+      !!workspaceId &&
+      !!issueId,
+  });
+};
+
+export const useWorkflowRun = (
+  workspaceId: string,
+  issueId: string,
+  options: { enabled?: boolean } = {},
+) => {
+  const { session } = useAuth();
+
+  return useQuery({
+    queryKey: ["workflow-run", workspaceId, issueId],
+    queryFn: async () => {
+      if (!session?.access_token) {
+        return null;
+      }
+
+      return getWorkflowRun(workspaceId, issueId, session.access_token);
     },
     enabled:
       (options.enabled ?? true) &&
@@ -150,6 +158,9 @@ export const useCreateIssue = () => {
       queryClient.invalidateQueries({
         queryKey: ["issues", variables.workspaceId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["project-summary", variables.workspaceId],
+      });
 
       if (!session?.access_token || !createdIssue?.id) {
         return;
@@ -188,35 +199,6 @@ export const useCreateWorkflowIssue = () => {
         throw new Error("未授权");
       }
 
-      // 获取工作流数据
-      const response = await fetch(
-        `${getBackendBaseUrl()}/workspaces/${workspaceId}/workflows/${workflowId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("获取工作流数据失败");
-      }
-
-      const workflow = await response.json();
-      const workflowJson = workflow.json
-        ? typeof workflow.json === "string"
-          ? JSON.parse(workflow.json)
-          : workflow.json
-        : { nodes: [], edges: [] };
-
-      // 找到第一个节点作为起始节点
-      const nodes = workflowJson.nodes || [];
-      const firstNode = nodes.length > 0 ? nodes[0] : null;
-
-      if (!firstNode) {
-        throw new Error("工作流没有定义节点");
-      }
-
       const issueData: CreateWorkflowIssueDto = {
         title: issue.title || "",
         description: issue.description,
@@ -230,49 +212,23 @@ export const useCreateWorkflowIssue = () => {
         assigneeIds: issue.assigneeIds,
         labelIds: issue.labelIds,
         workflowId,
-        workflowSnapshot: JSON.stringify(workflowJson),
-        totalSteps: nodes.length,
-        currentStepId: firstNode.id,
-        currentStepIndex: 0,
-        currentStepStatus: IssueStatus.TODO,
       };
 
-      const createdIssue = await createWorkflowIssue(issueData, session.access_token);
-
-      if (!createdIssue?.id) {
-        return createdIssue;
-      }
-
-      const freshIssue = await getIssue(
-        workspaceId,
-        createdIssue.id,
-        session.access_token,
+      const createdIssue = await createWorkflowIssue(
+        issueData,
+        session.access_token
       );
-      const patch = buildWorkflowIssuePatch(issue);
 
-      if (
-        freshIssue?.id &&
-        Object.keys(patch).length > 0 &&
-        workflowIssueNeedsPatch(freshIssue, patch)
-      ) {
-        await updateIssue(workspaceId, freshIssue.id, patch, session.access_token);
-        return getIssue(workspaceId, freshIssue.id, session.access_token);
-      }
-
-      if (!freshIssue) {
-        return freshIssue;
-      }
-
-      return isWorkflowIssue(freshIssue)
-        ? freshIssue
-        : {
-            ...freshIssue,
-            issueType: IssueType.WORKFLOW,
-          };
+      return isWorkflowIssue(createdIssue)
+        ? createdIssue
+        : { ...createdIssue, issueType: IssueType.WORKFLOW };
     },
     onSuccess: async (createdIssue, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issues", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project-summary", variables.workspaceId],
       });
 
       if (!session?.access_token || !createdIssue?.id) {
@@ -287,6 +243,501 @@ export const useCreateWorkflowIssue = () => {
         },
         session.access_token,
       );
+    },
+  });
+};
+
+function invalidateWorkflowRunQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  workspaceId: string,
+  issueId: string
+) {
+  queryClient.invalidateQueries({
+    queryKey: ["issue", workspaceId, issueId],
+  });
+  queryClient.invalidateQueries({
+    queryKey: ["workflow-run", workspaceId, issueId],
+  });
+  queryClient.invalidateQueries({
+    queryKey: ["issues", workspaceId],
+  });
+  queryClient.invalidateQueries({
+    queryKey: ["issue-step-records", issueId],
+  });
+  queryClient.invalidateQueries({
+    queryKey: ["issue-activities", issueId],
+  });
+  queryClient.invalidateQueries({
+    queryKey: ["project-summary", workspaceId],
+  });
+}
+
+async function emitWorkflowRunEvent(
+  accessToken: string,
+  payload: {
+    issueId: string;
+    workspaceId: string;
+    event: string;
+    runStatus: string | null;
+    currentStepId: string | null;
+    targetStepId?: string | null;
+  }
+) {
+  await broadcastWorkflowRunEvent(payload, accessToken);
+}
+
+export const useUpdateWorkflowRunStatus = () => {
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      workspaceId,
+      issueId,
+      data,
+    }: {
+      workspaceId: string;
+      issueId: string;
+      data: UpdateWorkflowRunStatusDto;
+    }) => {
+      if (!session?.access_token) {
+        throw new Error("未授权");
+      }
+
+      return updateWorkflowRunStatus(
+        workspaceId,
+        issueId,
+        data,
+        session.access_token
+      );
+    },
+    onSuccess: async (updatedIssue, variables) => {
+      invalidateWorkflowRunQueries(
+        queryClient,
+        variables.workspaceId,
+        variables.issueId
+      );
+
+      if (!session?.access_token) {
+        return;
+      }
+
+      await emitWorkflowRunEvent(session.access_token, {
+        issueId: variables.issueId,
+        workspaceId: variables.workspaceId,
+        event: "workflow.step.status_changed",
+        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
+        currentStepId: updatedIssue.currentStepId ?? null,
+      });
+    },
+  });
+};
+
+export const useAdvanceWorkflowRun = () => {
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      workspaceId,
+      issueId,
+      data,
+    }: {
+      workspaceId: string;
+      issueId: string;
+      data: AdvanceWorkflowRunDto;
+    }) => {
+      if (!session?.access_token) {
+        throw new Error("未授权");
+      }
+
+      return advanceWorkflowRun(workspaceId, issueId, data, session.access_token);
+    },
+    onSuccess: async (updatedIssue, variables) => {
+      invalidateWorkflowRunQueries(
+        queryClient,
+        variables.workspaceId,
+        variables.issueId
+      );
+
+      if (!session?.access_token) {
+        return;
+      }
+
+      await emitWorkflowRunEvent(session.access_token, {
+        issueId: variables.issueId,
+        workspaceId: variables.workspaceId,
+        event:
+          updatedIssue.workflowRun?.runStatus === "DONE"
+            ? "workflow.run.completed"
+            : "workflow.step.completed",
+        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
+        currentStepId: updatedIssue.currentStepId ?? null,
+      });
+    },
+  });
+};
+
+export const useRevertWorkflowRun = () => {
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      workspaceId,
+      issueId,
+      data,
+    }: {
+      workspaceId: string;
+      issueId: string;
+      data: RevertWorkflowRunDto;
+    }) => {
+      if (!session?.access_token) {
+        throw new Error("未授权");
+      }
+
+      return revertWorkflowRun(workspaceId, issueId, data, session.access_token);
+    },
+    onSuccess: async (updatedIssue, variables) => {
+      invalidateWorkflowRunQueries(
+        queryClient,
+        variables.workspaceId,
+        variables.issueId
+      );
+
+      if (!session?.access_token) {
+        return;
+      }
+
+      await emitWorkflowRunEvent(session.access_token, {
+        issueId: variables.issueId,
+        workspaceId: variables.workspaceId,
+        event: "workflow.step.reverted",
+        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
+        currentStepId: updatedIssue.currentStepId ?? null,
+      });
+    },
+  });
+};
+
+export const useBlockWorkflowRun = () => {
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      workspaceId,
+      issueId,
+      data,
+    }: {
+      workspaceId: string;
+      issueId: string;
+      data: BlockWorkflowRunDto;
+    }) => {
+      if (!session?.access_token) {
+        throw new Error("未授权");
+      }
+
+      return blockWorkflowRun(workspaceId, issueId, data, session.access_token);
+    },
+    onSuccess: async (updatedIssue, variables) => {
+      invalidateWorkflowRunQueries(
+        queryClient,
+        variables.workspaceId,
+        variables.issueId
+      );
+
+      if (!session?.access_token) {
+        return;
+      }
+
+      await emitWorkflowRunEvent(session.access_token, {
+        issueId: variables.issueId,
+        workspaceId: variables.workspaceId,
+        event: "workflow.blocked",
+        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
+        currentStepId: updatedIssue.currentStepId ?? null,
+      });
+    },
+  });
+};
+
+export const useUnblockWorkflowRun = () => {
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      workspaceId,
+      issueId,
+      data,
+    }: {
+      workspaceId: string;
+      issueId: string;
+      data: UnblockWorkflowRunDto;
+    }) => {
+      if (!session?.access_token) {
+        throw new Error("未授权");
+      }
+
+      return unblockWorkflowRun(workspaceId, issueId, data, session.access_token);
+    },
+    onSuccess: async (updatedIssue, variables) => {
+      invalidateWorkflowRunQueries(
+        queryClient,
+        variables.workspaceId,
+        variables.issueId
+      );
+
+      if (!session?.access_token) {
+        return;
+      }
+
+      await emitWorkflowRunEvent(session.access_token, {
+        issueId: variables.issueId,
+        workspaceId: variables.workspaceId,
+        event: "workflow.unblocked",
+        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
+        currentStepId: updatedIssue.currentStepId ?? null,
+      });
+    },
+  });
+};
+
+export const useRequestWorkflowReview = () => {
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      workspaceId,
+      issueId,
+      data,
+    }: {
+      workspaceId: string;
+      issueId: string;
+      data: RequestWorkflowReviewDto;
+    }) => {
+      if (!session?.access_token) {
+        throw new Error("未授权");
+      }
+
+      return requestWorkflowReview(
+        workspaceId,
+        issueId,
+        data,
+        session.access_token
+      );
+    },
+    onSuccess: async (updatedIssue, variables) => {
+      invalidateWorkflowRunQueries(
+        queryClient,
+        variables.workspaceId,
+        variables.issueId
+      );
+
+      if (!session?.access_token) {
+        return;
+      }
+
+      await emitWorkflowRunEvent(session.access_token, {
+        issueId: variables.issueId,
+        workspaceId: variables.workspaceId,
+        event: "workflow.review.requested",
+        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
+        currentStepId: updatedIssue.currentStepId ?? null,
+      });
+    },
+  });
+};
+
+export const useRequestWorkflowHandoff = () => {
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      workspaceId,
+      issueId,
+      data,
+    }: {
+      workspaceId: string;
+      issueId: string;
+      data: RequestWorkflowHandoffDto;
+    }) => {
+      if (!session?.access_token) {
+        throw new Error("未授权");
+      }
+
+      return requestWorkflowHandoff(
+        workspaceId,
+        issueId,
+        data,
+        session.access_token
+      );
+    },
+    onSuccess: async (updatedIssue, variables) => {
+      invalidateWorkflowRunQueries(
+        queryClient,
+        variables.workspaceId,
+        variables.issueId
+      );
+
+      if (!session?.access_token) {
+        return;
+      }
+
+      await emitWorkflowRunEvent(session.access_token, {
+        issueId: variables.issueId,
+        workspaceId: variables.workspaceId,
+        event: "workflow.handoff.requested",
+        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
+        currentStepId: updatedIssue.currentStepId ?? null,
+      });
+    },
+  });
+};
+
+export const useRespondWorkflowReview = () => {
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      workspaceId,
+      issueId,
+      data,
+    }: {
+      workspaceId: string;
+      issueId: string;
+      data: RespondWorkflowReviewDto;
+    }) => {
+      if (!session?.access_token) {
+        throw new Error("未授权");
+      }
+
+      return respondWorkflowReview(
+        workspaceId,
+        issueId,
+        data,
+        session.access_token
+      );
+    },
+    onSuccess: async (updatedIssue, variables) => {
+      invalidateWorkflowRunQueries(
+        queryClient,
+        variables.workspaceId,
+        variables.issueId
+      );
+
+      if (!session?.access_token) {
+        return;
+      }
+
+      await emitWorkflowRunEvent(session.access_token, {
+        issueId: variables.issueId,
+        workspaceId: variables.workspaceId,
+        event:
+          variables.data.outcome === "APPROVED"
+            ? "workflow.review.approved"
+            : "workflow.review.changes_requested",
+        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
+        currentStepId: updatedIssue.currentStepId ?? null,
+      });
+    },
+  });
+};
+
+export const useAcceptWorkflowHandoff = () => {
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      workspaceId,
+      issueId,
+      data,
+    }: {
+      workspaceId: string;
+      issueId: string;
+      data: AcceptWorkflowHandoffDto;
+    }) => {
+      if (!session?.access_token) {
+        throw new Error("未授权");
+      }
+
+      return acceptWorkflowHandoff(
+        workspaceId,
+        issueId,
+        data,
+        session.access_token
+      );
+    },
+    onSuccess: async (updatedIssue, variables) => {
+      invalidateWorkflowRunQueries(
+        queryClient,
+        variables.workspaceId,
+        variables.issueId
+      );
+
+      if (!session?.access_token) {
+        return;
+      }
+
+      await emitWorkflowRunEvent(session.access_token, {
+        issueId: variables.issueId,
+        workspaceId: variables.workspaceId,
+        event: "workflow.handoff.accepted",
+        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
+        currentStepId: updatedIssue.currentStepId ?? null,
+      });
+    },
+  });
+};
+
+export const useSubmitWorkflowRecord = () => {
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      workspaceId,
+      issueId,
+      data,
+    }: {
+      workspaceId: string;
+      issueId: string;
+      data: SubmitWorkflowRecordDto;
+    }) => {
+      if (!session?.access_token) {
+        throw new Error("未授权");
+      }
+
+      return submitWorkflowRecord(
+        workspaceId,
+        issueId,
+        data,
+        session.access_token
+      );
+    },
+    onSuccess: async (updatedIssue, variables) => {
+      invalidateWorkflowRunQueries(
+        queryClient,
+        variables.workspaceId,
+        variables.issueId
+      );
+
+      if (!session?.access_token) {
+        return;
+      }
+
+      await emitWorkflowRunEvent(session.access_token, {
+        issueId: variables.issueId,
+        workspaceId: variables.workspaceId,
+        event: "workflow.record.submitted",
+        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
+        currentStepId: updatedIssue.currentStepId ?? null,
+      });
     },
   });
 };
@@ -317,6 +768,9 @@ export const useUpdateIssue = () => {
     onSuccess: async (updatedIssue, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issues", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project-summary", variables.workspaceId],
       });
 
       if (!session?.access_token) {
@@ -359,6 +813,9 @@ export const useDeleteIssue = () => {
     onSuccess: async (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issues", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project-summary", variables.workspaceId],
       });
 
       if (!session?.access_token) {
@@ -415,6 +872,9 @@ export const useCreateIssueStepRecord = () => {
     onSuccess: async (createdStepRecord, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issue-step-records", variables.issueId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project-summary", variables.workspaceId],
       });
 
       if (!session?.access_token) {

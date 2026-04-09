@@ -5,9 +5,19 @@ export const REALTIME_EVENTS = {
   ISSUE_DELETED: "issue.deleted",
   ISSUE_ACTIVITY_CREATED: "issue.activity.created",
   ISSUE_STEP_RECORD_CREATED: "issue.step_record.created",
-  WORKFLOW_NODE_STATUS_CHANGED: "workflow.node.status_changed",
-  WORKFLOW_NODE_MOVED_NEXT: "workflow.node.moved_next",
-  WORKFLOW_NODE_MOVED_PREVIOUS: "workflow.node.moved_previous",
+  WORKFLOW_RUN_CREATED: "workflow.run.created",
+  WORKFLOW_STEP_STATUS_CHANGED: "workflow.step.status_changed",
+  WORKFLOW_STEP_COMPLETED: "workflow.step.completed",
+  WORKFLOW_STEP_REVERTED: "workflow.step.reverted",
+  WORKFLOW_RECORD_SUBMITTED: "workflow.record.submitted",
+  WORKFLOW_REVIEW_REQUESTED: "workflow.review.requested",
+  WORKFLOW_REVIEW_APPROVED: "workflow.review.approved",
+  WORKFLOW_REVIEW_CHANGES_REQUESTED: "workflow.review.changes_requested",
+  WORKFLOW_HANDOFF_REQUESTED: "workflow.handoff.requested",
+  WORKFLOW_HANDOFF_ACCEPTED: "workflow.handoff.accepted",
+  WORKFLOW_BLOCKED: "workflow.blocked",
+  WORKFLOW_UNBLOCKED: "workflow.unblocked",
+  WORKFLOW_RUN_COMPLETED: "workflow.run.completed",
 } as const;
 
 export type RealtimeEventName =
@@ -22,15 +32,38 @@ export const ISSUE_REALTIME_EVENTS = [
 
 export const WORKFLOW_REALTIME_EVENTS = [
   REALTIME_EVENTS.ISSUE_STEP_RECORD_CREATED,
-  REALTIME_EVENTS.WORKFLOW_NODE_STATUS_CHANGED,
-  REALTIME_EVENTS.WORKFLOW_NODE_MOVED_NEXT,
-  REALTIME_EVENTS.WORKFLOW_NODE_MOVED_PREVIOUS,
+  REALTIME_EVENTS.WORKFLOW_RUN_CREATED,
+  REALTIME_EVENTS.WORKFLOW_STEP_STATUS_CHANGED,
+  REALTIME_EVENTS.WORKFLOW_STEP_COMPLETED,
+  REALTIME_EVENTS.WORKFLOW_STEP_REVERTED,
+  REALTIME_EVENTS.WORKFLOW_RECORD_SUBMITTED,
+  REALTIME_EVENTS.WORKFLOW_REVIEW_REQUESTED,
+  REALTIME_EVENTS.WORKFLOW_REVIEW_APPROVED,
+  REALTIME_EVENTS.WORKFLOW_REVIEW_CHANGES_REQUESTED,
+  REALTIME_EVENTS.WORKFLOW_HANDOFF_REQUESTED,
+  REALTIME_EVENTS.WORKFLOW_HANDOFF_ACCEPTED,
+  REALTIME_EVENTS.WORKFLOW_BLOCKED,
+  REALTIME_EVENTS.WORKFLOW_UNBLOCKED,
+  REALTIME_EVENTS.WORKFLOW_RUN_COMPLETED,
 ] as const satisfies readonly RealtimeEventName[];
 
 export const WORKSPACE_REALTIME_EVENTS = [
   REALTIME_EVENTS.ISSUE_CREATED,
   REALTIME_EVENTS.ISSUE_UPDATED,
   REALTIME_EVENTS.ISSUE_DELETED,
+  REALTIME_EVENTS.WORKFLOW_RUN_CREATED,
+  REALTIME_EVENTS.WORKFLOW_STEP_STATUS_CHANGED,
+  REALTIME_EVENTS.WORKFLOW_STEP_COMPLETED,
+  REALTIME_EVENTS.WORKFLOW_STEP_REVERTED,
+  REALTIME_EVENTS.WORKFLOW_RECORD_SUBMITTED,
+  REALTIME_EVENTS.WORKFLOW_REVIEW_REQUESTED,
+  REALTIME_EVENTS.WORKFLOW_REVIEW_APPROVED,
+  REALTIME_EVENTS.WORKFLOW_REVIEW_CHANGES_REQUESTED,
+  REALTIME_EVENTS.WORKFLOW_HANDOFF_REQUESTED,
+  REALTIME_EVENTS.WORKFLOW_HANDOFF_ACCEPTED,
+  REALTIME_EVENTS.WORKFLOW_BLOCKED,
+  REALTIME_EVENTS.WORKFLOW_UNBLOCKED,
+  REALTIME_EVENTS.WORKFLOW_RUN_COMPLETED,
 ] as const satisfies readonly RealtimeEventName[];
 
 export type IssueRealtimeEditingField =
@@ -92,14 +125,13 @@ export interface IssueStepRecordCreatedPayload {
   assigneeId: string;
 }
 
-export interface WorkflowNodeTransitionPayload {
+export interface WorkflowRunEventPayload {
   issueId: string;
   workspaceId: string;
-  fromStepId: string | null;
-  toStepId: string | null;
-  fromIndex: number | null;
-  toIndex: number | null;
-  currentStepStatus: string | null;
+  event: string;
+  runStatus: string | null;
+  currentStepId: string | null;
+  targetStepId?: string | null;
 }
 
 export interface RealtimePayloadMap {
@@ -109,18 +141,26 @@ export interface RealtimePayloadMap {
   [REALTIME_EVENTS.ISSUE_DELETED]: IssueDeletedPayload;
   [REALTIME_EVENTS.ISSUE_ACTIVITY_CREATED]: IssueActivityCreatedPayload;
   [REALTIME_EVENTS.ISSUE_STEP_RECORD_CREATED]: IssueStepRecordCreatedPayload;
-  [REALTIME_EVENTS.WORKFLOW_NODE_STATUS_CHANGED]: WorkflowNodeTransitionPayload;
-  [REALTIME_EVENTS.WORKFLOW_NODE_MOVED_NEXT]: WorkflowNodeTransitionPayload;
-  [REALTIME_EVENTS.WORKFLOW_NODE_MOVED_PREVIOUS]: WorkflowNodeTransitionPayload;
+  [REALTIME_EVENTS.WORKFLOW_RUN_CREATED]: WorkflowRunEventPayload;
+  [REALTIME_EVENTS.WORKFLOW_STEP_STATUS_CHANGED]: WorkflowRunEventPayload;
+  [REALTIME_EVENTS.WORKFLOW_STEP_COMPLETED]: WorkflowRunEventPayload;
+  [REALTIME_EVENTS.WORKFLOW_STEP_REVERTED]: WorkflowRunEventPayload;
+  [REALTIME_EVENTS.WORKFLOW_RECORD_SUBMITTED]: WorkflowRunEventPayload;
+  [REALTIME_EVENTS.WORKFLOW_REVIEW_REQUESTED]: WorkflowRunEventPayload;
+  [REALTIME_EVENTS.WORKFLOW_REVIEW_APPROVED]: WorkflowRunEventPayload;
+  [REALTIME_EVENTS.WORKFLOW_REVIEW_CHANGES_REQUESTED]: WorkflowRunEventPayload;
+  [REALTIME_EVENTS.WORKFLOW_HANDOFF_REQUESTED]: WorkflowRunEventPayload;
+  [REALTIME_EVENTS.WORKFLOW_HANDOFF_ACCEPTED]: WorkflowRunEventPayload;
+  [REALTIME_EVENTS.WORKFLOW_BLOCKED]: WorkflowRunEventPayload;
+  [REALTIME_EVENTS.WORKFLOW_UNBLOCKED]: WorkflowRunEventPayload;
+  [REALTIME_EVENTS.WORKFLOW_RUN_COMPLETED]: WorkflowRunEventPayload;
 }
 
 export function isWorkflowRealtimeEvent(
   event: RealtimeEventName,
 ): event is
   | typeof REALTIME_EVENTS.ISSUE_STEP_RECORD_CREATED
-  | typeof REALTIME_EVENTS.WORKFLOW_NODE_STATUS_CHANGED
-  | typeof REALTIME_EVENTS.WORKFLOW_NODE_MOVED_NEXT
-  | typeof REALTIME_EVENTS.WORKFLOW_NODE_MOVED_PREVIOUS {
+  | (typeof WORKFLOW_REALTIME_EVENTS)[number] {
   return (WORKFLOW_REALTIME_EVENTS as readonly RealtimeEventName[]).includes(
     event,
   );

@@ -94,12 +94,16 @@ export const createInitialWorkflowIssue = (
 
   // 构建默认的 nodeStatuses
   const nodeStatuses: Record<string, { status: string }> = {};
+  const activeStepIndex =
+    issue.workflowRun?.currentStepIndex ?? issue.currentStepIndex ?? 0;
+  const activeStepStatus =
+    issue.workflowRun?.currentStepStatus ?? issue.currentStepStatus ?? "TODO";
   nodes.forEach((n: Node, idx: number) => {
     const status =
-      idx < (issue.currentStepIndex || 0)
+      idx < activeStepIndex
         ? "DONE"
-        : idx === (issue.currentStepIndex || 0)
-        ? issue.currentStepStatus || "TODO"
+        : idx === activeStepIndex
+        ? activeStepStatus || "TODO"
         : "TODO";
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -125,7 +129,8 @@ export const createInitialWorkflowIssue = (
     createdAt: issue.createdAt,
     updatedAt: issue.updatedAt,
     deadline: issue.dueDate || undefined,
-    currentNodeId: issue.currentStepId || nodes[0]?.id,
+    currentNodeId:
+      issue.workflowRun?.currentStepId || issue.currentStepId || nodes[0]?.id,
     nodeStatuses,
     history: [],
   } as unknown as WorkflowIssue;

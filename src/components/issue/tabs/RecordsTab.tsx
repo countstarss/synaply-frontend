@@ -8,6 +8,12 @@ interface StepRecord {
   index: number;
   resultText?: string; // 改为可选
   createdAt: string;
+  assignee?: {
+    user?: {
+      name?: string | null;
+      email?: string | null;
+    } | null;
+  } | null;
 }
 
 interface RecordsTabProps {
@@ -26,7 +32,11 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({ records }) => {
             {rec.resultText}
           </div>
           <div className="text-xs text-app-text-muted mt-1">
-            {new Date(rec.createdAt).toLocaleString()}
+            {(rec.assignee?.user?.name ||
+              rec.assignee?.user?.email?.split("@")[0] ||
+              "未知成员") +
+              " · " +
+              new Date(rec.createdAt).toLocaleString()}
           </div>
         </div>
       ))}

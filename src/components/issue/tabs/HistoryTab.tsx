@@ -8,6 +8,12 @@ interface HistoryTabProps {
     action: string;
     actorId: string;
     createdAt: string;
+    actor?: {
+      user?: {
+        name?: string | null;
+        email?: string | null;
+      } | null;
+    } | null;
   }>;
 }
 
@@ -21,7 +27,11 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ activities }) => {
             <div className="flex-1 min-w-0">
               <p className="text-app-text-primary">{activity.action}</p>
               <div className="flex items-center gap-2 mt-1 text-xs text-app-text-muted">
-                <span>{activity.actorId}</span>
+                <span>
+                  {activity.actor?.user?.name ||
+                    activity.actor?.user?.email?.split("@")[0] ||
+                    activity.actorId}
+                </span>
                 <span>•</span>
                 <span>{new Date(activity.createdAt).toLocaleString()}</span>
               </div>
