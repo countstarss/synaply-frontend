@@ -5,6 +5,7 @@ import {
   Building2,
   Users,
   UserCheck,
+  BotIcon,
   Shield,
   Smartphone,
   CreditCard,
@@ -73,6 +74,12 @@ export const baseSettingSections: SettingSection[] = [
         label: "Members",
         icon: UserCheck,
         href: "/settings/admin#members",
+      },
+      {
+        id: "ai-execution",
+        label: "AI Execution",
+        icon: BotIcon,
+        href: "/settings/admin#ai-execution",
       },
       {
         id: "security",

@@ -5,6 +5,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import SettingsScrollPage from "@/components/settings/SettingsScrollPage";
+import AiExecutionSettingsSection from "@/components/settings/sections/AiExecutionSettingsSection";
 import MembersSettingsSection from "@/components/settings/sections/MembersSettingsSection";
 import SettingsPlaceholderSection from "@/components/settings/sections/SettingsPlaceholderSection";
 import TeamsSettingsSection from "@/components/settings/sections/TeamsSettingsSection";
@@ -44,6 +45,12 @@ export default function AdminSettingsPage() {
           label: "Members",
           description: "成员角色、权限与移除操作",
           content: <MembersSettingsSection />,
+        },
+        {
+          id: "ai-execution",
+          label: "AI Execution",
+          description: "AI 可执行动作、确认策略与审计记录",
+          content: <AiExecutionSettingsSection />,
         },
         {
           id: "security",
