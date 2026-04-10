@@ -58,7 +58,7 @@ export function ProjectsOverviewPage({
               {workspaceType === "TEAM" ? "团队项目" : "我的项目"}
             </h2>
             <p className="mt-1 text-sm text-app-text-secondary">
-              共 {projects.length} 个项目，{linkedProjectCount} 个已关联任务，{emptyProjectCount} 个空项目，{unassignedIssueCount} 个未归属任务
+              共 {projects.length} 个项目，{linkedProjectCount} 个项目有有效任务，{emptyProjectCount} 个暂无有效任务，{unassignedIssueCount} 个未归属有效任务
             </p>
           </div>
           <button
@@ -161,7 +161,7 @@ export function ProjectsOverviewPage({
                       {visibilityMeta.label}
                     </span>
                     <span className="rounded-full border border-app-border bg-app-bg px-2 py-1 text-[11px] text-app-text-secondary">
-                      {issueCount} issues
+                      {issueCount} 个有效 issue
                     </span>
                     <span className="text-xs text-app-text-muted">
                       {formatShortDate(project.updatedAt)}

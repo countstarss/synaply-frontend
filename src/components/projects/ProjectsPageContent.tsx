@@ -51,6 +51,7 @@ import {
 import IssueDetailPageSurface from "@/components/issue/IssueDetailPageSurface";
 import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
 import {
+  isActiveIssue,
   normalizeIssueStateCategoryOrder,
   persistIssueBoardCategoryOrderToStorage,
   readIssueBoardCategoryOrderFromStorage,
@@ -236,7 +237,7 @@ export default function ProjectsPageContent() {
 
   const issueCountByProject = allIssues.reduce<Record<string, number>>(
     (counts, issue) => {
-      if (!issue.projectId) {
+      if (!issue.projectId || !isActiveIssue(issue)) {
         return counts;
       }
 
@@ -248,7 +249,7 @@ export default function ProjectsPageContent() {
 
   const linkedProjectCount = Object.keys(issueCountByProject).length;
   const unassignedIssueCount = allIssues.filter(
-    (issue) => !issue.projectId,
+    (issue) => !issue.projectId && isActiveIssue(issue),
   ).length;
   const emptyProjectCount = Math.max(projects.length - linkedProjectCount, 0);
 

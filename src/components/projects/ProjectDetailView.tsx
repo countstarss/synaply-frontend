@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import {
+  isActiveIssueCategory,
   sortIssuesByUrgency,
 } from "@/lib/issue-board";
 import type { Issue } from "@/lib/fetchers/issue";
@@ -99,11 +100,11 @@ function formatRelativeTime(date: string) {
 }
 
 function isCompletedIssueLike(issue: IssueStatusLike) {
-  return (
-    issue.state?.category === IssueStateCategory.DONE ||
-    issue.state?.category === IssueStateCategory.CANCELED ||
-    issue.currentStepStatus === IssueStatus.DONE
-  );
+  return issue.state?.category === IssueStateCategory.DONE;
+}
+
+function isActiveIssueLike(issue: IssueStatusLike) {
+  return isActiveIssueCategory(issue.state?.category);
 }
 
 function isBlockedIssueLike(issue: IssueStatusLike) {
@@ -221,12 +222,14 @@ function buildFallbackMetrics(
   issues: Issue[],
   lastSyncAt?: string | null,
 ): ProjectSummary["metrics"] {
+  const activeIssues = issues.filter((issue) => isActiveIssueLike(issue));
   const completedIssues = issues.filter((issue) => isCompletedIssueLike(issue))
     .length;
-  const blockedIssues = issues.filter((issue) => isBlockedIssueLike(issue))
+  const completionBaseIssueCount = activeIssues.length + completedIssues;
+  const blockedIssues = activeIssues.filter((issue) => isBlockedIssueLike(issue))
     .length;
-  const overdueIssues = issues.filter((issue) => {
-    if (!issue.dueDate || isCompletedIssueLike(issue)) {
+  const overdueIssues = activeIssues.filter((issue) => {
+    if (!issue.dueDate) {
       return false;
     }
 
@@ -235,12 +238,12 @@ function buildFallbackMetrics(
   const workflowCount = new Set(
     issues.map((issue) => issue.workflowId).filter(Boolean),
   ).size;
-  const highPriorityIssues = issues.filter(
+  const highPriorityIssues = activeIssues.filter(
     (issue) =>
       issue.priority === IssuePriority.HIGH ||
       issue.priority === IssuePriority.URGENT,
   ).length;
-  const unassignedIssues = issues.filter((issue) => {
+  const unassignedIssues = activeIssues.filter((issue) => {
     const hasAssignee =
       issue.directAssigneeId ||
       issue.assignees?.some((assignee) => Boolean(assignee.member?.id));
@@ -248,17 +251,21 @@ function buildFallbackMetrics(
   }).length;
 
   return {
-    totalIssues: issues.length,
-    openIssues: Math.max(issues.length - completedIssues, 0),
+    totalIssues: activeIssues.length,
+    openIssues: activeIssues.length,
     completedIssues,
     blockedIssues,
     overdueIssues,
     workflowCount,
-    workflowIssueCount: issues.filter((issue) => Boolean(issue.workflowId)).length,
+    workflowIssueCount: activeIssues.filter((issue) =>
+      Boolean(issue.workflowId),
+    ).length,
     highPriorityIssues,
     unassignedIssues,
     completionRate:
-      issues.length > 0 ? Math.round((completedIssues / issues.length) * 100) : 0,
+      completionBaseIssueCount > 0
+        ? Math.round((completedIssues / completionBaseIssueCount) * 100)
+        : 0,
     staleSyncDays: lastSyncAt
       ? Math.floor(
           (Date.now() - new Date(lastSyncAt).getTime()) /
@@ -500,7 +507,7 @@ export function ProjectDetailView({
   const blockedIssues =
     projectSummary?.blockedIssues ??
     displayedIssues
-      .filter((issue) => isBlockedIssueLike(issue))
+      .filter((issue) => isActiveIssueLike(issue) && isBlockedIssueLike(issue))
       .slice(0, 5)
       .map(normalizeIssueForSummary);
   const attentionItems =
@@ -648,7 +655,7 @@ export function ProjectDetailView({
                     负责人 · {getProjectOwnerLabel(selectedProject)}
                   </span>
                   <span className="rounded-full border border-app-border bg-app-content-bg/80 px-2.5 py-1 text-[11px] text-app-text-secondary">
-                    {metrics.totalIssues} issues
+                    {metrics.totalIssues} 个有效 issue
                   </span>
                   <span className="rounded-full border border-app-border bg-app-content-bg/80 px-2.5 py-1 text-[11px] text-app-text-secondary">
                     {metrics.workflowCount} workflows
@@ -688,7 +695,7 @@ export function ProjectDetailView({
               <ProjectMetricCard
                 label="推进进度"
                 value={`${metrics.completionRate}%`}
-                hint={`${metrics.completedIssues}/${metrics.totalIssues} 已完成`}
+                hint={`${metrics.completedIssues} 已完成 · ${metrics.totalIssues} 有效`}
                 tone={metrics.completionRate >= 70 ? "success" : "default"}
               />
               <ProjectMetricCard
@@ -758,7 +765,7 @@ export function ProjectDetailView({
                 className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-4 text-left transition hover:bg-app-button-hover/35 cursor-pointer"
               >
                 <div className="text-xs uppercase tracking-[0.18em] text-app-text-muted">
-                  Issues
+                  有效任务
                 </div>
                 <div className="mt-3 text-2xl font-semibold text-app-text-primary">
                   {metrics.totalIssues}

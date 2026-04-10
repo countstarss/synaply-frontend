@@ -50,6 +50,8 @@ import {
   buildIssueStateSummary,
   getIssueCategory,
   ISSUE_STATE_CATEGORY_LABELS,
+  isActiveIssue,
+  isClosedIssue,
   normalizeIssueStateCategoryOrder,
   persistIssueBoardCategoryOrderToStorage,
   readIssueBoardCategoryOrderFromStorage,
@@ -259,14 +261,6 @@ export default function IssuesPageContent() {
     );
   }, [issueStates]);
 
-  const myIssueCount = useMemo(
-    () =>
-      issues.filter((issue) =>
-        issueBelongsToUser(issue, currentUserTeamMember?.id, user?.id),
-      ).length,
-    [currentUserTeamMember?.id, issues, user?.id],
-  );
-
   const hasActiveFilters =
     searchQuery.trim().length > 0 ||
     selectedProjectId !== ALL_FILTER_VALUE ||
@@ -296,11 +290,22 @@ export default function IssuesPageContent() {
     [issues, optimisticIssueStates],
   );
 
-  const filteredIssues = useMemo(() => {
+  const activeIssueCount = useMemo(
+    () => issuesWithOptimisticState.filter(isActiveIssue).length,
+    [issuesWithOptimisticState],
+  );
+  const myIssueCount = useMemo(
+    () =>
+      issuesWithOptimisticState.filter(
+        (issue) =>
+          isActiveIssue(issue) &&
+          issueBelongsToUser(issue, currentUserTeamMember?.id, user?.id),
+      ).length,
+    [currentUserTeamMember?.id, issuesWithOptimisticState, user?.id],
+  );
+
+  const baseFilteredIssues = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
-    const shouldHideClosedIssues =
-      issuesViewMode === "list" &&
-      selectedStateCategory === ALL_FILTER_VALUE;
 
     return sortIssuesByUrgency(
       issuesWithOptimisticState.filter((issue) => {
@@ -340,16 +345,7 @@ export default function IssuesPageContent() {
 
         if (
           selectedStateCategory !== ALL_FILTER_VALUE &&
-          issue.state?.category !== selectedStateCategory
-        ) {
-          return false;
-        }
-
-        if (
-          shouldHideClosedIssues &&
-          [IssueStateCategory.DONE, IssueStateCategory.CANCELED].includes(
-            getIssueCategory(issue),
-          )
+          getIssueCategory(issue) !== selectedStateCategory
         ) {
           return false;
         }
@@ -376,7 +372,6 @@ export default function IssuesPageContent() {
     );
   }, [
     currentUserTeamMember?.id,
-    issuesViewMode,
     issuesWithOptimisticState,
     projectNameById,
     searchQuery,
@@ -390,6 +385,26 @@ export default function IssuesPageContent() {
   const shouldListHideClosedIssues =
     issuesViewMode === "list" &&
     selectedStateCategory === ALL_FILTER_VALUE;
+  const filteredIssues = useMemo(
+    () =>
+      shouldListHideClosedIssues
+        ? baseFilteredIssues.filter(isActiveIssue)
+        : baseFilteredIssues,
+    [baseFilteredIssues, shouldListHideClosedIssues],
+  );
+  const activeFilteredIssueCount =
+    baseFilteredIssues.filter(isActiveIssue).length;
+  const closedFilteredIssueCount =
+    baseFilteredIssues.filter(isClosedIssue).length;
+  const selectedStateCategoryLabel =
+    selectedStateCategory === ALL_FILTER_VALUE
+      ? null
+      : ISSUE_STATE_CATEGORY_LABELS[selectedStateCategory];
+  const issueSummaryText = selectedStateCategoryLabel
+    ? `当前显示 ${filteredIssues.length} 条状态为「${selectedStateCategoryLabel}」的任务`
+    : shouldListHideClosedIssues
+      ? `当前有效 ${activeFilteredIssueCount} 条任务`
+      : `当前显示 ${filteredIssues.length} 条任务，其中 ${activeFilteredIssueCount} 条有效`;
 
   const handleCreateIssue = () => {
     queryClient.invalidateQueries({ queryKey: ["issues", workspaceId] });
@@ -572,7 +587,7 @@ export default function IssuesPageContent() {
                 }`}
                 onClick={() => setSelectedView("all")}
               >
-                全部 {issues.length ? `(${issues.length})` : ""}
+                全部 {activeIssueCount ? `(${activeIssueCount})` : ""}
               </Button>
               <Button
                 type="button"
@@ -748,10 +763,13 @@ export default function IssuesPageContent() {
           </div>
 
           <div className="text-xs text-app-text-muted">
-            当前显示 {filteredIssues.length} 条任务
+            {issueSummaryText}
             {selectedView === "my"
               ? "，只包含你负责、参与或创建的任务。"
               : "。"}
+            {shouldListHideClosedIssues && closedFilteredIssueCount > 0
+              ? ` 另有 ${closedFilteredIssueCount} 条已完成或已取消。`
+              : ""}
             {shouldListHideClosedIssues
               ? " 列表视图默认隐藏已完成和已取消，切到看板可查看完整状态。"
               : ""}

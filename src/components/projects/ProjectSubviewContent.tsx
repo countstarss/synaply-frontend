@@ -21,6 +21,7 @@ import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import {
   buildIssueStateSummary,
+  isActiveIssue,
   resolveIssueStateForCategory,
   sortIssuesByUrgency,
 } from "@/lib/issue-board";
@@ -248,6 +249,12 @@ export function ProjectIssuesSubview({
       ),
     [optimisticIssueStates, projectIssues],
   );
+  const activeProjectIssues = useMemo(
+    () => displayedIssues.filter(isActiveIssue),
+    [displayedIssues],
+  );
+  const visibleProjectIssues =
+    issuesViewMode === "list" ? activeProjectIssues : displayedIssues;
 
   const handleMoveIssueToCategory = (
     issue: Issue,
@@ -330,7 +337,10 @@ export function ProjectIssuesSubview({
         <div className="flex h-full min-h-0 flex-col">
           <div className="z-10 flex shrink-0 flex-wrap items-center justify-between gap-3 pb-4">
             <div className="text-xs text-app-text-secondary">
-              {displayedIssues.length} 条项目任务
+              {activeProjectIssues.length} 条有效项目任务
+              {displayedIssues.length > activeProjectIssues.length
+                ? ` · ${displayedIssues.length - activeProjectIssues.length} 条已完成或已取消`
+                : ""}
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
               {issuesViewMode === "board" && (
@@ -360,14 +370,14 @@ export function ProjectIssuesSubview({
                 <RiLoader4Line className="mr-2 size-5 animate-spin" />
                 正在加载项目任务...
               </div>
-            ) : displayedIssues.length === 0 ? (
+            ) : visibleProjectIssues.length === 0 ? (
               <div className="flex h-full items-center justify-center overflow-y-auto px-2">
                 <div className="w-full h-full rounded-2xl border border-dashed border-app-border bg-app-bg p-6 text-center">
                   <div className="text-base font-semibold text-app-text-primary">
-                    这个项目还没有任务
+                    这个项目还没有有效任务
                   </div>
                   <div className="mt-2 text-sm text-app-text-secondary">
-                    可以先创建一条 issue 放进这个项目里。
+                    待处理、进行中和 Backlog 会出现在列表；已完成或已取消可切到看板查看。
                   </div>
                   <button
                     onClick={onCreateIssue}
@@ -380,7 +390,7 @@ export function ProjectIssuesSubview({
               </div>
             ) : issuesViewMode === "board" ? (
               <ProjectIssuesKanbanBoard
-                issues={displayedIssues}
+                issues={visibleProjectIssues}
                 categoryOrder={issueBoardCategoryOrder}
                 pendingIssueIds={pendingIssueIds}
                 onOpenIssue={onOpenIssue}
@@ -390,7 +400,7 @@ export function ProjectIssuesSubview({
             ) : (
               <div className="h-full overflow-y-auto scrollbar-hidden">
                 <ProjectIssueList
-                  issues={displayedIssues}
+                  issues={visibleProjectIssues}
                   onOpenIssue={onOpenIssue}
                 />
               </div>

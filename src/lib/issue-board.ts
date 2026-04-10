@@ -12,6 +12,17 @@ export const ISSUE_STATE_CATEGORY_ORDER = [
   IssueStateCategory.CANCELED,
 ] as const;
 
+export const ACTIVE_ISSUE_STATE_CATEGORIES: readonly IssueStateCategory[] = [
+  IssueStateCategory.BACKLOG,
+  IssueStateCategory.TODO,
+  IssueStateCategory.IN_PROGRESS,
+] as const;
+
+export const CLOSED_ISSUE_STATE_CATEGORIES: readonly IssueStateCategory[] = [
+  IssueStateCategory.DONE,
+  IssueStateCategory.CANCELED,
+] as const;
+
 export const ISSUE_STATE_CATEGORY_LABELS: Record<IssueStateCategory, string> = {
   [IssueStateCategory.BACKLOG]: "Backlog",
   [IssueStateCategory.TODO]: "待处理",
@@ -117,6 +128,28 @@ function getTimestamp(value?: string | null, fallback = Number.POSITIVE_INFINITY
 
 export function getIssueCategory(issue?: Pick<Issue, "state"> | null) {
   return issue?.state?.category ?? IssueStateCategory.BACKLOG;
+}
+
+export function isActiveIssueCategory(
+  category?: IssueStateCategory | null,
+) {
+  return ACTIVE_ISSUE_STATE_CATEGORIES.includes(
+    category ?? IssueStateCategory.BACKLOG,
+  );
+}
+
+export function isClosedIssueCategory(category?: IssueStateCategory | null) {
+  return CLOSED_ISSUE_STATE_CATEGORIES.includes(
+    category ?? IssueStateCategory.BACKLOG,
+  );
+}
+
+export function isActiveIssue(issue?: Pick<Issue, "state"> | null) {
+  return isActiveIssueCategory(getIssueCategory(issue));
+}
+
+export function isClosedIssue(issue?: Pick<Issue, "state"> | null) {
+  return isClosedIssueCategory(getIssueCategory(issue));
 }
 
 export function resolveIssueStateForCategory<T extends IssueStateLike>(
