@@ -199,7 +199,7 @@ function TreeNode({
           ref={nodeRef}
           className={`flex items-center gap-1 px-2 py-1.5 rounded-md cursor-pointer group ${
             isActive
-              ? "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
+              ? "bg-sky-100 text-sky-700 dark:bg-sky-900/20 dark:text-sky-400"
               : "hover:bg-app-button-hover text-app-text-primary"
           }`}
           style={{ paddingLeft: `${level * 12 + 8}px` }}
@@ -217,7 +217,7 @@ function TreeNode({
                 e.stopPropagation();
                 onToggleExpand(doc._id);
               }}
-              className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+              className="rounded p-0.5 hover:bg-app-button-hover"
             >
               <RiArrowRightSLine
                 className={`w-4 h-4 transition-transform ${
@@ -264,7 +264,7 @@ function TreeNode({
             {doc.type === "folder" && (
               <button
                 onClick={handleCreateChild}
-                className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                className="rounded p-0.5 hover:bg-app-button-hover"
                 title="新建子文档"
               >
                 <RiAddLine className="w-3.5 h-3.5" />
@@ -277,7 +277,7 @@ function TreeNode({
                   e.stopPropagation();
                   setShowMenu(!showMenu);
                 }}
-                className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                className="rounded p-0.5 hover:bg-app-button-hover"
               >
                 <RiMoreLine className="w-3.5 h-3.5" />
               </button>
@@ -285,7 +285,7 @@ function TreeNode({
               {showMenu && (
                 <div
                   ref={menuRef}
-                  className="absolute right-0 top-6 bg-app-content-bg border border-app-border rounded-md shadow-lg py-1 z-50 min-w-[140px]"
+                  className="absolute right-0 top-6 z-50 min-w-[140px] rounded-xl border border-app-border bg-app-content-bg py-1 shadow-[0_16px_36px_rgba(15,23,42,0.12)]"
                   onMouseEnter={() => setIsHoveringNode(true)}
                   onMouseLeave={() => setIsHoveringNode(false)}
                 >
@@ -402,7 +402,7 @@ export default function DocsSidebar({
 
   if (isLoading) {
     return (
-      <div className="h-full w-64 flex flex-col bg-app-content-bg border-r border-app-border">
+      <div className="flex h-full w-64 flex-col border-r border-app-border bg-app-content-bg">
         <div className="p-3 border-b border-app-border">
           <h2 className="font-semibold text-app-text-primary">文档</h2>
         </div>
@@ -415,7 +415,7 @@ export default function DocsSidebar({
 
   return (
     <ContextMenuWrapper>
-      <div className="h-full w-64 flex flex-col bg-app-content-bg border-r border-app-border">
+      <div className="flex h-full w-64 flex-col border-r border-app-border bg-app-content-bg">
         {/* Header */}
         <div className="p-3 border-b border-app-border">
           <div className="flex items-center justify-between mb-3">
@@ -423,14 +423,14 @@ export default function DocsSidebar({
             <div className="flex items-center gap-1">
               <button
                 onClick={handleCreateRootDoc}
-                className="p-1.5 hover:bg-app-button-hover rounded-md text-app-text-secondary"
+                className="rounded-lg p-1.5 text-app-text-secondary hover:bg-app-button-hover"
                 title="新建文档"
               >
                 <RiFileAddLine className="w-4 h-4" />
               </button>
               <button
                 onClick={handleCreateRootFolder}
-                className="p-1.5 hover:bg-app-button-hover rounded-md text-app-text-secondary"
+                className="rounded-lg p-1.5 text-app-text-secondary hover:bg-app-button-hover"
                 title="新建文件夹"
               >
                 <RiFolderAddLine className="w-4 h-4" />
@@ -446,7 +446,7 @@ export default function DocsSidebar({
               placeholder="搜索文档..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-app-button-hover border border-app-border rounded-md text-sm text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+              className="w-full rounded-2xl border border-app-border bg-app-bg py-2 pl-9 pr-3 text-sm text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-sky-500/20"
             />
           </div>
         </div>
@@ -458,7 +458,7 @@ export default function DocsSidebar({
               {filteredDocs.map((doc) => (
                 <div
                   key={doc._id}
-                  className={`flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer ${"hover:bg-app-button-hover text-app-text-primary"}`}
+                  className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 ${"text-app-text-primary hover:bg-app-button-hover"}`}
                   onClick={() => onSelectDoc(doc)}
                 >
                   {doc.type === "folder" ? (

@@ -20,7 +20,7 @@ export const CachedDocsPage = React.memo(() => {
   const projectId = searchParams.get("projectId")?.trim() || undefined;
 
   return (
-    <div className="h-full">
+    <div className="h-full bg-app-bg">
       <DocsPage
         workspaceId={workspaceId}
         workspaceType={workspaceType}

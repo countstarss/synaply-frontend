@@ -69,14 +69,14 @@ export default function DocsEditor({
   };
 
   return (
-    <div className="h-full flex flex-col bg-app-bg relative">
+    <div className="relative flex h-full flex-col bg-app-bg">
       {/* Toolbar */}
       {onToggleExpand && (
         <DocsToolbar isExpanded={isExpanded} onToggleExpand={onToggleExpand} />
       )}
 
       {/* Title */}
-      <div className="px-8 py-[14.5px] border-b border-app-border bg-app-content-bg">
+      <div className="border-b border-app-border bg-app-content-bg px-8 py-[14.5px]">
         {isEditingTitle ? (
           <div className="space-y-2">
             <input
@@ -88,7 +88,7 @@ export default function DocsEditor({
                 if (e.key === "Enter") handleSaveTitle();
                 if (e.key === "Escape") handleCancelEdit();
               }}
-              className="text-2xl font-bold bg-transparent border-b-2 border-blue-500 text-app-text-primary w-full outline-none"
+              className="w-full border-b-2 border-sky-500 bg-transparent text-2xl font-semibold text-app-text-primary outline-none"
               autoFocus
               disabled={isSavingTitle || !doc.canEdit}
             />
@@ -96,7 +96,7 @@ export default function DocsEditor({
               <button
                 onClick={handleSaveTitle}
                 disabled={isSavingTitle}
-                className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded transition-colors"
+                className="rounded bg-sky-600 px-3 py-1 text-xs text-white transition-colors hover:bg-sky-500 disabled:bg-sky-400"
               >
                 {isSavingTitle ? "保存中..." : "保存"}
               </button>

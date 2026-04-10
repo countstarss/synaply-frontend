@@ -17,6 +17,20 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 //   ResizableHandle,
 // } from "@/components/ui/resizable";
 
+const docsPageBackgroundStyle = {
+  backgroundImage:
+    "radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 28%)",
+} satisfies React.CSSProperties;
+
+const docsStaticCardClassName =
+  "rounded-2xl border border-app-border bg-app-content-bg/80 p-4 text-left shadow-[0_18px_40px_rgba(15,23,42,0.05)] backdrop-blur-sm";
+
+const docsActionCardClassName =
+  "cursor-pointer rounded-2xl border border-app-border bg-app-content-bg/80 p-4 text-left shadow-[0_18px_40px_rgba(15,23,42,0.05)] backdrop-blur-sm transition hover:bg-app-button-hover/40";
+
+const docsListItemClassName =
+  "flex cursor-pointer items-center gap-3 rounded-2xl border border-app-border bg-app-content-bg/80 p-3 shadow-[0_12px_30px_rgba(15,23,42,0.04)] backdrop-blur-sm transition hover:bg-app-button-hover/40";
+
 interface DocsPageProps {
   workspaceId: string;
   workspaceType: "PERSONAL" | "TEAM";
@@ -44,11 +58,14 @@ function PersonalDocsOverviewPage() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto h-[calc(100vh-64px)]">
-      <div className="max-w-4xl mx-auto p-8">
+    <div
+      className="h-full min-h-full overflow-y-auto bg-app-bg"
+      style={docsPageBackgroundStyle}
+    >
+      <div className="mx-auto max-w-5xl px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-app-text-primary mb-2">
+        <div className="mb-6">
+          <h1 className="mb-2 text-2xl font-semibold text-app-text-primary">
             我的文档
           </h1>
           <p className="text-app-text-secondary">
@@ -62,10 +79,10 @@ function PersonalDocsOverviewPage() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="p-4 bg-app-content-bg border border-app-border rounded-lg text-left">
+          <div className={docsStaticCardClassName}>
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded">
-                <RiFileTextLine className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div className="rounded bg-sky-100 p-2 dark:bg-sky-900/20">
+                <RiFileTextLine className="w-5 h-5 text-sky-600 dark:text-sky-400" />
               </div>
               <span className="text-2xl font-semibold text-app-text-primary">
                 {documents.filter((doc) => doc.type === "document").length}
@@ -74,7 +91,7 @@ function PersonalDocsOverviewPage() {
             <p className="text-sm text-app-text-secondary">文档数</p>
           </div>
 
-          <div className="p-4 bg-app-content-bg border border-app-border rounded-lg text-left">
+          <div className={docsStaticCardClassName}>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded">
                 <RiFolder3Line className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -88,11 +105,11 @@ function PersonalDocsOverviewPage() {
 
           <button
             onClick={handleCreateNewDoc}
-            className="p-4 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow text-left cursor-pointer"
+            className={docsActionCardClassName}
           >
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded">
-                <RiAddLine className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              <div className="rounded bg-sky-100 p-2 dark:bg-sky-900/20">
+                <RiAddLine className="w-5 h-5 text-sky-600 dark:text-sky-400" />
               </div>
               <span className="text-lg font-semibold text-app-text-primary">
                 新建文档
@@ -117,7 +134,7 @@ function PersonalDocsOverviewPage() {
                   <div
                     key={doc._id}
                     onClick={() => handleSelectDoc(doc)}
-                    className="p-4 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                    className={docsActionCardClassName}
                   >
                     <div className="flex items-start gap-3">
                       {doc.type === "folder" ? (
@@ -163,7 +180,7 @@ function PersonalDocsOverviewPage() {
                   <div
                     key={doc._id}
                     onClick={() => handleSelectDoc(doc)}
-                    className="flex items-center gap-3 p-3 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                    className={docsListItemClassName}
                   >
                     {doc.type === "folder" ? (
                       <RiFolder3Line className="w-4 h-4 text-app-text-secondary" />
@@ -217,7 +234,7 @@ function PersonalDocsOverviewPage() {
             </p>
             <button
               onClick={handleCreateNewDoc}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-white transition-colors hover:bg-sky-500"
             >
               <RiAddLine className="w-4 h-4" />
               创建文档
@@ -248,11 +265,14 @@ function TeamDocsOverviewPage() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto h-[calc(100vh-64px)]">
-      <div className="max-w-4xl mx-auto p-8">
+    <div
+      className="h-full min-h-full overflow-y-auto bg-app-bg"
+      style={docsPageBackgroundStyle}
+    >
+      <div className="mx-auto max-w-5xl px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-app-text-primary mb-2">
+        <div className="mb-6">
+          <h1 className="mb-2 text-2xl font-semibold text-app-text-primary">
             团队文档
           </h1>
           <p className="text-app-text-secondary">
@@ -266,10 +286,10 @@ function TeamDocsOverviewPage() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="p-4 bg-app-content-bg border border-app-border rounded-lg text-left">
+          <div className={docsStaticCardClassName}>
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded">
-                <RiFileTextLine className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div className="rounded bg-sky-100 p-2 dark:bg-sky-900/20">
+                <RiFileTextLine className="w-5 h-5 text-sky-600 dark:text-sky-400" />
               </div>
               <span className="text-2xl font-semibold text-app-text-primary">
                 {documents.filter((doc) => doc.type === "document").length}
@@ -278,7 +298,7 @@ function TeamDocsOverviewPage() {
             <p className="text-sm text-app-text-secondary">团队文档数</p>
           </div>
 
-          <div className="p-4 bg-app-content-bg border border-app-border rounded-lg text-left">
+          <div className={docsStaticCardClassName}>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded">
                 <RiFolder3Line className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -292,11 +312,11 @@ function TeamDocsOverviewPage() {
 
           <button
             onClick={handleCreateNewDoc}
-            className="p-4 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow text-left cursor-pointer"
+            className={docsActionCardClassName}
           >
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded">
-                <RiAddLine className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              <div className="rounded bg-sky-100 p-2 dark:bg-sky-900/20">
+                <RiAddLine className="w-5 h-5 text-sky-600 dark:text-sky-400" />
               </div>
               <span className="text-lg font-semibold text-app-text-primary">
                 新建文档
@@ -321,7 +341,7 @@ function TeamDocsOverviewPage() {
                   <div
                     key={doc._id}
                     onClick={() => handleSelectDoc(doc)}
-                    className="p-4 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                    className={docsActionCardClassName}
                   >
                     <div className="flex items-start gap-3">
                       {doc.type === "folder" ? (
@@ -367,7 +387,7 @@ function TeamDocsOverviewPage() {
                   <div
                     key={doc._id}
                     onClick={() => handleSelectDoc(doc)}
-                    className="flex items-center gap-3 p-3 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                    className={docsListItemClassName}
                   >
                     {doc.type === "folder" ? (
                       <RiFolder3Line className="w-4 h-4 text-app-text-secondary" />
@@ -421,7 +441,7 @@ function TeamDocsOverviewPage() {
             </p>
             <button
               onClick={handleCreateNewDoc}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-white transition-colors hover:bg-sky-500"
             >
               <RiAddLine className="w-4 h-4" />
               创建团队文档
@@ -452,11 +472,14 @@ function TeamPersonalDocsOverviewPage() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto h-[calc(100vh-64px)]">
-      <div className="max-w-4xl mx-auto p-8">
+    <div
+      className="h-full min-h-full overflow-y-auto bg-app-bg"
+      style={docsPageBackgroundStyle}
+    >
+      <div className="mx-auto max-w-5xl px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-app-text-primary mb-2">
+        <div className="mb-6">
+          <h1 className="mb-2 text-2xl font-semibold text-app-text-primary">
             我的工作文档
           </h1>
           <p className="text-app-text-secondary">
@@ -470,10 +493,10 @@ function TeamPersonalDocsOverviewPage() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="p-4 bg-app-content-bg border border-app-border rounded-lg text-left">
+          <div className={docsStaticCardClassName}>
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded">
-                <RiFileTextLine className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div className="rounded bg-sky-100 p-2 dark:bg-sky-900/20">
+                <RiFileTextLine className="w-5 h-5 text-sky-600 dark:text-sky-400" />
               </div>
               <span className="text-2xl font-semibold text-app-text-primary">
                 {documents.filter((doc) => doc.type === "document").length}
@@ -482,7 +505,7 @@ function TeamPersonalDocsOverviewPage() {
             <p className="text-sm text-app-text-secondary">工作文档数</p>
           </div>
 
-          <div className="p-4 bg-app-content-bg border border-app-border rounded-lg text-left">
+          <div className={docsStaticCardClassName}>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded">
                 <RiFolder3Line className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -496,11 +519,11 @@ function TeamPersonalDocsOverviewPage() {
 
           <button
             onClick={handleCreateNewDoc}
-            className="p-4 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow text-left cursor-pointer"
+            className={docsActionCardClassName}
           >
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded">
-                <RiAddLine className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              <div className="rounded bg-sky-100 p-2 dark:bg-sky-900/20">
+                <RiAddLine className="w-5 h-5 text-sky-600 dark:text-sky-400" />
               </div>
               <span className="text-lg font-semibold text-app-text-primary">
                 新建文档
@@ -527,7 +550,7 @@ function TeamPersonalDocsOverviewPage() {
                   <div
                     key={doc._id}
                     onClick={() => handleSelectDoc(doc)}
-                    className="p-4 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                    className={docsActionCardClassName}
                   >
                     <div className="flex items-start gap-3">
                       {doc.type === "folder" ? (
@@ -573,7 +596,7 @@ function TeamPersonalDocsOverviewPage() {
                   <div
                     key={doc._id}
                     onClick={() => handleSelectDoc(doc)}
-                    className="flex items-center gap-3 p-3 bg-app-content-bg border border-app-border rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                    className={docsListItemClassName}
                   >
                     {doc.type === "folder" ? (
                       <RiFolder3Line className="w-4 h-4 text-app-text-secondary" />
@@ -627,7 +650,7 @@ function TeamPersonalDocsOverviewPage() {
             </p>
             <button
               onClick={handleCreateNewDoc}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-white transition-colors hover:bg-sky-500"
             >
               <RiAddLine className="w-4 h-4" />
               创建个人文档
@@ -671,9 +694,12 @@ function DocsPageContent() {
 
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center bg-app-bg">
+      <div
+        className="flex h-full min-h-full items-center justify-center bg-app-bg"
+        style={docsPageBackgroundStyle}
+      >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-sky-600"></div>
           <p className="text-app-text-muted">加载文档...</p>
         </div>
       </div>
@@ -682,11 +708,18 @@ function DocsPageContent() {
 
   // 如果没有激活文档且没有打开的文档，显示概览页面
   if (!activeDocId && openDocs.length === 0) {
-    return <DocsOverviewPage context={context} />;
+    return (
+      <div className="h-full min-h-full bg-app-bg">
+        <DocsOverviewPage context={context} />
+      </div>
+    );
   }
 
   return (
-    <div className="h-full bg-app-bg flex">
+    <div
+      className="flex h-full min-h-full bg-app-bg"
+      style={docsPageBackgroundStyle}
+    >
       {/* Sidebar */}
       {!isExpanded && (
         <div className="w-64 flex-shrink-0">

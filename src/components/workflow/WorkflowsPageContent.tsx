@@ -290,173 +290,184 @@ export default function WorkflowsPageContent() {
   }
 
   return (
-    <div className="h-full w-full bg-app-bg">
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-xl font-bold text-app-text-primary">
-              工作流管理
-            </h1>
-            <p className="text-app-text-secondary text-sm mt-0.5">
-              管理团队工作流模板，创建标准化流程
-            </p>
-          </div>
-          <button
-            onClick={handleCreateNew}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
-          >
-            <RiAddLine className="w-4 h-4" />
-            新建工作流
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-          <div className="bg-app-content-bg rounded-lg border border-app-border p-3">
-            <p className="text-xs text-app-text-secondary mb-1">总工作流</p>
-            <p className="text-xl font-semibold text-app-text-primary">
-              {stats.total}
-            </p>
-          </div>
-          <div className="bg-app-content-bg rounded-lg border border-app-border p-3">
-            <p className="text-xs text-app-text-secondary mb-1">草稿</p>
-            <p className="text-xl font-semibold text-app-text-primary">
-              {stats.draft}
-            </p>
-          </div>
-          <div className="bg-app-content-bg rounded-lg border border-app-border p-3">
-            <p className="text-xs text-app-text-secondary mb-1">已发布</p>
-            <p className="text-xl font-semibold text-app-text-primary">
-              {stats.published}
-            </p>
-          </div>
-          <div className="bg-app-content-bg rounded-lg border border-app-border p-3">
-            <p className="text-xs text-app-text-secondary mb-1">使用中</p>
-            <p className="text-xl font-semibold text-app-text-primary">
-              {stats.active}
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-app-content-bg rounded-lg border border-app-border">
-          <div className="p-3 border-b border-app-border flex justify-between items-center">
-            <h2 className="text-base font-semibold text-app-text-primary">
-              工作流列表
-            </h2>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowDraftsOnly(!showDraftsOnly)}
-                className={`text-sm px-3 py-1 rounded-md transition-colors ${
-                  showDraftsOnly
-                    ? "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400"
-                    : "text-app-text-secondary hover:text-app-text-primary"
-                }`}
-              >
-                {showDraftsOnly ? "显示所有" : "仅显示草稿"}
-              </button>
-            </div>
-          </div>
-
-          {workflows.length === 0 ? (
-            <div className="p-8 text-center">
-              <RiFlowChart className="w-12 h-12 text-app-text-muted mx-auto mb-3" />
-              <h3 className="text-base font-medium text-app-text-primary mb-1">
-                还没有工作流
-              </h3>
-              <p className="text-app-text-secondary text-sm mb-4">
-                创建第一个工作流模板来标准化团队流程
+    <div
+      className="h-full w-full bg-app-bg"
+      style={{
+        backgroundImage:
+          "radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 28%)",
+      }}
+    >
+      <div className="h-full overflow-y-auto">
+        <div className="mx-auto max-w-5xl px-8 py-8">
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold text-app-text-primary">
+                工作流管理
+              </h1>
+              <p className="mt-1 text-sm text-app-text-secondary">
+                管理团队工作流模板，创建标准化流程
               </p>
-              <button
-                onClick={handleCreateNew}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors mx-auto"
-              >
-                <RiAddLine className="w-4 h-4" />
-                创建工作流
-              </button>
             </div>
-          ) : (
-            <div className="divide-y divide-app-border">
-              {workflows
-                .filter(
-                  (workflow) => !showDraftsOnly || workflow.status === "DRAFT",
-                )
-                .map((workflow) => (
-                  <div
-                    key={workflow.id}
-                    className="p-3 hover:bg-app-button-hover transition-colors"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-semibold text-app-text-primary mb-1 truncate flex items-center gap-2">
-                          {workflow.name}
-                          {workflow.status === "DRAFT" && (
-                            <span className="text-xs bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2 py-0.5 rounded">
-                              草稿
+            <button
+              onClick={handleCreateNew}
+              className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-500"
+            >
+              <RiAddLine className="w-4 h-4" />
+              新建工作流
+            </button>
+          </div>
+
+          <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+            <div className="rounded-2xl border border-app-border bg-app-content-bg p-4">
+              <p className="mb-1 text-xs text-app-text-secondary">总工作流</p>
+              <p className="text-2xl font-semibold text-app-text-primary">
+                {stats.total}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-app-border bg-app-content-bg p-4">
+              <p className="mb-1 text-xs text-app-text-secondary">草稿</p>
+              <p className="text-2xl font-semibold text-app-text-primary">
+                {stats.draft}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-app-border bg-app-content-bg p-4">
+              <p className="mb-1 text-xs text-app-text-secondary">已发布</p>
+              <p className="text-2xl font-semibold text-app-text-primary">
+                {stats.published}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-app-border bg-app-content-bg p-4">
+              <p className="mb-1 text-xs text-app-text-secondary">使用中</p>
+              <p className="text-2xl font-semibold text-app-text-primary">
+                {stats.active}
+              </p>
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-app-border bg-app-content-bg">
+            <div className="flex items-center justify-between border-b border-app-border p-3">
+              <h2 className="text-base font-semibold text-app-text-primary">
+                工作流列表
+              </h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowDraftsOnly(!showDraftsOnly)}
+                  className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                    showDraftsOnly
+                      ? "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400"
+                      : "text-app-text-secondary hover:bg-app-button-hover/60 hover:text-app-text-primary"
+                  }`}
+                >
+                  {showDraftsOnly ? "显示所有" : "仅显示草稿"}
+                </button>
+              </div>
+            </div>
+
+            {workflows.length === 0 ? (
+              <div className="p-8 text-center">
+                <RiFlowChart className="w-12 h-12 text-app-text-muted mx-auto mb-3" />
+                <h3 className="text-base font-medium text-app-text-primary mb-1">
+                  还没有工作流
+                </h3>
+                <p className="text-app-text-secondary text-sm mb-4">
+                  创建第一个工作流模板来标准化团队流程
+                </p>
+                <button
+                  onClick={handleCreateNew}
+                  className="mx-auto flex items-center gap-1.5 rounded-xl bg-sky-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-500"
+                >
+                  <RiAddLine className="w-4 h-4" />
+                  创建工作流
+                </button>
+              </div>
+            ) : (
+              <div className="divide-y divide-app-border">
+                {workflows
+                  .filter(
+                    (workflow) =>
+                      !showDraftsOnly || workflow.status === "DRAFT",
+                  )
+                  .map((workflow) => (
+                    <div
+                      key={workflow.id}
+                      className="p-4 transition-colors hover:bg-app-button-hover/40"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-semibold text-app-text-primary mb-1 truncate flex items-center gap-2">
+                            {workflow.name}
+                            {workflow.status === "DRAFT" && (
+                              <span className="rounded-full border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-xs text-yellow-700 dark:border-yellow-500/30 dark:bg-yellow-900/20 dark:text-yellow-400">
+                                草稿
+                              </span>
+                            )}
+                            {workflow.status === "PUBLISHED" && (
+                              <span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs text-green-700 dark:border-green-500/30 dark:bg-green-900/20 dark:text-green-400">
+                                已发布
+                              </span>
+                            )}
+                          </h3>
+                          <div className="flex items-center gap-3 text-xs text-app-text-muted">
+                            <span>节点: {workflow.totalSteps}</span>
+                            <span>版本: {workflow.version}</span>
+                            <span>
+                              运行中: {workflow.usage?.activeRunCount || 0}
                             </span>
-                          )}
-                          {workflow.status === "PUBLISHED" && (
-                            <span className="text-xs bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 px-2 py-0.5 rounded">
-                              已发布
+                            <span>
+                              总运行: {workflow.usage?.totalRunCount || 0}
                             </span>
-                          )}
-                        </h3>
-                        <div className="flex items-center gap-3 text-xs text-app-text-muted">
-                          <span>节点: {workflow.totalSteps}</span>
-                          <span>版本: {workflow.version}</span>
-                          <span>
-                            运行中: {workflow.usage?.activeRunCount || 0}
-                          </span>
-                          <span>
-                            总运行: {workflow.usage?.totalRunCount || 0}
-                          </span>
-                          <span>
-                            创建者: {workflow.creator?.user?.name || "未知"}
-                          </span>
-                          <span>
-                            创建时间:{" "}
-                            {new Date(workflow.createdAt).toLocaleDateString()}
-                          </span>
+                            <span>
+                              创建者: {workflow.creator?.user?.name || "未知"}
+                            </span>
+                            <span>
+                              创建时间:{" "}
+                              {new Date(
+                                workflow.createdAt,
+                              ).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 ml-3">
+                          <button
+                            onClick={() => handleEditWorkflow(workflow)}
+                            className="rounded p-1.5 text-app-text-secondary transition-colors hover:bg-sky-50 hover:text-sky-600 dark:hover:bg-sky-900/20"
+                            title="查看/编辑"
+                          >
+                            <RiEyeLine className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleOpenSettings(workflow)}
+                            className="rounded p-1.5 text-app-text-secondary transition-colors hover:bg-sky-50 hover:text-sky-600 dark:hover:bg-sky-900/20"
+                            title="设置"
+                          >
+                            <RiSettings3Line className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEditWorkflow(workflow)}
+                            className="rounded p-1.5 text-app-text-secondary transition-colors hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-900/20"
+                            title="编辑"
+                          >
+                            <RiEditLine className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteWorkflow(workflow.id)}
+                            className="rounded p-1.5 text-app-text-secondary transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                            title="删除"
+                            disabled={deleteWorkflowMutation.isPending}
+                          >
+                            {deleteWorkflowMutation.isPending ? (
+                              <RiLoader4Line className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <RiDeleteBinLine className="w-4 h-4" />
+                            )}
+                          </button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 ml-3">
-                        <button
-                          onClick={() => handleEditWorkflow(workflow)}
-                          className="p-1.5 text-app-text-secondary hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                          title="查看/编辑"
-                        >
-                          <RiEyeLine className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleOpenSettings(workflow)}
-                          className="p-1.5 text-app-text-secondary hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition-colors"
-                          title="设置"
-                        >
-                          <RiSettings3Line className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleEditWorkflow(workflow)}
-                          className="p-1.5 text-app-text-secondary hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
-                          title="编辑"
-                        >
-                          <RiEditLine className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteWorkflow(workflow.id)}
-                          className="p-1.5 text-app-text-secondary hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                          title="删除"
-                          disabled={deleteWorkflowMutation.isPending}
-                        >
-                          {deleteWorkflowMutation.isPending ? (
-                            <RiLoader4Line className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <RiDeleteBinLine className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
                     </div>
-                  </div>
-                ))}
-            </div>
-          )}
+                  ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

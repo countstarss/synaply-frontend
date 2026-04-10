@@ -14,7 +14,7 @@ export default function DocsToolbar({
 }: DocsToolbarProps) {
   return (
     <div className="absolute top-32 right-4 z-10">
-      <div className="bg-app-content-bg border border-app-border rounded-lg shadow-lg dark:shadow-black/20 p-1">
+      <div className="rounded-xl border border-app-border bg-app-content-bg p-1 shadow-[0_16px_36px_rgba(15,23,42,0.12)] dark:shadow-black/20">
         <button
           onClick={onToggleExpand}
           className="flex items-center gap-2 px-3 py-2 text-sm text-app-text-secondary hover:text-app-text-primary hover:bg-app-button-hover rounded-md transition-colors"

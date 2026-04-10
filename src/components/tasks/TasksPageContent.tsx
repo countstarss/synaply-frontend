@@ -130,7 +130,7 @@ function getSummaryToneClasses(tone: SummaryMetricCardProps["tone"]) {
       };
     default:
       return {
-        accent: "bg-white/60",
+        accent: "bg-slate-300/70 dark:bg-white/60",
         ambient:
           "radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 32%), radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.05), transparent 44%)",
       };
@@ -154,10 +154,10 @@ function SummaryMetricCard({
       onClick={() => onSelect(tabId)}
       aria-pressed={active}
       className={cn(
-        "group relative h-[118px] overflow-hidden rounded-[22px] border text-left backdrop-blur-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/12",
+        "group relative h-[118px] overflow-hidden rounded-2xl border text-left transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/20",
         active
-          ? "border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.075),rgba(255,255,255,0.03))] shadow-[0_16px_36px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.1)]"
-          : "border-white/[0.07] bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.016))] shadow-[0_12px_30px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-white/10 hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.058),rgba(255,255,255,0.02))] hover:shadow-[0_16px_34px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.08)]",
+          ? "border-sky-200 bg-app-content-bg shadow-[0_18px_40px_rgba(15,23,42,0.08)] dark:border-white/12 dark:shadow-[0_16px_36px_rgba(0,0,0,0.22)]"
+          : "border-app-border bg-app-content-bg shadow-[0_12px_30px_rgba(15,23,42,0.05)] hover:bg-app-button-hover/40 hover:shadow-[0_16px_34px_rgba(15,23,42,0.07)] dark:border-white/[0.07] dark:shadow-[0_12px_30px_rgba(0,0,0,0.16)]",
         "hover:-translate-y-0.5",
         className,
       )}
@@ -166,7 +166,7 @@ function SummaryMetricCard({
         className="pointer-events-none absolute inset-0 opacity-75"
         style={{ backgroundImage: toneClasses.ambient }}
       />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/[0.05] to-transparent opacity-60" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/70 to-transparent opacity-70 dark:from-white/[0.05]" />
       {active ? (
         <div
           className={cn(
@@ -276,17 +276,17 @@ function getPriorityBadge(priority: IssuePriority | null) {
 function getActionTone(item: MyWorkItem) {
   switch (item.currentActionType) {
     case "review":
-      return "border-blue-500/30 bg-blue-500/10 text-blue-200";
+      return "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200";
     case "handoff":
-      return "border-cyan-500/30 bg-cyan-500/10 text-cyan-200";
+      return "border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-200";
     case "blocked":
-      return "border-red-500/30 bg-red-500/10 text-red-200";
+      return "border-rose-200 bg-rose-50 text-rose-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200";
     case "execution":
-      return "border-amber-500/30 bg-amber-500/10 text-amber-200";
+      return "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200";
     case "done":
-      return "border-emerald-500/30 bg-emerald-500/10 text-emerald-200";
+      return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200";
     default:
-      return "border-white/[0.06] bg-white/[0.035] text-app-text-secondary";
+      return "border-app-border bg-app-bg text-app-text-secondary";
   }
 }
 
@@ -409,8 +409,8 @@ function WorkItemRow({
       <div
         className={cn(
           "grid items-start gap-4 rounded-[18px] border border-transparent px-4 py-4 transition-all duration-200 md:grid-cols-[minmax(0,1.6fr)_minmax(190px,0.85fr)_minmax(190px,0.9fr)_auto]",
-          "group-hover:border-white/[0.06] group-hover:bg-white/[0.028] group-hover:shadow-[0_1px_0_rgba(255,255,255,0.02)_inset]",
-          "group-focus-visible:border-white/[0.08] group-focus-visible:bg-white/[0.035] group-focus-visible:ring-1 group-focus-visible:ring-white/[0.08]",
+          "group-hover:border-app-border group-hover:bg-app-button-hover/40",
+          "group-focus-visible:border-sky-200 group-focus-visible:bg-app-button-hover/40 group-focus-visible:ring-1 group-focus-visible:ring-sky-500/20",
         )}
       >
         <div className="min-w-0">
@@ -422,7 +422,7 @@ function WorkItemRow({
             ) : null}
             <Badge
               variant="outline"
-              className="gap-1 border-white/[0.06] bg-white/[0.03] text-app-text-secondary"
+              className="gap-1 border-app-border bg-app-bg text-app-text-secondary"
             >
               {sourceMeta.icon}
               {sourceMeta.label}
@@ -445,7 +445,7 @@ function WorkItemRow({
                   ? "bg-emerald-400"
                   : item.currentActionType === "execution"
                     ? "bg-amber-300"
-                    : "bg-white/60",
+                    : "bg-slate-300 dark:bg-white/60",
               )}
             />
             <div className="min-w-0 flex-1">
@@ -486,8 +486,10 @@ function WorkItemRow({
               <Badge
                 variant="outline"
                 className={cn(
-                  "border-white/[0.06] bg-white/[0.03]",
-                  item.isOverdue ? "text-red-300" : "text-app-text-secondary",
+                  "border-app-border bg-app-bg",
+                  item.isOverdue
+                    ? "text-rose-600 dark:text-red-300"
+                    : "text-app-text-secondary",
                 )}
               >
                 Due {dueLabel}
@@ -511,7 +513,7 @@ function WorkItemRow({
             type="button"
             variant="ghost"
             size="sm"
-            className="rounded-lg border border-white/[0.06] bg-white/[0.02] text-app-text-secondary hover:border-white/[0.08] hover:bg-white/[0.045] hover:text-app-text-primary"
+            className="rounded-lg border border-app-border bg-app-content-bg text-app-text-secondary hover:bg-app-button-hover/60 hover:text-app-text-primary"
             onClick={handleQuickAction}
             disabled={isMutating}
           >
@@ -530,7 +532,7 @@ function WorkItemRow({
 
 function EmptySectionState({ meta }: { meta: SectionMeta }) {
   return (
-    <div className="rounded-xl border border-dashed border-white/[0.06] bg-white/[0.02] px-4 py-8 text-center">
+    <div className="rounded-xl border border-dashed border-app-border bg-app-bg px-4 py-8 text-center">
       <div className="text-sm font-medium text-app-text-primary">
         {meta.emptyTitle}
       </div>
@@ -550,8 +552,8 @@ function WorkSection({
   isMutatingIssueId,
 }: WorkSectionProps) {
   return (
-    <Card className="overflow-hidden rounded-2xl border border-white/[0.04] bg-white/[0.018] shadow-[0_1px_0_rgba(255,255,255,0.015)_inset]">
-      <CardHeader className="gap-2 border-b border-white/[0.045] px-5 py-4">
+    <Card className="overflow-hidden rounded-2xl border border-app-border bg-app-content-bg shadow-none">
+      <CardHeader className="gap-2 border-b border-app-border px-5 py-4">
         <div className="flex items-center justify-between gap-4">
           <div>
             <CardTitle className="text-base text-app-text-primary">
@@ -570,7 +572,7 @@ function WorkSection({
           </div>
         ) : (
           <>
-            <div className="hidden border-b border-white/[0.04] bg-white/[0.015] px-4 py-2 md:grid md:grid-cols-[minmax(0,1.6fr)_minmax(190px,0.85fr)_minmax(190px,0.9fr)_auto] md:gap-4">
+            <div className="hidden border-b border-app-border bg-app-bg px-4 py-2 md:grid md:grid-cols-[minmax(0,1.6fr)_minmax(190px,0.85fr)_minmax(190px,0.9fr)_auto] md:gap-4">
               <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-app-text-muted">
                 Work
               </div>
@@ -584,7 +586,7 @@ function WorkSection({
                 Action
               </div>
             </div>
-            <div className="divide-y divide-white/[0.04]">
+            <div className="divide-y divide-app-border">
               {items.map((item) => (
                 <WorkItemRow
                   key={item.id}
@@ -784,7 +786,7 @@ export default function TasksPageContent() {
 
   return (
     <div className="flex h-full flex-col bg-app-bg">
-      <div className="border-b border-white/[0.045] px-4 py-3">
+      <div className="border-b border-app-border px-4 py-3">
         <InfoBarTabs
           tabs={tabs}
           activeTab={activeTab}
@@ -799,12 +801,12 @@ export default function TasksPageContent() {
             "radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 28%)",
         }}
       >
-        <div className="relative mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-6">
+        <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-6 px-8 py-8">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-32" />
 
           <div className="relative z-10 flex flex-col gap-6">
             {isLoading ? (
-              <Card className="border border-white/[0.04] bg-white/[0.018] shadow-[0_1px_0_rgba(255,255,255,0.015)_inset]">
+              <Card className="border border-app-border bg-app-content-bg shadow-none">
                 <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-3 py-12">
                   <Loader2 className="size-5 animate-spin text-app-text-muted" />
                   <div className="text-sm text-app-text-muted">
@@ -827,7 +829,7 @@ export default function TasksPageContent() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="border-white/[0.08] bg-transparent text-app-text-primary hover:bg-white/[0.04]"
+                    className="border-app-border bg-app-content-bg text-app-text-primary hover:bg-app-button-hover/60"
                     onClick={() => void refetch()}
                   >
                     <RefreshCw data-icon="inline-start" />
@@ -838,7 +840,7 @@ export default function TasksPageContent() {
             ) : (
               <>
                 <div className="flex flex-col gap-4">
-                  <div className="flex flex-wrap items-center gap-3 rounded-[26px] border border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.015))] px-4 py-3 backdrop-blur-sm">
+                  <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-app-border bg-app-content-bg px-4 py-3">
                     <div className="min-w-0 pr-2">
                       <h2 className="truncate text-[1.15rem] font-semibold tracking-[-0.03em] text-app-text-primary">
                         My Work Overview
@@ -846,10 +848,10 @@ export default function TasksPageContent() {
                     </div>
 
                     <div className="ml-auto flex flex-wrap gap-2">
-                      <div className="rounded-full border border-white/8 bg-app-bg/55 px-3 py-1.5 text-xs font-medium text-app-text-secondary">
+                      <div className="rounded-full border border-app-border bg-app-bg px-3 py-1.5 text-xs font-medium text-app-text-secondary">
                         {data?.counts.total || 0} active
                       </div>
-                      <div className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-app-bg/55 px-3 py-1.5 text-xs font-medium text-app-text-secondary">
+                      <div className="inline-flex items-center gap-1.5 rounded-full border border-app-border bg-app-bg px-3 py-1.5 text-xs font-medium text-app-text-secondary">
                         {isRefetching ? (
                           <RefreshCw className="size-3.5 animate-spin" />
                         ) : (

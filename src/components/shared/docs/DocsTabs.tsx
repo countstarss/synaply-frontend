@@ -24,10 +24,10 @@ export default function DocsTabs({ onSelectDoc }: DocsTabsProps) {
           return (
             <div
               key={doc._id}
-              className={`group flex items-center gap-2 px-4 py-2 border-r border-app-border cursor-pointer transition-colors min-w-0 ${
+              className={`group flex min-w-0 cursor-pointer items-center gap-2 border-r border-app-border px-4 py-2 transition-colors ${
                 isActive
                   ? "bg-app-bg text-app-text-primary"
-                  : "hover:bg-app-button-hover text-app-text-secondary"
+                  : "text-app-text-secondary hover:bg-app-button-hover"
               }`}
               onClick={() => onSelectDoc(doc)}
             >
@@ -44,7 +44,7 @@ export default function DocsTabs({ onSelectDoc }: DocsTabsProps) {
                   e.stopPropagation();
                   closeDoc(doc._id);
                 }}
-                className={`p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-opacity flex-shrink-0 ${
+                className={`flex-shrink-0 rounded p-0.5 transition-opacity hover:bg-app-button-hover ${
                   isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                 }`}
                 title="关闭"
