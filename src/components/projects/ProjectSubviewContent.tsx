@@ -253,8 +253,19 @@ export function ProjectIssuesSubview({
     () => displayedIssues.filter(isActiveIssue),
     [displayedIssues],
   );
-  const visibleProjectIssues =
-    issuesViewMode === "list" ? activeProjectIssues : displayedIssues;
+  const hiddenClosedIssueCount =
+    displayedIssues.length - activeProjectIssues.length;
+  const shouldListHideClosedIssues = issuesViewMode === "list";
+  const visibleProjectIssues = shouldListHideClosedIssues
+    ? activeProjectIssues
+    : displayedIssues;
+  const issueSummaryText = `${activeProjectIssues.length} 条有效项目任务${
+    hiddenClosedIssueCount > 0
+      ? ` · ${hiddenClosedIssueCount} 条已完成或已取消${
+          shouldListHideClosedIssues ? "已隐藏" : ""
+        }`
+      : ""
+  }`;
 
   const handleMoveIssueToCategory = (
     issue: Issue,
@@ -337,10 +348,7 @@ export function ProjectIssuesSubview({
         <div className="flex h-full min-h-0 flex-col">
           <div className="z-10 flex shrink-0 flex-wrap items-center justify-between gap-3 pb-4">
             <div className="text-xs text-app-text-secondary">
-              {activeProjectIssues.length} 条有效项目任务
-              {displayedIssues.length > activeProjectIssues.length
-                ? ` · ${displayedIssues.length - activeProjectIssues.length} 条已完成或已取消`
-                : ""}
+              {issueSummaryText}
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
               {issuesViewMode === "board" && (
@@ -377,7 +385,7 @@ export function ProjectIssuesSubview({
                     这个项目还没有有效任务
                   </div>
                   <div className="mt-2 text-sm text-app-text-secondary">
-                    待处理、进行中和 Backlog 会出现在列表；已完成或已取消可切到看板查看。
+                    列表视图默认隐藏已完成或已取消的 issue，切到看板可查看完整状态。
                   </div>
                   <button
                     onClick={onCreateIssue}
