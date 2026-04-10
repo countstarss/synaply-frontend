@@ -6,6 +6,7 @@ import { GlobalPageCache } from "@/components/cache/GlobalPageCache";
 import React from "react";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/stores/sidebar";
+import { useAppearanceScope } from "@/hooks/useAppearanceScope";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
 
 interface LayoutProps {
@@ -68,6 +69,7 @@ function routeMatchesPattern(pathname: string, routePattern: string) {
 }
 
 const Layout = ({ children }: LayoutProps) => {
+  useAppearanceScope();
   const { isOpen: sidebarOpen } = useSidebarStore();
   const segments = useSelectedLayoutSegments();
   const pathname = usePathname();
@@ -88,7 +90,7 @@ const Layout = ({ children }: LayoutProps) => {
       <div
         className={cn(
           "transition-all duration-300 ease-in-out",
-          sidebarOpen ? "w-64 opacity-100" : "w-0 opacity-0 overflow-hidden"
+          sidebarOpen ? "w-64 opacity-100" : "w-0 opacity-0 overflow-hidden",
         )}
       >
         <Sidebar />
@@ -98,7 +100,7 @@ const Layout = ({ children }: LayoutProps) => {
       <div
         className={cn(
           "flex-1 flex flex-col overflow-hidden relative",
-          sidebarOpen ? "ml-2" : "ml-0"
+          sidebarOpen ? "ml-2" : "ml-0",
         )}
       >
         {/* InfoBar - 始终保持在顶部，不参与动画 */}
@@ -114,7 +116,7 @@ const Layout = ({ children }: LayoutProps) => {
                 "transition-all duration-300 ease-in-out",
               showCachedPage
                 ? "opacity-0 translate-x-full pointer-events-none" // 向右退出
-                : "opacity-100 translate-x-0 pointer-events-auto"
+                : "opacity-100 translate-x-0 pointer-events-auto",
             )}
           >
             <main
@@ -143,7 +145,7 @@ const Layout = ({ children }: LayoutProps) => {
                 "transition-all duration-300 ease-in-out",
               showCachedPage
                 ? "opacity-100 translate-x-0 pointer-events-auto" // 从左滑入到中央
-                : "opacity-0 translate-x-[-100%] pointer-events-none" // 在左侧待命
+                : "opacity-0 translate-x-[-100%] pointer-events-none", // 在左侧待命
             )}
           >
             {/* 保持与常规内容相同的结构和间距 */}

@@ -118,6 +118,7 @@ function ProjectSurfaceCard({
   );
 }
 
+// MARK: IssueList
 function ProjectIssueList({
   issues,
   pendingIssueIds,
@@ -213,6 +214,7 @@ function ProjectIssueList({
   );
 }
 
+// MARK: ProjectIssues
 export function ProjectIssuesSubview({
   workspaceId,
   projectIssues,
@@ -465,7 +467,7 @@ export function ProjectIssuesSubview({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col p-4">
+    <div className="flex h-full min-h-0 flex-col p-4 isolate bg-app-content-bg/50">
       <ProjectSurfaceCard
         title="Issues"
         subtitle="把项目执行层单独沉到一层，保留现有 list / board 双视图。"
@@ -638,13 +640,14 @@ export function ProjectDocsSubview({
   );
 }
 
+// MARK: ProjectWorkflow
 export function ProjectWorkflowSubview({
   relatedWorkflows,
 }: {
   relatedWorkflows: ProjectWorkflowSummary[];
 }) {
   return (
-    <div className="flex h-full min-h-0 flex-col p-4">
+    <div className="flex h-full min-h-0 flex-col p-4 isolate bg-app-content-bg/50">
       <ProjectSurfaceCard
         title="Workflow"
         subtitle="这里聚合当前项目真实关联的流程，不再埋在项目总览中间。"
@@ -701,6 +704,7 @@ export function ProjectWorkflowSubview({
   );
 }
 
+// MARK: ProjectSync
 export function ProjectSyncSubview({
   selectedProject,
   recentActivity,
@@ -723,7 +727,7 @@ export function ProjectSyncSubview({
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col p-4">
+    <div className="flex h-full min-h-0 flex-col p-4 isolate bg-app-content-bg/50">
       <ProjectSurfaceCard
         title="Project Sync"
         subtitle="把异步同步痕迹和近期变更沉到单独一层，阅读时不被其他模块打断。"

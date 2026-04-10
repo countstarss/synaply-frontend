@@ -4,6 +4,7 @@ import React from "react";
 import { RiArrowLeftLine } from "react-icons/ri";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import AmbientGlow from "@/components/global/AmbientGlow";
 import type { Project, ProjectDetail } from "@/lib/fetchers/project";
 import {
   buildProjectPath,
@@ -26,13 +27,8 @@ export function ProjectRouteShell({
     activeView === "overview" ? "/projects" : buildProjectPath(project.id);
 
   return (
-    <div
-      className="relative flex h-full min-h-0 flex-col bg-app-bg"
-      style={{
-        backgroundImage:
-          "radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 28%)",
-      }}
-    >
+    <div className="relative flex h-full min-h-0 flex-col bg-app-bg">
+      <AmbientGlow />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-32" />
 
       <div className="relative z-10 shrink-0 px-4 pt-5">

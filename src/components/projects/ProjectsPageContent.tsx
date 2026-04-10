@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { RiLoader4Line } from "react-icons/ri";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/context/AuthContext";
+import AmbientGlow from "@/components/global/AmbientGlow";
 import { useIssues } from "@/hooks/useIssueApi";
 import { useWorkspaceRealtime } from "@/hooks/realtime/useWorkspaceRealtime";
 import {
@@ -73,6 +74,7 @@ function isSameCategoryOrder(
   );
 }
 
+// MARK: 项目页面内容
 export default function ProjectsPageContent() {
   const { session } = useAuth();
   const queryClient = useQueryClient();
@@ -442,13 +444,9 @@ export default function ProjectsPageContent() {
 
   return (
     <>
-      <div
-        className="flex h-full min-h-0 flex-col bg-app-bg"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 28%)",
-        }}
-      >
+      <div className="relative flex h-full min-h-0 flex-col bg-app-bg">
+        <AmbientGlow />
+        <div className="relative z-10 flex h-full min-h-0 flex-col">
         {!projects.length ? (
           <ProjectsEmptyState
             canManageProjects={canManageProjects}
@@ -547,6 +545,7 @@ export default function ProjectsPageContent() {
             )}
           </ProjectRouteShell>
         )}
+        </div>
       </div>
 
       <ProjectEditorDialog

@@ -47,6 +47,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/i18n/navigation";
 import { buildProjectPath } from "@/components/projects/project-route-utils";
+import AmbientGlow from "../global/AmbientGlow";
 
 type InboxViewId = "primary" | "other" | "later" | "cleared";
 
@@ -771,6 +772,7 @@ export default function InboxPageContent() {
   return (
     <div className="flex h-full flex-col bg-[#f7f7fb] text-[#2f2d3a] dark:bg-[#111111] dark:text-[#ece9f4]">
       <div className="flex-1 overflow-y-auto">
+        <AmbientGlow />
         <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-6 py-6">
           <ViewTabs
             activeView={activeView}
@@ -778,7 +780,7 @@ export default function InboxPageContent() {
             onChange={setActiveView}
           />
 
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-[#e9e6f0] bg-app-content-bg px-4 py-3 dark:border-white/10">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-[#e9e6f0] isolate bg-app-content-bg/80 px-4 py-3 dark:border-white/10">
             <div className="flex flex-wrap items-center gap-2">
               {supportsLiveFilters ? (
                 <>
@@ -877,7 +879,7 @@ export default function InboxPageContent() {
               </Button>
             </div>
           ) : groupedItems.length ? (
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-6 isolate bg-app-content-bg/80 rounded-2xl p-4">
               {groupedItems.map((group) => (
                 <section key={group.label}>
                   <div className="mb-3 px-1 text-[1.05rem] font-semibold text-[#767083] dark:text-[#a19aae]">

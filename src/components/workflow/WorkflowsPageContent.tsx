@@ -31,6 +31,7 @@ import {
   useUpdateWorkflowJson,
 } from "@/hooks/useWorkflowApi";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import AmbientGlow from "@/components/global/AmbientGlow";
 import { toast } from "sonner";
 import { WorkflowResponse } from "@/lib/fetchers/workflow";
 
@@ -307,14 +308,9 @@ export default function WorkflowsPageContent() {
   }
 
   return (
-    <div
-      className="h-full w-full bg-app-bg"
-      style={{
-        backgroundImage:
-          "radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 28%)",
-      }}
-    >
-      <div className="h-full overflow-y-auto">
+    <div className="relative h-full w-full bg-app-bg">
+      <AmbientGlow />
+      <div className="relative z-10 h-full overflow-y-auto">
         <div className="mx-auto max-w-5xl px-8 py-8">
           <div className="mb-6 flex items-center justify-between gap-4">
             <div>

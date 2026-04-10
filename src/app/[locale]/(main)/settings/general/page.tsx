@@ -1,7 +1,8 @@
-import { Bell, Palette } from "lucide-react";
+import { Bell } from "lucide-react";
 import SettingsScrollPage from "@/components/settings/SettingsScrollPage";
 import SettingsPlaceholderSection from "@/components/settings/sections/SettingsPlaceholderSection";
 import ProfileSettingsSection from "@/components/settings/sections/ProfileSettingsSection";
+import AppearanceSettingsSection from "@/components/settings/sections/AppearanceSettingsSection";
 
 export default function GeneralSettingsPage() {
   return (
@@ -38,19 +39,7 @@ export default function GeneralSettingsPage() {
           id: "appearance",
           label: "Appearance",
           description: "主题、密度与界面阅读体验",
-          content: (
-            <SettingsPlaceholderSection
-              title="Appearance"
-              description="把视觉偏好集中到这里，后面要接主题、布局密度和阅读模式时，不需要再拆独立路由。"
-              icon={Palette}
-              highlights={[
-                "Theme mode and accent styling",
-                "Sidebar density and content spacing",
-                "Document reading width preferences",
-                "Calendar / board visual defaults",
-              ]}
-            />
-          ),
+          content: <AppearanceSettingsSection />,
         },
       ]}
     />

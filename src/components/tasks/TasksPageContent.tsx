@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 import WorkflowIssueDetail from "@/components/issue/WorkflowIssueDetail";
 import InfoBarTabs from "@/components/layout/infobar/InfoBarTabs";
+import AmbientGlow from "@/components/global/AmbientGlow";
 import NormalIssueDetail from "@/components/shared/issue/NormalIssueDetail";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -305,10 +306,7 @@ function getSourceMeta(item: MyWorkItem) {
 }
 
 function getQuickActionLabel(item: MyWorkItem) {
-  if (
-    item.sourceType === "workflow" &&
-    item.currentActionType === "handoff"
-  ) {
+  if (item.sourceType === "workflow" && item.currentActionType === "handoff") {
     return "接受";
   }
 
@@ -372,7 +370,9 @@ function WorkItemRow({
     item.currentActionType === "todo" &&
     item.status === IssueStatus.TODO;
 
-  const handleQuickAction = async (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleQuickAction = async (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
     event.stopPropagation();
 
     if (showAcceptHandoff) {
@@ -439,13 +439,13 @@ function WorkItemRow({
             <div
               className={cn(
                 "mt-1 size-2 shrink-0 rounded-full",
-              item.currentActionType === "blocked"
-                ? "bg-red-400"
-                : item.currentActionType === "done"
-                  ? "bg-emerald-400"
-                  : item.currentActionType === "execution"
-                    ? "bg-amber-300"
-                    : "bg-slate-300 dark:bg-white/60",
+                item.currentActionType === "blocked"
+                  ? "bg-red-400"
+                  : item.currentActionType === "done"
+                    ? "bg-emerald-400"
+                    : item.currentActionType === "execution"
+                      ? "bg-amber-300"
+                      : "bg-slate-300 dark:bg-white/60",
               )}
             />
             <div className="min-w-0 flex-1">
@@ -458,7 +458,9 @@ function WorkItemRow({
                 <span>{getQueueMeta(item)}</span>
               </div>
               {item.blockedReason && item.currentActionType !== "blocked" ? (
-                <div className="mt-2 text-[12px] text-red-300">{item.blockedReason}</div>
+                <div className="mt-2 text-[12px] text-red-300">
+                  {item.blockedReason}
+                </div>
               ) : null}
             </div>
           </div>
@@ -666,10 +668,13 @@ export default function TasksPageContent() {
   const [activeTab, setActiveTab] = useState<WorkTabId>("today");
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const [selectedIssueIsWorkflow, setSelectedIssueIsWorkflow] = useState(false);
-  const [isMutatingIssueId, setIsMutatingIssueId] = useState<string | null>(null);
+  const [isMutatingIssueId, setIsMutatingIssueId] = useState<string | null>(
+    null,
+  );
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id || "";
-  const { data, isLoading, error, refetch, isRefetching } = useMyWork(workspaceId);
+  const { data, isLoading, error, refetch, isRefetching } =
+    useMyWork(workspaceId);
   const updateWorkflowRunStatus = useUpdateWorkflowRunStatus();
   const acceptWorkflowHandoff = useAcceptWorkflowHandoff();
 
@@ -797,111 +802,108 @@ export default function TasksPageContent() {
         />
       </div>
 
-      <div
-        className="flex-1 overflow-y-auto"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 28%)",
-        }}
-      >
-        <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-6 px-8 py-8">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-32" />
+      <div className="isolate relative flex-1 min-h-0 overflow-hidden">
+        <AmbientGlow />
+        <div className="relative z-20 h-full overflow-y-auto">
+          <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-6 px-8 py-8">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-32" />
 
-          <div className="relative z-10 flex flex-col gap-6">
-            {isLoading ? (
-              <Card className="border border-app-border bg-app-content-bg shadow-none">
-                <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-3 py-12">
-                  <Loader2 className="size-5 animate-spin text-app-text-muted" />
-                  <div className="text-sm text-app-text-muted">
-                    正在整理你的工作队列...
-                  </div>
-                </CardContent>
-              </Card>
-            ) : error ? (
-              <Card className="border border-red-500/18 bg-red-500/[0.07] shadow-none">
-                <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-4 py-12 text-center">
-                  <AlertTriangle className="size-5 text-red-300" />
-                  <div>
-                    <div className="text-sm font-medium text-app-text-primary">
-                      个人工作聚合加载失败
+            <div className="relative z-10 flex flex-col gap-4">
+              {isLoading ? (
+                <Card className="border border-app-border bg-app-content-bg shadow-none">
+                  <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-3 py-12">
+                    <Loader2 className="size-5 animate-spin text-app-text-muted" />
+                    <div className="text-sm text-app-text-muted">
+                      正在整理你的工作队列...
                     </div>
-                    <div className="mt-2 text-sm text-app-text-muted">
-                      {error instanceof Error ? error.message : "请稍后再试"}
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border-app-border bg-app-content-bg text-app-text-primary hover:bg-app-button-hover/60"
-                    onClick={() => void refetch()}
-                  >
-                    <RefreshCw data-icon="inline-start" />
-                    重试
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <>
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-app-border bg-app-content-bg px-4 py-3">
-                    <div className="min-w-0 pr-2">
-                      <h2 className="truncate text-[1.15rem] font-semibold tracking-[-0.03em] text-app-text-primary">
-                        我的工作概览
-                      </h2>
-                    </div>
-
-                    <div className="ml-auto flex flex-wrap gap-2">
-                      <div className="rounded-full border border-app-border bg-app-bg px-3 py-1.5 text-xs font-medium text-app-text-secondary">
-                        {data?.counts.total || 0} 个活跃事项
+                  </CardContent>
+                </Card>
+              ) : error ? (
+                <Card className="border border-red-500/18 bg-red-500/[0.07] shadow-none">
+                  <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-4 py-12 text-center">
+                    <AlertTriangle className="size-5 text-red-300" />
+                    <div>
+                      <div className="text-sm font-medium text-app-text-primary">
+                        个人工作聚合加载失败
                       </div>
-                      <div className="inline-flex items-center gap-1.5 rounded-full border border-app-border bg-app-bg px-3 py-1.5 text-xs font-medium text-app-text-secondary">
-                        {isRefetching ? (
-                          <RefreshCw className="size-3.5 animate-spin" />
-                        ) : (
-                          <Clock3 className="size-3.5" />
-                        )}
-                        {isRefetching
-                          ? "同步中"
-                          : generatedAtLabel
-                            ? `数据更新于 ${generatedAtLabel}`
-                            : "等待首次同步"}
+                      <div className="mt-2 text-sm text-app-text-muted">
+                        {error instanceof Error ? error.message : "请稍后再试"}
                       </div>
                     </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-app-border bg-app-content-bg text-app-text-primary hover:bg-app-button-hover/60"
+                      onClick={() => void refetch()}
+                    >
+                      <RefreshCw data-icon="inline-start" />
+                      重试
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <>
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-app-border bg-app-content-bg px-4 py-3">
+                      <div className="min-w-0 pr-2">
+                        <h2 className="truncate text-[1.15rem] font-semibold tracking-[-0.03em] text-app-text-primary">
+                          我的工作概览
+                        </h2>
+                      </div>
+
+                      <div className="ml-auto flex flex-wrap gap-2">
+                        <div className="rounded-full border border-app-border bg-app-bg px-3 py-1.5 text-xs font-medium text-app-text-secondary">
+                          {data?.counts.total || 0} 个活跃事项
+                        </div>
+                        <div className="inline-flex items-center gap-1.5 rounded-full border border-app-border bg-app-bg px-3 py-1.5 text-xs font-medium text-app-text-secondary">
+                          {isRefetching ? (
+                            <RefreshCw className="size-3.5 animate-spin" />
+                          ) : (
+                            <Clock3 className="size-3.5" />
+                          )}
+                          {isRefetching
+                            ? "同步中"
+                            : generatedAtLabel
+                              ? `数据更新于 ${generatedAtLabel}`
+                              : "等待首次同步"}
+                        </div>
+                      </div>
+                    </div>
+
+                    {renderSummaryCards(data, activeTab, setActiveTab)}
                   </div>
 
-                  {renderSummaryCards(data, activeTab, setActiveTab)}
-                </div>
-
-                {activeTab === "today" ? (
-                  <WorkSection
-                    meta={{
-                      title: "今日焦点",
-                      description:
-                        "今天先处理这些。它们综合了紧急度、阻塞、评审和你当前的执行状态。",
-                      emptyTitle: "今天的焦点队列还是空的",
-                      emptyDescription:
-                        "当你有待处理、进行中或阻塞的工作时，它们会优先排到这里。",
-                    }}
-                    items={data?.todayFocus || []}
-                    onOpenIssue={handleOpenIssue}
-                    onMarkStarted={handleMarkStarted}
-                    onAcceptHandoff={handleAcceptHandoff}
-                    isMutatingIssueId={isMutatingIssueId}
-                  />
-                ) : activeSection ? (
-                  <div className="grid gap-6">
+                  {activeTab === "today" ? (
                     <WorkSection
-                      meta={SECTION_META[activeSection]}
-                      items={sectionItems[activeSection]}
+                      meta={{
+                        title: "今日焦点",
+                        description:
+                          "今天先处理这些。它们综合了紧急度、阻塞、评审和你当前的执行状态。",
+                        emptyTitle: "今天的焦点队列还是空的",
+                        emptyDescription:
+                          "当你有待处理、进行中或阻塞的工作时，它们会优先排到这里。",
+                      }}
+                      items={data?.todayFocus || []}
                       onOpenIssue={handleOpenIssue}
                       onMarkStarted={handleMarkStarted}
                       onAcceptHandoff={handleAcceptHandoff}
                       isMutatingIssueId={isMutatingIssueId}
                     />
-                  </div>
-                ) : null}
-              </>
-            )}
+                  ) : activeSection ? (
+                    <div className="grid gap-6">
+                      <WorkSection
+                        meta={SECTION_META[activeSection]}
+                        items={sectionItems[activeSection]}
+                        onOpenIssue={handleOpenIssue}
+                        onMarkStarted={handleMarkStarted}
+                        onAcceptHandoff={handleAcceptHandoff}
+                        isMutatingIssueId={isMutatingIssueId}
+                      />
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

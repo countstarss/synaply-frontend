@@ -14,10 +14,7 @@ import {
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import {
-  isActiveIssueCategory,
-  sortIssuesByUrgency,
-} from "@/lib/issue-board";
+import { isActiveIssueCategory, sortIssuesByUrgency } from "@/lib/issue-board";
 import type { Issue } from "@/lib/fetchers/issue";
 import type {
   Project,
@@ -41,6 +38,7 @@ import {
   IssueStatus,
   VisibilityType,
 } from "@/types/prisma";
+import AmbientGlow from "../global/AmbientGlow";
 
 interface ProjectDetailViewProps {
   workspaceId: string;
@@ -223,11 +221,13 @@ function buildFallbackMetrics(
   lastSyncAt?: string | null,
 ): ProjectSummary["metrics"] {
   const activeIssues = issues.filter((issue) => isActiveIssueLike(issue));
-  const completedIssues = issues.filter((issue) => isCompletedIssueLike(issue))
-    .length;
+  const completedIssues = issues.filter((issue) =>
+    isCompletedIssueLike(issue),
+  ).length;
   const completionBaseIssueCount = activeIssues.length + completedIssues;
-  const blockedIssues = activeIssues.filter((issue) => isBlockedIssueLike(issue))
-    .length;
+  const blockedIssues = activeIssues.filter((issue) =>
+    isBlockedIssueLike(issue),
+  ).length;
   const overdueIssues = activeIssues.filter((issue) => {
     if (!issue.dueDate) {
       return false;
@@ -268,8 +268,7 @@ function buildFallbackMetrics(
         : 0,
     staleSyncDays: lastSyncAt
       ? Math.floor(
-          (Date.now() - new Date(lastSyncAt).getTime()) /
-            (1000 * 60 * 60 * 24),
+          (Date.now() - new Date(lastSyncAt).getTime()) / (1000 * 60 * 60 * 24),
         )
       : null,
   };
@@ -341,13 +340,16 @@ function ProjectPanel({
   return (
     <section
       className={cn(
-        "rounded-[28px] border border-app-border bg-app-content-bg/95 p-5 shadow-sm",
+        // 这里isolate是不透明的关键
+        "rounded-[28px] border border-app-border bg-app-content-bg/80 p-5 shadow-sm isolate",
         className,
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-app-text-primary">{title}</h3>
+          <h3 className="text-sm font-semibold text-app-text-primary">
+            {title}
+          </h3>
           {subtitle && (
             <p className="mt-1 text-xs leading-5 text-app-text-secondary">
               {subtitle}
@@ -375,12 +377,12 @@ function ProjectMetricCard({
 }) {
   const toneClassName =
     tone === "danger"
-      ? "border-rose-500/20 bg-rose-500/10"
+      ? "border-rose-500/20 bg-app-content-bg"
       : tone === "warning"
-        ? "border-amber-500/20 bg-amber-500/10"
+        ? "border-amber-500/20 bg-app-content-bg"
         : tone === "success"
-          ? "border-emerald-500/20 bg-emerald-500/10"
-          : "border-app-border bg-app-bg/80";
+          ? "border-emerald-500/20 bg-app-content-bg"
+          : "border-app-border bg-app-content-bg";
 
   return (
     <div className={cn("rounded-2xl border px-4 py-3", toneClassName)}>
@@ -388,7 +390,9 @@ function ProjectMetricCard({
       <div className="mt-2 text-2xl font-semibold text-app-text-primary">
         {value}
       </div>
-      {hint && <div className="mt-1 text-xs text-app-text-secondary">{hint}</div>}
+      {hint && (
+        <div className="mt-1 text-xs text-app-text-secondary">{hint}</div>
+      )}
     </div>
   );
 }
@@ -412,8 +416,8 @@ function ProjectIssueRow({
       className={cn(
         "flex w-full items-center gap-3 rounded-2xl border px-3 py-3 text-left transition hover:bg-app-button-hover/35",
         isHighlighted
-          ? "border-amber-500/20 bg-amber-500/5"
-          : "border-app-border bg-app-bg/60",
+          ? "border-amber-500/20 bg-app-content-bg"
+          : "border-app-border bg-app-content-bg",
       )}
     >
       <div
@@ -491,7 +495,7 @@ export function ProjectDetailView({
     },
     {
       enabled: !!workspaceId && !!currentUserId,
-    }
+    },
   );
 
   const displayedIssues = useMemo(
@@ -584,7 +588,7 @@ export function ProjectDetailView({
   };
 
   return (
-    <div className="flex flex-1 h-full flex-col select-none">
+    <div className="flex flex-1 h-full flex-col select-none z-50">
       <div className="mx-auto flex h-full min-h-0 w-full flex-col overflow-y-auto px-4 pb-8 pt-6">
         <div className="shrink-0">
           {showBackButton && (
@@ -593,142 +597,147 @@ export function ProjectDetailView({
               className="inline-flex items-center gap-1 rounded-full border border-app-border bg-app-content-bg px-3 py-1 text-xs font-medium text-app-text-secondary transition hover:bg-app-button-hover hover:text-app-text-primary"
             >
               <RiArrowLeftLine className="size-3.5" />
-              返回项目概览
             </button>
           )}
 
-          <div className={cn(
-            "rounded-[32px] border border-app-border px-5 py-5",
-            showBackButton ? "mt-4" : "mt-0",
-          )}>
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2 text-xs text-app-text-muted">
-                  <span>{workspaceName}</span>
-                  <span>·</span>
-                  <span>{visibilityLabel}</span>
-                  {(isSelectionPending || isLoadingProjectDetail) && (
-                    <RiLoader4Line className="size-3.5 animate-spin" />
-                  )}
-                </div>
+          <div
+            className={cn(
+              "relative isolate overflow-hidden rounded-[32px] border border-app-border bg-app-content-bg/80 px-5 py-5",
+              showBackButton ? "mt-4" : "mt-0",
+            )}
+          >
+            <div className="relative z-10">
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-app-text-muted">
+                    <span>{workspaceName}</span>
+                    <span>·</span>
+                    <span>{visibilityLabel}</span>
+                    {(isSelectionPending || isLoadingProjectDetail) && (
+                      <RiLoader4Line className="size-3.5 animate-spin" />
+                    )}
+                  </div>
 
-                <h2 className="mt-2 text-2xl font-semibold text-app-text-primary">
-                  {selectedProject.name}
-                </h2>
+                  <h2 className="mt-2 text-2xl font-semibold text-app-text-primary">
+                    {selectedProject.name}
+                  </h2>
 
-                <p className="mt-3 max-w-4xl text-sm leading-6 text-app-text-primary/90">
-                  {selectedProject.brief ||
-                    "这个项目还没有写一句话 brief，建议补充项目目标、交付方向和成功标准。"}
-                </p>
-
-                {selectedProject.description && (
-                  <p className="mt-2 max-w-4xl text-sm leading-6 text-app-text-secondary">
-                    {selectedProject.description}
+                  <p className="mt-3 max-w-4xl text-sm leading-6 text-app-text-primary/90">
+                    {selectedProject.brief ||
+                      "这个项目还没有写一句话 brief，建议补充项目目标、交付方向和成功标准。"}
                   </p>
-                )}
 
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium",
-                      statusMeta.chipClassName,
-                    )}
-                  >
-                    {statusMeta.icon}
-                    {statusMeta.label}
-                  </span>
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium",
-                      riskMeta.chipClassName,
-                    )}
-                  >
-                    {riskMeta.icon}
-                    {riskMeta.label}
-                  </span>
-                  {selectedProject.phase && (
-                    <span className="rounded-full border border-app-border bg-app-content-bg/80 px-2.5 py-1 text-[11px] text-app-text-secondary">
-                      阶段 · {selectedProject.phase}
-                    </span>
+                  {selectedProject.description && (
+                    <p className="mt-2 max-w-4xl text-sm leading-6 text-app-text-secondary">
+                      {selectedProject.description}
+                    </p>
                   )}
-                  <span className="rounded-full border border-app-border bg-app-content-bg/80 px-2.5 py-1 text-[11px] text-app-text-secondary">
-                    负责人 · {getProjectOwnerLabel(selectedProject)}
-                  </span>
-                  <span className="rounded-full border border-app-border bg-app-content-bg/80 px-2.5 py-1 text-[11px] text-app-text-secondary">
-                    {metrics.totalIssues} 个有效 issue
-                  </span>
-                  <span className="rounded-full border border-app-border bg-app-content-bg/80 px-2.5 py-1 text-[11px] text-app-text-secondary">
-                    {metrics.workflowCount} workflows
-                  </span>
-                  <span className="rounded-full border border-app-border bg-app-content-bg/80 px-2.5 py-1 text-[11px] text-app-text-secondary">
-                    {projectDocs.length} docs
-                  </span>
-                  <span className="rounded-full border border-app-border bg-app-content-bg/80 px-2.5 py-1 text-[11px] text-app-text-secondary">
-                    更新于 {formatPreciseDate(selectedProject.updatedAt)}
-                  </span>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium",
+                        statusMeta.chipClassName,
+                      )}
+                    >
+                      {statusMeta.icon}
+                      {statusMeta.label}
+                    </span>
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium",
+                        riskMeta.chipClassName,
+                      )}
+                    >
+                      {riskMeta.icon}
+                      {riskMeta.label}
+                    </span>
+                    {selectedProject.phase && (
+                      <span className="rounded-full border border-app-border bg-app-content-bg px-2.5 py-1 text-[11px] text-app-text-secondary">
+                        阶段 · {selectedProject.phase}
+                      </span>
+                    )}
+                    <span className="rounded-full border border-app-border bg-app-content-bg px-2.5 py-1 text-[11px] text-app-text-secondary">
+                      负责人 · {getProjectOwnerLabel(selectedProject)}
+                    </span>
+                    <span className="rounded-full border border-app-border bg-app-content-bg px-2.5 py-1 text-[11px] text-app-text-secondary">
+                      {metrics.totalIssues} 个有效 issue
+                    </span>
+                    <span className="rounded-full border border-app-border bg-app-content-bg px-2.5 py-1 text-[11px] text-app-text-secondary">
+                      {metrics.workflowCount} workflows
+                    </span>
+                    <span className="rounded-full border border-app-border bg-app-content-bg px-2.5 py-1 text-[11px] text-app-text-secondary">
+                      {projectDocs.length} docs
+                    </span>
+                    <span className="rounded-full border border-app-border bg-app-content-bg px-2.5 py-1 text-[11px] text-app-text-secondary">
+                      更新于 {formatPreciseDate(selectedProject.updatedAt)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {canManageProjects && (
+                    <button
+                      onClick={onEdit}
+                      className="inline-flex items-center gap-2 rounded-xl border border-app-border bg-app-content-bg px-3 py-2 text-sm text-app-text-primary transition hover:bg-app-button-hover cursor-pointer"
+                    >
+                      <RiEdit2Line className="size-4" />
+                      编辑
+                    </button>
+                  )}
+                  {canManageProjects && (
+                    <button
+                      onClick={onDelete}
+                      className="inline-flex items-center gap-2 rounded-xl border border-red-500/20 bg-app-content-bg px-3 py-2 text-sm text-red-600 transition hover:bg-red-500/15 dark:text-red-300 cursor-pointer"
+                    >
+                      <RiDeleteBinLine className="size-4" />
+                      删除
+                    </button>
+                  )}
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                {canManageProjects && (
-                  <button
-                    onClick={onEdit}
-                    className="inline-flex items-center gap-2 rounded-xl border border-app-border bg-app-content-bg px-3 py-2 text-sm text-app-text-primary transition hover:bg-app-button-hover cursor-pointer"
-                  >
-                    <RiEdit2Line className="size-4" />
-                    编辑
-                  </button>
-                )}
-                {canManageProjects && (
-                  <button
-                    onClick={onDelete}
-                    className="inline-flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-600 transition hover:bg-red-500/15 dark:text-red-300 cursor-pointer"
-                  >
-                    <RiDeleteBinLine className="size-4" />
-                    删除
-                  </button>
-                )}
+              <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <ProjectMetricCard
+                  label="推进进度"
+                  value={`${metrics.completionRate}%`}
+                  hint={`${metrics.completedIssues} 已完成 · ${metrics.totalIssues} 有效`}
+                  tone={metrics.completionRate >= 70 ? "success" : "default"}
+                />
+                <ProjectMetricCard
+                  label="阻塞与延期"
+                  value={`${metrics.blockedIssues + metrics.overdueIssues}`}
+                  hint={`${metrics.blockedIssues} 阻塞 · ${metrics.overdueIssues} 延期`}
+                  tone={
+                    metrics.blockedIssues > 0
+                      ? "danger"
+                      : metrics.overdueIssues > 0
+                        ? "warning"
+                        : "success"
+                  }
+                />
+                <ProjectMetricCard
+                  label="关键执行面"
+                  value={`${metrics.workflowIssueCount}`}
+                  hint={`${metrics.workflowCount} 个关联流程 · ${metrics.highPriorityIssues} 个高优先级`}
+                />
+                <ProjectMetricCard
+                  label="最近同步"
+                  value={
+                    selectedProject.lastSyncAt
+                      ? formatRelativeTime(selectedProject.lastSyncAt)
+                      : "未记录"
+                  }
+                  hint={
+                    selectedProject.lastSyncAt
+                      ? formatPreciseDate(selectedProject.lastSyncAt)
+                      : "建议在关键评审或异步同步后更新"
+                  }
+                  tone={
+                    (metrics.staleSyncDays ?? 0) >= 7 ? "warning" : "default"
+                  }
+                />
               </div>
-            </div>
-
-            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <ProjectMetricCard
-                label="推进进度"
-                value={`${metrics.completionRate}%`}
-                hint={`${metrics.completedIssues} 已完成 · ${metrics.totalIssues} 有效`}
-                tone={metrics.completionRate >= 70 ? "success" : "default"}
-              />
-              <ProjectMetricCard
-                label="阻塞与延期"
-                value={`${metrics.blockedIssues + metrics.overdueIssues}`}
-                hint={`${metrics.blockedIssues} 阻塞 · ${metrics.overdueIssues} 延期`}
-                tone={
-                  metrics.blockedIssues > 0
-                    ? "danger"
-                    : metrics.overdueIssues > 0
-                      ? "warning"
-                      : "success"
-                }
-              />
-              <ProjectMetricCard
-                label="关键执行面"
-                value={`${metrics.workflowIssueCount}`}
-                hint={`${metrics.workflowCount} 个关联流程 · ${metrics.highPriorityIssues} 个高优先级`}
-              />
-              <ProjectMetricCard
-                label="最近同步"
-                value={
-                  selectedProject.lastSyncAt
-                    ? formatRelativeTime(selectedProject.lastSyncAt)
-                    : "未记录"
-                }
-                hint={
-                  selectedProject.lastSyncAt
-                    ? formatPreciseDate(selectedProject.lastSyncAt)
-                    : "建议在关键评审或异步同步后更新"
-                }
-                tone={(metrics.staleSyncDays ?? 0) >= 7 ? "warning" : "default"}
-              />
             </div>
           </div>
         </div>
@@ -736,13 +745,13 @@ export function ProjectDetailView({
         <div className="mt-4">
           <ProjectPanel
             title="Project Workspace"
-            // MARK: Workspace
+            // MARK: -- Workspace
             action={
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={onCreateIssue}
-                  className="inline-flex items-center gap-1 rounded-full border border-app-border bg-app-bg px-3 py-1 text-xs text-app-text-primary transition hover:bg-app-button-hover"
+                  className="inline-flex items-center gap-1 rounded-full border border-app-border bg-app-content-bg px-3 py-1 text-xs text-app-text-primary transition hover:bg-app-button-hover"
                 >
                   <RiAddLine className="size-3.5" />
                   新建 Issue
@@ -750,7 +759,7 @@ export function ProjectDetailView({
                 <button
                   type="button"
                   onClick={handleCreateProjectDoc}
-                  className="inline-flex items-center gap-1 rounded-full border border-app-border bg-app-bg px-3 py-1 text-xs text-app-text-primary transition hover:bg-app-button-hover"
+                  className="inline-flex items-center gap-1 rounded-full border border-app-border bg-app-content-bg px-3 py-1 text-xs text-app-text-primary transition hover:bg-app-button-hover"
                 >
                   <RiFileList3Line className="size-3.5" />
                   新建文档
@@ -758,11 +767,13 @@ export function ProjectDetailView({
               </div>
             }
           >
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4 bg-app-content-bg/80">
               <button
                 type="button"
-                onClick={() => router.push(buildProjectPath(selectedProject.id, "issues"))}
-                className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-4 text-left transition hover:bg-app-button-hover/35 cursor-pointer"
+                onClick={() =>
+                  router.push(buildProjectPath(selectedProject.id, "issues"))
+                }
+                className="rounded-2xl border border-app-border bg-app-content-bg px-4 py-4 text-left transition hover:bg-app-button-hover/35 cursor-pointer"
               >
                 <div className="text-xs uppercase tracking-[0.18em] text-app-text-muted">
                   有效任务
@@ -775,7 +786,7 @@ export function ProjectDetailView({
               <button
                 type="button"
                 onClick={openProjectDocHub}
-                className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-4 text-left transition hover:bg-app-button-hover/35  cursor-pointer"
+                className="rounded-2xl border border-app-border bg-app-content-bg px-4 py-4 text-left transition hover:bg-app-button-hover/35 cursor-pointer"
               >
                 <div className="text-xs uppercase tracking-[0.18em] text-app-text-muted">
                   Docs
@@ -790,7 +801,7 @@ export function ProjectDetailView({
                 onClick={() =>
                   router.push(buildProjectPath(selectedProject.id, "workflow"))
                 }
-                className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-4 text-left transition hover:bg-app-button-hover/35  cursor-pointer"
+                className="rounded-2xl border border-app-border bg-app-content-bg px-4 py-4 text-left transition hover:bg-app-button-hover/35 cursor-pointer"
               >
                 <div className="text-xs uppercase tracking-[0.18em] text-app-text-muted">
                   Workflow
@@ -802,8 +813,10 @@ export function ProjectDetailView({
 
               <button
                 type="button"
-                onClick={() => router.push(buildProjectPath(selectedProject.id, "sync"))}
-                className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-4 text-left transition hover:bg-app-button-hover/35  cursor-pointer"
+                onClick={() =>
+                  router.push(buildProjectPath(selectedProject.id, "sync"))
+                }
+                className="rounded-2xl border border-app-border bg-app-content-bg px-4 py-4 text-left transition hover:bg-app-button-hover/35 cursor-pointer"
               >
                 <div className="text-xs uppercase tracking-[0.18em] text-app-text-muted">
                   Sync
@@ -821,7 +834,7 @@ export function ProjectDetailView({
         <div className="mt-4">
           <ProjectPanel
             title="Risks"
-            // MARK: Risks
+            // MARK: -- Risks
           >
             <div className="space-y-3">
               {attentionItems.map((item) => (
@@ -851,7 +864,7 @@ export function ProjectDetailView({
                   Blocked Issues
                 </div>
                 {blockedIssues.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-app-border bg-app-bg/60 px-4 py-5 text-sm text-app-text-secondary">
+                  <div className="rounded-2xl border border-dashed border-app-border bg-app-content-bg px-4 py-5 text-sm text-app-text-secondary">
                     当前没有被识别为阻塞中的任务。
                   </div>
                 ) : (

@@ -11,16 +11,29 @@ import DocsSidebar from "./DocsSidebar";
 import DocsTabs from "./DocsTabs";
 import DocsEditor from "./DocsEditor";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import AmbientGlow from "@/components/global/AmbientGlow";
 // import {
 //   ResizablePanelGroup,
 //   ResizablePanel,
 //   ResizableHandle,
 // } from "@/components/ui/resizable";
 
-const docsPageBackgroundStyle = {
-  backgroundImage:
-    "radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 28%)",
-} satisfies React.CSSProperties;
+function DocsPageFrame({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={`relative h-full min-h-full bg-app-bg ${className ?? ""}`}>
+      <AmbientGlow />
+      <div className="relative z-10 h-full min-h-full overflow-y-auto">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 const docsStaticCardClassName =
   "rounded-2xl border border-app-border bg-app-content-bg/80 p-4 text-left shadow-[0_18px_40px_rgba(15,23,42,0.05)] backdrop-blur-sm";
@@ -58,10 +71,7 @@ function PersonalDocsOverviewPage() {
   };
 
   return (
-    <div
-      className="h-full min-h-full overflow-y-auto bg-app-bg"
-      style={docsPageBackgroundStyle}
-    >
+    <DocsPageFrame>
       <div className="mx-auto max-w-5xl px-8 py-8">
         {/* Header */}
         <div className="mb-6">
@@ -78,7 +88,7 @@ function PersonalDocsOverviewPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className={docsStaticCardClassName}>
             <div className="flex items-center gap-3 mb-2">
               <div className="rounded bg-sky-100 p-2 dark:bg-sky-900/20">
@@ -242,7 +252,7 @@ function PersonalDocsOverviewPage() {
           </div>
         )}
       </div>
-    </div>
+    </DocsPageFrame>
   );
 }
 
@@ -265,10 +275,7 @@ function TeamDocsOverviewPage() {
   };
 
   return (
-    <div
-      className="h-full min-h-full overflow-y-auto bg-app-bg"
-      style={docsPageBackgroundStyle}
-    >
+    <DocsPageFrame>
       <div className="mx-auto max-w-5xl px-8 py-8">
         {/* Header */}
         <div className="mb-6">
@@ -285,7 +292,7 @@ function TeamDocsOverviewPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className={docsStaticCardClassName}>
             <div className="flex items-center gap-3 mb-2">
               <div className="rounded bg-sky-100 p-2 dark:bg-sky-900/20">
@@ -449,7 +456,7 @@ function TeamDocsOverviewPage() {
           </div>
         )}
       </div>
-    </div>
+    </DocsPageFrame>
   );
 }
 
@@ -472,10 +479,7 @@ function TeamPersonalDocsOverviewPage() {
   };
 
   return (
-    <div
-      className="h-full min-h-full overflow-y-auto bg-app-bg"
-      style={docsPageBackgroundStyle}
-    >
+    <DocsPageFrame>
       <div className="mx-auto max-w-5xl px-8 py-8">
         {/* Header */}
         <div className="mb-6">
@@ -492,7 +496,7 @@ function TeamPersonalDocsOverviewPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className={docsStaticCardClassName}>
             <div className="flex items-center gap-3 mb-2">
               <div className="rounded bg-sky-100 p-2 dark:bg-sky-900/20">
@@ -658,7 +662,7 @@ function TeamPersonalDocsOverviewPage() {
           </div>
         )}
       </div>
-    </div>
+    </DocsPageFrame>
   );
 }
 
@@ -694,11 +698,9 @@ function DocsPageContent() {
 
   if (isLoading) {
     return (
-      <div
-        className="flex h-full min-h-full items-center justify-center bg-app-bg"
-        style={docsPageBackgroundStyle}
-      >
-        <div className="text-center">
+      <div className="relative flex h-full min-h-full items-center justify-center bg-app-bg">
+        <AmbientGlow />
+        <div className="relative z-10 text-center">
           <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-sky-600"></div>
           <p className="text-app-text-muted">加载文档...</p>
         </div>
@@ -716,19 +718,17 @@ function DocsPageContent() {
   }
 
   return (
-    <div
-      className="flex h-full min-h-full bg-app-bg"
-      style={docsPageBackgroundStyle}
-    >
+    <div className="relative flex h-full min-h-full bg-app-bg">
+      <AmbientGlow />
       {/* Sidebar */}
       {!isExpanded && (
-        <div className="w-64 flex-shrink-0">
+        <div className="relative z-10 w-64 flex-shrink-0">
           <DocsSidebar onSelectDoc={handleSelectDoc} />
         </div>
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="relative z-10 flex-1 flex flex-col">
         {/* Tabs */}
         <DocsTabs onSelectDoc={handleSelectDoc} />
 
