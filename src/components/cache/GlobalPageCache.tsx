@@ -3,14 +3,16 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
-import { CachedDocsPage } from "./pages/CachedDocsPage";
 import { CachedTasksPage } from "./pages/CachedTasksPage";
+import { CachedInboxPage } from "./pages/CachedInboxPage";
+import { CachedDocsPage } from "./pages/CachedDocsPage";
 import { CachedIssuesPage } from "./pages/CachedIssuesPage";
 import { CachedProjectsPage } from "./pages/CachedProjectsPage";
 import { CachedWorkflowsPage } from "./pages/CachedWorkflowsPage";
 
 const PAGE_COMPONENTS = {
   tasks: CachedTasksPage,
+  inbox: CachedInboxPage,
   docs: CachedDocsPage,
   issues: CachedIssuesPage,
   projects: CachedProjectsPage,
@@ -22,10 +24,11 @@ type PagePosition = "left" | "center" | "right" | "hidden";
 
 const PAGE_ORDER: Record<PageId, number> = {
   tasks: 1,
-  docs: 2,
-  issues: 3,
-  projects: 4,
-  workflows: 5,
+  inbox: 2,
+  docs: 3,
+  issues: 4,
+  projects: 5,
+  workflows: 6,
 };
 
 const getPageIdFromPath = (pathname: string): PageId | null => {
@@ -33,6 +36,7 @@ const getPageIdFromPath = (pathname: string): PageId | null => {
 
   for (const segment of segments) {
     if (segment === "tasks") return "tasks";
+    if (segment === "inbox") return "inbox";
     if (segment === "docs") return "docs";
     if (segment === "issues") return "issues";
     if (segment === "projects") return "projects";

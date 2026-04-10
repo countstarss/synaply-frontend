@@ -167,6 +167,14 @@ function SummaryMetricCard({
         style={{ backgroundImage: toneClasses.ambient }}
       />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/[0.05] to-transparent opacity-60" />
+      {active ? (
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-x-4 bottom-0 h-px",
+            toneClasses.accent,
+          )}
+        />
+      ) : null}
 
       <div className="relative flex h-full flex-col justify-between px-4 py-4">
         <div className="text-[13px] font-medium text-app-text-secondary">
@@ -784,90 +792,80 @@ export default function TasksPageContent() {
         />
       </div>
 
-      <div 
+      <div
         className="flex-1 overflow-y-auto"
-        style={
-            activeTab === "today"
-              ? {
-                  backgroundImage:
-                    "radial-gradient(circle at top left, rgba(56, 189, 248, 0.1), transparent 28%)",
-                }
-              : undefined
-          }
-      
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at top left, rgba(56, 189, 248, 0.08), transparent 28%)",
+        }}
       >
-        <div
-          className="relative mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-6"
-        >
-          {activeTab === "today" ? (
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-32" />
-          ) : null}
+        <div className="relative mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 py-6">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-32" />
 
           <div className="relative z-10 flex flex-col gap-6">
-          {isLoading ? (
-            <Card className="border border-white/[0.04] bg-white/[0.018] shadow-[0_1px_0_rgba(255,255,255,0.015)_inset]">
-              <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-3 py-12">
-                <Loader2 className="size-5 animate-spin text-app-text-muted" />
-                <div className="text-sm text-app-text-muted">
-                  正在整理你的工作队列...
-                </div>
-              </CardContent>
-            </Card>
-          ) : error ? (
-            <Card className="border border-red-500/18 bg-red-500/[0.07] shadow-none">
-              <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-4 py-12 text-center">
-                <AlertTriangle className="size-5 text-red-300" />
-                <div>
-                  <div className="text-sm font-medium text-app-text-primary">
-                    个人工作聚合加载失败
+            {isLoading ? (
+              <Card className="border border-white/[0.04] bg-white/[0.018] shadow-[0_1px_0_rgba(255,255,255,0.015)_inset]">
+                <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-3 py-12">
+                  <Loader2 className="size-5 animate-spin text-app-text-muted" />
+                  <div className="text-sm text-app-text-muted">
+                    正在整理你的工作队列...
                   </div>
-                  <div className="mt-2 text-sm text-app-text-muted">
-                    {error instanceof Error ? error.message : "请稍后再试"}
+                </CardContent>
+              </Card>
+            ) : error ? (
+              <Card className="border border-red-500/18 bg-red-500/[0.07] shadow-none">
+                <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-4 py-12 text-center">
+                  <AlertTriangle className="size-5 text-red-300" />
+                  <div>
+                    <div className="text-sm font-medium text-app-text-primary">
+                      个人工作聚合加载失败
+                    </div>
+                    <div className="mt-2 text-sm text-app-text-muted">
+                      {error instanceof Error ? error.message : "请稍后再试"}
+                    </div>
                   </div>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="border-white/[0.08] bg-transparent text-app-text-primary hover:bg-white/[0.04]"
-                  onClick={() => void refetch()}
-                >
-                  <RefreshCw data-icon="inline-start" />
-                  Retry
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              {activeTab === "today" ? (
-                <>
-                  <div className="flex flex-col gap-4">
-                    <div className="flex flex-wrap items-center gap-3 rounded-[26px] border border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.015))] px-4 py-3 backdrop-blur-sm">
-                      <div className="min-w-0 pr-2">
-                        <h2 className="truncate text-[1.15rem] font-semibold tracking-[-0.03em] text-app-text-primary">
-                          My Work Overview
-                        </h2>
-                      </div>
-
-                      <div className="ml-auto flex flex-wrap gap-2">
-                        <div className="rounded-full border border-white/8 bg-app-bg/55 px-3 py-1.5 text-xs font-medium text-app-text-secondary">
-                          {data?.counts.total || 0} active
-                        </div>
-                        <div className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-app-bg/55 px-3 py-1.5 text-xs font-medium text-app-text-secondary">
-                          {isRefetching ? (
-                            <RefreshCw className="size-3.5 animate-spin" />
-                          ) : (
-                            <Clock3 className="size-3.5" />
-                          )}
-                          {isRefetching
-                            ? "Syncing"
-                            : `Updated ${format(new Date(), "HH:mm")}`}
-                        </div>
-                      </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="border-white/[0.08] bg-transparent text-app-text-primary hover:bg-white/[0.04]"
+                    onClick={() => void refetch()}
+                  >
+                    <RefreshCw data-icon="inline-start" />
+                    Retry
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-wrap items-center gap-3 rounded-[26px] border border-white/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.015))] px-4 py-3 backdrop-blur-sm">
+                    <div className="min-w-0 pr-2">
+                      <h2 className="truncate text-[1.15rem] font-semibold tracking-[-0.03em] text-app-text-primary">
+                        My Work Overview
+                      </h2>
                     </div>
 
-                    {renderSummaryCards(data, activeTab, setActiveTab)}
+                    <div className="ml-auto flex flex-wrap gap-2">
+                      <div className="rounded-full border border-white/8 bg-app-bg/55 px-3 py-1.5 text-xs font-medium text-app-text-secondary">
+                        {data?.counts.total || 0} active
+                      </div>
+                      <div className="inline-flex items-center gap-1.5 rounded-full border border-white/8 bg-app-bg/55 px-3 py-1.5 text-xs font-medium text-app-text-secondary">
+                        {isRefetching ? (
+                          <RefreshCw className="size-3.5 animate-spin" />
+                        ) : (
+                          <Clock3 className="size-3.5" />
+                        )}
+                        {isRefetching
+                          ? "Syncing"
+                          : `Updated ${format(new Date(), "HH:mm")}`}
+                      </div>
+                    </div>
                   </div>
 
+                  {renderSummaryCards(data, activeTab, setActiveTab)}
+                </div>
+
+                {activeTab === "today" ? (
                   <WorkSection
                     meta={{
                       title: "Today Focus",
@@ -883,21 +881,20 @@ export default function TasksPageContent() {
                     onAcceptHandoff={handleAcceptHandoff}
                     isMutatingIssueId={isMutatingIssueId}
                   />
-                </>
-              ) : activeSection ? (
-                <div className="grid gap-6">
-                  <WorkSection
-                    meta={SECTION_META[activeSection]}
-                    items={sectionItems[activeSection]}
-                    onOpenIssue={handleOpenIssue}
-                    onMarkStarted={handleMarkStarted}
-                    onAcceptHandoff={handleAcceptHandoff}
-                    isMutatingIssueId={isMutatingIssueId}
-                  />
-                </div>
-              ) : null}
-            </>
-          )}
+                ) : activeSection ? (
+                  <div className="grid gap-6">
+                    <WorkSection
+                      meta={SECTION_META[activeSection]}
+                      items={sectionItems[activeSection]}
+                      onOpenIssue={handleOpenIssue}
+                      onMarkStarted={handleMarkStarted}
+                      onAcceptHandoff={handleAcceptHandoff}
+                      isMutatingIssueId={isMutatingIssueId}
+                    />
+                  </div>
+                ) : null}
+              </>
+            )}
           </div>
         </div>
       </div>
