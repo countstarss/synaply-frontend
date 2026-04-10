@@ -64,7 +64,7 @@ const nodeTypes = {
 const RUN_STATUS_LABELS = {
   ACTIVE: "执行中",
   BLOCKED: "已阻塞",
-  WAITING_REVIEW: "等待 Review",
+  WAITING_REVIEW: "等待评审",
   HANDOFF_PENDING: "等待交接",
   DONE: "已完成",
 } as const;
@@ -117,6 +117,9 @@ export function WorkflowIssueDetailFlow({
 
   const [workflowIssue, setWorkflowIssue] = useState<WorkflowIssue | null>(
     initialWorkflowIssue,
+  );
+  const [workflowPanelTab, setWorkflowPanelTab] = useState<"overview" | "canvas">(
+    "canvas",
   );
   const [activeTab, setActiveTab] = useState<"history" | "discussion" | "records">(
     "history",
@@ -227,7 +230,7 @@ export function WorkflowIssueDetailFlow({
       resetCollaborationInputs();
       onUpdate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "请求 review 失败");
+      toast.error(error instanceof Error ? error.message : "请求评审失败");
     }
   }, [
     collaborationNote,
@@ -334,7 +337,7 @@ export function WorkflowIssueDetailFlow({
       setCollaborationNote("");
       onUpdate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "确认 review 失败");
+      toast.error(error instanceof Error ? error.message : "确认评审失败");
     }
   }, [
     collaborationNote,
@@ -427,6 +430,42 @@ export function WorkflowIssueDetailFlow({
   const currentNodeFocusUsers = currentNode
     ? getFocusedUsersForNode(currentNode.id)
     : [];
+  const currentOwnerLabel =
+    workflowRun?.currentAssigneeName || currentNodeStatus?.assigneeName || "未分配";
+  const pendingTargetLabel = workflowRun?.targetName || "指定成员";
+  const hasSelectedTarget = Boolean(selectedCollaborationTarget?.userId);
+  const canRequestCollaboration =
+    Boolean(workflowRun) && workflowRun?.runStatus === "ACTIVE" && isCurrentAssignee;
+  const issueMetaItems = [
+    ["编号", issue.key || `#${issue.id.slice(0, 8)}`],
+    ["工作流", workflowIssue.workflowName],
+    ["状态", workflowRun ? RUN_STATUS_LABELS[workflowRun.runStatus] : "未开始"],
+    ["当前步骤", workflowRun?.currentStepName || currentNode?.data?.label || "未命名步骤"],
+    ["当前负责人", currentOwnerLabel],
+    ["优先级", issue.priority || "未设置"],
+    ["步骤数", workflowRun?.totalSteps ? `${workflowRun.totalSteps} 步` : `${workflow.nodes.length} 步`],
+  ] as const;
+  const collaborationTags = workflowRun
+    ? [
+        ["动作", ACTION_TYPE_LABELS[workflowRun.currentActionType]],
+        ["负责人", workflowRun.currentAssigneeName || "未分配"],
+        ["步骤", workflowRun.currentStepName || "未命名步骤"],
+        ["版本", workflowRun.templateVersion || "v1"],
+        ...(workflowRun.lastEventType === "workflow.review.approved" ||
+        workflowRun.lastEventType === "workflow.review.changes_requested"
+          ? [
+              [
+                "最近评审",
+                REVIEW_OUTCOME_LABELS[
+                  workflowRun.lastEventType === "workflow.review.approved"
+                    ? "APPROVED"
+                    : "CHANGES_REQUESTED"
+                ],
+              ],
+            ]
+          : []),
+      ]
+    : [];
 
   return (
     <div className="flex h-full flex-col gap-2">
@@ -472,246 +511,378 @@ export function WorkflowIssueDetailFlow({
         </CardHeader>
       </Card>
 
-      <div className="grid min-h-0 flex-1 gap-2 overflow-y-auto xl:grid-cols-[minmax(0,1fr)_360px] xl:grid-rows-[minmax(0,1fr)_320px] xl:overflow-hidden">
-        <Card className="flex min-h-[420px] flex-col border-app-border bg-app-content-bg shadow-none xl:min-h-0">
-          <CardHeader className="border-b border-app-border p-4">
-            <CardTitle className="text-lg text-app-text-primary">
-              工作流进度
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent className="min-h-0 flex-1 p-0">
-            <div className="h-full min-h-0">
-              <ReactFlow
-                nodes={flowNodes}
-                edges={flowEdges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                nodeTypes={nodeTypes}
-                fitView
-                proOptions={{ hideAttribution: true }}
-                nodesDraggable={false}
-                nodesConnectable={true}
-                elementsSelectable={true}
-                zoomOnDoubleClick={false}
-                edgesFocusable={false}
-                edgesUpdatable={false}
+      <div className="grid min-h-0 flex-1 gap-2 overflow-y-auto xl:grid-cols-[minmax(0,1fr)_400px] xl:grid-rows-[minmax(420px,1fr)_auto] xl:overflow-hidden">
+        <Tabs
+          value={workflowPanelTab}
+          onValueChange={(value) =>
+            setWorkflowPanelTab(value as "overview" | "canvas")
+          }
+          className="flex min-h-[420px] flex-col overflow-hidden xl:min-h-0"
+        >
+          <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-app-border bg-app-content-bg shadow-none">
+            <CardHeader className="flex flex-col gap-3 border-b border-app-border p-4 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="text-lg text-app-text-primary">
+                工作流任务
+              </CardTitle>
+              <TabsList
+                variant="line"
+                className="h-auto w-full gap-2 bg-transparent p-0 sm:w-auto"
               >
-                <Controls className="!border-app-border !bg-app-content-bg" />
-                <MiniMap className="!border-app-border !bg-app-content-bg" />
-                <Background
-                  variant={BackgroundVariant.Dots}
-                  gap={12}
-                  size={1}
-                  className="!bg-transparent"
-                />
-              </ReactFlow>
-            </div>
-          </CardContent>
-        </Card>
+                <TabsTrigger
+                  value="overview"
+                  className="data-[state=active]:bg-sky-500/10 data-[state=active]:text-sky-700"
+                >
+                  介绍
+                </TabsTrigger>
+                <TabsTrigger
+                  value="canvas"
+                  className="data-[state=active]:bg-sky-500/10 data-[state=active]:text-sky-700"
+                >
+                  Canvas
+                </TabsTrigger>
+              </TabsList>
+            </CardHeader>
 
-        <div className="flex min-h-0 flex-col gap-2 xl:overflow-y-auto xl:pr-1">
+            <CardContent className="min-h-0 flex-1 p-0">
+              <TabsContent value="overview" className="mt-0 h-full">
+                <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto p-4">
+                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                    {issueMetaItems.map(([label, value]) => (
+                      <div
+                        key={label}
+                        className="rounded-lg border border-app-border bg-app-bg px-3 py-2"
+                      >
+                        <div className="text-[11px] font-medium uppercase tracking-wide text-app-text-muted">
+                          {label}
+                        </div>
+                        <div className="mt-1 truncate text-sm text-app-text-primary">
+                          {String(value)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="min-h-0 flex-1 rounded-lg border border-app-border bg-app-bg p-4">
+                    <div className="text-sm font-medium text-app-text-primary">
+                      任务介绍
+                    </div>
+                    <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-app-text-secondary">
+                      {issue.description?.trim() ||
+                        "还没有补充介绍。建议写清背景、验收标准、交接注意事项和相关文档。"}
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="canvas" className="mt-0 h-full">
+                <div className="h-full min-h-0">
+                  <ReactFlow
+                    nodes={flowNodes}
+                    edges={flowEdges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    nodeTypes={nodeTypes}
+                    fitView
+                    proOptions={{ hideAttribution: true }}
+                    nodesDraggable={false}
+                    nodesConnectable={true}
+                    elementsSelectable={true}
+                    zoomOnDoubleClick={false}
+                    edgesFocusable={false}
+                    edgesUpdatable={false}
+                  >
+                    <Controls className="!border-app-border !bg-app-content-bg" />
+                    <MiniMap className="!border-app-border !bg-app-content-bg" />
+                    <Background
+                      variant={BackgroundVariant.Dots}
+                      gap={12}
+                      size={1}
+                      className="!bg-transparent"
+                    />
+                  </ReactFlow>
+                </div>
+              </TabsContent>
+            </CardContent>
+          </Card>
+        </Tabs>
+
+        <div className="flex min-h-0 flex-col gap-2 xl:col-start-1 xl:row-start-2">
           {workflowRun && (
             <Card className="border-app-border bg-app-content-bg shadow-none">
-              <CardHeader className="flex flex-row items-start justify-between gap-3 p-4 pb-3">
+              <CardHeader className="flex flex-row items-center justify-between gap-3 p-3 pb-2">
                 <div className="space-y-1">
                   <CardTitle className="text-base text-app-text-primary">
                     协作状态
                   </CardTitle>
-                  <p className="text-xs text-app-text-muted">
-                    当前 run 的协作动作、接手关系与状态反馈。
-                  </p>
                 </div>
                 <Badge
                   variant="outline"
-                  className="border-app-border text-app-text-primary"
+                  className="border-app-border text-xs text-app-text-primary"
                 >
                   {RUN_STATUS_LABELS[workflowRun.runStatus]}
                 </Badge>
               </CardHeader>
-              <CardContent className="space-y-4 px-4 pb-4">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <div className="text-app-text-muted">当前动作</div>
-                    <div className="mt-1 font-medium text-app-text-primary">
-                      {ACTION_TYPE_LABELS[workflowRun.currentActionType]}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-app-text-muted">模板版本</div>
-                    <div className="mt-1 font-medium text-app-text-primary">
-                      {workflowRun.templateVersion || "v1"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-app-text-muted">当前负责人</div>
-                    <div className="mt-1 font-medium text-app-text-primary">
-                      {workflowRun.currentAssigneeName || "未分配"}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-app-text-muted">当前步骤</div>
-                    <div className="mt-1 font-medium text-app-text-primary">
-                      {workflowRun.currentStepName || "未命名步骤"}
-                    </div>
-                  </div>
-                  {(workflowRun.lastEventType === "workflow.review.approved" ||
-                    workflowRun.lastEventType ===
-                      "workflow.review.changes_requested") && (
-                    <div className="col-span-2">
-                      <div className="text-app-text-muted">最近 review 结果</div>
-                      <div className="mt-1 font-medium text-app-text-primary">
-                        {
-                          REVIEW_OUTCOME_LABELS[
-                            workflowRun.lastEventType ===
-                            "workflow.review.approved"
-                              ? "APPROVED"
-                              : "CHANGES_REQUESTED"
-                          ]
-                        }
-                      </div>
-                    </div>
-                  )}
+              <CardContent className="space-y-3 px-3 pb-3">
+                <div className="flex flex-wrap gap-2">
+                  {collaborationTags.map(([label, value]) => (
+                    <Badge
+                      key={label}
+                      variant="secondary"
+                      className="rounded-md bg-app-button-hover px-2.5 py-1 text-xs font-normal text-app-text-primary"
+                    >
+                      {label}：{value}
+                    </Badge>
+                  ))}
                 </div>
 
                 {(workflowRun.blockedReason || workflowRun.targetName) && (
-                  <div className="rounded-xl border border-app-border bg-app-bg px-3 py-2 text-sm text-app-text-secondary">
+                  <div className="flex flex-wrap gap-2 rounded-lg border border-app-border bg-app-bg px-3 py-2 text-xs text-app-text-secondary">
                     {workflowRun.blockedReason && (
-                      <div>阻塞原因：{workflowRun.blockedReason}</div>
+                      <span>阻塞原因：{workflowRun.blockedReason}</span>
                     )}
                     {workflowRun.targetName && (
-                      <div>待处理人：{workflowRun.targetName}</div>
+                      <span>待处理人：{workflowRun.targetName}</span>
                     )}
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <Label className="text-sm text-app-text-primary">
-                    目标成员
-                  </Label>
-                  <Select
-                    value={collaborationTargetId || undefined}
-                    onValueChange={setCollaborationTargetId}
-                  >
-                    <SelectTrigger className="border-app-border bg-app-bg text-app-text-primary">
-                      <SelectValue placeholder="选择 review / 交接对象" />
-                    </SelectTrigger>
-                    <SelectContent className="border-app-border bg-app-content-bg">
-                      {workflowMembers.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {workflowRun.runStatus === "ACTIVE" && (
+                  <div className="space-y-2 rounded-lg border border-app-border bg-app-bg px-3 py-2.5">
+                    <div>
+                      <div className="text-sm font-medium text-app-text-primary">
+                        当前由 {currentOwnerLabel} 推进
+                      </div>
+                      <p className="mt-1 text-xs leading-5 text-app-text-muted">
+                        执行人可以请求评审、发起交接，或在需要外部帮助时标记阻塞。
+                      </p>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label className="text-sm text-app-text-primary">
-                    协作备注
-                  </Label>
-                  <Textarea
-                    value={collaborationNote}
-                    onChange={(event) => setCollaborationNote(event.target.value)}
-                    rows={3}
-                    placeholder="填写 review、交接或阻塞说明"
-                    className="border-app-border bg-app-bg text-app-text-primary"
-                  />
-                </div>
+                    {canRequestCollaboration ? (
+                      <>
+                        <div className="space-y-2">
+                          <Label className="text-sm text-app-text-primary">
+                            评审 / 交接对象
+                          </Label>
+                          <Select
+                            value={collaborationTargetId || undefined}
+                            onValueChange={setCollaborationTargetId}
+                          >
+                            <SelectTrigger className="border-app-border bg-app-content-bg text-app-text-primary">
+                              <SelectValue placeholder="选择需要确认或接手的人" />
+                            </SelectTrigger>
+                            <SelectContent className="border-app-border bg-app-content-bg">
+                              {workflowMembers.map((member) => (
+                                <SelectItem key={member.id} value={member.id}>
+                                  {member.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border-app-border bg-transparent text-app-text-primary"
-                    disabled={
-                      requestWorkflowReviewMutation.isPending ||
-                      !selectedCollaborationTarget?.userId ||
-                      !isCurrentAssignee
-                    }
-                    onClick={handleRequestReview}
-                  >
-                    请求 Review
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border-app-border bg-transparent text-app-text-primary"
-                    disabled={
-                      requestWorkflowHandoffMutation.isPending ||
-                      !selectedCollaborationTarget?.userId ||
-                      !isCurrentAssignee
-                    }
-                    onClick={handleRequestHandoff}
-                  >
-                    请求交接
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border-app-border bg-transparent text-app-text-primary"
-                    disabled={
-                      respondWorkflowReviewMutation.isPending || !isPendingReviewer
-                    }
-                    onClick={handleApproveReview}
-                  >
-                    通过 Review
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border-app-border bg-transparent text-app-text-primary"
-                    disabled={
-                      respondWorkflowReviewMutation.isPending || !isPendingReviewer
-                    }
-                    onClick={handleRequestChanges}
-                  >
-                    请求修改
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border-app-border bg-transparent text-app-text-primary"
-                    disabled={
-                      acceptWorkflowHandoffMutation.isPending ||
-                      !isPendingHandoffTarget
-                    }
-                    onClick={handleAcceptHandoff}
-                  >
-                    接受交接
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border-app-border bg-transparent text-app-text-primary"
-                    disabled={
-                      blockWorkflowRunMutation.isPending ||
-                      workflowRun.runStatus === "BLOCKED" ||
-                      !isCurrentAssignee
-                    }
-                    onClick={handleBlockRun}
-                  >
-                    标记阻塞
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="border-app-border bg-transparent text-app-text-primary"
-                    disabled={
-                      unblockWorkflowRunMutation.isPending ||
-                      workflowRun.runStatus !== "BLOCKED" ||
-                      !isCurrentAssignee
-                    }
-                    onClick={handleUnblockRun}
-                  >
-                    解除阻塞
-                  </Button>
-                </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm text-app-text-primary">
+                            协作说明
+                          </Label>
+                          <Textarea
+                            value={collaborationNote}
+                            onChange={(event) =>
+                              setCollaborationNote(event.target.value)
+                            }
+                            rows={2}
+                            placeholder="补充评审、交接或阻塞说明。标记阻塞时建议写清：原因、需要谁帮助、预计何时恢复。"
+                            className="border-app-border bg-app-content-bg text-app-text-primary"
+                          />
+                        </div>
+
+                        {!hasSelectedTarget && (
+                          <p className="text-xs text-app-text-muted">
+                            选择目标成员后才能请求评审或交接；标记阻塞可以直接提交。
+                          </p>
+                        )}
+
+                        <div className="grid gap-2 sm:grid-cols-3">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="border-app-border bg-transparent text-app-text-primary"
+                            disabled={
+                              requestWorkflowReviewMutation.isPending ||
+                              !hasSelectedTarget
+                            }
+                            onClick={handleRequestReview}
+                          >
+                            请求评审
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="border-app-border bg-transparent text-app-text-primary"
+                            disabled={
+                              requestWorkflowHandoffMutation.isPending ||
+                              !hasSelectedTarget
+                            }
+                            onClick={handleRequestHandoff}
+                          >
+                            请求交接
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="border-rose-500/30 bg-transparent text-rose-600 hover:bg-rose-500/10 dark:text-rose-300"
+                            disabled={blockWorkflowRunMutation.isPending}
+                            onClick={handleBlockRun}
+                          >
+                            标记阻塞
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-app-border px-3 py-2 text-sm text-app-text-secondary">
+                        只有当前负责人可以发起评审、交接或阻塞操作。
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {workflowRun.runStatus === "WAITING_REVIEW" && (
+                  <div className="space-y-2 rounded-lg border border-sky-500/20 bg-sky-500/10 px-3 py-2.5">
+                    <div>
+                      <div className="text-sm font-medium text-app-text-primary">
+                        正在等待 {pendingTargetLabel} 评审
+                      </div>
+                      <p className="mt-1 text-xs leading-5 text-app-text-muted">
+                        评审通过后流程会继续推进；如果需要补充修改，可以直接退回。
+                      </p>
+                    </div>
+
+                    {isPendingReviewer ? (
+                      <>
+                        <Textarea
+                          value={collaborationNote}
+                          onChange={(event) =>
+                            setCollaborationNote(event.target.value)
+                          }
+                          rows={2}
+                          placeholder="写下评审结论或修改建议"
+                          className="border-app-border bg-app-content-bg text-app-text-primary"
+                        />
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <Button
+                            type="button"
+                            className="bg-sky-600 text-white hover:bg-sky-500"
+                            disabled={respondWorkflowReviewMutation.isPending}
+                            onClick={handleApproveReview}
+                          >
+                            通过评审
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="border-app-border bg-transparent text-app-text-primary"
+                            disabled={respondWorkflowReviewMutation.isPending}
+                            onClick={handleRequestChanges}
+                          >
+                            请求修改
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-sky-500/20 px-3 py-2 text-sm text-app-text-secondary">
+                        这一步需要 {pendingTargetLabel} 处理，你可以在讨论区补充上下文。
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {workflowRun.runStatus === "HANDOFF_PENDING" && (
+                  <div className="space-y-2 rounded-lg border border-cyan-500/20 bg-cyan-500/10 px-3 py-2.5">
+                    <div>
+                      <div className="text-sm font-medium text-app-text-primary">
+                        正在等待 {pendingTargetLabel} 接手
+                      </div>
+                      <p className="mt-1 text-xs leading-5 text-app-text-muted">
+                        接手后，当前步骤的负责人会转移到新的处理人。
+                      </p>
+                    </div>
+
+                    {isPendingHandoffTarget ? (
+                      <>
+                        <Textarea
+                          value={collaborationNote}
+                          onChange={(event) =>
+                            setCollaborationNote(event.target.value)
+                          }
+                          rows={2}
+                          placeholder="写下接手说明，例如下一步准备如何推进"
+                          className="border-app-border bg-app-content-bg text-app-text-primary"
+                        />
+                        <Button
+                          type="button"
+                          className="w-full bg-sky-600 text-white hover:bg-sky-500"
+                          disabled={acceptWorkflowHandoffMutation.isPending}
+                          onClick={handleAcceptHandoff}
+                        >
+                          接受交接
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-cyan-500/20 px-3 py-2 text-sm text-app-text-secondary">
+                        这一步需要 {pendingTargetLabel} 接手，你可以在讨论区补充交接上下文。
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {workflowRun.runStatus === "BLOCKED" && (
+                  <div className="space-y-2 rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-2.5">
+                    <div>
+                      <div className="text-sm font-medium text-app-text-primary">
+                        当前步骤处于阻塞中
+                      </div>
+                      <p className="mt-1 text-xs leading-5 text-app-text-muted">
+                        负责人：{currentOwnerLabel}。阻塞说明里应包含原因、需要谁帮助、预计恢复时间。
+                      </p>
+                    </div>
+
+                    {isCurrentAssignee ? (
+                      <>
+                        <Textarea
+                          value={collaborationNote}
+                          onChange={(event) =>
+                            setCollaborationNote(event.target.value)
+                          }
+                          rows={2}
+                          placeholder="说明阻塞已解除的依据，或补充恢复后的下一步"
+                          className="border-app-border bg-app-content-bg text-app-text-primary"
+                        />
+                        <Button
+                          type="button"
+                          className="w-full bg-sky-600 text-white hover:bg-sky-500"
+                          disabled={unblockWorkflowRunMutation.isPending}
+                          onClick={handleUnblockRun}
+                        >
+                          解除阻塞
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-rose-500/20 px-3 py-2 text-sm text-app-text-secondary">
+                        只有当前负责人可以解除阻塞；其他成员可以在讨论区补充信息。
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {workflowRun.runStatus === "DONE" && (
+                  <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2.5 text-sm text-app-text-secondary">
+                    这个流程已经完成，后续可以在成果和讨论记录中回看交付上下文。
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
 
-          {currentNode && (
+          {currentNode && isCurrentAssignee && (
             <NodeStatusUpdate
               nodeId={currentNode.id}
               currentStatus={currentNodeStatus?.status || "TODO"}
@@ -740,7 +911,7 @@ export function WorkflowIssueDetailFlow({
           onValueChange={(value) =>
             setActiveTab(value as "history" | "discussion" | "records")
           }
-          className="min-h-[320px] xl:col-span-2 xl:min-h-0"
+          className="min-h-[420px] xl:col-start-2 xl:row-span-2 xl:row-start-1 xl:min-h-0"
         >
           <Card className="flex h-full min-h-0 flex-col border-app-border bg-app-content-bg shadow-none">
             <CardHeader className="flex flex-col gap-3 border-b border-app-border p-4 sm:flex-row sm:items-end sm:justify-between">
@@ -748,9 +919,6 @@ export function WorkflowIssueDetailFlow({
                 <CardTitle className="text-base text-app-text-primary">
                   协作记录
                 </CardTitle>
-                <p className="text-xs text-app-text-muted">
-                  操作痕迹、讨论上下文与步骤成果都在这里连续展开。
-                </p>
               </div>
               <TabsList
                 variant="line"

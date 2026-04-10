@@ -16,6 +16,14 @@ import {
 } from "react-icons/ri";
 import { useDocs, DocsDocument } from "./DocsContext";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface DocsSidebarProps {
   onSelectDoc: (doc: DocsDocument) => void;
@@ -54,6 +62,7 @@ function TreeNode({
   const [editTitle, setEditTitle] = useState(doc.title);
   const [showMenu, setShowMenu] = useState(false);
   const [isHoveringNode, setIsHoveringNode] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Refs for click outside and mouse leave detection
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -167,15 +176,12 @@ function TreeNode({
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowMenu(false);
-    if (
-      confirm(
-        `确定要删除"${doc.title}"吗？${
-          hasChildren ? "这将同时删除所有子文档。" : ""
-        }`
-      )
-    ) {
-      await deleteDoc(doc._id);
-    }
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    await deleteDoc(doc._id);
+    setIsDeleteDialogOpen(false);
   };
 
   const handleRename = async () => {
@@ -193,8 +199,9 @@ function TreeNode({
   }, [isEditing]);
 
   return (
-    <ContextMenuWrapper>
-      <div className="select-none">
+    <>
+      <ContextMenuWrapper>
+        <div className="select-none">
         <div
           ref={nodeRef}
           className={`flex items-center gap-1 px-2 py-1.5 rounded-md cursor-pointer group ${
@@ -344,8 +351,38 @@ function TreeNode({
             ))}
           </div>
         )}
-      </div>
-    </ContextMenuWrapper>
+        </div>
+      </ContextMenuWrapper>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>删除文档？</DialogTitle>
+            <DialogDescription>
+              将删除「{doc.title}」。
+              {hasChildren ? "它下面的子文档也会一起删除。" : ""}
+              删除后不可恢复。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              className="rounded-md border border-app-border px-3 py-2 text-sm text-app-text-secondary transition-colors hover:bg-app-button-hover hover:text-app-text-primary"
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleConfirmDelete()}
+              className="rounded-md bg-red-600 px-3 py-2 text-sm text-white transition-colors hover:bg-red-700"
+            >
+              确认删除
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

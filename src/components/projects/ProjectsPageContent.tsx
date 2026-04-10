@@ -42,19 +42,20 @@ import {
   VISIBILITY_META,
 } from "@/components/projects/project-view-utils";
 import {
+  buildProjectIssuePath,
   buildProjectPath,
+  getProjectIssueIdFromPathname,
   getProjectViewModeFromPathname,
   getSelectedProjectIdFromPathname,
 } from "@/components/projects/project-route-utils";
-import WorkflowIssueDetail from "@/components/issue/WorkflowIssueDetail";
-import NormalIssueDetail from "@/components/shared/issue/NormalIssueDetail";
+import IssueDetailPageSurface from "@/components/issue/IssueDetailPageSurface";
 import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
 import {
   normalizeIssueStateCategoryOrder,
   persistIssueBoardCategoryOrderToStorage,
   readIssueBoardCategoryOrderFromStorage,
 } from "@/lib/issue-board";
-import { isWorkflowIssue, type Issue } from "@/lib/fetchers/issue";
+import type { Issue } from "@/lib/fetchers/issue";
 import type {
   Project,
   ProjectDetail,
@@ -80,13 +81,6 @@ export default function ProjectsPageContent() {
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id || "";
   const workspaceType = currentWorkspace?.type || "PERSONAL";
-  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
-  const [selectedIssueIsWorkflow, setSelectedIssueIsWorkflow] = useState(false);
-  const [isWorkflowIssueOpen, setIsWorkflowIssueOpen] = useState(false);
-  const [isNormalIssueOpen, setIsNormalIssueOpen] = useState(false);
-  useWorkspaceRealtime(workspaceId, {
-    enabled: !isWorkflowIssueOpen && !isNormalIssueOpen,
-  });
   const { data: projects = [], isLoading, error, isFetching } =
     useProjects(workspaceId);
   const { data: allIssues = [] } = useIssues(workspaceId);
@@ -103,7 +97,11 @@ export default function ProjectsPageContent() {
     currentRole === "ADMIN";
 
   const selectedProjectId = getSelectedProjectIdFromPathname(pathname);
+  const selectedProjectIssueId = getProjectIssueIdFromPathname(pathname);
   const projectViewMode = getProjectViewModeFromPathname(pathname);
+  useWorkspaceRealtime(workspaceId, {
+    enabled: !selectedProjectIssueId,
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   const [projectDialogMode, setProjectDialogMode] = useState<"create" | "edit">(
@@ -349,17 +347,16 @@ export default function ProjectsPageContent() {
   };
 
   const handleOpenIssue = (issue: Issue) => {
-    const workflowIssue = isWorkflowIssue(issue);
+    const projectIdForRoute = selectedProjectId || issue.projectId;
 
-    setSelectedIssueId(issue.id);
-    setSelectedIssueIsWorkflow(workflowIssue);
-
-    if (workflowIssue) {
-      setIsWorkflowIssueOpen(true);
+    if (!projectIdForRoute) {
+      toast.error("当前项目路径无效，无法打开任务");
       return;
     }
 
-    setIsNormalIssueOpen(true);
+    startTransition(() => {
+      router.push(buildProjectIssuePath(projectIdForRoute, issue.id));
+    });
   };
 
   const invalidateIssues = () => {
@@ -387,45 +384,6 @@ export default function ProjectsPageContent() {
       },
     );
   };
-
-  if (selectedIssueId && selectedIssueIsWorkflow && isWorkflowIssueOpen) {
-    return (
-      <div className="h-full w-full bg-app-bg p-2">
-        <WorkflowIssueDetail
-          issueId={selectedIssueId}
-          workspaceId={workspaceId}
-          isOpen={isWorkflowIssueOpen}
-          onClose={() => {
-            setSelectedIssueId(null);
-            setIsWorkflowIssueOpen(false);
-          }}
-          onUpdate={invalidateIssues}
-          displayMode="page"
-        />
-      </div>
-    );
-  }
-
-  if (selectedIssueId && !selectedIssueIsWorkflow && isNormalIssueOpen) {
-    return (
-      <div className="h-full w-full bg-app-bg p-2">
-        <NormalIssueDetail
-          issueId={selectedIssueId}
-          workspaceId={workspaceId}
-          isOpen={isNormalIssueOpen}
-          onClose={() => {
-            setSelectedIssueId(null);
-            setIsNormalIssueOpen(false);
-          }}
-          onUpdate={(updatedIssue) => {
-            void updatedIssue;
-            invalidateIssues();
-          }}
-          displayMode="page"
-        />
-      </div>
-    );
-  }
 
   if (!workspaceId) {
     return (
@@ -464,6 +422,19 @@ export default function ProjectsPageContent() {
             {error.message || "获取项目列表失败"}
           </p>
         </div>
+      </div>
+    );
+  }
+
+  if (selectedProjectId && selectedProjectIssueId) {
+    return (
+      <div className="h-full w-full bg-transparent">
+        <IssueDetailPageSurface
+          issueId={selectedProjectIssueId}
+          workspaceId={workspaceId}
+          onClose={() => router.push(buildProjectPath(selectedProjectId, "issues"))}
+          onUpdate={invalidateIssues}
+        />
       </div>
     );
   }

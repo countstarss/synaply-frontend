@@ -21,7 +21,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
 
 interface NodeSettingsModalProps {
   isOpen: boolean;
@@ -36,6 +45,9 @@ export default function NodeSettingsModal({
 }: NodeSettingsModalProps) {
   const [customNodes, setCustomNodes] = useState<NodeType[]>([]);
   const [editingNode, setEditingNode] = useState<NodeType | null>(null);
+  const [pendingDeleteNode, setPendingDeleteNode] = useState<NodeType | null>(
+    null
+  );
   const [newNodeForm, setNewNodeForm] = useState<Partial<NodeType>>({});
 
   // MARK: 获取团队成员
@@ -83,7 +95,7 @@ export default function NodeSettingsModal({
       !newNodeForm.assigneeId ||
       !newNodeForm.assigneeName
     ) {
-      alert("请填写所有必填字段");
+      toast.error("请填写所有必填字段");
       return;
     }
 
@@ -128,13 +140,19 @@ export default function NodeSettingsModal({
   };
 
   // MARK: 删除节点
-  const handleDeleteNode = (id: string) => {
-    if (confirm("确定要删除这个节点类型吗？")) {
-      const updatedNodes = customNodes.filter((node) => node.id !== id);
-      nodeStorage.saveAll(updatedNodes);
-      setCustomNodes(updatedNodes);
-      onSave(updatedNodes); // 通知父组件更新
-    }
+  const handleDeleteNode = (node: NodeType) => {
+    setPendingDeleteNode(node);
+  };
+
+  const handleConfirmDeleteNode = () => {
+    if (!pendingDeleteNode) return;
+    const updatedNodes = customNodes.filter(
+      (node) => node.id !== pendingDeleteNode.id
+    );
+    nodeStorage.saveAll(updatedNodes);
+    setCustomNodes(updatedNodes);
+    onSave(updatedNodes); // 通知父组件更新
+    setPendingDeleteNode(null);
   };
 
   // MARK: 取消编辑
@@ -144,17 +162,17 @@ export default function NodeSettingsModal({
   };
 
   const handleSyncToBackend = () => {
-    alert("同步到后端功能待实现");
+    toast.info("同步到后端功能待实现");
     // TODO: 实现与后端同步的逻辑
   };
 
   const handleImportNodes = () => {
-    alert("导入节点功能待实现");
+    toast.info("导入节点功能待实现");
     // TODO: 实现导入节点逻辑
   };
 
   const handleExportNodes = () => {
-    alert("导出节点功能待实现");
+    toast.info("导出节点功能待实现");
     // TODO: 实现导出节点逻辑
   };
 
@@ -218,7 +236,7 @@ export default function NodeSettingsModal({
                         <RiEditLine className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDeleteNode(node.id)}
+                        onClick={() => handleDeleteNode(node)}
                         className="p-1.5 text-app-text-secondary hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                         title="删除"
                       >
@@ -400,6 +418,38 @@ export default function NodeSettingsModal({
             </div>
           </div>
         </div>
+        <Dialog
+          open={Boolean(pendingDeleteNode)}
+          onOpenChange={(open) => {
+            if (!open) setPendingDeleteNode(null);
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>删除节点类型？</DialogTitle>
+              <DialogDescription>
+                将删除「{pendingDeleteNode?.label || "该节点"}」。已经创建的本地
+                工作流模板可能需要重新检查节点配置。
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <button
+                type="button"
+                onClick={() => setPendingDeleteNode(null)}
+                className="rounded-md border border-app-border px-3 py-2 text-sm text-app-text-secondary transition-colors hover:bg-app-button-hover hover:text-app-text-primary"
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteNode}
+                className="rounded-md bg-red-600 px-3 py-2 text-sm text-white transition-colors hover:bg-red-700"
+              >
+                确认删除
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

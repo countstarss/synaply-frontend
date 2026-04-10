@@ -269,7 +269,7 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
       if (!saveAsDraft) {
         const errors = validateWorkflow();
         if (errors.length > 0) {
-          alert(`工作流验证失败:\n${errors.join("\n")}`);
+          toast.error(`工作流验证失败：${errors.join("；")}`);
           return;
         }
       } else {

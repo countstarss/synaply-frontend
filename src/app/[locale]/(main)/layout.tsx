@@ -12,11 +12,67 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+const BORDERLESS_CONTENT_SHELL_ROUTES = [
+  "/issues/:issueId",
+  "/projects/:projectId/:issueId",
+] as const;
+const PROJECT_SUBVIEW_ROUTE_SEGMENTS = new Set([
+  "issues",
+  "docs",
+  "workflow",
+  "sync",
+]);
+
+function normalizeRoutePathname(pathname: string) {
+  const segments = pathname.split("/").filter(Boolean);
+  const firstSegment = segments[0];
+
+  if (firstSegment && /^[a-z]{2}(?:-[A-Z]{2})?$/.test(firstSegment)) {
+    segments.shift();
+  }
+
+  return `/${segments.join("/")}` || "/";
+}
+
+function shouldUseBorderlessContentShell(pathname: string) {
+  const routePathname = normalizeRoutePathname(pathname);
+
+  return BORDERLESS_CONTENT_SHELL_ROUTES.some((route) =>
+    routeMatchesPattern(routePathname, route),
+  );
+}
+
+function routeMatchesPattern(pathname: string, routePattern: string) {
+  const pathnameSegments = pathname.split("/").filter(Boolean);
+  const routePatternSegments = routePattern.split("/").filter(Boolean);
+
+  if (pathnameSegments.length !== routePatternSegments.length) {
+    return false;
+  }
+
+  return routePatternSegments.every((segment, index) => {
+    if (segment.startsWith(":")) {
+      if (
+        routePatternSegments[0] === "projects" &&
+        segment === ":issueId" &&
+        PROJECT_SUBVIEW_ROUTE_SEGMENTS.has(pathnameSegments[index])
+      ) {
+        return false;
+      }
+
+      return Boolean(pathnameSegments[index]);
+    }
+
+    return segment === pathnameSegments[index];
+  });
+}
+
 const Layout = ({ children }: LayoutProps) => {
   const { isOpen: sidebarOpen } = useSidebarStore();
   const segments = useSelectedLayoutSegments();
   const pathname = usePathname();
   const showCachedPage = segments.includes("(cached)");
+  const useBorderlessContentShell = shouldUseBorderlessContentShell(pathname);
   const previousPathnameRef = React.useRef(pathname);
   const shouldBypassShellAnimation =
     pathname.includes("/settings") ||
@@ -61,8 +117,19 @@ const Layout = ({ children }: LayoutProps) => {
                 : "opacity-100 translate-x-0 pointer-events-auto"
             )}
           >
-            <main className="mx-2 mb-2 bg-app-content-bg h-[calc(100vh-64px)] rounded-lg border border-app-border">
-              <div className="flex-1 overflow-y-auto bg-app-content-bg rounded-lg h-full">
+            <main
+              className={cn(
+                "mx-2 mb-2 h-[calc(100vh-64px)] overflow-hidden rounded-lg",
+                !useBorderlessContentShell &&
+                  "border border-app-border bg-app-content-bg",
+              )}
+            >
+              <div
+                className={cn(
+                  "flex-1 h-full overflow-y-auto rounded-lg",
+                  !useBorderlessContentShell && "bg-app-content-bg",
+                )}
+              >
                 {children}
               </div>
             </main>
@@ -81,7 +148,13 @@ const Layout = ({ children }: LayoutProps) => {
           >
             {/* 保持与常规内容相同的结构和间距 */}
             <div className="flex flex-col h-full">
-              <div className="mx-2 mb-2 bg-app-content-bg h-[calc(100vh-64px)] rounded-lg border border-app-border overflow-hidden">
+              <div
+                className={cn(
+                  "mx-2 mb-2 h-[calc(100vh-64px)] overflow-hidden rounded-lg",
+                  !useBorderlessContentShell &&
+                    "border border-app-border bg-app-content-bg",
+                )}
+              >
                 <GlobalPageCache />
               </div>
             </div>

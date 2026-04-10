@@ -74,37 +74,37 @@ interface WorkItemRowProps {
 }
 
 const TAB_ORDER: Array<{ id: WorkTabId; label: string }> = [
-  { id: "today", label: "Today" },
-  { id: "waiting", label: "Waiting" },
-  { id: "in-progress", label: "In Progress" },
-  { id: "blocked", label: "Blocked" },
-  { id: "completed", label: "Completed" },
+  { id: "today", label: "今日" },
+  { id: "waiting", label: "待处理" },
+  { id: "in-progress", label: "进行中" },
+  { id: "blocked", label: "阻塞" },
+  { id: "completed", label: "已完成" },
 ];
 
 const SECTION_META: Record<SectionId, SectionMeta> = {
   waitingForMe: {
-    title: "Waiting For Me",
-    description: "需要你开始、确认、review 或接手的事项。",
+    title: "待我处理",
+    description: "需要你开始、确认评审或接手的事项。",
     emptyTitle: "现在没有需要你接球的事项",
-    emptyDescription: "新的 handoff、review 和待开始工作会优先落在这里。",
+    emptyDescription: "新的交接、评审和待开始工作会优先落在这里。",
   },
   inProgress: {
-    title: "In Progress",
+    title: "进行中",
     description: "你已经开始推进、当前仍在执行中的工作。",
     emptyTitle: "当前没有进行中的事项",
-    emptyDescription: "一旦你开始推进 issue 或 workflow，它会出现在这里。",
+    emptyDescription: "一旦你开始推进任务或工作流，它会出现在这里。",
   },
   blocked: {
-    title: "Blocked",
+    title: "阻塞",
     description: "和你相关、但目前被阻塞的工作。",
     emptyTitle: "当前没有与你相关的阻塞项",
     emptyDescription: "阻塞项会集中显示在这里，避免状态散落在别处。",
   },
   completedToday: {
-    title: "Completed Today",
+    title: "今日完成",
     description: "今天已经推进完成或收尾的事项。",
     emptyTitle: "今天还没有完成项",
-    emptyDescription: "当你完成 issue 或 workflow 节点后，这里会记录今天的推进结果。",
+    emptyDescription: "当你完成任务或工作流节点后，这里会记录今天的推进结果。",
   },
 };
 
@@ -205,7 +205,7 @@ function renderSummaryCards(
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
       <SummaryMetricCard
         tabId="today"
-        label="Today Focus"
+        label="今日焦点"
         value={data?.counts.todayFocus || 0}
         tone="attention"
         active={getSummaryCardActiveState(activeTab, "today")}
@@ -213,7 +213,7 @@ function renderSummaryCards(
       />
       <SummaryMetricCard
         tabId="waiting"
-        label="Waiting"
+        label="待处理"
         value={data?.counts.waitingForMe || 0}
         tone="attention"
         active={getSummaryCardActiveState(activeTab, "waiting")}
@@ -221,7 +221,7 @@ function renderSummaryCards(
       />
       <SummaryMetricCard
         tabId="in-progress"
-        label="In Progress"
+        label="进行中"
         value={data?.counts.inProgress || 0}
         tone="default"
         active={getSummaryCardActiveState(activeTab, "in-progress")}
@@ -229,7 +229,7 @@ function renderSummaryCards(
       />
       <SummaryMetricCard
         tabId="blocked"
-        label="Blocked"
+        label="阻塞"
         value={data?.counts.blocked || 0}
         tone="danger"
         active={getSummaryCardActiveState(activeTab, "blocked")}
@@ -237,7 +237,7 @@ function renderSummaryCards(
       />
       <SummaryMetricCard
         tabId="completed"
-        label="Done Today"
+        label="今日完成"
         value={data?.counts.completedToday || 0}
         tone="success"
         active={getSummaryCardActiveState(activeTab, "completed")}
@@ -309,7 +309,7 @@ function getQuickActionLabel(item: MyWorkItem) {
     item.sourceType === "workflow" &&
     item.currentActionType === "handoff"
   ) {
-    return "Accept";
+    return "接受";
   }
 
   if (
@@ -317,30 +317,30 @@ function getQuickActionLabel(item: MyWorkItem) {
     item.currentActionType === "todo" &&
     item.status === IssueStatus.TODO
   ) {
-    return "Mark Started";
+    return "开始执行";
   }
 
   if (item.currentActionType === "review") {
-    return "Open Review";
+    return "处理评审";
   }
 
-  return "Open";
+  return "打开";
 }
 
 function getQueueMeta(item: MyWorkItem) {
   if (item.currentActionType === "review" && item.targetName) {
-    return `Reviewer · ${item.targetName}`;
+    return `评审 · ${item.targetName}`;
   }
 
   if (item.currentActionType === "handoff" && item.targetName) {
-    return `Handoff · ${item.targetName}`;
+    return `交接 · ${item.targetName}`;
   }
 
   if (item.assigneeName) {
-    return `Owner · ${item.assigneeName}`;
+    return `负责人 · ${item.assigneeName}`;
   }
 
-  return item.sourceType === "workflow" ? "Workflow run" : "Issue";
+  return item.sourceType === "workflow" ? "工作流运行" : "任务";
 }
 
 function getSignalCopy(item: MyWorkItem) {
@@ -552,7 +552,7 @@ function WorkSection({
   isMutatingIssueId,
 }: WorkSectionProps) {
   return (
-    <Card className="overflow-hidden rounded-2xl border border-app-border bg-app-content-bg shadow-none">
+    <Card className="overflow-hidden rounded-2xl border border-app-border bg-app-content-bg shadow-none  cursor-pointer">
       <CardHeader className="gap-2 border-b border-app-border px-5 py-4">
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -610,34 +610,34 @@ function buildTabs(data?: MyWorkResponse) {
     if (tab.id === "waiting") {
       return {
         id: tab.id,
-        label: `Waiting${data?.counts.waitingForMe ? ` (${data.counts.waitingForMe})` : ""}`,
+        label: `待处理${data?.counts.waitingForMe ? ` (${data.counts.waitingForMe})` : ""}`,
       };
     }
 
     if (tab.id === "in-progress") {
       return {
         id: tab.id,
-        label: `In Progress${data?.counts.inProgress ? ` (${data.counts.inProgress})` : ""}`,
+        label: `进行中${data?.counts.inProgress ? ` (${data.counts.inProgress})` : ""}`,
       };
     }
 
     if (tab.id === "blocked") {
       return {
         id: tab.id,
-        label: `Blocked${data?.counts.blocked ? ` (${data.counts.blocked})` : ""}`,
+        label: `阻塞${data?.counts.blocked ? ` (${data.counts.blocked})` : ""}`,
       };
     }
 
     if (tab.id === "completed") {
       return {
         id: tab.id,
-        label: `Completed${data?.counts.completedToday ? ` (${data.counts.completedToday})` : ""}`,
+        label: `已完成${data?.counts.completedToday ? ` (${data.counts.completedToday})` : ""}`,
       };
     }
 
     return {
       id: tab.id,
-      label: `Today${data?.counts.todayFocus ? ` (${data.counts.todayFocus})` : ""}`,
+      label: `今日${data?.counts.todayFocus ? ` (${data.counts.todayFocus})` : ""}`,
     };
   });
 }
@@ -688,6 +688,9 @@ export default function TasksPageContent() {
     [data],
   );
   const activeSection = useMemo(() => getActiveSection(activeTab), [activeTab]);
+  const generatedAtLabel = data?.generatedAt
+    ? format(new Date(data.generatedAt), "HH:mm")
+    : null;
 
   const handleOpenIssue = (item: MyWorkItem) => {
     setSelectedIssueId(item.issueId);
@@ -741,13 +744,13 @@ export default function TasksPageContent() {
         issueId: item.issueId,
         data: {},
       });
-      toast.success("已接受 handoff");
+      toast.success("已接受交接");
       await refetch();
     } catch (mutationError) {
       toast.error(
         mutationError instanceof Error
           ? mutationError.message
-          : "接受 handoff 失败，请重试",
+          : "接受交接失败，请重试",
       );
     } finally {
       setIsMutatingIssueId(null);
@@ -833,7 +836,7 @@ export default function TasksPageContent() {
                     onClick={() => void refetch()}
                   >
                     <RefreshCw data-icon="inline-start" />
-                    Retry
+                    重试
                   </Button>
                 </CardContent>
               </Card>
@@ -843,13 +846,13 @@ export default function TasksPageContent() {
                   <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-app-border bg-app-content-bg px-4 py-3">
                     <div className="min-w-0 pr-2">
                       <h2 className="truncate text-[1.15rem] font-semibold tracking-[-0.03em] text-app-text-primary">
-                        My Work Overview
+                        我的工作概览
                       </h2>
                     </div>
 
                     <div className="ml-auto flex flex-wrap gap-2">
                       <div className="rounded-full border border-app-border bg-app-bg px-3 py-1.5 text-xs font-medium text-app-text-secondary">
-                        {data?.counts.total || 0} active
+                        {data?.counts.total || 0} 个活跃事项
                       </div>
                       <div className="inline-flex items-center gap-1.5 rounded-full border border-app-border bg-app-bg px-3 py-1.5 text-xs font-medium text-app-text-secondary">
                         {isRefetching ? (
@@ -858,8 +861,10 @@ export default function TasksPageContent() {
                           <Clock3 className="size-3.5" />
                         )}
                         {isRefetching
-                          ? "Syncing"
-                          : `Updated ${format(new Date(), "HH:mm")}`}
+                          ? "同步中"
+                          : generatedAtLabel
+                            ? `数据更新于 ${generatedAtLabel}`
+                            : "等待首次同步"}
                       </div>
                     </div>
                   </div>
@@ -870,9 +875,9 @@ export default function TasksPageContent() {
                 {activeTab === "today" ? (
                   <WorkSection
                     meta={{
-                      title: "Today Focus",
+                      title: "今日焦点",
                       description:
-                        "今天先处理这些。它们综合了紧急度、阻塞、review 和你当前的执行状态。",
+                        "今天先处理这些。它们综合了紧急度、阻塞、评审和你当前的执行状态。",
                       emptyTitle: "今天的焦点队列还是空的",
                       emptyDescription:
                         "当你有待处理、进行中或阻塞的工作时，它们会优先排到这里。",

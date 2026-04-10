@@ -100,7 +100,7 @@ export function ProjectsOverviewPage({
             </div>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-app-border bg-app-content-bg">
+          <div className="overflow-hidden rounded-2xl border border-app-border bg-app-content-bg cursor-pointer">
             {filteredProjects.map((project) => {
               const visibilityMeta = VISIBILITY_META[project.visibility];
               const statusMeta = PROJECT_STATUS_META[project.status];
@@ -111,7 +111,7 @@ export function ProjectsOverviewPage({
                 <button
                   key={project.id}
                   onClick={() => onOpenProject(project.id)}
-                  className="flex w-full items-center gap-4 border-b border-app-border px-4 py-3 text-left transition last:border-b-0 hover:bg-app-button-hover/40"
+                  className="flex w-full items-center gap-4 border-b border-app-border px-4 py-3 text-left transition last:border-b-0 hover:bg-app-button-hover/40 cursor-pointer"
                 >
                   <RiFolder2Line className="size-4 shrink-0 text-app-text-secondary" />
                   <div className="min-w-0 flex-1">

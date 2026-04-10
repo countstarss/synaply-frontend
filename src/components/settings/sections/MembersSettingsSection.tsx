@@ -20,6 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/context/AuthContext";
 import { useTeamMembers } from "@/hooks/useTeam";
@@ -51,6 +59,8 @@ export default function MembersSettingsSection() {
   const teamId = currentWorkspace?.teamId;
   const queryClient = useQueryClient();
   const { data: members, isLoading, error } = useTeamMembers(teamId);
+  const [pendingRemoveMember, setPendingRemoveMember] =
+    React.useState<TeamMember | null>(null);
 
   const currentMember = members?.find((member) => {
     const memberUserId = resolveMemberUserId(member);
@@ -82,6 +92,14 @@ export default function MembersSettingsSection() {
     },
   });
 
+  const handleConfirmRemoveMember = () => {
+    if (!pendingRemoveMember) return;
+    const memberUserId = resolveMemberUserId(pendingRemoveMember);
+    if (!memberUserId) return;
+    removeMemberMutation.mutate(memberUserId);
+    setPendingRemoveMember(null);
+  };
+
   if (!teamId) {
     return (
       <div className="p-6">
@@ -99,7 +117,8 @@ export default function MembersSettingsSection() {
   }
 
   return (
-    <div className="space-y-5 py-1">
+    <>
+      <div className="space-y-5 py-1">
       {!isOwner && (
         <Card className="border-none">
           <CardHeader>
@@ -188,14 +207,7 @@ export default function MembersSettingsSection() {
                       removeMemberMutation.isPending ||
                       !memberUserId
                     }
-                    onClick={() => {
-                      const confirmed = window.confirm(
-                        `确认移除 ${member.user?.email || "该成员"} 吗？`,
-                      );
-                      if (confirmed && memberUserId) {
-                        removeMemberMutation.mutate(memberUserId);
-                      }
-                    }}
+                    onClick={() => setPendingRemoveMember(member)}
                   >
                     移除成员
                   </Button>
@@ -219,6 +231,43 @@ export default function MembersSettingsSection() {
           )}
         </CardFooter>
       </Card>
-    </div>
+      </div>
+
+      <Dialog
+        open={Boolean(pendingRemoveMember)}
+        onOpenChange={(open) => {
+          if (!open) setPendingRemoveMember(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>移除团队成员？</DialogTitle>
+            <DialogDescription>
+              将把「
+              {pendingRemoveMember?.user?.email ||
+                pendingRemoveMember?.user?.name ||
+                "该成员"}
+              」从当前团队移除。对方将不再看到这个团队工作区中的项目、任务和文档。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPendingRemoveMember(null)}
+            >
+              取消
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirmRemoveMember}
+            >
+              确认移除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

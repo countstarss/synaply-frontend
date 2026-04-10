@@ -5,13 +5,15 @@ import {
   RiAddLine,
   RiArrowRightLine,
   RiArrowRightSLine,
-  RiLayoutGridLine,
-  RiListUnordered,
   RiLoader4Line,
   RiLoopLeftLine,
   RiTimeLine,
 } from "react-icons/ri";
 import DocsPage from "@/components/shared/docs/DocsPage";
+import {
+  IssueViewModeToggle,
+  type IssueViewMode,
+} from "@/components/issue/IssueViewModeToggle";
 import { ProjectIssuesKanbanBoard } from "@/components/projects/ProjectIssuesKanbanBoard";
 import { useIssueStates } from "@/hooks/useIssueStates";
 import { useUpdateIssue } from "@/hooks/useIssueApi";
@@ -32,7 +34,6 @@ import type {
 import { formatShortDate, getIssueStateMeta, getPriorityTone } from "@/components/projects/project-view-utils";
 import { IssueStateCategory } from "@/types/prisma";
 
-type IssuesViewMode = "list" | "board";
 type OptimisticIssueState = Pick<Issue, "state" | "stateId">;
 
 function formatRelativeTime(date: string) {
@@ -116,7 +117,7 @@ function ProjectIssueList({
             key={issue.id}
             type="button"
             onClick={() => onOpenIssue(issue)}
-            className="group flex w-full items-center gap-4 border-b border-app-border px-4 py-3 text-left transition last:border-b-0 hover:bg-app-button-hover/35"
+            className="group flex w-full items-center gap-4 border-b border-app-border px-4 py-3 text-left transition last:border-b-0 hover:bg-app-button-hover/35  cursor-pointer"
           >
             <div
               className={cn(
@@ -182,7 +183,7 @@ export function ProjectIssuesSubview({
 }: {
   workspaceId: string;
   projectIssues: Issue[];
-  issuesViewMode: IssuesViewMode;
+  issuesViewMode: IssueViewMode;
   issueBoardCategoryOrder: IssueStateCategory[];
   isLoadingProjectIssues: boolean;
   hasUnsavedIssueBoardCategoryOrder: boolean;
@@ -190,7 +191,7 @@ export function ProjectIssuesSubview({
   onOpenIssue: (issue: Issue) => void;
   onIssueBoardCategoryOrderChange: (order: IssueStateCategory[]) => void;
   onSaveIssueBoardCategoryOrder: () => void;
-  onIssuesViewModeChange: (viewMode: IssuesViewMode) => void;
+  onIssuesViewModeChange: (viewMode: IssueViewMode) => void;
 }) {
   const { data: issueStates = [] } = useIssueStates(workspaceId, {
     enabled: !!workspaceId,
@@ -346,34 +347,10 @@ export function ProjectIssuesSubview({
                   {hasUnsavedIssueBoardCategoryOrder ? "保存看板顺序" : "已保存顺序"}
                 </button>
               )}
-              <div className="flex items-center rounded-full border border-app-border bg-app-bg/70 p-0.5">
-                <button
-                  type="button"
-                  onClick={() => onIssuesViewModeChange("list")}
-                  className={cn(
-                    "inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-medium transition",
-                    issuesViewMode === "list"
-                      ? "bg-app-content-bg text-app-text-primary shadow-sm"
-                      : "text-app-text-secondary hover:text-app-text-primary",
-                  )}
-                >
-                  <RiListUnordered className="size-3.5" />
-                  列表
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onIssuesViewModeChange("board")}
-                  className={cn(
-                    "inline-flex h-7 items-center gap-1 rounded-full px-2.5 text-xs font-medium transition",
-                    issuesViewMode === "board"
-                      ? "bg-app-content-bg text-app-text-primary shadow-sm"
-                      : "text-app-text-secondary hover:text-app-text-primary",
-                  )}
-                >
-                  <RiLayoutGridLine className="size-3.5" />
-                  看板
-                </button>
-              </div>
+              <IssueViewModeToggle
+                value={issuesViewMode}
+                onValueChange={onIssuesViewModeChange}
+              />
             </div>
           </div>
 
@@ -447,7 +424,7 @@ export function ProjectDocsSubview({
   }
 
   return (
-    <div className="h-full px-6 pb-6 pt-4">
+    <div className="h-full p-4">
       <div className="h-full overflow-hidden rounded-[28px] border border-app-border bg-app-content-bg/95 shadow-sm">
         <DocsPage
           workspaceId={workspaceId}

@@ -666,7 +666,7 @@ export function ProjectDetailView({
                 {canManageProjects && (
                   <button
                     onClick={onEdit}
-                    className="inline-flex items-center gap-2 rounded-xl border border-app-border bg-app-content-bg px-3 py-2 text-sm text-app-text-primary transition hover:bg-app-button-hover"
+                    className="inline-flex items-center gap-2 rounded-xl border border-app-border bg-app-content-bg px-3 py-2 text-sm text-app-text-primary transition hover:bg-app-button-hover cursor-pointer"
                   >
                     <RiEdit2Line className="size-4" />
                     编辑
@@ -675,7 +675,7 @@ export function ProjectDetailView({
                 {canManageProjects && (
                   <button
                     onClick={onDelete}
-                    className="inline-flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-600 transition hover:bg-red-500/15 dark:text-red-300"
+                    className="inline-flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-600 transition hover:bg-red-500/15 dark:text-red-300 cursor-pointer"
                   >
                     <RiDeleteBinLine className="size-4" />
                     删除
@@ -755,7 +755,7 @@ export function ProjectDetailView({
               <button
                 type="button"
                 onClick={() => router.push(buildProjectPath(selectedProject.id, "issues"))}
-                className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-4 text-left transition hover:bg-app-button-hover/35"
+                className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-4 text-left transition hover:bg-app-button-hover/35 cursor-pointer"
               >
                 <div className="text-xs uppercase tracking-[0.18em] text-app-text-muted">
                   Issues
@@ -768,7 +768,7 @@ export function ProjectDetailView({
               <button
                 type="button"
                 onClick={openProjectDocHub}
-                className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-4 text-left transition hover:bg-app-button-hover/35"
+                className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-4 text-left transition hover:bg-app-button-hover/35  cursor-pointer"
               >
                 <div className="text-xs uppercase tracking-[0.18em] text-app-text-muted">
                   Docs
@@ -783,7 +783,7 @@ export function ProjectDetailView({
                 onClick={() =>
                   router.push(buildProjectPath(selectedProject.id, "workflow"))
                 }
-                className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-4 text-left transition hover:bg-app-button-hover/35"
+                className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-4 text-left transition hover:bg-app-button-hover/35  cursor-pointer"
               >
                 <div className="text-xs uppercase tracking-[0.18em] text-app-text-muted">
                   Workflow
@@ -796,7 +796,7 @@ export function ProjectDetailView({
               <button
                 type="button"
                 onClick={() => router.push(buildProjectPath(selectedProject.id, "sync"))}
-                className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-4 text-left transition hover:bg-app-button-hover/35"
+                className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-4 text-left transition hover:bg-app-button-hover/35  cursor-pointer"
               >
                 <div className="text-xs uppercase tracking-[0.18em] text-app-text-muted">
                   Sync

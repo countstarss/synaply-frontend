@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { RiCloseLine, RiFlowChart } from "react-icons/ri";
+import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -318,22 +319,22 @@ export default function CreateIssueModal({
     event.preventDefault();
 
     if (!title.trim()) {
-      alert("请输入标题");
+      toast.error("请输入任务标题");
       return;
     }
 
     if (issueType === "workflow" && !selectedWorkflowId) {
-      alert("请选择工作流");
+      toast.error("请选择一个工作流模板");
       return;
     }
 
     if (!session?.access_token) {
-      alert("无法获取认证信息，请重新登录");
+      toast.error("无法获取认证信息，请重新登录");
       return;
     }
 
     if (workspaceType === "PERSONAL" && !personalAssigneeId) {
-      alert("还没拿到你的负责人身份，请稍等片刻后再创建");
+      toast.error("正在同步你的成员身份，请稍等片刻后再创建");
       return;
     }
 
@@ -388,8 +389,8 @@ export default function CreateIssueModal({
       onCreated();
       handleClose();
     } catch (error) {
-      console.error("创建 Issue 失败:", error);
-      alert(error instanceof Error ? error.message : "创建 Issue 失败，请重试");
+      console.error("创建任务失败:", error);
+      toast.error(error instanceof Error ? error.message : "创建任务失败，请重试");
     }
   };
 
@@ -403,7 +404,7 @@ export default function CreateIssueModal({
         <div className="flex items-center justify-between border-b border-app-border px-6 py-5">
           <div>
             <h2 className="text-xl font-semibold text-app-text-primary">
-              新建 Issue
+              新建任务
             </h2>
             <p className="mt-1 text-sm text-app-text-secondary">
               {workspaceType === "PERSONAL" ? "个人空间" : "团队空间"}
@@ -425,7 +426,7 @@ export default function CreateIssueModal({
           {workspaceType === "TEAM" && (
             <div>
               <label className="mb-3 block text-sm font-medium text-app-text-primary">
-                Issue 类型
+                任务类型
               </label>
               <div className="flex gap-3">
                 <Button
@@ -439,7 +440,7 @@ export default function CreateIssueModal({
                   )}
                   onClick={() => setIssueType("normal")}
                 >
-                  普通 Issue
+                  普通任务
                 </Button>
                 <Button
                   type="button"
@@ -548,7 +549,7 @@ export default function CreateIssueModal({
             <Input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="输入 Issue 标题..."
+              placeholder="输入任务标题..."
               className="h-11 rounded-xl border-app-border bg-app-bg text-app-text-primary"
               autoFocus
               required
@@ -682,8 +683,8 @@ export default function CreateIssueModal({
                 </div>
                 <div className="mt-2 text-xs text-app-text-muted">
                   {personalAssigneeId
-                    ? `会以真实成员 ID 传入：${personalAssigneeId.slice(0, 8)}...`
-                    : "正在加载你的成员身份，创建时会带上真实负责人 ID。"}
+                    ? "创建后会自动归到你的个人工作队列。"
+                    : "正在同步你的成员身份，稍后即可创建。"}
                 </div>
               </div>
             ) : (
@@ -768,7 +769,7 @@ export default function CreateIssueModal({
             >
               {createIssueMutation.isPending || createWorkflowIssueMutation.isPending
                 ? "创建中..."
-                : "创建 Issue"}
+                : "创建任务"}
             </Button>
           </div>
         </form>

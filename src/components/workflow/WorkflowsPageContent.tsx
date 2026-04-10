@@ -13,6 +13,14 @@ import {
 import WorkflowEditor from "@/components/workflow/WorkflowEditor";
 import WorkflowSetupModal from "@/components/workflow/WorkflowSetupModal";
 import WorkflowSettingsModal from "@/components/workflow/WorkflowSettingsModal";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Workflow } from "@/types/team";
 import {
   useWorkflows,
@@ -32,6 +40,8 @@ export default function WorkflowsPageContent() {
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [selectedWorkflow, setSelectedWorkflow] =
+    useState<WorkflowResponse | null>(null);
+  const [pendingDeleteWorkflow, setPendingDeleteWorkflow] =
     useState<WorkflowResponse | null>(null);
   const [showDraftsOnly, setShowDraftsOnly] = useState(false);
   const { currentWorkspace } = useWorkspace();
@@ -174,23 +184,30 @@ export default function WorkflowsPageContent() {
     }
   };
 
-  const handleDeleteWorkflow = async (workflowId: string) => {
+  const handleDeleteWorkflow = (workflow: WorkflowResponse) => {
+    setPendingDeleteWorkflow(workflow);
+  };
+
+  const handleConfirmDeleteWorkflow = async () => {
     if (!currentWorkspace?.id) {
       toast.error("工作空间信息不完整");
       return;
     }
 
-    if (confirm("确定要删除这个工作流吗？")) {
-      try {
-        await deleteWorkflowMutation.mutateAsync({
-          workspaceId: currentWorkspace.id,
-          workflowId,
-        });
-        toast.success("工作流删除成功");
-      } catch (error) {
-        console.error("删除工作流失败:", error);
-        toast.error(error instanceof Error ? error.message : "删除工作流失败");
-      }
+    if (!pendingDeleteWorkflow) {
+      return;
+    }
+
+    try {
+      await deleteWorkflowMutation.mutateAsync({
+        workspaceId: currentWorkspace.id,
+        workflowId: pendingDeleteWorkflow.id,
+      });
+      toast.success("工作流已删除");
+      setPendingDeleteWorkflow(null);
+    } catch (error) {
+      console.error("删除工作流失败:", error);
+      toast.error(error instanceof Error ? error.message : "删除工作流失败");
     }
   };
 
@@ -344,7 +361,7 @@ export default function WorkflowsPageContent() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-2xl border border-app-border bg-app-content-bg">
+          <div className="overflow-hidden rounded-2xl border border-app-border bg-app-content-bg cursor-pointer">
             <div className="flex items-center justify-between border-b border-app-border p-3">
               <h2 className="text-base font-semibold text-app-text-primary">
                 工作流列表
@@ -450,7 +467,7 @@ export default function WorkflowsPageContent() {
                             <RiEditLine className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteWorkflow(workflow.id)}
+                            onClick={() => handleDeleteWorkflow(workflow)}
                             className="rounded p-1.5 text-app-text-secondary transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                             title="删除"
                             disabled={deleteWorkflowMutation.isPending}
@@ -485,6 +502,44 @@ export default function WorkflowsPageContent() {
           onUpdate={handleWorkflowUpdate}
         />
       )}
+
+      <Dialog
+        open={Boolean(pendingDeleteWorkflow)}
+        onOpenChange={(open) => {
+          if (!open && !deleteWorkflowMutation.isPending) {
+            setPendingDeleteWorkflow(null);
+          }
+        }}
+      >
+        <DialogContent className="border-app-border bg-app-content-bg text-app-text-primary">
+          <DialogHeader>
+            <DialogTitle>删除工作流？</DialogTitle>
+            <DialogDescription className="text-app-text-secondary">
+              {pendingDeleteWorkflow
+                ? `“${pendingDeleteWorkflow.name}” 删除后不可恢复。已经运行中的任务可能也会受到影响。`
+                : "删除后不可恢复。"}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              type="button"
+              className="rounded-lg border border-app-border px-4 py-2 text-sm text-app-text-primary transition hover:bg-app-button-hover"
+              disabled={deleteWorkflowMutation.isPending}
+              onClick={() => setPendingDeleteWorkflow(null)}
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={deleteWorkflowMutation.isPending}
+              onClick={() => void handleConfirmDeleteWorkflow()}
+            >
+              {deleteWorkflowMutation.isPending ? "删除中..." : "确认删除"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

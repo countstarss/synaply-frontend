@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { RiCloseLine, RiFlowChart } from "react-icons/ri";
+import { toast } from "sonner";
 import { WorkflowResponse } from "@/lib/fetchers/workflow";
 import { useWorkflowInstance } from "@/hooks/useWorkflowInstance";
 
@@ -41,7 +42,7 @@ export default function WorkflowInstanceModal({
     }
 
     if (!title.trim()) {
-      alert("请输入标题");
+      toast.error("请输入标题");
       return;
     }
 

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { RiCloseLine } from "react-icons/ri";
+import { toast } from "sonner";
 
 interface WorkflowSetupModalProps {
   isOpen: boolean;
@@ -23,7 +24,7 @@ export default function WorkflowSetupModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!workflowName.trim()) {
-      alert("请输入工作流名称");
+      toast.error("请输入工作流名称");
       return;
     }
     onContinue({
