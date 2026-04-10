@@ -18,6 +18,8 @@ export const REALTIME_EVENTS = {
   WORKFLOW_BLOCKED: "workflow.blocked",
   WORKFLOW_UNBLOCKED: "workflow.unblocked",
   WORKFLOW_RUN_COMPLETED: "workflow.run.completed",
+  INBOX_UPDATED: "inbox.updated",
+  PROJECT_SUMMARY_INVALIDATED: "project.summary.invalidated",
 } as const;
 
 export type RealtimeEventName =
@@ -64,6 +66,11 @@ export const WORKSPACE_REALTIME_EVENTS = [
   REALTIME_EVENTS.WORKFLOW_BLOCKED,
   REALTIME_EVENTS.WORKFLOW_UNBLOCKED,
   REALTIME_EVENTS.WORKFLOW_RUN_COMPLETED,
+  REALTIME_EVENTS.PROJECT_SUMMARY_INVALIDATED,
+] as const satisfies readonly RealtimeEventName[];
+
+export const USER_REALTIME_EVENTS = [
+  REALTIME_EVENTS.INBOX_UPDATED,
 ] as const satisfies readonly RealtimeEventName[];
 
 export type IssueRealtimeEditingField =
@@ -132,6 +139,30 @@ export interface WorkflowRunEventPayload {
   runStatus: string | null;
   currentStepId: string | null;
   targetStepId?: string | null;
+  actorId?: string | null;
+  activityId?: string | null;
+}
+
+export interface InboxUpdatedPayload {
+  operation: "INSERT" | "UPDATE" | "DELETE";
+  itemId: string;
+  workspaceId: string;
+  targetUserId: string;
+  type: string;
+  bucket: string;
+  status: string;
+  priority: string;
+  requiresAction: boolean;
+  projectId: string | null;
+  issueId: string | null;
+  workflowRunId: string | null;
+  occurredAt: string;
+}
+
+export interface ProjectSummaryInvalidatedPayload {
+  operation: "INSERT" | "UPDATE" | "DELETE";
+  projectId: string;
+  workspaceId: string;
 }
 
 export interface RealtimePayloadMap {
@@ -154,6 +185,8 @@ export interface RealtimePayloadMap {
   [REALTIME_EVENTS.WORKFLOW_BLOCKED]: WorkflowRunEventPayload;
   [REALTIME_EVENTS.WORKFLOW_UNBLOCKED]: WorkflowRunEventPayload;
   [REALTIME_EVENTS.WORKFLOW_RUN_COMPLETED]: WorkflowRunEventPayload;
+  [REALTIME_EVENTS.INBOX_UPDATED]: InboxUpdatedPayload;
+  [REALTIME_EVENTS.PROJECT_SUMMARY_INVALIDATED]: ProjectSummaryInvalidatedPayload;
 }
 
 export function isWorkflowRealtimeEvent(

@@ -9,3 +9,7 @@ export function buildIssueTopic(issueId: string) {
 export function buildWorkflowIssueTopic(issueId: string) {
   return `workflow_issue:${issueId}`;
 }
+
+export function buildUserTopic(userId: string) {
+  return `user:${userId}`;
+}
