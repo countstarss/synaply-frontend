@@ -33,7 +33,8 @@ interface SidebarProps {
 
 const Sidebar = React.memo(({ className }: SidebarProps) => {
   const { isOpen: sidebarOpen } = useSidebarStore();
-  const { mode, switchToMain } = useSidebarMode();
+  const { mode, switchToMain, returnToMainPath, isModeTransitionEnabled } =
+    useSidebarMode();
   const router = useRouter();
   const { currentWorkspace } = useWorkspace();
   const { teams = [] } = useTeam();
@@ -41,11 +42,14 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
   const [isCreateTeamDialogOpen, setIsCreateTeamDialogOpen] = useState(false);
   const readyMainNavItems = getReadyNavItems(mainNavItems);
   const readyPersonalNavItems = getReadyNavItems(personalNavItems);
+  const modeTransitionClass = isModeTransitionEnabled
+    ? "transition-transform duration-300 ease-in-out"
+    : "transition-none";
 
   const handleBackToMain = useCallback(() => {
-    router.push("/tasks");
-    switchToMain();
-  }, [router, switchToMain]);
+    router.push(returnToMainPath);
+    switchToMain({ skipAnimation: true });
+  }, [returnToMainPath, router, switchToMain]);
 
   const handleOpenCreateTeamDialog = useCallback(() => {
     setIsCreateTeamDialogOpen(true);
@@ -86,7 +90,8 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
           {/* 主要导航内容 */}
           <div
             className={cn(
-              "absolute inset-0 transition-transform duration-300 ease-in-out",
+              "absolute inset-0",
+              modeTransitionClass,
               mode === "settings" ? "-translate-x-full" : "translate-x-0",
             )}
           >
@@ -143,7 +148,8 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
            */}
           <div
             className={cn(
-              "absolute inset-0 transition-transform duration-300 ease-in-out",
+              "absolute inset-0",
+              modeTransitionClass,
               mode === "settings" ? "translate-x-0" : "translate-x-full",
             )}
           >
