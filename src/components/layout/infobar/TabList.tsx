@@ -1,9 +1,8 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { Link, usePathname } from "@/i18n/navigation";
+import { cn, isRouteActive } from "@/lib/utils";
 import { useSidebarStore } from "@/stores/sidebar";
 import {
   getReadyNavItems,
@@ -26,7 +25,7 @@ export default function TabList() {
     <div className="flex items-center gap-2 animate-in slide-in-from-left-5 duration-300">
       {tabItems.map((item) => {
         const Icon = item.icon;
-        const isActive = pathname.startsWith(item.href);
+        const isActive = isRouteActive(pathname, item.href);
 
         return (
           <Link

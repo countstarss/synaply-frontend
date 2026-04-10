@@ -9,6 +9,7 @@ import SidebarNavItem from "../sidebar/SidebarNavItem";
 import SidebarSection from "../sidebar/SidebarSection";
 import SettingSection from "../sidebar/SettingSection";
 import SidebarFooter from "../sidebar/SidebarFooter";
+import UtilsSidebarSection from "../sidebar/UtilsSidebarSection";
 import { useSidebarStore } from "@/stores/sidebar";
 import { useSidebarMode } from "@/hooks/useSidebarMode";
 import { useRouter } from "@/i18n/navigation";
@@ -103,6 +104,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
                       href={item.href}
                     />
                   ))}
+                  <UtilsSidebarSection />
                 </div>
               ) : (
                 /* MARK: TEAM 导航
@@ -130,6 +132,8 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
                       />
                     ))}
                   </SidebarSection>
+
+                  <UtilsSidebarSection />
                 </>
               )}
             </div>
