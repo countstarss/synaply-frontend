@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { usePathname, useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -127,7 +127,6 @@ const readStoredShortcuts = (storageKey: string): UtilityShortcut[] => {
 
 const UtilsSidebarSection = () => {
   const router = useRouter();
-  const pathname = usePathname();
   const { user } = useAuth();
   const { currentWorkspace } = useWorkspace();
   const userId = user?.id ?? null;

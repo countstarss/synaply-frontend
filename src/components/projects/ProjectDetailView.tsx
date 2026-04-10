@@ -38,7 +38,6 @@ import {
   IssueStatus,
   VisibilityType,
 } from "@/types/prisma";
-import AmbientGlow from "../global/AmbientGlow";
 
 interface ProjectDetailViewProps {
   workspaceId: string;
