@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { RiSearchLine, RiUser3Line, RiUser2Line } from "react-icons/ri";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface TeamMember {
   id: string;
@@ -93,17 +94,17 @@ export default function TeamMemberSelect({
       >
         {selectedMember ? (
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+            <Avatar className="h-5 w-5 bg-gray-200 dark:bg-gray-700">
               {selectedMember.avatar ? (
-                <img
+                <AvatarImage
                   src={selectedMember.avatar}
                   alt={selectedMember.name}
-                  className="w-full h-full rounded-full"
                 />
-              ) : (
+              ) : null}
+              <AvatarFallback className="bg-gray-200 dark:bg-gray-700">
                 <RiUser3Line className="w-3 h-3 text-gray-600 dark:text-gray-300" />
-              )}
-            </div>
+              </AvatarFallback>
+            </Avatar>
             <span className="text-sm">{selectedMember.name}</span>
           </div>
         ) : (
@@ -153,17 +154,14 @@ export default function TeamMemberSelect({
                   className="px-3 py-2 hover:bg-app-button-hover cursor-pointer flex items-center gap-2"
                   onClick={() => handleSelectMember(member)}
                 >
-                  <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                  <Avatar className="h-6 w-6 bg-gray-200 dark:bg-gray-700">
                     {member.avatar ? (
-                      <img
-                        src={member.avatar}
-                        alt={member.name}
-                        className="w-full h-full rounded-full"
-                      />
-                    ) : (
+                      <AvatarImage src={member.avatar} alt={member.name} />
+                    ) : null}
+                    <AvatarFallback className="bg-gray-200 dark:bg-gray-700">
                       <RiUser3Line className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-                    )}
-                  </div>
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
                     <div className="text-sm font-medium text-app-text-primary">
                       {member.name}

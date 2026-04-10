@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useTeamMembers } from "@/hooks/useTeam";
 import { useCurrentTeam } from "@/hooks/useTeam";
 import { RiUserLine } from "react-icons/ri";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface MentionInputProps {
   value: string;
@@ -165,19 +166,17 @@ export default function MentionInput({
                 }
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                  <Avatar className="h-6 w-6 flex-shrink-0 bg-gray-200 dark:bg-gray-700">
                     {member.user.avatar_url ? (
-                      <img
+                      <AvatarImage
                         src={member.user.avatar_url}
-                        alt={member.user.name}
-                        className="w-full h-full rounded-full"
+                        alt={member.user.name || member.user.email}
                       />
-                    ) : (
-                      <span className="text-xs">
-                        {(member.user.name || member.user.email)[0]}
-                      </span>
-                    )}
-                  </div>
+                    ) : null}
+                    <AvatarFallback className="bg-gray-200 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                      {(member.user.name || member.user.email)[0]}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-app-text-primary truncate">
                       {member.user.name || member.user.email.split("@")[0]}

@@ -29,7 +29,6 @@ interface TaskCalendarProps {
   }) => Promise<void>;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const TaskCalendar: React.FC<TaskCalendarProps> = ({
   workspaceId: _workspaceId,
   tasks,

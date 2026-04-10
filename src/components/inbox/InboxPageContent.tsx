@@ -204,24 +204,6 @@ function getSourceMeta(item: InboxItem) {
   };
 }
 
-function getMessageMeta(item: InboxItem) {
-  const parts: string[] = [];
-
-  if (item.issueKey) {
-    parts.push(item.issueKey);
-  }
-
-  if (item.projectName) {
-    parts.push(item.projectName);
-  }
-
-  if (item.actionLabel) {
-    parts.push(item.actionLabel);
-  }
-
-  return parts;
-}
-
 function getSectionLabel(value: string) {
   const date = new Date(value);
   const now = new Date();
@@ -384,7 +366,6 @@ function InboxRow({
   onAccept: (item: InboxItem) => Promise<void> | void;
 }) {
   const sourceMeta = getSourceMeta(item);
-  const messageMeta = getMessageMeta(item);
   const isUnread = item.status === "unread";
   const canAccept = hasAction(item, "accept_handoff");
   const shouldRaiseRow = isUnread;

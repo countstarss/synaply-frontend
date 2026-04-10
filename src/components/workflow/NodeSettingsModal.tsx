@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface NodeSettingsModalProps {
   isOpen: boolean;
@@ -330,17 +331,17 @@ export default function NodeSettingsModal({
                         teamMembers.map((member) => (
                           <SelectItem key={member.id} value={member.user.id}>
                             <div className="flex items-center gap-2">
-                              <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs">
+                              <Avatar className="h-5 w-5 bg-gray-200 text-xs dark:bg-gray-700">
                                 {member.user.avatar_url ? (
-                                  <img
+                                  <AvatarImage
                                     src={member.user.avatar_url}
-                                    alt={member.user.name}
-                                    className="w-full h-full rounded-full"
+                                    alt={member.user.name || member.user.email}
                                   />
-                                ) : (
-                                  (member.user.name || member.user.email)[0]
-                                )}
-                              </div>
+                                ) : null}
+                                <AvatarFallback className="bg-gray-200 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200">
+                                  {(member.user.name || member.user.email)[0]}
+                                </AvatarFallback>
+                              </Avatar>
                               <span>
                                 {member.user.name ||
                                   member.user.email.split("@")[0]}

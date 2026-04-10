@@ -84,7 +84,6 @@ export const createInitialWorkflowIssue = (
 ): WorkflowIssue | null => {
   if (!issue.workflowSnapshot) return null;
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const snapshot: Record<string, unknown> =
     typeof issue.workflowSnapshot === "string"
       ? (JSON.parse(issue.workflowSnapshot) as Record<string, unknown>)
@@ -106,9 +105,7 @@ export const createInitialWorkflowIssue = (
         ? activeStepStatus || "TODO"
         : "TODO";
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const assigneeId = (n.data as { assigneeId?: string })?.assigneeId;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const assigneeName = (n.data as { assigneeName?: string })?.assigneeName;
 
     nodeStatuses[n.id] = {
