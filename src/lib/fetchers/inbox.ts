@@ -7,6 +7,7 @@ export type InboxItemType =
   | "workflow.handoff.requested"
   | "workflow.blocked"
   | "issue.assigned"
+  | "issue.canceled"
   | "project.risk.flagged"
   | "deadline.soon"
   | "digest.generated";

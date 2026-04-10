@@ -7,7 +7,6 @@ import {
   RiFilter3Line,
   RiFlowChart,
   RiEdit2Line,
-  RiDeleteBinLine,
 } from "react-icons/ri";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -20,12 +19,20 @@ import {
 import { ProjectIssuesKanbanBoard } from "@/components/projects/ProjectIssuesKanbanBoard";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuGroup,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -38,7 +45,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/context/AuthContext";
 import { Issue, isWorkflowIssue } from "@/lib/fetchers/issue";
-import { useIssues, useDeleteIssue, useUpdateIssue } from "@/hooks/useIssueApi";
+import { useIssues, useCancelIssue, useUpdateIssue } from "@/hooks/useIssueApi";
 import { useIssueStates } from "@/hooks/useIssueStates";
 import { useProjects } from "@/hooks/useProjectApi";
 import { useTeamMemberByUserId } from "@/hooks/useTeam";
@@ -181,7 +188,7 @@ export default function IssuesPageContent() {
   const [selectedIssueType, setSelectedIssueType] =
     useState<IssueTypeFilterValue>(ALL_FILTER_VALUE);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [pendingDeleteIssue, setPendingDeleteIssue] = useState<Issue | null>(
+  const [pendingCancelIssue, setPendingCancelIssue] = useState<Issue | null>(
     null,
   );
 
@@ -207,7 +214,7 @@ export default function IssuesPageContent() {
     enabled: !!workspaceId,
   });
   const queryClient = useQueryClient();
-  const deleteIssueMutation = useDeleteIssue();
+  const cancelIssueMutation = useCancelIssue();
   const updateIssueMutation = useUpdateIssue();
 
   useWorkspaceRealtime(workspaceId, {
@@ -221,6 +228,7 @@ export default function IssuesPageContent() {
     setSavedIssueBoardCategoryOrder(storedOrder);
     setOptimisticIssueStates({});
     setPendingIssueIds(new Set());
+    setPendingCancelIssue(null);
   }, [workspaceId]);
 
   useEffect(() => {
@@ -525,6 +533,16 @@ export default function IssuesPageContent() {
     );
   };
 
+  const canCancelIssue = (issue: Issue) => {
+    const creatorMemberId = issue.creatorMemberId || issue.creatorId;
+
+    if (!creatorMemberId || !currentUserTeamMember?.id) {
+      return true;
+    }
+
+    return creatorMemberId === currentUserTeamMember.id;
+  };
+
   const handleClearFilters = () => {
     setSearchQuery("");
     setSelectedProjectId(ALL_FILTER_VALUE);
@@ -533,22 +551,69 @@ export default function IssuesPageContent() {
     setSelectedIssueType(ALL_FILTER_VALUE);
   };
 
-  const handleConfirmDeleteIssue = () => {
-    if (!pendingDeleteIssue) {
+  const handleCancelIssue = () => {
+    if (!workspaceId || !pendingCancelIssue) {
       return;
     }
 
-    deleteIssueMutation.mutate(
-      { workspaceId, issueId: pendingDeleteIssue.id },
+    if (pendingIssueIds.has(pendingCancelIssue.id)) {
+      return;
+    }
+
+    const issue = pendingCancelIssue;
+    if (!canCancelIssue(issue)) {
+      toast.error("只有创建者可以取消这个 Issue");
+      setPendingCancelIssue(null);
+      return;
+    }
+
+    const targetState = resolveIssueStateForCategory(
+      issueStates,
+      IssueStateCategory.CANCELED,
+    );
+
+    if (targetState) {
+      setOptimisticIssueStates((current) => ({
+        ...current,
+        [issue.id]: {
+          stateId: targetState.id,
+          state: buildIssueStateSummary(targetState),
+        },
+      }));
+    }
+
+    setPendingIssueIds((current) => {
+      const nextState = new Set(current);
+      nextState.add(issue.id);
+      return nextState;
+    });
+
+    cancelIssueMutation.mutate(
+      { workspaceId, issueId: issue.id },
       {
         onSuccess: () => {
-          toast.success("已删除任务");
-          setPendingDeleteIssue(null);
+          toast.success("Issue 已取消，列表视图会默认隐藏它");
+          setPendingCancelIssue(null);
+          setPendingIssueIds((current) => {
+            const nextState = new Set(current);
+            nextState.delete(issue.id);
+            return nextState;
+          });
         },
-        onError: (err: unknown) => {
+        onError: (error) => {
           toast.error(
-            err instanceof Error ? err.message : "删除任务失败，请重试",
+            error instanceof Error ? error.message : "取消 Issue 失败，请重试",
           );
+          setOptimisticIssueStates((current) => {
+            const nextState = { ...current };
+            delete nextState[issue.id];
+            return nextState;
+          });
+          setPendingIssueIds((current) => {
+            const nextState = new Set(current);
+            nextState.delete(issue.id);
+            return nextState;
+          });
         },
       },
     );
@@ -801,6 +866,8 @@ export default function IssuesPageContent() {
               onOpenIssue={handleViewIssue}
               onCategoryOrderChange={handleIssueBoardCategoryOrderChange}
               onMoveIssue={handleMoveIssueToCategory}
+              onCancelIssue={setPendingCancelIssue}
+              canCancelIssue={canCancelIssue}
             />
           ) : filteredIssues.length === 0 ? (
             <div className="py-12 text-center">
@@ -835,9 +902,10 @@ export default function IssuesPageContent() {
                   (issue.projectId ? projectNameById.get(issue.projectId) : "") ||
                   "未归属项目";
 
-                return (
+                const isPending = pendingIssueIds.has(issue.id);
+                const canCancel = canCancelIssue(issue);
+                const issueRow = (
                   <div
-                    key={issue.id}
                     role="button"
                     tabIndex={0}
                     className="group flex cursor-pointer items-center gap-4 rounded-lg px-4 py-3 transition-colors hover:bg-app-button-hover focus:outline-none focus:ring-2 focus:ring-sky-500/20"
@@ -895,22 +963,29 @@ export default function IssuesPageContent() {
                         >
                           <RiEdit2Line className="h-4 w-4 text-app-text-secondary" />
                         </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setPendingDeleteIssue(issue);
-                          }}
-                          className="size-7 rounded p-1 transition-colors hover:bg-red-100 dark:hover:bg-red-900/20"
-                          title="删除任务"
-                        >
-                          <RiDeleteBinLine className="h-4 w-4 text-red-600 dark:text-red-400" />
-                        </Button>
                       </div>
                     </div>
                   </div>
+                );
+
+                return (
+                  <ContextMenu key={issue.id}>
+                    <ContextMenuTrigger asChild>{issueRow}</ContextMenuTrigger>
+                    <ContextMenuContent className="w-44">
+                      <ContextMenuGroup>
+                        <ContextMenuItem onSelect={() => handleViewIssue(issue)}>
+                          打开 Issue
+                        </ContextMenuItem>
+                        <ContextMenuItem
+                          variant="destructive"
+                          disabled={isPending || !canCancel}
+                          onSelect={() => setPendingCancelIssue(issue)}
+                        >
+                          取消 Issue
+                        </ContextMenuItem>
+                      </ContextMenuGroup>
+                    </ContextMenuContent>
+                  </ContextMenu>
                 );
               })}
             </div>
@@ -925,39 +1000,43 @@ export default function IssuesPageContent() {
       />
 
       <Dialog
-        open={Boolean(pendingDeleteIssue)}
+        open={Boolean(pendingCancelIssue)}
         onOpenChange={(open) => {
-          if (!open && !deleteIssueMutation.isPending) {
-            setPendingDeleteIssue(null);
+          if (!open && !cancelIssueMutation.isPending) {
+            setPendingCancelIssue(null);
           }
         }}
       >
-        <DialogContent className="border-app-border bg-app-content-bg text-app-text-primary">
+        <DialogContent className="border-app-border bg-app-content-bg text-app-text-primary sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>删除任务？</DialogTitle>
+            <DialogTitle>取消这个 Issue？</DialogTitle>
             <DialogDescription className="text-app-text-secondary">
-              {pendingDeleteIssue
-                ? `“${pendingDeleteIssue.title}” 删除后不可恢复。`
-                : "删除后不可恢复。"}
+              状态会设置为已取消，并在列表视图中默认隐藏。记录不会删除，相关负责人会收到通知。
             </DialogDescription>
           </DialogHeader>
+          {pendingCancelIssue && (
+            <div className="rounded-lg border border-app-border bg-app-bg px-3 py-2 text-sm text-app-text-secondary">
+              {pendingCancelIssue.key ? `${pendingCancelIssue.key} · ` : ""}
+              {pendingCancelIssue.title}
+            </div>
+          )}
           <DialogFooter>
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={cancelIssueMutation.isPending}
+              >
+                先保留
+              </Button>
+            </DialogClose>
             <Button
               type="button"
-              variant="outline"
-              className="rounded-lg border border-app-border px-4 py-2 text-sm text-app-text-primary transition hover:bg-app-button-hover"
-              disabled={deleteIssueMutation.isPending}
-              onClick={() => setPendingDeleteIssue(null)}
+              variant="destructive"
+              disabled={cancelIssueMutation.isPending}
+              onClick={handleCancelIssue}
             >
-              取消
-            </Button>
-            <Button
-              type="button"
-              className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={deleteIssueMutation.isPending}
-              onClick={handleConfirmDeleteIssue}
-            >
-              {deleteIssueMutation.isPending ? "删除中..." : "确认删除"}
+              {cancelIssueMutation.isPending ? "正在取消..." : "确认取消"}
             </Button>
           </DialogFooter>
         </DialogContent>

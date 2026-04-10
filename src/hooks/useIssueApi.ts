@@ -7,6 +7,7 @@ import {
   AcceptWorkflowHandoffDto,
   BlockWorkflowRunDto,
   blockWorkflowRun,
+  cancelIssue,
   CreateIssueDto,
   CreateWorkflowIssueDto,
   createIssue,
@@ -818,6 +819,64 @@ export const useUpdateIssue = () => {
           issueId: variables.issueId,
           workspaceId: variables.workspaceId,
           changedFields: Object.keys(variables.data),
+          issueType: updatedIssue.issueType ?? null,
+        },
+        session.access_token,
+      );
+    },
+  });
+};
+
+/**
+ * MARK: 取消 Issue（软取消）
+ */
+export const useCancelIssue = () => {
+  const { session } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      workspaceId,
+      issueId,
+    }: {
+      workspaceId: string;
+      issueId: string;
+    }) => {
+      if (!session?.access_token) {
+        throw new Error("未授权");
+      }
+
+      return cancelIssue(workspaceId, issueId, session.access_token);
+    },
+    onSuccess: async (updatedIssue, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["issues", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["my-work", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["inbox", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["inbox-summary", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["project-summary", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["issue-activities", variables.issueId],
+      });
+
+      if (!session?.access_token) {
+        return;
+      }
+
+      await broadcastIssueUpdated(
+        {
+          issueId: variables.issueId,
+          workspaceId: variables.workspaceId,
+          changedFields: ["stateId"],
           issueType: updatedIssue.issueType ?? null,
         },
         session.access_token,

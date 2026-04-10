@@ -452,6 +452,25 @@ export async function updateIssue(
 }
 
 /**
+ * 取消 Issue（软取消）
+ */
+export async function cancelIssue(
+  workspaceId: string,
+  issueId: string,
+  token: string,
+): Promise<Issue> {
+  const issue = await fetchApi<Issue>(
+    `/workspaces/${workspaceId}/issues/${issueId}/cancel`,
+    token,
+    {
+      method: "PATCH",
+    },
+  );
+
+  return normalizeIssueType(issue);
+}
+
+/**
  * 删除 Issue
  */
 export async function deleteIssue(

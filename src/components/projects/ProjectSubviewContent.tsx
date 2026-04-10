@@ -9,6 +9,7 @@ import {
   RiLoopLeftLine,
   RiTimeLine,
 } from "react-icons/ri";
+import { toast } from "sonner";
 import DocsPage from "@/components/shared/docs/DocsPage";
 import {
   IssueViewModeToggle,
@@ -16,7 +17,7 @@ import {
 } from "@/components/issue/IssueViewModeToggle";
 import { ProjectIssuesKanbanBoard } from "@/components/projects/ProjectIssuesKanbanBoard";
 import { useIssueStates } from "@/hooks/useIssueStates";
-import { useUpdateIssue } from "@/hooks/useIssueApi";
+import { useCancelIssue, useUpdateIssue } from "@/hooks/useIssueApi";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -34,6 +35,23 @@ import type {
 } from "@/lib/fetchers/project";
 import { formatShortDate, getIssueStateMeta, getPriorityTone } from "@/components/projects/project-view-utils";
 import { IssueStateCategory } from "@/types/prisma";
+import { Button } from "@/components/ui/button";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuGroup,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type OptimisticIssueState = Pick<Issue, "state" | "stateId">;
 
@@ -102,23 +120,29 @@ function ProjectSurfaceCard({
 
 function ProjectIssueList({
   issues,
+  pendingIssueIds,
   onOpenIssue,
+  onCancelIssue,
+  canCancelIssue,
 }: {
   issues: Issue[];
+  pendingIssueIds: Set<string>;
   onOpenIssue: (issue: Issue) => void;
+  onCancelIssue: (issue: Issue) => void;
+  canCancelIssue: (issue: Issue) => boolean;
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-app-border bg-app-content-bg">
       {issues.map((issue) => {
         const priorityMeta = getPriorityTone(issue);
         const stateMeta = getIssueStateMeta(issue);
-
-        return (
+        const isPending = pendingIssueIds.has(issue.id);
+        const canCancel = canCancelIssue(issue);
+        const issueRow = (
           <button
-            key={issue.id}
             type="button"
             onClick={() => onOpenIssue(issue)}
-            className="group flex w-full items-center gap-4 border-b border-app-border px-4 py-3 text-left transition last:border-b-0 hover:bg-app-button-hover/35  cursor-pointer"
+            className="group flex w-full cursor-pointer items-center gap-4 border-b border-app-border px-4 py-3 text-left transition last:border-b-0 hover:bg-app-button-hover/35"
           >
             <div
               className={cn(
@@ -164,6 +188,26 @@ function ProjectIssueList({
             <RiArrowRightSLine className="size-4 shrink-0 text-app-text-muted transition group-hover:translate-x-0.5 group-hover:text-app-text-primary" />
           </button>
         );
+
+        return (
+          <ContextMenu key={issue.id}>
+            <ContextMenuTrigger asChild>{issueRow}</ContextMenuTrigger>
+            <ContextMenuContent className="w-44">
+              <ContextMenuGroup>
+                <ContextMenuItem onSelect={() => onOpenIssue(issue)}>
+                  打开 Issue
+                </ContextMenuItem>
+                <ContextMenuItem
+                  variant="destructive"
+                  disabled={isPending || !canCancel}
+                  onSelect={() => onCancelIssue(issue)}
+                >
+                  取消 Issue
+                </ContextMenuItem>
+              </ContextMenuGroup>
+            </ContextMenuContent>
+          </ContextMenu>
+        );
       })}
     </div>
   );
@@ -176,6 +220,7 @@ export function ProjectIssuesSubview({
   issueBoardCategoryOrder,
   isLoadingProjectIssues,
   hasUnsavedIssueBoardCategoryOrder,
+  currentTeamMemberId,
   onCreateIssue,
   onOpenIssue,
   onIssueBoardCategoryOrderChange,
@@ -188,6 +233,7 @@ export function ProjectIssuesSubview({
   issueBoardCategoryOrder: IssueStateCategory[];
   isLoadingProjectIssues: boolean;
   hasUnsavedIssueBoardCategoryOrder: boolean;
+  currentTeamMemberId?: string;
   onCreateIssue: () => void;
   onOpenIssue: (issue: Issue) => void;
   onIssueBoardCategoryOrderChange: (order: IssueStateCategory[]) => void;
@@ -198,15 +244,23 @@ export function ProjectIssuesSubview({
     enabled: !!workspaceId,
   });
   const updateIssueMutation = useUpdateIssue();
+  const cancelIssueMutation = useCancelIssue();
   const [optimisticIssueStates, setOptimisticIssueStates] = useState<
     Record<string, OptimisticIssueState>
   >({});
   const [pendingIssueIds, setPendingIssueIds] = useState<Set<string>>(new Set());
+  const [pendingCancelIssue, setPendingCancelIssue] = useState<Issue | null>(
+    null,
+  );
 
   useEffect(() => {
     setOptimisticIssueStates({});
     setPendingIssueIds(new Set());
   }, [projectIssues, workspaceId]);
+
+  useEffect(() => {
+    setPendingCancelIssue(null);
+  }, [workspaceId]);
 
   useEffect(() => {
     setOptimisticIssueStates((current) => {
@@ -266,6 +320,15 @@ export function ProjectIssuesSubview({
         }`
       : ""
   }`;
+  const canCancelIssue = (issue: Issue) => {
+    const creatorMemberId = issue.creatorMemberId || issue.creatorId;
+
+    if (!creatorMemberId || !currentTeamMemberId) {
+      return true;
+    }
+
+    return creatorMemberId === currentTeamMemberId;
+  };
 
   const handleMoveIssueToCategory = (
     issue: Issue,
@@ -315,6 +378,77 @@ export function ProjectIssuesSubview({
           });
         },
         onError: () => {
+          setOptimisticIssueStates((current) => {
+            const nextState = { ...current };
+            delete nextState[issue.id];
+            return nextState;
+          });
+          setPendingIssueIds((current) => {
+            const nextState = new Set(current);
+            nextState.delete(issue.id);
+            return nextState;
+          });
+        },
+      },
+    );
+  };
+
+  const handleCancelIssue = () => {
+    if (!workspaceId || !pendingCancelIssue) {
+      return;
+    }
+
+    if (pendingIssueIds.has(pendingCancelIssue.id)) {
+      return;
+    }
+
+    const issue = pendingCancelIssue;
+    if (!canCancelIssue(issue)) {
+      toast.error("只有创建者可以取消这个 Issue");
+      setPendingCancelIssue(null);
+      return;
+    }
+
+    const targetState = resolveIssueStateForCategory(
+      issueStates,
+      IssueStateCategory.CANCELED,
+    );
+
+    if (targetState) {
+      setOptimisticIssueStates((current) => ({
+        ...current,
+        [issue.id]: {
+          stateId: targetState.id,
+          state: buildIssueStateSummary(targetState),
+        },
+      }));
+    }
+
+    setPendingIssueIds((current) => {
+      const nextState = new Set(current);
+      nextState.add(issue.id);
+      return nextState;
+    });
+
+    cancelIssueMutation.mutate(
+      {
+        workspaceId,
+        issueId: issue.id,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Issue 已取消，列表视图会默认隐藏它");
+          setPendingCancelIssue(null);
+          setPendingIssueIds((current) => {
+            const nextState = new Set(current);
+            nextState.delete(issue.id);
+            return nextState;
+          });
+        },
+        onError: (error) => {
+          toast.error(
+            error instanceof Error ? error.message : "取消 Issue 失败，请重试",
+          );
           setOptimisticIssueStates((current) => {
             const nextState = { ...current };
             delete nextState[issue.id];
@@ -404,18 +538,66 @@ export function ProjectIssuesSubview({
                 onOpenIssue={onOpenIssue}
                 onCategoryOrderChange={onIssueBoardCategoryOrderChange}
                 onMoveIssue={handleMoveIssueToCategory}
+                onCancelIssue={setPendingCancelIssue}
+                canCancelIssue={canCancelIssue}
               />
             ) : (
               <div className="h-full overflow-y-auto scrollbar-hidden">
                 <ProjectIssueList
                   issues={visibleProjectIssues}
+                  pendingIssueIds={pendingIssueIds}
                   onOpenIssue={onOpenIssue}
+                  onCancelIssue={setPendingCancelIssue}
+                  canCancelIssue={canCancelIssue}
                 />
               </div>
             )}
           </div>
         </div>
       </ProjectSurfaceCard>
+
+      <Dialog
+        open={!!pendingCancelIssue}
+        onOpenChange={(open) => {
+          if (!open && !cancelIssueMutation.isPending) {
+            setPendingCancelIssue(null);
+          }
+        }}
+      >
+        <DialogContent className="border-app-border bg-app-content-bg text-app-text-primary sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>取消这个 Issue？</DialogTitle>
+            <DialogDescription>
+              状态会设置为已取消，并在列表视图中默认隐藏。记录不会删除，相关负责人会收到通知。
+            </DialogDescription>
+          </DialogHeader>
+          {pendingCancelIssue && (
+            <div className="rounded-lg border border-app-border bg-app-bg px-3 py-2 text-sm text-app-text-secondary">
+              {pendingCancelIssue.key ? `${pendingCancelIssue.key} · ` : ""}
+              {pendingCancelIssue.title}
+            </div>
+          )}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={cancelIssueMutation.isPending}
+              >
+                先保留
+              </Button>
+            </DialogClose>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={cancelIssueMutation.isPending}
+              onClick={handleCancelIssue}
+            >
+              {cancelIssueMutation.isPending ? "正在取消..." : "确认取消"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

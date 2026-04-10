@@ -21,6 +21,13 @@ import {
   getPriorityTone,
 } from "@/components/projects/project-view-utils";
 import { IssueStateCategory } from "@/types/prisma";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuGroup,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 interface ProjectIssuesKanbanBoardProps {
   issues: Issue[];
@@ -29,6 +36,8 @@ interface ProjectIssuesKanbanBoardProps {
   onOpenIssue: (issue: Issue) => void;
   onCategoryOrderChange: (order: IssueStateCategory[]) => void;
   onMoveIssue: (issue: Issue, category: IssueStateCategory) => void;
+  onCancelIssue?: (issue: Issue) => void;
+  canCancelIssue?: (issue: Issue) => boolean;
 }
 
 type DragEntity = {
@@ -168,12 +177,16 @@ function ProjectIssueKanbanColumn({
   issues,
   pendingIssueIds,
   onOpenIssue,
+  onCancelIssue,
+  canCancelIssue,
 }: {
   category: IssueStateCategory;
   index: number;
   issues: Issue[];
   pendingIssueIds: Set<string>;
   onOpenIssue: (issue: Issue) => void;
+  onCancelIssue?: (issue: Issue) => void;
+  canCancelIssue?: (issue: Issue) => boolean;
 }) {
   const { ref, handleRef, isDragSource, isDropTarget } = useSortable({
     id: `project-issue-column:${category}`,
@@ -241,6 +254,8 @@ function ProjectIssueKanbanColumn({
               category={category}
               isPending={pendingIssueIds.has(issue.id)}
               onOpenIssue={onOpenIssue}
+              onCancelIssue={onCancelIssue}
+              canCancelIssue={canCancelIssue}
             />
           ))}
           {issues.length === 0 && (
@@ -259,11 +274,15 @@ function ProjectIssueKanbanCard({
   category,
   isPending,
   onOpenIssue,
+  onCancelIssue,
+  canCancelIssue,
 }: {
   issue: Issue;
   category: IssueStateCategory;
   isPending: boolean;
   onOpenIssue: (issue: Issue) => void;
+  onCancelIssue?: (issue: Issue) => void;
+  canCancelIssue?: (issue: Issue) => boolean;
 }) {
   const { ref, handleRef, isDragSource, isDropping } = useDraggable({
     id: `project-issue-card:${issue.id}`,
@@ -276,8 +295,9 @@ function ProjectIssueKanbanCard({
     },
   });
   const priorityMeta = getPriorityTone(issue);
+  const canCancel = canCancelIssue?.(issue) ?? true;
 
-  return (
+  const card = (
     <div
       ref={ref}
       className={cn(
@@ -346,6 +366,30 @@ function ProjectIssueKanbanCard({
       </div>
     </div>
   );
+
+  if (!onCancelIssue) {
+    return card;
+  }
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>{card}</ContextMenuTrigger>
+      <ContextMenuContent className="w-44">
+        <ContextMenuGroup>
+          <ContextMenuItem onSelect={() => onOpenIssue(issue)}>
+            打开 Issue
+          </ContextMenuItem>
+          <ContextMenuItem
+            variant="destructive"
+            disabled={isPending || !canCancel}
+            onSelect={() => onCancelIssue(issue)}
+          >
+            取消 Issue
+          </ContextMenuItem>
+        </ContextMenuGroup>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
 }
 
 function ProjectIssueKanbanCardOverlay({ issue }: { issue: Issue }) {
@@ -387,6 +431,8 @@ export function ProjectIssuesKanbanBoard({
   onOpenIssue,
   onCategoryOrderChange,
   onMoveIssue,
+  onCancelIssue,
+  canCancelIssue,
 }: ProjectIssuesKanbanBoardProps) {
   const [activeIssueId, setActiveIssueId] = useState<string | null>(null);
   const lastOverCategoryRef = useRef<IssueStateCategory | null>(null);
@@ -540,6 +586,8 @@ export function ProjectIssuesKanbanBoard({
               issues={groupedIssues[category] || []}
               pendingIssueIds={pendingIssueIds}
               onOpenIssue={onOpenIssue}
+              onCancelIssue={onCancelIssue}
+              canCancelIssue={canCancelIssue}
             />
           ))}
         </div>

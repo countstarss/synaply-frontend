@@ -489,6 +489,7 @@ export default function ProjectsPageContent() {
                 hasUnsavedIssueBoardCategoryOrder={
                   hasUnsavedIssueBoardCategoryOrder
                 }
+                currentTeamMemberId={currentTeamMember?.id}
                 onCreateIssue={() => setIsCreateIssueOpen(true)}
                 onOpenIssue={handleOpenIssue}
                 onIssueBoardCategoryOrderChange={
