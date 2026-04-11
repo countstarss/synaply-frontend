@@ -10,15 +10,21 @@ import {
   RiFileTextLine,
   RiLinkM,
   RiSaveLine,
+  RiSparklingLine,
   RiTimeLine,
 } from "react-icons/ri";
 import { toast } from "sonner";
+import { AiThreadShell } from "@/components/ai/thread/AiThreadShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
@@ -50,7 +56,11 @@ import { Issue, IssueAssigneeMember } from "@/lib/fetchers/issue";
 import type { TeamMember } from "@/lib/fetchers/team";
 import type { DocRecord } from "@/lib/fetchers/doc";
 import { cn } from "@/lib/utils";
-import { IssuePriority, IssueStateCategory, VisibilityType } from "@/types/prisma";
+import {
+  IssuePriority,
+  IssueStateCategory,
+  VisibilityType,
+} from "@/types/prisma";
 
 interface NormalIssueDetailProps {
   issueId: string;
@@ -273,7 +283,10 @@ function MarkdownDescriptionPreview({
 
         if (trimmed.startsWith("### ")) {
           return (
-            <h4 key={index} className="text-base font-semibold text-app-text-primary">
+            <h4
+              key={index}
+              className="text-base font-semibold text-app-text-primary"
+            >
               {renderInlineMarkdown(
                 trimmed.slice(4),
                 docsById,
@@ -286,7 +299,10 @@ function MarkdownDescriptionPreview({
 
         if (trimmed.startsWith("## ")) {
           return (
-            <h3 key={index} className="text-lg font-semibold text-app-text-primary">
+            <h3
+              key={index}
+              className="text-lg font-semibold text-app-text-primary"
+            >
               {renderInlineMarkdown(
                 trimmed.slice(3),
                 docsById,
@@ -299,7 +315,10 @@ function MarkdownDescriptionPreview({
 
         if (trimmed.startsWith("# ")) {
           return (
-            <h2 key={index} className="text-xl font-semibold text-app-text-primary">
+            <h2
+              key={index}
+              className="text-xl font-semibold text-app-text-primary"
+            >
               {renderInlineMarkdown(
                 trimmed.slice(2),
                 docsById,
@@ -314,7 +333,14 @@ function MarkdownDescriptionPreview({
           return (
             <div key={index} className="flex items-start gap-2">
               <span className="mt-1.5 h-3 w-3 rounded border border-app-border" />
-              <span>{renderInlineMarkdown(trimmed.slice(6), docsById, onOpenDoc, `todo-${index}`)}</span>
+              <span>
+                {renderInlineMarkdown(
+                  trimmed.slice(6),
+                  docsById,
+                  onOpenDoc,
+                  `todo-${index}`,
+                )}
+              </span>
             </div>
           );
         }
@@ -323,7 +349,14 @@ function MarkdownDescriptionPreview({
           return (
             <div key={index} className="flex items-start gap-2">
               <span className="mt-2 h-1.5 w-1.5 rounded-full bg-app-text-muted" />
-              <span>{renderInlineMarkdown(trimmed.slice(2), docsById, onOpenDoc, `list-${index}`)}</span>
+              <span>
+                {renderInlineMarkdown(
+                  trimmed.slice(2),
+                  docsById,
+                  onOpenDoc,
+                  `list-${index}`,
+                )}
+              </span>
             </div>
           );
         }
@@ -334,7 +367,12 @@ function MarkdownDescriptionPreview({
               key={index}
               className="border-l-2 border-app-border pl-3 text-app-text-muted"
             >
-              {renderInlineMarkdown(trimmed.slice(2), docsById, onOpenDoc, `quote-${index}`)}
+              {renderInlineMarkdown(
+                trimmed.slice(2),
+                docsById,
+                onOpenDoc,
+                `quote-${index}`,
+              )}
             </blockquote>
           );
         }
@@ -354,26 +392,33 @@ export default function NormalIssueDetail({
   onUpdate,
 }: NormalIssueDetailProps) {
   const { user } = useAuth();
-  const { data: issue, isLoading: isLoadingIssue } = useIssue(workspaceId, issueId, {
-    enabled: isOpen,
-  });
+  const { data: issue, isLoading: isLoadingIssue } = useIssue(
+    workspaceId,
+    issueId,
+    {
+      enabled: isOpen,
+    },
+  );
   const { currentWorkspace } = useWorkspace();
   const workspaceType = currentWorkspace?.type || "PERSONAL";
   const teamId = currentWorkspace?.teamId;
   const currentUserName =
-    user?.user_metadata?.name?.trim() || user?.email?.split("@")[0] || "匿名用户";
-  const {
-    getEditorsForField,
-    setEditingField: setRealtimeEditingField,
-  } = useIssueRealtime(issueId, workspaceId, {
-    enabled: isOpen,
-  });
+    user?.user_metadata?.name?.trim() ||
+    user?.email?.split("@")[0] ||
+    "匿名用户";
+  const { getEditorsForField, setEditingField: setRealtimeEditingField } =
+    useIssueRealtime(issueId, workspaceId, {
+      enabled: isOpen,
+    });
 
   const [editingField, setEditingField] = useState<string | null>(null);
-  const [committedIssue, setCommittedIssue] = useState<Issue | null>(issue ?? null);
+  const [committedIssue, setCommittedIssue] = useState<Issue | null>(
+    issue ?? null,
+  );
   const [localIssue, setLocalIssue] = useState<Issue | null>(issue ?? null);
   const [isDocPickerOpen, setIsDocPickerOpen] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<DocRecord | null>(null);
+  const [isAiThreadOpen, setIsAiThreadOpen] = useState(false);
 
   const { data: projects = [] } = useProjects(workspaceId);
   const { data: issueStates = [] } = useIssueStates(workspaceId, {
@@ -424,7 +469,8 @@ export default function NormalIssueDetail({
   const currentWorkspaceMember = teamMembers.find(
     (member) => member.user.id === user?.id,
   );
-  const currentMemberId = currentWorkspaceMember?.id || currentUserTeamMember?.id;
+  const currentMemberId =
+    currentWorkspaceMember?.id || currentUserTeamMember?.id;
   const canEditIssue = Boolean(
     localIssue &&
       user?.id &&
@@ -453,7 +499,13 @@ export default function NormalIssueDetail({
     }
 
     return Array.from(members.values());
-  }, [currentUserName, currentUserTeamMember?.id, memberOptions, user?.email, user?.user_metadata?.avatar_url]);
+  }, [
+    currentUserName,
+    currentUserTeamMember?.id,
+    memberOptions,
+    user?.email,
+    user?.user_metadata?.avatar_url,
+  ]);
   const personalDirectAssignee =
     workspaceType === "PERSONAL" &&
     localIssue?.directAssigneeId &&
@@ -464,13 +516,16 @@ export default function NormalIssueDetail({
           email: user?.email || "",
         }
       : null;
-  const directAssignee = memberOptions.find(
-    (member) => member.id === localIssue?.directAssigneeId,
-  ) || personalDirectAssignee;
+  const directAssignee =
+    memberOptions.find(
+      (member) => member.id === localIssue?.directAssigneeId,
+    ) || personalDirectAssignee;
   const selectedProject = projects.find(
     (project) => project.id === localIssue?.projectId,
   );
-  const selectedState = issueStates.find((state) => state.id === localIssue?.stateId);
+  const selectedState = issueStates.find(
+    (state) => state.id === localIssue?.stateId,
+  );
   const currentPriority = getPriorityOption(localIssue?.priority);
   const doneState =
     issueStates.find(
@@ -501,15 +556,16 @@ export default function NormalIssueDetail({
   );
   const referencedDocCount = React.useMemo(
     () =>
-      Array.from((localIssue?.description || "").matchAll(DOC_REFERENCE_PATTERN))
-        .length,
+      Array.from(
+        (localIssue?.description || "").matchAll(DOC_REFERENCE_PATTERN),
+      ).length,
     [localIssue?.description],
   );
 
   useEffect(() => {
     if (issue) {
       setCommittedIssue(issue);
-      setLocalIssue((current) => (editingField ? current ?? issue : issue));
+      setLocalIssue((current) => (editingField ? (current ?? issue) : issue));
       return;
     }
 
@@ -590,11 +646,21 @@ export default function NormalIssueDetail({
       toast.success("任务已保存");
     } catch (error) {
       console.error("更新任务失败:", error);
-      toast.error(error instanceof Error ? error.message : "更新任务失败，请重试");
+      toast.error(
+        error instanceof Error ? error.message : "更新任务失败，请重试",
+      );
     }
   };
 
-  const renderEditingHint = (field: "title" | "state" | "priority" | "assignee" | "dueDate" | "description") => {
+  const renderEditingHint = (
+    field:
+      | "title"
+      | "state"
+      | "priority"
+      | "assignee"
+      | "dueDate"
+      | "description",
+  ) => {
     const editors = getEditorsForField(field);
 
     if (editors.length === 0) {
@@ -603,7 +669,8 @@ export default function NormalIssueDetail({
 
     return (
       <div className="text-xs text-amber-600">
-        {editors.map((participant) => participant.name).join("、")} 正在编辑该字段
+        {editors.map((participant) => participant.name).join("、")}{" "}
+        正在编辑该字段
       </div>
     );
   };
@@ -634,10 +701,7 @@ export default function NormalIssueDetail({
       return;
     }
 
-    void persistIssuePatch(
-      { stateId: doneState.id },
-      { state: doneState },
-    );
+    void persistIssuePatch({ stateId: doneState.id }, { state: doneState });
   };
 
   if (!isOpen) {
@@ -716,7 +780,10 @@ export default function NormalIssueDetail({
             {renderEditingHint("title")}
 
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="border-app-border text-app-text-primary">
+              <Badge
+                variant="outline"
+                className="border-app-border text-app-text-primary"
+              >
                 {localIssue.key || `#${localIssue.id}`}
               </Badge>
 
@@ -727,7 +794,8 @@ export default function NormalIssueDetail({
                     const nextState =
                       value === EMPTY_STATE_VALUE
                         ? null
-                        : issueStates.find((state) => state.id === value) || null;
+                        : issueStates.find((state) => state.id === value) ||
+                          null;
                     void persistIssuePatch(
                       { stateId: nextState?.id ?? null },
                       { state: nextState },
@@ -739,7 +807,9 @@ export default function NormalIssueDetail({
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>
-                      <SelectItem value={EMPTY_STATE_VALUE}>状态：未设置</SelectItem>
+                      <SelectItem value={EMPTY_STATE_VALUE}>
+                        状态：未设置
+                      </SelectItem>
                       {issueStates.map((state) => (
                         <SelectItem key={state.id} value={state.id}>
                           状态：{state.name}
@@ -749,7 +819,10 @@ export default function NormalIssueDetail({
                   </SelectContent>
                 </Select>
               ) : (
-                <Badge variant="secondary" className="bg-app-button-hover text-app-text-primary">
+                <Badge
+                  variant="secondary"
+                  className="bg-app-button-hover text-app-text-primary"
+                >
                   状态：{selectedState?.name || "未设置"}
                 </Badge>
               )}
@@ -798,8 +871,9 @@ export default function NormalIssueDetail({
                     const nextProjectId =
                       value === EMPTY_PROJECT_VALUE ? null : value;
                     const nextProject =
-                      projects.find((project) => project.id === nextProjectId) ||
-                      null;
+                      projects.find(
+                        (project) => project.id === nextProjectId,
+                      ) || null;
                     void persistIssuePatch(
                       { projectId: nextProjectId },
                       { project: nextProject },
@@ -811,7 +885,9 @@ export default function NormalIssueDetail({
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>
-                      <SelectItem value={EMPTY_PROJECT_VALUE}>项目：未设置</SelectItem>
+                      <SelectItem value={EMPTY_PROJECT_VALUE}>
+                        项目：未设置
+                      </SelectItem>
                       {projects.map((project) => (
                         <SelectItem key={project.id} value={project.id}>
                           项目：{project.name}
@@ -821,8 +897,14 @@ export default function NormalIssueDetail({
                   </SelectContent>
                 </Select>
               ) : (
-                <Badge variant="outline" className="border-app-border text-app-text-primary">
-                  项目：{selectedProject?.name || localIssue.project?.name || "未设置"}
+                <Badge
+                  variant="outline"
+                  className="border-app-border text-app-text-primary"
+                >
+                  项目：
+                  {selectedProject?.name ||
+                    localIssue.project?.name ||
+                    "未设置"}
                 </Badge>
               )}
 
@@ -853,7 +935,10 @@ export default function NormalIssueDetail({
                   </SelectContent>
                 </Select>
               ) : (
-                <Badge variant="outline" className="border-app-border text-app-text-primary">
+                <Badge
+                  variant="outline"
+                  className="border-app-border text-app-text-primary"
+                >
                   负责人：{directAssignee?.name || currentUserName || "未分配"}
                 </Badge>
               )}
@@ -888,7 +973,10 @@ export default function NormalIssueDetail({
                   </PopoverContent>
                 </Popover>
               ) : (
-                <Badge variant="outline" className="border-app-border text-app-text-primary">
+                <Badge
+                  variant="outline"
+                  className="border-app-border text-app-text-primary"
+                >
                   截止：{formatDateOnly(localIssue.dueDate)}
                 </Badge>
               )}
@@ -897,7 +985,9 @@ export default function NormalIssueDetail({
                 <Select
                   value={localIssue.visibility ?? VisibilityType.PRIVATE}
                   onValueChange={(value) =>
-                    void persistIssuePatch({ visibility: value as VisibilityType })
+                    void persistIssuePatch({
+                      visibility: value as VisibilityType,
+                    })
                   }
                 >
                   <SelectTrigger className="h-8 w-auto min-w-[130px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
@@ -914,7 +1004,10 @@ export default function NormalIssueDetail({
                   </SelectContent>
                 </Select>
               ) : (
-                <Badge variant="outline" className="border-app-border text-app-text-primary">
+                <Badge
+                  variant="outline"
+                  className="border-app-border text-app-text-primary"
+                >
                   可见性：{getVisibilityLabel(localIssue.visibility)}
                 </Badge>
               )}
@@ -925,7 +1018,8 @@ export default function NormalIssueDetail({
                   variant="secondary"
                   className="bg-app-button-hover text-app-text-primary"
                 >
-                  协作：{memberOptions.find(
+                  协作：
+                  {memberOptions.find(
                     (member) => member.id === assignee.memberId,
                   )?.name || getIssueMemberName(assignee.member)}
                 </Badge>
@@ -944,6 +1038,17 @@ export default function NormalIssueDetail({
                 标记为完成
               </Button>
             )}
+
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="border-app-border bg-transparent text-app-text-primary"
+              onClick={() => setIsAiThreadOpen(true)}
+            >
+              <RiSparklingLine className="h-4 w-4 text-sky-600" />
+              打开 AI 助手
+            </Button>
           </div>
 
           <Button
@@ -966,7 +1071,9 @@ export default function NormalIssueDetail({
                 任务描述
               </CardTitle>
               <p className="text-xs text-app-text-muted">
-                {referencedDocCount > 0 ? ` 已引用 ${referencedDocCount} 篇文档。` : ""}
+                {referencedDocCount > 0
+                  ? ` 已引用 ${referencedDocCount} 篇文档。`
+                  : ""}
               </p>
             </div>
             {canEditIssue && (
@@ -988,7 +1095,9 @@ export default function NormalIssueDetail({
                       size="sm"
                       className="bg-sky-600 text-white hover:bg-sky-500"
                       onClick={() =>
-                        persistIssuePatch({ description: localIssue.description })
+                        persistIssuePatch({
+                          description: localIssue.description,
+                        })
                       }
                     >
                       保存描述
@@ -1031,7 +1140,9 @@ export default function NormalIssueDetail({
                     })
                   }
                   className="min-h-[360px] resize-none border-app-border bg-app-bg text-app-text-primary"
-                  placeholder={"用 Markdown 写清背景、验收标准、风险和下一步。\n例如：\n## 背景\n- 为什么要做\n- [ ] 待确认事项"}
+                  placeholder={
+                    "用 Markdown 写清背景、验收标准、风险和下一步。\n例如：\n## 背景\n- 为什么要做\n- [ ] 待确认事项"
+                  }
                 />
               ) : (
                 <MarkdownDescriptionPreview
@@ -1136,9 +1247,7 @@ export default function NormalIssueDetail({
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{previewDoc?.title || "团队文档"}</DialogTitle>
-            <DialogDescription>
-              来自团队空间的引用文档预览。
-            </DialogDescription>
+            <DialogDescription>来自团队空间的引用文档预览。</DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[520px] rounded-lg border border-app-border bg-app-bg">
             <div className="whitespace-pre-wrap p-4 text-sm leading-6 text-app-text-secondary">
@@ -1147,6 +1256,15 @@ export default function NormalIssueDetail({
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      <AiThreadShell
+        open={isAiThreadOpen}
+        onOpenChange={setIsAiThreadOpen}
+        workspaceId={workspaceId}
+        originSurfaceType="ISSUE"
+        originSurfaceId={issueId}
+        originTitle={localIssue?.title}
+      />
     </div>
   );
 

@@ -11,7 +11,13 @@ import ReactFlow, {
   useNodesState,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { RiCloseLine, RiFileTextLine, RiHistoryLine } from "react-icons/ri";
+import {
+  RiCloseLine,
+  RiFileTextLine,
+  RiHistoryLine,
+  RiSparklingLine,
+} from "react-icons/ri";
+import { AiThreadShell } from "@/components/ai/thread/AiThreadShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,12 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
 import {
   useAcceptWorkflowHandoff,
@@ -97,13 +98,14 @@ export function WorkflowIssueDetailFlow({
   const { team } = useCurrentTeam();
   const { data: teamMembers = [] } = useTeamMembers(team?.id);
   const { user, session } = useAuth();
-  const {
-    getFocusedUsersForNode,
-    setFocusingNode,
-  } = useIssueRealtime(issue.id, issue.workspaceId, {
-    enabled: true,
-    workflow: true,
-  });
+  const { getFocusedUsersForNode, setFocusingNode } = useIssueRealtime(
+    issue.id,
+    issue.workspaceId,
+    {
+      enabled: true,
+      workflow: true,
+    },
+  );
 
   const initialWorkflowIssue = React.useMemo(
     () => createInitialWorkflowIssue(issue),
@@ -118,12 +120,13 @@ export function WorkflowIssueDetailFlow({
   const [workflowIssue, setWorkflowIssue] = useState<WorkflowIssue | null>(
     initialWorkflowIssue,
   );
-  const [workflowPanelTab, setWorkflowPanelTab] = useState<"overview" | "canvas">(
-    "canvas",
-  );
-  const [activeTab, setActiveTab] = useState<"history" | "discussion" | "records">(
-    "history",
-  );
+  const [isAiThreadOpen, setIsAiThreadOpen] = useState(false);
+  const [workflowPanelTab, setWorkflowPanelTab] = useState<
+    "overview" | "canvas"
+  >("canvas");
+  const [activeTab, setActiveTab] = useState<
+    "history" | "discussion" | "records"
+  >("history");
   const [collaborationTargetId, setCollaborationTargetId] = useState("");
   const [collaborationNote, setCollaborationNote] = useState("");
 
@@ -181,7 +184,8 @@ export function WorkflowIssueDetailFlow({
   );
   const workflowRun = issue.workflowRun;
   const selectedCollaborationTarget =
-    workflowMembers.find((member) => member.id === collaborationTargetId) || null;
+    workflowMembers.find((member) => member.id === collaborationTargetId) ||
+    null;
 
   const {
     handleStatusUpdate,
@@ -431,19 +435,31 @@ export function WorkflowIssueDetailFlow({
     ? getFocusedUsersForNode(currentNode.id)
     : [];
   const currentOwnerLabel =
-    workflowRun?.currentAssigneeName || currentNodeStatus?.assigneeName || "未分配";
+    workflowRun?.currentAssigneeName ||
+    currentNodeStatus?.assigneeName ||
+    "未分配";
   const pendingTargetLabel = workflowRun?.targetName || "指定成员";
   const hasSelectedTarget = Boolean(selectedCollaborationTarget?.userId);
   const canRequestCollaboration =
-    Boolean(workflowRun) && workflowRun?.runStatus === "ACTIVE" && isCurrentAssignee;
+    Boolean(workflowRun) &&
+    workflowRun?.runStatus === "ACTIVE" &&
+    isCurrentAssignee;
   const issueMetaItems = [
     ["编号", issue.key || `#${issue.id.slice(0, 8)}`],
     ["工作流", workflowIssue.workflowName],
     ["状态", workflowRun ? RUN_STATUS_LABELS[workflowRun.runStatus] : "未开始"],
-    ["当前步骤", workflowRun?.currentStepName || currentNode?.data?.label || "未命名步骤"],
+    [
+      "当前步骤",
+      workflowRun?.currentStepName || currentNode?.data?.label || "未命名步骤",
+    ],
     ["当前负责人", currentOwnerLabel],
     ["优先级", issue.priority || "未设置"],
-    ["步骤数", workflowRun?.totalSteps ? `${workflowRun.totalSteps} 步` : `${workflow.nodes.length} 步`],
+    [
+      "步骤数",
+      workflowRun?.totalSteps
+        ? `${workflowRun.totalSteps} 步`
+        : `${workflow.nodes.length} 步`,
+    ],
   ] as const;
   const collaborationTags = workflowRun
     ? [
@@ -499,15 +515,28 @@ export function WorkflowIssueDetailFlow({
             </div>
           </div>
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="rounded-lg text-app-text-secondary hover:bg-app-button-hover hover:text-app-text-primary"
-            onClick={onClose}
-          >
-            <RiCloseLine className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="border-app-border bg-transparent text-app-text-primary"
+              onClick={() => setIsAiThreadOpen(true)}
+            >
+              <RiSparklingLine className="h-4 w-4 text-sky-600" />
+              打开 AI 助手
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="rounded-lg text-app-text-secondary hover:bg-app-button-hover hover:text-app-text-primary"
+              onClick={onClose}
+            >
+              <RiCloseLine className="h-5 w-5" />
+            </Button>
+          </div>
         </CardHeader>
       </Card>
 
@@ -789,7 +818,8 @@ export function WorkflowIssueDetailFlow({
                       </>
                     ) : (
                       <div className="rounded-lg border border-dashed border-sky-500/20 px-3 py-2 text-sm text-app-text-secondary">
-                        这一步需要 {pendingTargetLabel} 处理，你可以在讨论区补充上下文。
+                        这一步需要 {pendingTargetLabel}{" "}
+                        处理，你可以在讨论区补充上下文。
                       </div>
                     )}
                   </div>
@@ -828,7 +858,8 @@ export function WorkflowIssueDetailFlow({
                       </>
                     ) : (
                       <div className="rounded-lg border border-dashed border-cyan-500/20 px-3 py-2 text-sm text-app-text-secondary">
-                        这一步需要 {pendingTargetLabel} 接手，你可以在讨论区补充交接上下文。
+                        这一步需要 {pendingTargetLabel}{" "}
+                        接手，你可以在讨论区补充交接上下文。
                       </div>
                     )}
                   </div>
@@ -841,7 +872,8 @@ export function WorkflowIssueDetailFlow({
                         当前步骤处于阻塞中
                       </div>
                       <p className="mt-1 text-xs leading-5 text-app-text-muted">
-                        负责人：{currentOwnerLabel}。阻塞说明里应包含原因、需要谁帮助、预计恢复时间。
+                        负责人：{currentOwnerLabel}
+                        。阻塞说明里应包含原因、需要谁帮助、预计恢复时间。
                       </p>
                     </div>
 
@@ -899,7 +931,9 @@ export function WorkflowIssueDetailFlow({
           {currentNodeFocusUsers.length > 0 && (
             <Card className="border-app-border bg-app-content-bg shadow-none">
               <CardContent className="p-3 text-xs text-app-text-muted">
-                {currentNodeFocusUsers.map((participant) => participant.name).join("、")}
+                {currentNodeFocusUsers
+                  .map((participant) => participant.name)
+                  .join("、")}
                 正在关注当前节点
               </CardContent>
             </Card>
@@ -971,6 +1005,15 @@ export function WorkflowIssueDetailFlow({
         isOpen={isRecordModalOpen}
         onClose={() => setIsRecordModalOpen(false)}
         onSubmit={handleSubmitRecord}
+      />
+
+      <AiThreadShell
+        open={isAiThreadOpen}
+        onOpenChange={setIsAiThreadOpen}
+        workspaceId={issue.workspaceId}
+        originSurfaceType="ISSUE"
+        originSurfaceId={issue.id}
+        originTitle={issue.title}
       />
     </div>
   );
