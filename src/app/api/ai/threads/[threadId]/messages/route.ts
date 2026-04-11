@@ -8,6 +8,7 @@ import {
   createAiApproval,
   executeAiAction,
   finishAiRun,
+  getAiApproval,
   getAiActorContext,
   getAiExecutionCapabilities,
   getAiExecutionManifest,
@@ -30,12 +31,18 @@ import {
   createRuntimeContext,
   extractBearerToken,
 } from "@/lib/ai/runtime/context";
+import {
+  confirmAndExecuteApproval,
+  rejectApprovalWithMessage,
+  type ApprovalBundleItem,
+} from "@/lib/ai/runtime/approval-helpers";
 import { buildAiSystemPrompt } from "@/lib/ai/runtime/system-prompt";
 import {
-  getAiMessageText,
   type AiCodingPromptAssembly,
+  type AiApprovalRecord,
   type AiExecutionCapabilities,
   type AiExecutionManifest,
+  type AiExecutionActionResult,
   type AiMessagePart,
   type AiMessageRecord,
 } from "@/lib/ai/types";
@@ -79,6 +86,18 @@ const executeDecisionSchema = z.object({
   input: z.record(z.string(), z.unknown()).default({}),
 });
 
+const executeManyItemSchema = z.object({
+  actionKey: z.string().trim().min(1),
+  input: z.record(z.string(), z.unknown()).default({}),
+  summary: z.string().trim().min(1).optional(),
+});
+
+const executeManyDecisionSchema = z.object({
+  type: z.literal("execute_many"),
+  summary: z.string().trim().min(1).optional(),
+  items: z.array(executeManyItemSchema).min(1).max(20),
+});
+
 const finalDecisionSchema = z.object({
   type: z.literal("final"),
   reply: z.string().trim().min(1),
@@ -87,6 +106,7 @@ const finalDecisionSchema = z.object({
 const agentDecisionSchema = z.discriminatedUnion("type", [
   readDecisionSchema,
   executeDecisionSchema,
+  executeManyDecisionSchema,
   finalDecisionSchema,
 ]);
 
@@ -102,9 +122,54 @@ interface ToolEvent {
   text: string;
 }
 
+function describeMessagePartForRuntime(part: AiMessagePart) {
+  switch (part.type) {
+    case "text":
+      return part.text.trim();
+    case "error":
+      return `[系统错误] ${part.message}`.trim();
+    case "coding-prompt":
+      return `[编码交接 Prompt] issue=${part.issueId ?? "unknown"}`;
+    case "approval-request":
+      return `[待确认动作] ${part.summary} (approvalId=${part.approvalId}, action=${part.actionKey})`;
+    case "tool-result":
+      if (part.output && typeof part.output === "object") {
+        const output = part.output as {
+          status?: unknown;
+          summary?: unknown;
+          message?: unknown;
+        };
+
+        return clipText(
+          [
+            `[工具结果 ${part.toolName}]`,
+            typeof output.status === "string" ? `status=${output.status}` : null,
+            typeof output.summary === "string"
+              ? `summary=${output.summary}`
+              : null,
+            typeof output.message === "string"
+              ? `message=${output.message}`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(" "),
+          600,
+        );
+      }
+
+      return `[工具结果 ${part.toolName}]`;
+    default:
+      return "";
+  }
+}
+
 function toRuntimeMessages(messages: AiMessageRecord[]): AiRuntimeMessage[] {
   return messages.reduce<AiRuntimeMessage[]>((accumulator, message) => {
-    const text = getAiMessageText(message.parts);
+    const text = message.parts
+      .map((part) => describeMessagePartForRuntime(part))
+      .filter(Boolean)
+      .join("\n")
+      .trim();
 
     if (!text) {
       return accumulator;
@@ -197,8 +262,86 @@ function extractJsonObject(rawText: string) {
 
 function parseAgentDecision(rawText: string): AgentDecision {
   const candidate = extractJsonObject(rawText);
-  const parsed = JSON.parse(candidate) as unknown;
-  return agentDecisionSchema.parse(parsed);
+
+  const parseAsDecision = (value: unknown): AgentDecision => {
+    if (Array.isArray(value)) {
+      const items = value.map((item) => {
+        if (
+          item &&
+          typeof item === "object" &&
+          "type" in item &&
+          (item as { type?: unknown }).type === "execute"
+        ) {
+          const parsedItem = executeDecisionSchema.parse(item);
+          return {
+            actionKey: parsedItem.actionKey,
+            input: parsedItem.input,
+          };
+        }
+
+        return executeManyItemSchema.parse(item);
+      });
+      return executeManyDecisionSchema.parse({
+        type: "execute_many",
+        items,
+      });
+    }
+
+    return agentDecisionSchema.parse(value);
+  };
+
+  const parseJsonLines = () => {
+    const lines = rawText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    if (
+      lines.length <= 1 ||
+      !lines.every((line) => line.startsWith("{") && line.endsWith("}"))
+    ) {
+      return null;
+    }
+
+    return lines.map((line) => JSON.parse(line) as unknown);
+  };
+
+  try {
+    const parsed = JSON.parse(candidate) as unknown;
+    return parseAsDecision(parsed);
+  } catch (error) {
+    try {
+      const parsedJsonLines = parseJsonLines();
+
+      if (parsedJsonLines) {
+        return parseAsDecision(parsedJsonLines);
+      }
+    } catch (jsonLinesError) {
+      console.warn("[ai-runtime] json-lines parse fallback failed", {
+        error:
+          jsonLinesError instanceof Error
+            ? jsonLinesError.message
+            : String(jsonLinesError),
+      });
+    }
+
+    const fallbackReply = rawText.trim();
+
+    console.warn("[ai-runtime] decision parse fallback", {
+      error: error instanceof Error ? error.message : String(error),
+      rawText,
+      candidate,
+    });
+
+    if (fallbackReply) {
+      return {
+        type: "final",
+        reply: fallbackReply,
+      };
+    }
+
+    throw error;
+  }
 }
 
 function buildReadToolCatalog() {
@@ -278,19 +421,22 @@ function buildDecisionSystemPrompt(params: {
     "你现在运行在 Synaply 的 AI execution loop 中。",
     "你必须严格只返回一个 JSON object，不要输出 Markdown、解释、前后缀或代码围栏。",
     "",
-    "只允许三种返回形态：",
+    "只允许四种返回形态：",
     '{"type":"final","reply":"给用户的最终回复"}',
     '{"type":"read","tool":"get_issue_detail","arguments":{"issueId":"..."}}',
     '{"type":"execute","actionKey":"create_issue","input":{"title":"..."}}',
+    '{"type":"execute_many","summary":"批量创建 Phase 1 issues","items":[{"actionKey":"create_issue","input":{"title":"..."}}]}',
     "",
     "行为规则：",
-    "1. 一次只做一个 read 或 execute。",
+    "1. 一次只做一个 read、execute 或 execute_many。",
+    "1.5. 如果当前要连续执行多个同类写动作，必须使用 execute_many，把所有 items 放进同一个 JSON object；不要输出多行 JSON，也不要一次一个地拆开。",
     "2. 缺少真实对象 ID 时，先 read，不要猜 projectId / issueId / docId / workflowId。",
     "2.5. 当用户使用项目名提问时，优先先 search_projects 找到真实 projectId；当用户说“我 / 当前由我处理”时，优先使用 get_current_actor_context 或在 list_issues 中使用 assigneeScope=ME。",
     "3. 用户想把想法落到系统里时，优先尝试 create_project / create_issue，而不是只给泛泛建议。",
     "4. 需要编码交接时，先 read 相关对象；如果要给用户展示 handoff prompt，用 assemble_coding_prompt；如果用户明确要求把 prompt 写回 issue，再 execute attach_coding_prompt_to_issue。",
     "5. 当信息已经足够时，尽快返回 final，不要无休止读取。",
     "6. 如果动作需要确认，runtime 会自动预演并展示确认卡，你只要正常返回 execute。",
+    "6.5. 如果用户明确说了“直接执行 / 直接创建 / 批量创建 / 不用再确认”，runtime 可能会直接执行，不需要你额外解释审批机制。",
     "7. 对 enum 字段必须严格使用 action catalog 里给出的原始枚举值，不能自造缩写或近义词，例如不能把 TEAM_READONLY / TEAM_EDITABLE 写成 TEAM。",
     "8. 当用户只表达“团队可见”而没有说明编辑权限时，优先省略 visibility，让后端使用默认值；如果必须显式填写，优先使用 TEAM_READONLY。",
     "9. 对任何 *Id 字段都不能猜测；如果当前 read tools 还拿不到真实 ID，就先换成可执行的 read，或在 final 里明确说明缺少哪个真实 ID。",
@@ -497,6 +643,340 @@ async function resolveExecutionInput(
   };
 }
 
+type ApprovalIntent = "confirm" | "reject" | null;
+
+interface PreviewBundleItem {
+  actionKey: string;
+  input: Record<string, unknown>;
+  summary: string;
+  status: AiExecutionActionResult["status"];
+  needsConfirmation: boolean;
+  message: string;
+  preview?: unknown;
+  error?: AiExecutionActionResult["error"];
+}
+
+function isQuestionLike(text: string) {
+  const normalized = text.trim().toLowerCase();
+
+  if (!normalized) {
+    return false;
+  }
+
+  return /[?？]|(为什么|怎么|如何|能不能|可不可以|可以吗|是否|要不要|需不需要|解释一下|说明一下|先.*吗)/i.test(
+    normalized,
+  );
+}
+
+function detectApprovalIntent(text: string): ApprovalIntent {
+  const normalized = text.trim().toLowerCase();
+
+  if (!normalized || isQuestionLike(normalized)) {
+    return null;
+  }
+
+  if (/^(拒绝|取消|先别|不要执行|算了|不执行|reject|cancel)\b/i.test(normalized)) {
+    return "reject";
+  }
+
+  if (
+    /^(可以|好的|好|行|那就|请)?[\s，,]*(执行|确认|继续|继续执行|继续创建|开始执行|开始创建|直接执行|直接创建|同意|批准|approve|confirm|run|go ahead)\b/i.test(
+      normalized,
+    ) ||
+    /^根据.*(执行|确认)/i.test(normalized)
+  ) {
+    return "confirm";
+  }
+
+  return null;
+}
+
+function allowsDirectExecution(text: string) {
+  const normalized = text.trim().toLowerCase();
+
+  if (!normalized || isQuestionLike(normalized)) {
+    return false;
+  }
+
+  return /(直接执行|直接创建|直接批量创建|直接帮我创建|不用确认|无需确认|你可以直接执行|你可以直接创建|一次创建|一次性创建|一并创建|一次生成创建|batch create|go ahead|without confirmation)/i.test(
+    normalized,
+  );
+}
+
+async function findPendingApprovals(
+  backendOptions: ServerFetchOptions,
+  threadId: string,
+  messages: AiMessageRecord[],
+) {
+  const approvalIds = Array.from(
+    new Set(
+      messages
+        .flatMap((message) =>
+          message.parts.flatMap((part) =>
+            part.type === "approval-request" ? [part.approvalId] : [],
+          ),
+        )
+        .reverse(),
+    ),
+  ).slice(0, 12);
+
+  const approvals = await Promise.all(
+    approvalIds.map(async (approvalId) => {
+      try {
+        return await getAiApproval(backendOptions, threadId, approvalId);
+      } catch {
+        return null;
+      }
+    }),
+  );
+
+  return approvals.filter(
+    (approval: AiApprovalRecord | null): approval is AiApprovalRecord =>
+      approval?.status === "PENDING",
+  );
+}
+
+async function previewExecutionItems(
+  items: ApprovalBundleItem[],
+  backendOptions: ServerFetchOptions,
+  threadId: string,
+) {
+  const previewItems: PreviewBundleItem[] = [];
+  let latestCodingPrompt: AiCodingPromptAssembly | null = null;
+
+  for (const item of items) {
+    const { resolvedInput, codingPromptAssembly } = await resolveExecutionInput(
+      item.actionKey,
+      item.input,
+      backendOptions,
+    );
+
+    if (codingPromptAssembly) {
+      latestCodingPrompt = codingPromptAssembly;
+    }
+
+    const execution = await executeAiAction(backendOptions, item.actionKey, {
+      input: resolvedInput,
+      dryRun: true,
+      conversationId: threadId,
+    });
+
+    previewItems.push({
+      actionKey: item.actionKey,
+      input: resolvedInput,
+      summary: item.summary ?? execution.summary,
+      status: execution.status,
+      needsConfirmation: execution.needsConfirmation,
+      message: execution.message,
+      preview: execution.result,
+      error: execution.error,
+    });
+  }
+
+  return {
+    previewItems,
+    latestCodingPrompt,
+  };
+}
+
+async function executeExecutionItems(
+  items: ApprovalBundleItem[],
+  backendOptions: ServerFetchOptions,
+  threadId: string,
+  confirmed: boolean,
+) {
+  const executedItems: Array<{
+    actionKey: string;
+    input: Record<string, unknown>;
+    summary: string;
+    execution: AiExecutionActionResult;
+  }> = [];
+  let latestCodingPrompt: AiCodingPromptAssembly | null = null;
+
+  for (const item of items) {
+    const { resolvedInput, codingPromptAssembly } = await resolveExecutionInput(
+      item.actionKey,
+      item.input,
+      backendOptions,
+    );
+
+    if (codingPromptAssembly) {
+      latestCodingPrompt = codingPromptAssembly;
+    }
+
+    const execution = await executeAiAction(backendOptions, item.actionKey, {
+      input: resolvedInput,
+      confirmed,
+      conversationId: threadId,
+    });
+
+    executedItems.push({
+      actionKey: item.actionKey,
+      input: resolvedInput,
+      summary: item.summary ?? execution.summary,
+      execution,
+    });
+  }
+
+  return {
+    executedItems,
+    latestCodingPrompt,
+  };
+}
+
+function buildBatchToolText(summary: string, items: PreviewBundleItem[]) {
+  return clipText(
+    [
+      "批量动作已完成预演。",
+      `摘要：${summary}`,
+      `共 ${items.length} 项，等待你的统一确认。`,
+      ...items.map((item, index) => {
+        const title =
+          readStringArg(item.input, "title") ||
+          readStringArg(item.input, "name") ||
+          item.summary ||
+          item.actionKey;
+        return `${index + 1}. ${title}`;
+      }),
+    ].join("\n"),
+    2400,
+  );
+}
+
+function buildBatchToolOutput(summary: string, items: PreviewBundleItem[]) {
+  return {
+    status: "preview" as const,
+    message: "已完成批量预演，等待确认。",
+    summary,
+    needsConfirmation: true,
+    targetId: null,
+    approvalMode: "CONFIRM" as const,
+    action: {
+      key: "execute_many",
+      label: "批量执行动作",
+      description: "按顺序执行一组动作。",
+      area: "issue" as const,
+      targetType: "WORKSPACE" as const,
+      approvalMode: "CONFIRM" as const,
+      requiresTargetId: false,
+      fields: [],
+      sampleInput: {},
+    },
+    result: {
+      total: items.length,
+      items,
+    },
+  };
+}
+
+function buildBatchAssistantText(
+  items: Array<{
+    actionKey: string;
+    summary: string;
+    input: Record<string, unknown>;
+    execution: AiExecutionActionResult;
+  }>,
+) {
+  const successCount = items.filter(
+    (item) => item.execution.status === "succeeded",
+  ).length;
+  const failedCount = items.length - successCount;
+
+  if (failedCount === 0) {
+    return `这批动作已经执行完成，共 ${items.length} 项。`;
+  }
+
+  return `这批动作已执行完毕，共 ${items.length} 项，成功 ${successCount} 项，失败 ${failedCount} 项。`;
+}
+
+function buildExecutedBatchToolText(
+  summary: string,
+  items: Array<{
+    actionKey: string;
+    summary: string;
+    input: Record<string, unknown>;
+    execution: AiExecutionActionResult;
+  }>,
+) {
+  const successCount = items.filter(
+    (item) => item.execution.status === "succeeded",
+  ).length;
+  const failedCount = items.length - successCount;
+
+  return clipText(
+    [
+      "批量动作已执行完成。",
+      `摘要：${summary}`,
+      `共 ${items.length} 项，成功 ${successCount} 项，失败 ${failedCount} 项。`,
+      ...items.map((item, index) => {
+        const title =
+          readStringArg(item.input, "title") ||
+          readStringArg(item.input, "name") ||
+          item.summary ||
+          item.actionKey;
+        const suffix =
+          item.execution.status === "succeeded"
+            ? "成功"
+            : `失败：${item.execution.error?.message ?? item.execution.message}`;
+        return `${index + 1}. ${title} - ${suffix}`;
+      }),
+    ].join("\n"),
+    2600,
+  );
+}
+
+function buildExecutedBatchToolOutput(
+  summary: string,
+  items: Array<{
+    actionKey: string;
+    summary: string;
+    input: Record<string, unknown>;
+    execution: AiExecutionActionResult;
+  }>,
+) {
+  const successCount = items.filter(
+    (item) => item.execution.status === "succeeded",
+  ).length;
+  const failedCount = items.length - successCount;
+
+  return {
+    status: failedCount === 0 ? "succeeded" : "failed",
+    message:
+      failedCount === 0
+        ? `批量动作执行成功，共 ${items.length} 项。`
+        : `批量动作执行完成，共 ${items.length} 项，失败 ${failedCount} 项。`,
+    summary,
+    needsConfirmation: false,
+    targetId: null,
+    approvalMode: "CONFIRM" as const,
+    action: {
+      key: "execute_many",
+      label: "批量执行动作",
+      description: "按顺序执行一组动作。",
+      area: "issue" as const,
+      targetType: "WORKSPACE" as const,
+      approvalMode: "CONFIRM" as const,
+      requiresTargetId: false,
+      fields: [],
+      sampleInput: {},
+    },
+    result: {
+      total: items.length,
+      succeeded: successCount,
+      failed: failedCount,
+      items: items.map((item) => ({
+        actionKey: item.actionKey,
+        summary: item.summary,
+        input: item.input,
+        status: item.execution.status,
+        message: item.execution.message,
+        result: item.execution.result,
+        error: item.execution.error,
+      })),
+    },
+  };
+}
+
 export async function GET(
   request: Request,
   context: { params: Promise<{ threadId: string }> },
@@ -593,14 +1073,77 @@ export async function POST(
       ],
     });
 
+    const historyPage = await listAiThreadMessages(backendOptions, threadId);
+    const approvalIntent = detectApprovalIntent(payload.text);
+    const directExecutionAllowed = allowsDirectExecution(payload.text);
+
+    if (approvalIntent) {
+      const pendingApprovals = await findPendingApprovals(
+        backendOptions,
+        threadId,
+        historyPage.items,
+      );
+
+      if (pendingApprovals.length === 1) {
+        if (approvalIntent === "confirm") {
+          const result = await confirmAndExecuteApproval(
+            durableBackendOptions,
+            threadId,
+            pendingApprovals[0].id,
+          );
+
+          return new Response(result.assistantText, {
+            headers: {
+              "Cache-Control": "no-store",
+              "Content-Type": "text/plain; charset=utf-8",
+            },
+          });
+        }
+
+        await rejectApprovalWithMessage(
+          durableBackendOptions,
+          threadId,
+          pendingApprovals[0].id,
+        );
+
+        return new Response("已经按你的要求取消待执行动作。", {
+          headers: {
+            "Cache-Control": "no-store",
+            "Content-Type": "text/plain; charset=utf-8",
+          },
+        });
+      }
+
+      if (pendingApprovals.length > 1) {
+        const clarificationText =
+          "当前线程里还有多个待确认动作。请直接点击对应确认卡，或明确说明要执行哪一组动作。";
+
+        await appendAiMessage(durableBackendOptions, threadId, {
+          role: "ASSISTANT",
+          parts: [
+            {
+              type: "text",
+              text: clarificationText,
+            },
+          ],
+        });
+
+        return new Response(clarificationText, {
+          headers: {
+            "Cache-Control": "no-store",
+            "Content-Type": "text/plain; charset=utf-8",
+          },
+        });
+      }
+    }
+
     const run = await startAiRun(backendOptions, threadId, {
       model: DEFAULT_AI_MODEL_ID,
       maxSteps: MAX_AGENT_STEPS,
     });
     runId = run.id;
 
-    const [historyPage, manifest, capabilities] = await Promise.all([
-      listAiThreadMessages(backendOptions, threadId),
+    const [manifest, capabilities] = await Promise.all([
       getAiExecutionManifest(backendOptions),
       getAiExecutionCapabilities(backendOptions),
     ]);
@@ -752,6 +1295,284 @@ export async function POST(
         continue;
       }
 
+      if (decision.type === "execute_many") {
+        const batchItems = decision.items.map(
+          (item): ApprovalBundleItem => ({
+            actionKey: item.actionKey,
+            input: item.input,
+            summary: item.summary,
+          }),
+        );
+
+        for (const item of batchItems) {
+          if (!EXECUTION_ACTION_ALLOWLIST.has(item.actionKey)) {
+            throw new Error(`当前 runtime 暂未开放动作 ${item.actionKey}`);
+          }
+        }
+
+        const batchSummary =
+          decision.summary?.trim() || `批量执行 ${batchItems.length} 个动作`;
+
+        if (directExecutionAllowed) {
+          const { executedItems, latestCodingPrompt: batchCodingPrompt } =
+            await executeExecutionItems(
+              batchItems,
+              backendOptions,
+              threadId,
+              true,
+            );
+
+          if (batchCodingPrompt) {
+            latestCodingPrompt = batchCodingPrompt;
+          }
+
+          const toolOutput = buildExecutedBatchToolOutput(
+            batchSummary,
+            executedItems,
+          );
+          const toolText = buildExecutedBatchToolText(
+            batchSummary,
+            executedItems,
+          );
+          const toolEvent: ToolEvent = {
+            toolCallId: `tool-${run.id}-${stepIndex}`,
+            toolName: "action:execute_many",
+            input: {
+              items: executedItems.map((item) => ({
+                actionKey: item.actionKey,
+                input: item.input,
+                summary: item.summary,
+              })),
+            },
+            output: toolOutput,
+            isError: toolOutput.status !== "succeeded",
+            text: toolText,
+          };
+
+          await appendAiMessage(durableBackendOptions, threadId, {
+            role: "TOOL",
+            runId: run.id,
+            parts: buildToolEventParts(toolEvent),
+          });
+
+          await recordAiRunStep(durableBackendOptions, threadId, run.id, {
+            kind: "TOOL_CALL",
+            stepIndex,
+            toolName: "execute_many",
+            toolInput: toolEvent.input,
+            toolOutput,
+          });
+          stepIndex += 1;
+
+          const assistantText = buildBatchAssistantText(executedItems);
+          const assistantParts: AiMessagePart[] = [
+            {
+              type: "text",
+              text: assistantText,
+            },
+          ];
+
+          if (latestCodingPrompt) {
+            assistantParts.push({
+              type: "coding-prompt",
+              issueId: latestCodingPrompt.issueId,
+              prompt: latestCodingPrompt.prompt,
+              generatedAt: new Date().toISOString(),
+            });
+          }
+
+          await appendAiMessage(durableBackendOptions, threadId, {
+            role: "ASSISTANT",
+            runId: run.id,
+            parts: assistantParts,
+          });
+
+          await finishAiRun(durableBackendOptions, threadId, run.id, {
+            status:
+              toolOutput.status === "succeeded" ? "COMPLETED" : "FAILED",
+            tokensUsed: totalTokensUsed,
+          });
+
+          return new Response(assistantText, {
+            headers: {
+              "Cache-Control": "no-store",
+              "Content-Type": "text/plain; charset=utf-8",
+            },
+          });
+        }
+
+        const { previewItems, latestCodingPrompt: batchCodingPrompt } =
+          await previewExecutionItems(batchItems, backendOptions, threadId);
+
+        if (batchCodingPrompt) {
+          latestCodingPrompt = batchCodingPrompt;
+        }
+
+        const previewNeedsApproval = previewItems.some(
+          (item) => item.needsConfirmation,
+        );
+
+        if (!previewNeedsApproval) {
+          const { executedItems, latestCodingPrompt: directBatchCodingPrompt } =
+            await executeExecutionItems(
+              batchItems,
+              backendOptions,
+              threadId,
+              false,
+            );
+
+          if (directBatchCodingPrompt) {
+            latestCodingPrompt = directBatchCodingPrompt;
+          }
+
+          const toolOutput = buildExecutedBatchToolOutput(
+            batchSummary,
+            executedItems,
+          );
+          const toolText = buildExecutedBatchToolText(
+            batchSummary,
+            executedItems,
+          );
+          const toolEvent: ToolEvent = {
+            toolCallId: `tool-${run.id}-${stepIndex}`,
+            toolName: "action:execute_many",
+            input: {
+              items: executedItems.map((item) => ({
+                actionKey: item.actionKey,
+                input: item.input,
+                summary: item.summary,
+              })),
+            },
+            output: toolOutput,
+            isError: toolOutput.status !== "succeeded",
+            text: toolText,
+          };
+
+          await appendAiMessage(durableBackendOptions, threadId, {
+            role: "TOOL",
+            runId: run.id,
+            parts: buildToolEventParts(toolEvent),
+          });
+
+          await recordAiRunStep(durableBackendOptions, threadId, run.id, {
+            kind: "TOOL_CALL",
+            stepIndex,
+            toolName: "execute_many",
+            toolInput: toolEvent.input,
+            toolOutput,
+          });
+          stepIndex += 1;
+
+          toolContextMessages.unshift({
+            role: "system",
+            content: `动作 execute_many 返回：\n${toolText}`,
+          });
+          lastToolText = toolText;
+          continue;
+        }
+
+        const previewOutput = buildBatchToolOutput(batchSummary, previewItems);
+        const previewText = buildBatchToolText(batchSummary, previewItems);
+        const previewInput = {
+          kind: "batch" as const,
+          summary: batchSummary,
+          items: previewItems.map((item) => ({
+            actionKey: item.actionKey,
+            input: item.input,
+            summary: item.summary,
+          })),
+        };
+        const previewEvent: ToolEvent = {
+          toolCallId: `tool-${run.id}-${stepIndex}`,
+          toolName: "action:execute_many",
+          input: {
+            items: batchItems,
+          },
+          output: previewOutput,
+          text: previewText,
+        };
+
+        await appendAiMessage(durableBackendOptions, threadId, {
+          role: "TOOL",
+          runId: run.id,
+          parts: buildToolEventParts(previewEvent),
+        });
+
+        await recordAiRunStep(durableBackendOptions, threadId, run.id, {
+          kind: "TOOL_CALL",
+          stepIndex,
+          toolName: "execute_many",
+          toolInput: previewEvent.input,
+          toolOutput: previewOutput,
+        });
+        stepIndex += 1;
+
+        const approval = await createAiApproval(
+          durableBackendOptions,
+          threadId,
+          {
+            runId: run.id,
+            actionKey: "execute_many",
+            summary: batchSummary,
+            input: previewInput,
+            previewResult: previewOutput.result,
+          },
+        );
+
+        const assistantText = "这批动作已经准备好，确认一次后我会一起执行。";
+        const assistantParts: AiMessagePart[] = [
+          {
+            type: "text",
+            text: assistantText,
+          },
+          {
+            type: "approval-request",
+            approvalId: approval.id,
+            actionKey: "execute_many",
+            summary: batchSummary,
+            input: previewInput,
+            preview: previewOutput.result,
+            items: previewItems.map((item) => ({
+              actionKey: item.actionKey,
+              summary: item.summary,
+              input: item.input,
+              preview: item.preview,
+              status: item.status,
+              message: item.message,
+              error: item.error,
+            })),
+            status: "PENDING",
+          },
+        ];
+
+        if (latestCodingPrompt) {
+          assistantParts.push({
+            type: "coding-prompt",
+            issueId: latestCodingPrompt.issueId,
+            prompt: latestCodingPrompt.prompt,
+            generatedAt: new Date().toISOString(),
+          });
+        }
+
+        await appendAiMessage(durableBackendOptions, threadId, {
+          role: "ASSISTANT",
+          runId: run.id,
+          parts: assistantParts,
+        });
+
+        await finishAiRun(durableBackendOptions, threadId, run.id, {
+          status: "WAITING_APPROVAL",
+          tokensUsed: totalTokensUsed,
+        });
+
+        return new Response(assistantText, {
+          headers: {
+            "Cache-Control": "no-store",
+            "Content-Type": "text/plain; charset=utf-8",
+          },
+        });
+      }
+
       if (!EXECUTION_ACTION_ALLOWLIST.has(decision.actionKey)) {
         throw new Error(`当前 runtime 暂未开放动作 ${decision.actionKey}`);
       }
@@ -771,6 +1592,7 @@ export async function POST(
         decision.actionKey,
         {
           input: resolvedInput,
+          confirmed: directExecutionAllowed,
           conversationId: threadId,
         },
       );

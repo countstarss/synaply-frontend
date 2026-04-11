@@ -48,6 +48,19 @@ export interface AiApprovalRequestPart {
   summary: string;
   input: Record<string, unknown>;
   preview?: unknown;
+  items?: Array<{
+    actionKey: string;
+    summary: string;
+    input: Record<string, unknown>;
+    preview?: unknown;
+    status?: "preview" | "succeeded" | "failed" | "blocked";
+    message?: string;
+    error?: {
+      name?: string;
+      message?: string;
+      statusCode?: number;
+    };
+  }>;
   status?: "PENDING" | "CONFIRMED" | "REJECTED" | "EXPIRED";
 }
 

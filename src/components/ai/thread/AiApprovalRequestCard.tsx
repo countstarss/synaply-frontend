@@ -19,6 +19,24 @@ interface AiApprovalRequestCardProps {
   part: AiApprovalRequestPart;
 }
 
+function getExecutionStatus(value: unknown) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const status = (value as { status?: unknown }).status;
+  return typeof status === "string" ? status : null;
+}
+
+function getExecutionMessage(value: unknown) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const message = (value as { message?: unknown }).message;
+  return typeof message === "string" ? message : null;
+}
+
 export function AiApprovalRequestCard({
   threadId,
   part,
@@ -51,13 +69,19 @@ export function AiApprovalRequestCard({
     (approvalQuery.data?.status as AiApprovalRequestPart["status"] | undefined) ??
     resolvedStatus;
   const isResolved = currentStatus !== "PENDING";
+  const previewItems = Array.isArray(part.items) ? part.items : [];
+  const isBatchApproval = previewItems.length > 0;
   const previewText = useMemo(() => {
+    if (isBatchApproval) {
+      return "";
+    }
+
     try {
       return JSON.stringify(part.preview ?? part.input, null, 2);
     } catch {
       return String(part.preview ?? part.input);
     }
-  }, [part.input, part.preview]);
+  }, [isBatchApproval, part.input, part.preview]);
 
   const refreshThread = async () => {
     if (!workspaceId) {
@@ -90,9 +114,17 @@ export function AiApprovalRequestCard({
         session.access_token,
       );
     },
-    onSuccess: async () => {
+    onSuccess: async (data) => {
       setResolvedStatus("CONFIRMED");
-      toast.success("已确认，AI 正在继续执行。");
+      const status = getExecutionStatus(data.execution);
+      const message = getExecutionMessage(data.execution);
+
+      if (status === "failed" || status === "blocked") {
+        toast.error(message ?? "动作执行未完成");
+      } else {
+        toast.success("已确认，AI 正在继续执行。");
+      }
+
       await refreshThread();
       await approvalQuery.refetch();
     },
@@ -148,6 +180,42 @@ export function AiApprovalRequestCard({
       <p className="mt-2 text-xs leading-5 text-amber-900/75">
         动作: <span className="font-mono">{part.actionKey}</span>
       </p>
+      {isBatchApproval ? (
+        <div className="mt-3 rounded-xl border border-amber-200/80 bg-white/70 p-3">
+          <p className="text-xs font-medium leading-5 text-amber-900/80">
+            这次会一起执行 {previewItems.length} 个动作
+          </p>
+          <div className="mt-3 flex flex-col gap-2">
+            {previewItems.map((item, index) => {
+              const title =
+                (typeof item.input.title === "string" && item.input.title) ||
+                (typeof item.input.name === "string" && item.input.name) ||
+                item.summary ||
+                item.actionKey;
+
+              return (
+                <div
+                  key={`${part.approvalId}-${item.actionKey}-${index}`}
+                  className="rounded-lg border border-amber-100 bg-white/80 px-3 py-2"
+                >
+                  <p className="text-sm font-medium leading-5 text-amber-950">
+                    {index + 1}. {title}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-amber-900/75">
+                    动作: <span className="font-mono">{item.actionKey}</span>
+                    {item.status ? ` · 预演状态: ${item.status}` : ""}
+                  </p>
+                  {item.message ? (
+                    <p className="mt-1 text-xs leading-5 text-amber-900/70">
+                      {item.message}
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       {previewText ? (
         <pre className="mt-3 overflow-auto rounded-xl border border-amber-200/80 bg-white/70 p-3 text-xs leading-5 text-amber-950">

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { appendAiMessage, rejectAiApproval } from "@/lib/ai/backend";
 import { extractBearerToken } from "@/lib/ai/runtime/context";
+import { rejectApprovalWithMessage } from "@/lib/ai/runtime/approval-helpers";
 
 const approvalActionSchema = z.object({
   workspaceId: z.string().trim().min(1),
@@ -15,32 +15,14 @@ export async function POST(
     const token = extractBearerToken(request);
     const payload = approvalActionSchema.parse(await request.json());
     const { approvalId, threadId } = await context.params;
-    const backendOptions = {
-      token,
-      workspaceId: payload.workspaceId,
-      signal: request.signal,
-    };
-
-    const approval = await rejectAiApproval(backendOptions, threadId, approvalId);
-
-    await appendAiMessage(
+    const approval = await rejectApprovalWithMessage(
       {
         token,
         workspaceId: payload.workspaceId,
+        signal: request.signal,
       },
       threadId,
-      {
-        role: "SYSTEM",
-        runId: approval.runId,
-        parts: [
-          {
-            type: "error",
-            message: approval.summary
-              ? `你已拒绝动作：${approval.summary}`
-              : `你已拒绝动作 ${approval.actionKey}`,
-          },
-        ],
-      },
+      approvalId,
     );
 
     return NextResponse.json(approval);
