@@ -11,6 +11,8 @@ interface RunOnceInput {
   messages: AiRuntimeMessage[];
   runtimeContext: AiRuntimeContext;
   signal?: AbortSignal;
+  maxTokens?: number;
+  temperature?: number;
 }
 
 interface AnthropicContentBlock {
@@ -124,67 +126,17 @@ export function runOnce({
   messages,
   runtimeContext,
   signal,
+  maxTokens,
+  temperature,
 }: RunOnceInput) {
-  const provider = getAiProviderConfig();
-  const systemPrompt = buildSystemPrompt(system, messages);
-  const requestMessages = normalizeMessages(messages);
-
-  const responsePromise = fetch(buildMessagesUrl(provider.baseUrl), {
-    method: "POST",
+  const responsePromise = generateAiText({
+    system,
+    messages,
+    runtimeContext,
     signal,
-    headers: {
-      "Content-Type": "application/json",
-      "anthropic-version": "2023-06-01",
-      "x-api-key": provider.apiKey,
-    },
-    body: JSON.stringify({
-      model: provider.model,
-      max_tokens: 1024,
-      temperature: 0.4,
-      stream: false,
-      system: systemPrompt || undefined,
-      messages: requestMessages,
-    }),
-  })
-    .then(async (response) => {
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          errorText || `AI 服务请求失败（${response.status}）`,
-        );
-      }
-
-      const payload = (await response.json()) as AnthropicResponse &
-        Record<string, unknown>;
-
-      if (payload.error?.message) {
-        throw new Error(payload.error.message);
-      }
-
-      const text = extractText(payload);
-      const usage = payload.usage
-        ? {
-            inputTokens: payload.usage.input_tokens,
-            outputTokens: payload.usage.output_tokens,
-            totalTokens:
-              (payload.usage.input_tokens ?? 0) +
-              (payload.usage.output_tokens ?? 0),
-          }
-        : undefined;
-
-      return {
-        text,
-        usage,
-      };
-    })
-    .catch((error) => {
-      console.error("[ai-runtime] direct reply error", {
-        workspaceId: runtimeContext.workspaceId,
-        surface: runtimeContext.surface,
-        error,
-      });
-      throw error;
-    });
+    maxTokens,
+    temperature,
+  });
 
   return {
     textStream: (async function* () {
@@ -193,4 +145,72 @@ export function runOnce({
     })(),
     totalUsage: responsePromise.then((result) => result.usage),
   };
+}
+
+export async function generateAiText({
+  system,
+  messages,
+  runtimeContext,
+  signal,
+  maxTokens = 1024,
+  temperature = 0.4,
+}: RunOnceInput) {
+  const provider = getAiProviderConfig();
+  const systemPrompt = buildSystemPrompt(system, messages);
+  const requestMessages = normalizeMessages(messages);
+
+  try {
+    const response = await fetch(buildMessagesUrl(provider.baseUrl), {
+      method: "POST",
+      signal,
+      headers: {
+        "Content-Type": "application/json",
+        "anthropic-version": "2023-06-01",
+        "x-api-key": provider.apiKey,
+      },
+      body: JSON.stringify({
+        model: provider.model,
+        max_tokens: maxTokens,
+        temperature,
+        stream: false,
+        system: systemPrompt || undefined,
+        messages: requestMessages,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `AI 服务请求失败（${response.status}）`);
+    }
+
+    const payload = (await response.json()) as AnthropicResponse &
+      Record<string, unknown>;
+
+    if (payload.error?.message) {
+      throw new Error(payload.error.message);
+    }
+
+    const text = extractText(payload);
+    const usage = payload.usage
+      ? {
+          inputTokens: payload.usage.input_tokens,
+          outputTokens: payload.usage.output_tokens,
+          totalTokens:
+            (payload.usage.input_tokens ?? 0) +
+            (payload.usage.output_tokens ?? 0),
+        }
+      : undefined;
+
+    return {
+      text,
+      usage,
+    };
+  } catch (error) {
+    console.error("[ai-runtime] direct reply error", {
+      workspaceId: runtimeContext.workspaceId,
+      surface: runtimeContext.surface,
+      error,
+    });
+    throw error;
+  }
 }

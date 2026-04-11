@@ -2,20 +2,66 @@
 
 import { cn } from "@/lib/utils";
 import {
-  getAiMessageText,
-  hasUnsupportedAiParts,
+  type AiMessagePart,
   type AiMessageRecord,
 } from "@/lib/ai/types";
+import { AiApprovalRequestCard } from "@/components/ai/thread/AiApprovalRequestCard";
+import { AiToolResultCard } from "@/components/ai/thread/AiToolResultCard";
+import { AiCodingPromptCard } from "@/components/ai/thread/AiCodingPromptCard";
 
 interface AiMessageBubbleProps {
   message: AiMessageRecord;
 }
 
+function renderTextPart(text: string, className?: string) {
+  return (
+    <pre
+      className={cn(
+        "whitespace-pre-wrap break-words font-sans text-sm leading-6",
+        className,
+      )}
+    >
+      {text}
+    </pre>
+  );
+}
+
+function renderStructuredPart(message: AiMessageRecord, part: AiMessagePart) {
+  switch (part.type) {
+    case "text":
+      return renderTextPart(part.text);
+    case "error":
+      return (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-950 shadow-sm">
+          {renderTextPart(part.message)}
+        </div>
+      );
+    case "tool-result":
+      return <AiToolResultCard part={part} />;
+    case "approval-request":
+      return <AiApprovalRequestCard threadId={message.threadId} part={part} />;
+    case "coding-prompt":
+      return <AiCodingPromptCard part={part} />;
+    case "context-chip":
+      return (
+        <div className="inline-flex w-fit items-center rounded-full border border-app-border bg-app-bg px-3 py-1 text-xs text-app-text-secondary">
+          {part.label}
+        </div>
+      );
+    case "tool-call":
+      return null;
+    default:
+      return null;
+  }
+}
+
 export function AiMessageBubble({ message }: AiMessageBubbleProps) {
-  const text = getAiMessageText(message.parts);
-  const hasUnsupportedParts = hasUnsupportedAiParts(message.parts);
   const isUser = message.role === "USER";
   const isSystem = message.role === "SYSTEM";
+  const visibleParts = message.parts.filter((part) => part.type !== "tool-call");
+  const textOnly =
+    visibleParts.length > 0 &&
+    visibleParts.every((part) => part.type === "text" || part.type === "error");
 
   return (
     <div
@@ -27,29 +73,32 @@ export function AiMessageBubble({ message }: AiMessageBubbleProps) {
     >
       <div
         className={cn(
-          "max-w-[88%] rounded-2xl px-4 py-3 text-sm shadow-sm",
-          isUser && "bg-sky-600 text-white",
+          "max-w-[88%]",
+          textOnly &&
+            "rounded-2xl px-4 py-3 text-sm shadow-sm",
+          isUser && textOnly && "bg-sky-600 text-white",
           !isUser &&
             !isSystem &&
+            textOnly &&
             "border border-app-border bg-app-content-bg text-app-text-primary",
-          isSystem && "border border-amber-200 bg-amber-50 text-amber-900",
+          isSystem &&
+            textOnly &&
+            "border border-amber-200 bg-amber-50 text-amber-900",
         )}
       >
-        {text ? (
-          <pre className="whitespace-pre-wrap break-words font-sans leading-6">
-            {text}
-          </pre>
-        ) : (
-          <p className="leading-6 text-app-text-secondary">
-            工具调用 / 审批 / 编码 prompt 留待 Stage 3-5
-          </p>
-        )}
-
-        {hasUnsupportedParts && text ? (
-          <p className="mt-2 text-xs opacity-80">
-            这条消息还包含结构化片段，当前版本先显示文本摘要。
-          </p>
-        ) : null}
+        <div className={cn("flex flex-col gap-3", textOnly && "gap-2")}>
+          {visibleParts.length > 0 ? (
+            visibleParts.map((part, index) => (
+              <div key={`${message.id}-${part.type}-${index}`}>
+                {renderStructuredPart(message, part)}
+              </div>
+            ))
+          ) : (
+            <p className="leading-6 text-app-text-secondary">
+              暂无可展示的消息内容。
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

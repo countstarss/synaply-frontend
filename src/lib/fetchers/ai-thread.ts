@@ -95,13 +95,28 @@ export function confirmAiApproval(
   approvalId: string,
   token: string,
 ) {
-  return fetchAiApi<AiApprovalRecord>(
+  return fetchAiApi<{
+    approval: AiApprovalRecord;
+    execution: unknown;
+  }>(
     `/threads/${threadId}/approvals/${approvalId}/confirm`,
     { token },
     {
       method: "POST",
       body: JSON.stringify({ workspaceId }),
     },
+  );
+}
+
+export function getAiApproval(
+  workspaceId: string,
+  threadId: string,
+  approvalId: string,
+  token: string,
+) {
+  return fetchAiApi<AiApprovalRecord>(
+    `/threads/${threadId}/approvals/${approvalId}?workspaceId=${workspaceId}`,
+    { token },
   );
 }
 

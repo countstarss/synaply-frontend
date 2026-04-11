@@ -48,6 +48,7 @@ export interface AiApprovalRequestPart {
   summary: string;
   input: Record<string, unknown>;
   preview?: unknown;
+  status?: "PENDING" | "CONFIRMED" | "REJECTED" | "EXPIRED";
 }
 
 export interface AiCodingPromptPart {
@@ -155,6 +156,196 @@ export interface AiSurfaceSummary {
   ownerLabel?: string;
   recentActivity?: string;
   text: string;
+}
+
+export interface AiWorkspaceSummaryDetail {
+  workspace: {
+    id: string;
+    name: string;
+    type: string;
+  };
+  counts: {
+    projectCount: number;
+    issueCount: number;
+    openIssueCount: number;
+    docCount: number;
+  };
+  recentProjects: Array<{
+    id: string;
+    name: string;
+    status: string;
+    phase?: string | null;
+    riskLevel?: string | null;
+  }>;
+  recentIssues: Array<{
+    id: string;
+    key?: string | null;
+    title: string;
+    state?: string | null;
+    projectName?: string | null;
+  }>;
+  recentDocs: Array<{
+    id: string;
+    title: string;
+    type: string;
+    updatedAt: string;
+  }>;
+  text: string;
+}
+
+export interface AiActorContextDetail {
+  actor: {
+    userId: string;
+    name?: string | null;
+    email?: string | null;
+    teamMemberId: string;
+    role: string;
+  };
+  workspace: {
+    id: string;
+    name: string;
+    type: string;
+  };
+  text: string;
+}
+
+export interface AiProjectSearchResult {
+  items: Array<{
+    id: string;
+    name: string;
+    brief?: string | null;
+    status?: string | null;
+    phase?: string | null;
+    riskLevel?: string | null;
+    updatedAt: string;
+  }>;
+  text: string;
+}
+
+export interface AiProjectDetail {
+  project: Record<string, unknown>;
+  summary: Record<string, unknown>;
+  text: string;
+}
+
+export interface AiIssueDetail {
+  issue: Record<string, unknown>;
+  linkedDocs: Array<Record<string, unknown>>;
+  recentComments: Array<Record<string, unknown>>;
+  text: string;
+}
+
+export interface AiWorkflowRunDetail {
+  workflowRun: Record<string, unknown>;
+  stepRecords: Array<Record<string, unknown>>;
+  recentActivities: Array<Record<string, unknown>>;
+  linkedDocs: Array<Record<string, unknown>>;
+  text: string;
+}
+
+export interface AiDocDetail {
+  doc: Record<string, unknown>;
+  recentRevisions: Array<Record<string, unknown>>;
+  text: string;
+}
+
+export interface AiDocSearchResult {
+  items: Array<Record<string, unknown>>;
+  text: string;
+}
+
+export interface AiIssueListResult {
+  filters: {
+    projectId?: string | null;
+    assigneeScope: "ANY" | "ME";
+    stateCategories: string[];
+    limit: number;
+  };
+  items: Array<{
+    id: string;
+    key?: string | null;
+    title: string;
+    state?: string | null;
+    stateCategory?: string | null;
+    projectName?: string | null;
+    updatedAt: string;
+    assigneeLabels: string[];
+    currentStepStatus?: string | null;
+  }>;
+  text: string;
+}
+
+export interface AiCodingPromptAssembly {
+  issueId: string;
+  prompt: string;
+  linkedDocIds: string[];
+  text: string;
+}
+
+export type AiExecutionAvailabilityStatus =
+  | "available"
+  | "requires_target_check"
+  | "unavailable";
+
+export interface AiExecutionActionField {
+  name: string;
+  label: string;
+  type: "string" | "string[]" | "enum" | "json" | "date";
+  required: boolean;
+  description: string;
+  options?: string[];
+}
+
+export interface AiExecutionActionDefinition {
+  key: string;
+  label: string;
+  description: string;
+  area: "project" | "issue" | "workflow" | "doc";
+  targetType: "WORKSPACE" | "PROJECT" | "ISSUE" | "WORKFLOW" | "DOC";
+  approvalMode: "AUTO" | "CONFIRM";
+  requiresTargetId: boolean;
+  fields: AiExecutionActionField[];
+  sampleInput: Record<string, unknown>;
+  availability?: {
+    status: AiExecutionAvailabilityStatus;
+    reason?: string;
+  };
+}
+
+export interface AiExecutionCapabilities {
+  workspaceId: string;
+  workspaceType: "PERSONAL" | "TEAM";
+  actorRole: "OWNER" | "ADMIN" | "MEMBER";
+  actions: AiExecutionActionDefinition[];
+}
+
+export interface AiExecutionManifest {
+  workspaceId: string;
+  version: number;
+  generatedAt: string;
+  actions: Array<
+    AiExecutionActionDefinition & {
+      minimumTeamRole: "MEMBER" | "ADMIN";
+      parametersSchema: Record<string, unknown>;
+    }
+  >;
+}
+
+export interface AiExecutionActionResult {
+  executionId: string;
+  status: "preview" | "succeeded" | "failed" | "blocked";
+  needsConfirmation: boolean;
+  message: string;
+  summary: string;
+  targetId: string | null;
+  approvalMode: "AUTO" | "CONFIRM";
+  action: AiExecutionActionDefinition;
+  result?: unknown;
+  error?: {
+    name?: string;
+    message?: string;
+    statusCode?: number;
+  };
 }
 
 export function getAiMessageText(parts: AiMessagePart[]) {

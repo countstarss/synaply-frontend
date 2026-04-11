@@ -27,8 +27,9 @@ export function useAiThreadStream({
   } = useAiThreadStore();
 
   const sendMessage = useCallback(
-    async (text: string) => {
+    async (text: string, threadIdOverride?: string) => {
       const trimmedText = text.trim();
+      const activeThreadId = threadIdOverride ?? threadId;
 
       if (!trimmedText) {
         return;
@@ -38,13 +39,13 @@ export function useAiThreadStream({
         throw new Error("未授权");
       }
 
-      if (!threadId) {
+      if (!activeThreadId) {
         throw new Error("AI 线程尚未准备好");
       }
 
       addMessage({
         id: `local-user-${Date.now()}`,
-        threadId,
+        threadId: activeThreadId,
         runId: null,
         role: "USER",
         parts: [
@@ -62,7 +63,7 @@ export function useAiThreadStream({
       try {
         const response = await streamAiThreadMessage(
           workspaceId,
-          threadId,
+          activeThreadId,
           session.access_token,
           trimmedText,
         );
@@ -95,14 +96,14 @@ export function useAiThreadStream({
           appendStreamingText(finalChunk);
         }
 
-        completeStreaming();
+        completeStreaming(activeThreadId);
 
         await Promise.all([
           queryClient.invalidateQueries({
-            queryKey: ["ai-thread", workspaceId, threadId],
+            queryKey: ["ai-thread", workspaceId, activeThreadId],
           }),
           queryClient.invalidateQueries({
-            queryKey: ["ai-thread-messages", workspaceId, threadId],
+            queryKey: ["ai-thread-messages", workspaceId, activeThreadId],
           }),
         ]);
       } catch (streamError) {
@@ -114,7 +115,7 @@ export function useAiThreadStream({
         setError(message);
         addMessage({
           id: `local-system-${Date.now()}`,
-          threadId,
+          threadId: activeThreadId,
           runId: null,
           role: "SYSTEM",
           parts: [

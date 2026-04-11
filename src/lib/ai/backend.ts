@@ -1,11 +1,24 @@
 import { getBackendBaseUrl } from "@/lib/backend-url";
 import type {
+  AiActorContextDetail,
   AiApprovalRecord,
+  AiCodingPromptAssembly,
+  AiDocDetail,
+  AiDocSearchResult,
+  AiExecutionActionResult,
+  AiExecutionCapabilities,
+  AiExecutionManifest,
+  AiIssueDetail,
+  AiIssueListResult,
   AiMessagePage,
   AiMessageRecord,
+  AiProjectDetail,
+  AiProjectSearchResult,
   AiRunRecord,
   AiSurfaceSummary,
   AiThreadRecord,
+  AiWorkflowRunDetail,
+  AiWorkspaceSummaryDetail,
 } from "@/lib/ai/types";
 
 const API_BASE_URL = getBackendBaseUrl();
@@ -271,6 +284,17 @@ export function confirmAiApproval(
   );
 }
 
+export function getAiApproval(
+  opts: ServerFetchOptions,
+  threadId: string,
+  approvalId: string,
+) {
+  return fetchAiBackend<AiApprovalRecord>(
+    `${getThreadBasePath(opts.workspaceId)}/${threadId}/approvals/${approvalId}`,
+    opts,
+  );
+}
+
 export function rejectAiApproval(
   opts: ServerFetchOptions,
   threadId: string,
@@ -354,8 +378,152 @@ export function postAiSurfaceSummaries(
 }
 
 export function getAiExecutionManifest(opts: ServerFetchOptions) {
-  return fetchAiBackend<unknown>(
+  return fetchAiBackend<AiExecutionManifest>(
     `${getExecutionBasePath(opts.workspaceId)}/manifest`,
     opts,
+  );
+}
+
+export function getAiWorkspaceSummary(opts: ServerFetchOptions) {
+  return fetchAiBackend<AiWorkspaceSummaryDetail>(
+    `${getContextBasePath(opts.workspaceId)}/workspace-summary`,
+    opts,
+  );
+}
+
+export function getAiActorContext(opts: ServerFetchOptions) {
+  return fetchAiBackend<AiActorContextDetail>(
+    `${getContextBasePath(opts.workspaceId)}/actor-context`,
+    opts,
+  );
+}
+
+export function searchAiProjects(
+  opts: ServerFetchOptions,
+  params: {
+    query?: string;
+    limit?: number;
+  },
+) {
+  return fetchAiBackend<AiProjectSearchResult>(
+    `${getContextBasePath(opts.workspaceId)}/projects/search`,
+    opts,
+    {
+      query: params,
+    },
+  );
+}
+
+export function getAiProjectDetail(
+  opts: ServerFetchOptions,
+  projectId: string,
+) {
+  return fetchAiBackend<AiProjectDetail>(
+    `${getContextBasePath(opts.workspaceId)}/projects/${projectId}`,
+    opts,
+  );
+}
+
+export function getAiIssueDetail(opts: ServerFetchOptions, issueId: string) {
+  return fetchAiBackend<AiIssueDetail>(
+    `${getContextBasePath(opts.workspaceId)}/issues/${issueId}`,
+    opts,
+  );
+}
+
+export function listAiIssues(
+  opts: ServerFetchOptions,
+  params: {
+    projectId?: string;
+    assigneeScope?: "ANY" | "ME";
+    stateCategories?: string[];
+    limit?: number;
+  },
+) {
+  return fetchAiBackend<AiIssueListResult>(
+    `${getContextBasePath(opts.workspaceId)}/issues/list`,
+    opts,
+    {
+      query: {
+        projectId: params.projectId,
+        assigneeScope: params.assigneeScope,
+        stateCategories: params.stateCategories?.join(","),
+        limit: params.limit,
+      },
+    },
+  );
+}
+
+export function getAiWorkflowRunDetail(
+  opts: ServerFetchOptions,
+  issueId: string,
+) {
+  return fetchAiBackend<AiWorkflowRunDetail>(
+    `${getContextBasePath(opts.workspaceId)}/workflow-runs/${issueId}`,
+    opts,
+  );
+}
+
+export function searchAiDocs(
+  opts: ServerFetchOptions,
+  params: {
+    query?: string;
+    limit?: number;
+  },
+) {
+  return fetchAiBackend<AiDocSearchResult>(
+    `${getContextBasePath(opts.workspaceId)}/docs/search`,
+    opts,
+    {
+      query: params,
+    },
+  );
+}
+
+export function getAiDocDetail(opts: ServerFetchOptions, docId: string) {
+  return fetchAiBackend<AiDocDetail>(
+    `${getContextBasePath(opts.workspaceId)}/docs/${docId}`,
+    opts,
+  );
+}
+
+export function getAiExecutionCapabilities(opts: ServerFetchOptions) {
+  return fetchAiBackend<AiExecutionCapabilities>(
+    `${getContextBasePath(opts.workspaceId)}/capabilities`,
+    opts,
+  );
+}
+
+export function assembleAiCodingPrompt(
+  opts: ServerFetchOptions,
+  issueId: string,
+) {
+  return fetchAiBackend<AiCodingPromptAssembly>(
+    `${getContextBasePath(opts.workspaceId)}/coding-prompt/assemble`,
+    opts,
+    {
+      method: "POST",
+      body: { issueId },
+    },
+  );
+}
+
+export function executeAiAction(
+  opts: ServerFetchOptions,
+  actionKey: string,
+  body: {
+    input?: Record<string, unknown>;
+    dryRun?: boolean;
+    confirmed?: boolean;
+    conversationId?: string;
+  },
+) {
+  return fetchAiBackend<AiExecutionActionResult>(
+    `${getExecutionBasePath(opts.workspaceId)}/actions/${actionKey}/execute`,
+    opts,
+    {
+      method: "POST",
+      body,
+    },
   );
 }

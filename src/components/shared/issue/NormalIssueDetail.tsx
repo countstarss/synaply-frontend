@@ -143,6 +143,15 @@ function formatDateOnly(dateString?: string | null) {
   return new Date(dateString).toLocaleDateString("zh-CN");
 }
 
+async function copyTextToClipboard(text: string, successMessage: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(successMessage);
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : "复制失败");
+  }
+}
+
 function toUtcMidnightIso(date: Date) {
   return new Date(
     Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
@@ -561,6 +570,7 @@ export default function NormalIssueDetail({
       ).length,
     [localIssue?.description],
   );
+  const aiHandoffPrompt = localIssue?.aiHandoffPrompt?.trim() || "";
 
   useEffect(() => {
     if (issue) {
@@ -1129,6 +1139,41 @@ export default function NormalIssueDetail({
           </CardHeader>
           <ScrollArea className="min-h-0 flex-1 overflow-hidden">
             <CardContent className="flex flex-col gap-4 p-4">
+              {aiHandoffPrompt ? (
+                <div className="rounded-xl border border-app-border bg-app-bg px-4 py-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium text-app-text-primary">
+                        AI 编码交接
+                      </p>
+                      <p className="mt-1 text-xs text-app-text-muted">
+                        {localIssue.aiHandoffPromptUpdatedAt
+                          ? `最近更新于 ${formatDate(localIssue.aiHandoffPromptUpdatedAt)}`
+                          : "已写回到当前任务，可直接交给 Claude Code / Codex"}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="border-app-border bg-transparent text-app-text-primary"
+                      onClick={() =>
+                        void copyTextToClipboard(
+                          aiHandoffPrompt,
+                          "编码交接 Prompt 已复制。",
+                        )
+                      }
+                    >
+                      复制给 Claude Code / Codex
+                    </Button>
+                  </div>
+
+                  <pre className="mt-3 max-h-72 overflow-auto rounded-lg border border-app-border bg-app-content-bg p-3 text-xs leading-6 text-app-text-secondary">
+                    {aiHandoffPrompt}
+                  </pre>
+                </div>
+              ) : null}
+
               {renderEditingHint("description")}
               {editingField === "description" ? (
                 <Textarea

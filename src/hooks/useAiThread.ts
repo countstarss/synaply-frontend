@@ -18,6 +18,8 @@ interface UseAiThreadOptions {
   originSurfaceId: string;
   originTitle?: string | null;
   enabled?: boolean;
+  autoCreate?: boolean;
+  threadIdOverride?: string | null;
 }
 
 export function useAiThread({
@@ -26,6 +28,8 @@ export function useAiThread({
   originSurfaceId,
   originTitle,
   enabled = true,
+  autoCreate = true,
+  threadIdOverride = null,
 }: UseAiThreadOptions) {
   const { session } = useAuth();
   const {
@@ -42,10 +46,13 @@ export function useAiThread({
   } = useAiThreadStore();
 
   const originKey = `${workspaceId}:${originSurfaceType}:${originSurfaceId}`;
+  const threadKey = threadIdOverride
+    ? `thread:${threadIdOverride}`
+    : `origin:${originKey}`;
 
   useEffect(() => {
     reset();
-  }, [originKey, reset]);
+  }, [reset, threadKey]);
 
   const threadListQuery = useQuery({
     queryKey: ["ai-threads", workspaceId],
@@ -83,13 +90,73 @@ export function useAiThread({
       );
     },
   });
+  const {
+    mutate: createThread,
+    mutateAsync: createThreadAsync,
+    isPending: isCreateThreadPending,
+    error: createThreadError,
+  } = createThreadMutation;
+
+  const ensureThread = async () => {
+    if (!session?.access_token) {
+      throw new Error("未授权");
+    }
+
+    if (threadIdOverride) {
+      if (currentThreadId !== threadIdOverride) {
+        setCurrentThreadId(threadIdOverride);
+      }
+
+      return threadIdOverride;
+    }
+
+    if (currentThreadId) {
+      return currentThreadId;
+    }
+
+    let threads = threadListQuery.data;
+
+    if (!threads) {
+      const threadListResult = await threadListQuery.refetch();
+      threads = threadListResult.data ?? [];
+    }
+
+    const existingThread = threads.find(
+      (thread) =>
+        thread.originSurfaceType === originSurfaceType &&
+        thread.originSurfaceId === originSurfaceId,
+    );
+
+    if (existingThread) {
+      if (currentThreadId !== existingThread.id) {
+        setCurrentThreadId(existingThread.id);
+      }
+
+      return existingThread.id;
+    }
+
+    const createdThread = await createThreadAsync();
+    return createdThread.id;
+  };
 
   useEffect(() => {
-    if (!enabled || !session?.access_token || !workspaceId || currentThreadId) {
+    if (!enabled) {
       return;
     }
 
-    if (threadListQuery.isLoading || createThreadMutation.isPending) {
+    if (threadIdOverride) {
+      if (currentThreadId !== threadIdOverride) {
+        setCurrentThreadId(threadIdOverride);
+      }
+
+      return;
+    }
+
+    if (!session?.access_token || !workspaceId || currentThreadId) {
+      return;
+    }
+
+    if (threadListQuery.isLoading || isCreateThreadPending) {
       return;
     }
 
@@ -100,21 +167,27 @@ export function useAiThread({
     );
 
     if (existingThread) {
-      setCurrentThreadId(existingThread.id);
+      if (currentThreadId !== existingThread.id) {
+        setCurrentThreadId(existingThread.id);
+      }
+
       return;
     }
 
-    if (threadListQuery.data) {
-      createThreadMutation.mutate();
+    if (threadListQuery.data && autoCreate) {
+      createThread();
     }
   }, [
-    createThreadMutation,
+    autoCreate,
+    createThread,
     currentThreadId,
     enabled,
+    isCreateThreadPending,
     originSurfaceId,
     originSurfaceType,
     session?.access_token,
     setCurrentThreadId,
+    threadIdOverride,
     threadListQuery.data,
     threadListQuery.isLoading,
     workspaceId,
@@ -159,12 +232,12 @@ export function useAiThread({
   useEffect(() => {
     setLoading(
       threadListQuery.isLoading ||
-        createThreadMutation.isPending ||
+        isCreateThreadPending ||
         threadQuery.isLoading ||
         messagesQuery.isLoading,
     );
   }, [
-    createThreadMutation.isPending,
+    isCreateThreadPending,
     messagesQuery.isLoading,
     setLoading,
     threadListQuery.isLoading,
@@ -179,7 +252,7 @@ export function useAiThread({
 
   useEffect(() => {
     const queryError =
-      createThreadMutation.error ??
+      createThreadError ??
       threadListQuery.error ??
       threadQuery.error ??
       messagesQuery.error;
@@ -192,7 +265,7 @@ export function useAiThread({
       queryError instanceof Error ? queryError.message : "加载 AI 线程失败",
     );
   }, [
-    createThreadMutation.error,
+    createThreadError,
     messagesQuery.error,
     setError,
     threadListQuery.error,
@@ -205,5 +278,6 @@ export function useAiThread({
     messages,
     isLoading,
     error,
+    ensureThread,
   };
 }

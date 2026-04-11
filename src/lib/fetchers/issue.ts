@@ -106,6 +106,8 @@ export interface Issue {
   currentStepStatus?: IssueStatus | null;
   workflowSnapshot?: Record<string, unknown> | null;
   workflowRun?: WorkflowRunSummary | null;
+  aiHandoffPrompt?: string | null;
+  aiHandoffPromptUpdatedAt?: string | null;
   state?: IssueStateSummary | null;
   project?: IssueProject | null;
   assignees?: IssueAssignee[];
