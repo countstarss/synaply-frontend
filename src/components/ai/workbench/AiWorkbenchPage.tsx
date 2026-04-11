@@ -9,9 +9,7 @@ import {
   MessageSquareText,
   Plus,
 } from "lucide-react";
-import { RiSendPlane2Line } from "react-icons/ri";
 import { useAuth } from "@/context/AuthContext";
-import { AiMessageList } from "@/components/ai/thread/AiMessageList";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -22,12 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { useAiThread } from "@/hooks/useAiThread";
 import { useAiThreadStream } from "@/hooks/useAiThreadStream";
 import { useIssues } from "@/hooks/useIssueApi";
 import { useProjects } from "@/hooks/useProjectApi";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { AiWorkbenchChatPanel } from "@/components/ai/workbench/modules/chat/AiWorkbenchChatPanel";
 import type { AiSurfaceType, AiThreadRecord } from "@/lib/ai/types";
 import { createAiThread, listAiThreads } from "@/lib/fetchers/ai-thread";
 import { type Issue } from "@/lib/fetchers/issue";
@@ -698,62 +696,24 @@ export function AiWorkbenchPage() {
             </header>
 
             <div className="min-h-0 flex-1">
-              <div className="mx-auto flex h-full w-full max-w-4xl min-w-0">
-                <AiMessageList
-                  messages={messages}
-                  isLoading={isLoading && messages.length === 0}
-                  isStreaming={isStreaming}
-                  streamingText={streamingText}
-                />
-              </div>
-            </div>
-
-            <div className="border-t border-white/8 px-4 py-4">
-              <div className="mx-auto max-w-4xl rounded-[24px] border border-white/8 bg-black/10 px-4 py-3">
-                <div className="flex items-start gap-3">
-                  <div className="min-w-0 flex-1">
-                    <Textarea
-                      value={draft}
-                      onChange={(event) => setDraft(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" && !event.shiftKey) {
-                          event.preventDefault();
-                          void handleSend();
-                        }
-                      }}
-                      placeholder="直接说你的想法，或者告诉 AI 现在想推进哪个项目 / issue。"
-                      className="min-h-24 resize-none border-0 bg-transparent px-0 text-[15px] leading-7 text-white placeholder:text-white/28 shadow-none focus-visible:ring-0"
-                    />
-                  </div>
-
-                  <Button
-                    type="button"
-                    disabled={
-                      !draft.trim() ||
-                      isSubmitting ||
-                      createThreadMutation.isPending ||
-                      !workspaceId ||
-                      !originSurfaceId
-                    }
-                    className="h-10 rounded-xl bg-white/92 px-4 text-slate-950 hover:bg-white"
-                    onClick={() => void handleSend()}
-                  >
-                    <RiSendPlane2Line className="mr-2 size-4" />
-                    发送
-                  </Button>
-                </div>
-
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-white/8 pt-3">
-                  <p className="text-xs text-white/34">
-                    当前会写入 AI thread / runs / steps。后续接入 execution 后再补确认执行。
-                  </p>
-                  {error ? (
-                    <span className="max-w-sm text-right text-xs leading-6 text-amber-200/90">
-                      {error}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
+              <AiWorkbenchChatPanel
+                messages={messages}
+                draft={draft}
+                onDraftChange={setDraft}
+                onPrefillSuggestion={setDraft}
+                onSend={handleSend}
+                isLoading={isLoading && messages.length === 0}
+                isStreaming={isStreaming}
+                streamingText={streamingText}
+                disabled={
+                  isSubmitting ||
+                  createThreadMutation.isPending ||
+                  !workspaceId ||
+                  !originSurfaceId
+                }
+                isSubmitting={isSubmitting}
+                error={error}
+              />
             </div>
           </div>
         </main>
