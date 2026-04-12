@@ -37,7 +37,7 @@ function DocsPageFrame({
   return (
     <div className={`relative h-full min-h-full bg-app-bg ${className ?? ""}`}>
       <AmbientGlow />
-      <div className="relative z-10 h-full min-h-full overflow-y-auto">
+      <div className="relative z-10 h-full min-h-full overflow-y-auto isolate bg-app-content-bg/80">
         {children}
       </div>
     </div>

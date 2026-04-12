@@ -10,6 +10,7 @@ import type {
   AiExecutionManifest,
   AiIssueDetail,
   AiIssueListResult,
+  AiIssueSearchResult,
   AiMessagePage,
   AiMessageRecord,
   AiProjectDetail,
@@ -18,6 +19,7 @@ import type {
   AiSurfaceSummary,
   AiThreadRecord,
   AiWorkflowRunDetail,
+  AiWorkspaceMemberSearchResult,
   AiWorkspaceSummaryDetail,
 } from "@/lib/ai/types";
 
@@ -454,6 +456,23 @@ export function listAiIssues(
   );
 }
 
+export function searchAiIssues(
+  opts: ServerFetchOptions,
+  params: {
+    query?: string;
+    projectId?: string;
+    limit?: number;
+  },
+) {
+  return fetchAiBackend<AiIssueSearchResult>(
+    `${getContextBasePath(opts.workspaceId)}/issues/search`,
+    opts,
+    {
+      query: params,
+    },
+  );
+}
+
 export function getAiWorkflowRunDetail(
   opts: ServerFetchOptions,
   issueId: string,
@@ -491,6 +510,22 @@ export function getAiExecutionCapabilities(opts: ServerFetchOptions) {
   return fetchAiBackend<AiExecutionCapabilities>(
     `${getContextBasePath(opts.workspaceId)}/capabilities`,
     opts,
+  );
+}
+
+export function searchAiWorkspaceMembers(
+  opts: ServerFetchOptions,
+  params: {
+    query?: string;
+    limit?: number;
+  },
+) {
+  return fetchAiBackend<AiWorkspaceMemberSearchResult>(
+    `${getContextBasePath(opts.workspaceId)}/workspace-members/search`,
+    opts,
+    {
+      query: params,
+    },
   );
 }
 

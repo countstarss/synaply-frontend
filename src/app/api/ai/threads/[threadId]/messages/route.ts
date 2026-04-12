@@ -23,7 +23,9 @@ import {
   postAiSurfaceSummaries,
   recordAiRunStep,
   searchAiDocs,
+  searchAiIssues,
   searchAiProjects,
+  searchAiWorkspaceMembers,
   startAiRun,
   type ServerFetchOptions,
 } from "@/lib/ai/backend";
@@ -37,6 +39,12 @@ import {
   type ApprovalBundleItem,
 } from "@/lib/ai/runtime/approval-helpers";
 import { buildAiSystemPrompt } from "@/lib/ai/runtime/system-prompt";
+import { buildPlannerSystemPrompt } from "@/lib/ai/runtime/execution-policy";
+import {
+  compileIntentPlan,
+  parseIntentPlan,
+  type IntentPlan,
+} from "@/lib/ai/runtime/intent-compiler";
 import {
   type AiCodingPromptAssembly,
   type AiApprovalRecord,
@@ -62,10 +70,12 @@ const READ_TOOL_NAMES = [
   "search_projects",
   "get_project_detail",
   "list_issues",
+  "search_issues",
   "get_issue_detail",
   "get_workflow_run_detail",
   "search_docs",
   "get_doc_detail",
+  "search_workspace_members",
   "assemble_coding_prompt",
 ] as const;
 
@@ -74,44 +84,7 @@ const sendMessageSchema = z.object({
   text: z.string().trim().min(1).max(4000),
 });
 
-const readDecisionSchema = z.object({
-  type: z.literal("read"),
-  tool: z.enum(READ_TOOL_NAMES),
-  arguments: z.record(z.string(), z.unknown()).default({}),
-});
-
-const executeDecisionSchema = z.object({
-  type: z.literal("execute"),
-  actionKey: z.string().trim().min(1),
-  input: z.record(z.string(), z.unknown()).default({}),
-});
-
-const executeManyItemSchema = z.object({
-  actionKey: z.string().trim().min(1),
-  input: z.record(z.string(), z.unknown()).default({}),
-  summary: z.string().trim().min(1).optional(),
-});
-
-const executeManyDecisionSchema = z.object({
-  type: z.literal("execute_many"),
-  summary: z.string().trim().min(1).optional(),
-  items: z.array(executeManyItemSchema).min(1).max(20),
-});
-
-const finalDecisionSchema = z.object({
-  type: z.literal("final"),
-  reply: z.string().trim().min(1),
-});
-
-const agentDecisionSchema = z.discriminatedUnion("type", [
-  readDecisionSchema,
-  executeDecisionSchema,
-  executeManyDecisionSchema,
-  finalDecisionSchema,
-]);
-
 type ReadToolName = (typeof READ_TOOL_NAMES)[number];
-type AgentDecision = z.infer<typeof agentDecisionSchema>;
 
 interface ToolEvent {
   toolCallId: string;
@@ -244,211 +217,6 @@ function toErrorPayload(error: unknown) {
   };
 }
 
-function extractJsonObject(rawText: string) {
-  const fencedMatch = rawText.match(/```json\s*([\s\S]*?)```/i);
-  if (fencedMatch?.[1]) {
-    return fencedMatch[1].trim();
-  }
-
-  const firstBrace = rawText.indexOf("{");
-  const lastBrace = rawText.lastIndexOf("}");
-
-  if (firstBrace >= 0 && lastBrace > firstBrace) {
-    return rawText.slice(firstBrace, lastBrace + 1).trim();
-  }
-
-  return rawText.trim();
-}
-
-function parseAgentDecision(rawText: string): AgentDecision {
-  const candidate = extractJsonObject(rawText);
-
-  const parseAsDecision = (value: unknown): AgentDecision => {
-    if (Array.isArray(value)) {
-      const items = value.map((item) => {
-        if (
-          item &&
-          typeof item === "object" &&
-          "type" in item &&
-          (item as { type?: unknown }).type === "execute"
-        ) {
-          const parsedItem = executeDecisionSchema.parse(item);
-          return {
-            actionKey: parsedItem.actionKey,
-            input: parsedItem.input,
-          };
-        }
-
-        return executeManyItemSchema.parse(item);
-      });
-      return executeManyDecisionSchema.parse({
-        type: "execute_many",
-        items,
-      });
-    }
-
-    return agentDecisionSchema.parse(value);
-  };
-
-  const parseJsonLines = () => {
-    const lines = rawText
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean);
-
-    if (
-      lines.length <= 1 ||
-      !lines.every((line) => line.startsWith("{") && line.endsWith("}"))
-    ) {
-      return null;
-    }
-
-    return lines.map((line) => JSON.parse(line) as unknown);
-  };
-
-  try {
-    const parsed = JSON.parse(candidate) as unknown;
-    return parseAsDecision(parsed);
-  } catch (error) {
-    try {
-      const parsedJsonLines = parseJsonLines();
-
-      if (parsedJsonLines) {
-        return parseAsDecision(parsedJsonLines);
-      }
-    } catch (jsonLinesError) {
-      console.warn("[ai-runtime] json-lines parse fallback failed", {
-        error:
-          jsonLinesError instanceof Error
-            ? jsonLinesError.message
-            : String(jsonLinesError),
-      });
-    }
-
-    const fallbackReply = rawText.trim();
-
-    console.warn("[ai-runtime] decision parse fallback", {
-      error: error instanceof Error ? error.message : String(error),
-      rawText,
-      candidate,
-    });
-
-    if (fallbackReply) {
-      return {
-        type: "final",
-        reply: fallbackReply,
-      };
-    }
-
-    throw error;
-  }
-}
-
-function buildReadToolCatalog() {
-  return [
-    "- get_workspace_summary(args: {}): 读取当前 workspace 的整体协作摘要、项目/任务/文档计数和最近对象。",
-    "- get_current_actor_context(args: {}): 读取当前登录用户在当前 workspace 里的 userId / teamMemberId / role。",
-    '- search_projects(args: { query: string, limit?: number }): 按项目名、brief、描述搜索真实项目，返回 projectId；sample: {\"query\":\"口袋吉他\"}。',
-    '- get_project_detail(args: { projectId: string }): 读取某个项目的深度信息、关键任务和风险概览。',
-    '- list_issues(args: { projectId?: string, assigneeScope?: \"ANY\" | \"ME\", stateCategories?: string[], limit?: number }): 按项目、当前用户和状态类别列出 issue；assigneeScope 只能填 ANY 或 ME。',
-    '- get_issue_detail(args: { issueId: string }): 读取 issue 的正文、状态、关联文档、最近评论和 handoff 状态。',
-    '- get_workflow_run_detail(args: { issueId: string }): 读取 workflow run 当前步骤、最近 step records 和活动。',
-    '- search_docs(args: { query: string, limit?: number }): 在当前 workspace 内搜索可读文档；sample: {\"query\":\"设计评审\"}。',
-    '- get_doc_detail(args: { docId: string }): 读取文档正文摘录与最近 revisions。',
-    '- assemble_coding_prompt(args: { issueId: string }): 组装可直接交给 Claude Code / Codex 的编码交接 prompt。',
-  ].join("\n");
-}
-
-function buildActionCatalog(
-  manifest: AiExecutionManifest,
-  capabilities: AiExecutionCapabilities,
-) {
-  const capabilitiesByKey = new Map(
-    capabilities.actions.map((action) => [action.key, action]),
-  );
-
-  const actions = manifest.actions
-    .filter((action) => EXECUTION_ACTION_ALLOWLIST.has(action.key))
-    .filter(
-      (action) =>
-        capabilitiesByKey.get(action.key)?.availability?.status !==
-        "unavailable",
-    );
-
-  if (actions.length === 0) {
-    return "- 当前没有可用写动作，只能读取上下文并给建议。";
-  }
-
-  return actions
-    .map((action) => {
-      const capability = capabilitiesByKey.get(action.key);
-      const availability = capability?.availability;
-      const fields = Array.isArray(capability?.fields)
-        ? capability.fields
-        : Array.isArray(action.fields)
-          ? action.fields
-          : [];
-      const fieldText =
-        fields.length > 0
-          ? fields
-              .map((field) =>
-                `${field.name}${field.required ? " [required]" : ""}${
-                  field.type === "enum" && Array.isArray(field.options)
-                    ? ` {${field.options.join(" | ")}}`
-                    : ""
-                }`,
-              )
-              .join(", ")
-          : "无";
-      const sampleText =
-        action.sampleInput && Object.keys(action.sampleInput).length > 0
-          ? JSON.stringify(action.sampleInput)
-          : "{}";
-
-      return `- ${action.key} (${action.approvalMode}, ${action.targetType}, availability=${availability?.status ?? "unknown"}): ${action.description} | fields: ${fieldText} | sampleInput: ${sampleText}`;
-    })
-    .join("\n");
-}
-
-function buildDecisionSystemPrompt(params: {
-  baseSystemPrompt: string;
-  manifest: AiExecutionManifest;
-  capabilities: AiExecutionCapabilities;
-}) {
-  return [
-    params.baseSystemPrompt,
-    "",
-    "你现在运行在 Synaply 的 AI execution loop 中。",
-    "你必须严格只返回一个 JSON object，不要输出 Markdown、解释、前后缀或代码围栏。",
-    "",
-    "只允许四种返回形态：",
-    '{"type":"final","reply":"给用户的最终回复"}',
-    '{"type":"read","tool":"get_issue_detail","arguments":{"issueId":"..."}}',
-    '{"type":"execute","actionKey":"create_issue","input":{"title":"..."}}',
-    '{"type":"execute_many","summary":"批量创建 Phase 1 issues","items":[{"actionKey":"create_issue","input":{"title":"..."}}]}',
-    "",
-    "行为规则：",
-    "1. 一次只做一个 read、execute 或 execute_many。",
-    "1.5. 如果当前要连续执行多个同类写动作，必须使用 execute_many，把所有 items 放进同一个 JSON object；不要输出多行 JSON，也不要一次一个地拆开。",
-    "2. 缺少真实对象 ID 时，先 read，不要猜 projectId / issueId / docId / workflowId。",
-    "2.5. 当用户使用项目名提问时，优先先 search_projects 找到真实 projectId；当用户说“我 / 当前由我处理”时，优先使用 get_current_actor_context 或在 list_issues 中使用 assigneeScope=ME。",
-    "3. 用户想把想法落到系统里时，优先尝试 create_project / create_issue，而不是只给泛泛建议。",
-    "4. 需要编码交接时，先 read 相关对象；如果要给用户展示 handoff prompt，用 assemble_coding_prompt；如果用户明确要求把 prompt 写回 issue，再 execute attach_coding_prompt_to_issue。",
-    "5. 当信息已经足够时，尽快返回 final，不要无休止读取。",
-    "6. 如果动作需要确认，runtime 会自动预演并展示确认卡，你只要正常返回 execute。",
-    "6.5. 如果用户明确说了“直接执行 / 直接创建 / 批量创建 / 不用再确认”，runtime 可能会直接执行，不需要你额外解释审批机制。",
-    "7. 对 enum 字段必须严格使用 action catalog 里给出的原始枚举值，不能自造缩写或近义词，例如不能把 TEAM_READONLY / TEAM_EDITABLE 写成 TEAM。",
-    "8. 当用户只表达“团队可见”而没有说明编辑权限时，优先省略 visibility，让后端使用默认值；如果必须显式填写，优先使用 TEAM_READONLY。",
-    "9. 对任何 *Id 字段都不能猜测；如果当前 read tools 还拿不到真实 ID，就先换成可执行的 read，或在 final 里明确说明缺少哪个真实 ID。",
-    "",
-    "Read tools:",
-    buildReadToolCatalog(),
-    "",
-    "Available execution actions:",
-    buildActionCatalog(params.manifest, params.capabilities),
-  ].join("\n");
-}
-
 function buildReadToolResultText(toolName: ReadToolName, output: unknown) {
   const text =
     output && typeof output === "object" && "text" in output
@@ -464,8 +232,12 @@ function buildReadToolResultText(toolName: ReadToolName, output: unknown) {
       return clipText(text || "已完成项目搜索。");
     case "list_issues":
       return clipText(text || "已按条件列出 issue。");
+    case "search_issues":
+      return clipText(text || "已完成 issue 搜索。");
     case "search_docs":
       return clipText(text || "已完成文档搜索。");
+    case "search_workspace_members":
+      return clipText(text || "已完成成员搜索。");
     default:
       return clipText(text || `已读取 ${toolName}。`);
   }
@@ -560,6 +332,16 @@ async function invokeReadTool(
             ? args.limit
             : undefined,
       });
+    case "search_issues":
+      return searchAiIssues(opts, {
+        query:
+          typeof args.query === "string" ? args.query.trim() : undefined,
+        projectId: readStringArg(args, "projectId") ?? undefined,
+        limit:
+          typeof args.limit === "number" && Number.isFinite(args.limit)
+            ? args.limit
+            : undefined,
+      });
     case "get_issue_detail": {
       const issueId = readStringArg(args, "issueId");
       if (!issueId) {
@@ -590,6 +372,15 @@ async function invokeReadTool(
       }
       return getAiDocDetail(opts, docId);
     }
+    case "search_workspace_members":
+      return searchAiWorkspaceMembers(opts, {
+        query:
+          typeof args.query === "string" ? args.query.trim() : undefined,
+        limit:
+          typeof args.limit === "number" && Number.isFinite(args.limit)
+            ? args.limit
+            : undefined,
+      });
     case "assemble_coding_prompt": {
       const issueId = readStringArg(args, "issueId");
       if (!issueId) {
@@ -977,6 +768,88 @@ function buildExecutedBatchToolOutput(
   };
 }
 
+async function requestIntentPlan(params: {
+  systemPrompt: string;
+  messages: AiRuntimeMessage[];
+  runtimeContext: ReturnType<typeof createRuntimeContext>;
+  signal: AbortSignal;
+  durableBackendOptions: ServerFetchOptions;
+  threadId: string;
+  runId: string;
+  stepIndex: number;
+}) {
+  let attempts = 0;
+  let stepIndex = params.stepIndex;
+  let totalTokensUsed = 0;
+  let retryInstruction = "";
+  let lastError: unknown = null;
+
+  while (attempts < 2) {
+    const effectiveSystemPrompt = retryInstruction
+      ? `${params.systemPrompt}\n\n${retryInstruction}`
+      : params.systemPrompt;
+    const llmResult = await generateAiText({
+      system: effectiveSystemPrompt,
+      messages: params.messages,
+      runtimeContext: params.runtimeContext,
+      signal: params.signal,
+      maxTokens: 1400,
+      temperature: 0.1,
+    });
+
+    totalTokensUsed += llmResult.usage?.totalTokens ?? 0;
+
+    await recordAiRunStep(
+      params.durableBackendOptions,
+      params.threadId,
+      params.runId,
+      {
+        kind: "LLM_CALL",
+        stepIndex,
+        model: DEFAULT_AI_MODEL_ID,
+        promptSnapshot: {
+          system: effectiveSystemPrompt,
+          messages: params.messages,
+        },
+        responseSnapshot: {
+          text: llmResult.text,
+        },
+        tokensIn: llmResult.usage?.inputTokens,
+        tokensOut: llmResult.usage?.outputTokens,
+      },
+    );
+    stepIndex += 1;
+
+    try {
+      const plan = parseIntentPlan(llmResult.text);
+      return {
+        plan,
+        stepIndex,
+        totalTokensUsed,
+      };
+    } catch (error) {
+      lastError = error;
+      attempts += 1;
+      retryInstruction =
+        "上一次输出无法被 runtime 解析。请严格只返回一个合法 JSON object，并且 type 必须是 final / clarify / read / prepare_execute / prepare_execute_many 之一。";
+    }
+  }
+
+  return {
+    plan: {
+      type: "clarify",
+      question:
+        "为了避免错误执行，我还需要你再明确一下目标对象、项目范围或评审人。",
+      reason:
+        lastError instanceof Error
+          ? lastError.message
+          : "planner 输出无法解析成合法 JSON。",
+    } satisfies IntentPlan,
+    stepIndex,
+    totalTokensUsed,
+  };
+}
+
 export async function GET(
   request: Request,
   context: { params: Promise<{ threadId: string }> },
@@ -1171,10 +1044,11 @@ export async function POST(
       thread,
     });
     const baseSystemPrompt = buildAiSystemPrompt(runtimeContext);
-    const agentSystemPrompt = buildDecisionSystemPrompt({
+    const agentSystemPrompt = buildPlannerSystemPrompt({
       baseSystemPrompt,
       manifest,
       capabilities,
+      allowlist: EXECUTION_ACTION_ALLOWLIST,
     });
 
     const historyMessages = toRuntimeMessages(historyPage.items);
@@ -1185,43 +1059,57 @@ export async function POST(
     let totalTokensUsed = 0;
     let latestCodingPrompt: AiCodingPromptAssembly | null = null;
     let lastToolText = "";
+    let actorContextPromise: ReturnType<typeof getAiActorContext> | null = null;
+
+    const compilerContext = {
+      manifest,
+      allowlist: EXECUTION_ACTION_ALLOWLIST,
+      runtimeContext,
+      thread,
+      getCurrentActor: () => {
+        if (!actorContextPromise) {
+          actorContextPromise = getAiActorContext(backendOptions);
+        }
+        return actorContextPromise;
+      },
+      searchProjects: (params: { query: string; limit?: number }) =>
+        searchAiProjects(backendOptions, params),
+      searchIssues: (params: {
+        query: string;
+        projectId?: string;
+        limit?: number;
+      }) => searchAiIssues(backendOptions, params),
+      searchWorkspaceMembers: (params: { query: string; limit?: number }) =>
+        searchAiWorkspaceMembers(backendOptions, params),
+    };
 
     for (let iteration = 0; iteration < MAX_AGENT_STEPS; iteration += 1) {
       const llmMessages = [...toolContextMessages, ...historyMessages];
-      const llmResult = await generateAiText({
-        system: agentSystemPrompt,
+      const plannedStep = await requestIntentPlan({
+        systemPrompt: agentSystemPrompt,
         messages: llmMessages,
         runtimeContext,
         signal: request.signal,
-        maxTokens: 1400,
-        temperature: 0.1,
-      });
-
-      totalTokensUsed += llmResult.usage?.totalTokens ?? 0;
-
-      await recordAiRunStep(durableBackendOptions, threadId, run.id, {
-        kind: "LLM_CALL",
+        durableBackendOptions,
+        threadId,
+        runId: run.id,
         stepIndex,
-        model: DEFAULT_AI_MODEL_ID,
-        promptSnapshot: {
-          system: agentSystemPrompt,
-          messages: llmMessages,
-        },
-        responseSnapshot: {
-          text: llmResult.text,
-        },
-        tokensIn: llmResult.usage?.inputTokens,
-        tokensOut: llmResult.usage?.outputTokens,
       });
-      stepIndex += 1;
 
-      const decision = parseAgentDecision(llmResult.text);
+      stepIndex = plannedStep.stepIndex;
+      totalTokensUsed += plannedStep.totalTokensUsed;
 
-      if (decision.type === "final") {
+      const plan = plannedStep.plan;
+
+      if (plan.type === "final" || plan.type === "clarify") {
+        const assistantText =
+          plan.type === "final"
+            ? plan.reply
+            : [plan.question, plan.reason].filter(Boolean).join("\n");
         const assistantParts: AiMessagePart[] = [
           {
             type: "text",
-            text: decision.reply,
+            text: assistantText,
           },
         ];
 
@@ -1245,7 +1133,7 @@ export async function POST(
           tokensUsed: totalTokensUsed,
         });
 
-        return new Response(decision.reply, {
+        return new Response(assistantText, {
           headers: {
             "Cache-Control": "no-store",
             "Content-Type": "text/plain; charset=utf-8",
@@ -1253,22 +1141,52 @@ export async function POST(
         });
       }
 
-      if (decision.type === "read") {
+      if (plan.type === "read") {
+        if (!READ_TOOL_NAMES.includes(plan.tool as ReadToolName)) {
+          const clarificationText = `当前 runtime 暂不支持读取工具 ${plan.tool}。请换一种方式描述你的目标，或让我先搜索项目 / issue / 成员。`;
+
+          await appendAiMessage(durableBackendOptions, threadId, {
+            role: "ASSISTANT",
+            runId: run.id,
+            parts: [
+              {
+                type: "text",
+                text: clarificationText,
+              },
+            ],
+          });
+
+          await finishAiRun(durableBackendOptions, threadId, run.id, {
+            status: "COMPLETED",
+            tokensUsed: totalTokensUsed,
+          });
+
+          return new Response(clarificationText, {
+            headers: {
+              "Cache-Control": "no-store",
+              "Content-Type": "text/plain; charset=utf-8",
+            },
+          });
+        }
+
         const toolOutput = await invokeReadTool(
-          decision.tool,
-          decision.arguments,
+          plan.tool as ReadToolName,
+          plan.arguments,
           backendOptions,
         );
-        const toolText = buildReadToolResultText(decision.tool, toolOutput);
+        const toolText = buildReadToolResultText(
+          plan.tool as ReadToolName,
+          toolOutput,
+        );
         const toolEvent: ToolEvent = {
           toolCallId: `tool-${run.id}-${stepIndex}`,
-          toolName: decision.tool,
-          input: decision.arguments,
+          toolName: plan.tool,
+          input: plan.arguments,
           output: toolOutput,
           text: toolText,
         };
 
-        if (decision.tool === "assemble_coding_prompt") {
+        if (plan.tool === "assemble_coding_prompt") {
           latestCodingPrompt = toolOutput as AiCodingPromptAssembly;
         }
 
@@ -1281,22 +1199,60 @@ export async function POST(
         await recordAiRunStep(durableBackendOptions, threadId, run.id, {
           kind: "TOOL_CALL",
           stepIndex,
-          toolName: decision.tool,
-          toolInput: decision.arguments,
+          toolName: plan.tool,
+          toolInput: plan.arguments,
           toolOutput,
         });
         stepIndex += 1;
 
         toolContextMessages.unshift({
           role: "system",
-          content: `工具 ${decision.tool} 返回：\n${toolText}`,
+          content: `工具 ${plan.tool} 返回：\n${toolText}`,
         });
         lastToolText = toolText;
         continue;
       }
 
-      if (decision.type === "execute_many") {
-        const batchItems = decision.items.map(
+      const compiledPlan = await compileIntentPlan(plan, compilerContext);
+
+      if (compiledPlan?.type === "clarify") {
+        const assistantParts: AiMessagePart[] = [
+          {
+            type: "text",
+            text: compiledPlan.reply,
+          },
+        ];
+
+        if (latestCodingPrompt) {
+          assistantParts.push({
+            type: "coding-prompt",
+            issueId: latestCodingPrompt.issueId,
+            prompt: latestCodingPrompt.prompt,
+            generatedAt: new Date().toISOString(),
+          });
+        }
+
+        await appendAiMessage(durableBackendOptions, threadId, {
+          role: "ASSISTANT",
+          runId: run.id,
+          parts: assistantParts,
+        });
+
+        await finishAiRun(durableBackendOptions, threadId, run.id, {
+          status: "COMPLETED",
+          tokensUsed: totalTokensUsed,
+        });
+
+        return new Response(compiledPlan.reply, {
+          headers: {
+            "Cache-Control": "no-store",
+            "Content-Type": "text/plain; charset=utf-8",
+          },
+        });
+      }
+
+      if (compiledPlan?.type === "execute_many") {
+        const batchItems = compiledPlan.items.map(
           (item): ApprovalBundleItem => ({
             actionKey: item.actionKey,
             input: item.input,
@@ -1311,7 +1267,7 @@ export async function POST(
         }
 
         const batchSummary =
-          decision.summary?.trim() || `批量执行 ${batchItems.length} 个动作`;
+          compiledPlan.summary?.trim() || `批量执行 ${batchItems.length} 个动作`;
 
         if (directExecutionAllowed) {
           const { executedItems, latestCodingPrompt: batchCodingPrompt } =
@@ -1573,13 +1529,17 @@ export async function POST(
         });
       }
 
-      if (!EXECUTION_ACTION_ALLOWLIST.has(decision.actionKey)) {
-        throw new Error(`当前 runtime 暂未开放动作 ${decision.actionKey}`);
+      if (!compiledPlan || compiledPlan.type !== "execute") {
+        throw new Error("planner 没有产出可执行动作。");
+      }
+
+      if (!EXECUTION_ACTION_ALLOWLIST.has(compiledPlan.actionKey)) {
+        throw new Error(`当前 runtime 暂未开放动作 ${compiledPlan.actionKey}`);
       }
 
       const { resolvedInput, codingPromptAssembly } = await resolveExecutionInput(
-        decision.actionKey,
-        decision.input,
+        compiledPlan.actionKey,
+        compiledPlan.input,
         backendOptions,
       );
 
@@ -1589,7 +1549,7 @@ export async function POST(
 
       const execution = await executeAiAction(
         backendOptions,
-        decision.actionKey,
+        compiledPlan.actionKey,
         {
           input: resolvedInput,
           confirmed: directExecutionAllowed,
@@ -1597,10 +1557,13 @@ export async function POST(
         },
       );
 
-      const toolText = buildExecutionResultText(decision.actionKey, execution);
+      const toolText = buildExecutionResultText(
+        compiledPlan.actionKey,
+        execution,
+      );
       const toolEvent: ToolEvent = {
         toolCallId: `tool-${run.id}-${stepIndex}`,
-        toolName: `action:${decision.actionKey}`,
+        toolName: `action:${compiledPlan.actionKey}`,
         input: resolvedInput,
         output: execution,
         isError:
@@ -1617,7 +1580,7 @@ export async function POST(
       await recordAiRunStep(durableBackendOptions, threadId, run.id, {
         kind: "TOOL_CALL",
         stepIndex,
-        toolName: decision.actionKey,
+        toolName: compiledPlan.actionKey,
         toolInput: resolvedInput,
         toolOutput: execution,
       });
@@ -1625,7 +1588,7 @@ export async function POST(
 
       toolContextMessages.unshift({
         role: "system",
-        content: `动作 ${decision.actionKey} 返回：\n${toolText}`,
+        content: `动作 ${compiledPlan.actionKey} 返回：\n${toolText}`,
       });
       lastToolText = toolText;
 
@@ -1642,7 +1605,7 @@ export async function POST(
           threadId,
           {
             runId: run.id,
-            actionKey: decision.actionKey,
+            actionKey: compiledPlan.actionKey,
             summary: execution.summary,
             input: resolvedInput,
             previewResult: approvalPreview,
@@ -1659,7 +1622,7 @@ export async function POST(
           {
             type: "approval-request",
             approvalId: approval.id,
-            actionKey: decision.actionKey,
+            actionKey: compiledPlan.actionKey,
             summary: execution.summary,
             input: resolvedInput,
             preview: approvalPreview,
