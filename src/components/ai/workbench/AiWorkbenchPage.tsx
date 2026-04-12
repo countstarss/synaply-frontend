@@ -3,28 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Bot,
-  FolderOpen,
-  MessageSquareText,
-  Plus,
-} from "lucide-react";
+import { Bot, FolderOpen, MessageSquareText } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAiThread } from "@/hooks/useAiThread";
 import { useAiThreadStream } from "@/hooks/useAiThreadStream";
 import { useIssues } from "@/hooks/useIssueApi";
 import { useProjects } from "@/hooks/useProjectApi";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { AiWorkbenchSidebar } from "@/components/ai/workbench/modules/sidebar/AiWorkbenchSidebar";
 import { AiWorkbenchChatPanel } from "@/components/ai/workbench/modules/chat/AiWorkbenchChatPanel";
 import type { AiSurfaceType, AiThreadRecord } from "@/lib/ai/types";
 import { createAiThread, listAiThreads } from "@/lib/fetchers/ai-thread";
@@ -37,7 +23,7 @@ import { useRouter } from "@/i18n/navigation";
 
 const NONE_VALUE = "__none__";
 const panelClassName =
-  "rounded-[28px] border border-white/8 bg-[rgba(11,14,20,0.62)] shadow-[0_24px_72px_-56px_rgba(2,8,23,0.9)] backdrop-blur-2xl";
+  "rounded-lg border border-black/[0.06] bg-white/84 shadow-[0_24px_72px_-56px_rgba(15,23,42,0.22)] ring-1 ring-black/[0.03] backdrop-blur-2xl dark:border-white/8 dark:bg-[rgba(18,18,20,0.72)] dark:ring-white/[0.04] dark:shadow-[0_24px_72px_-56px_rgba(0,0,0,0.88)]";
 
 function getIssueLabel(issue: Issue) {
   return issue.key ? `${issue.key} · ${issue.title}` : issue.title;
@@ -498,188 +484,59 @@ export function AiWorkbenchPage() {
 
   return (
     <div className="relative h-full min-h-full overflow-hidden bg-app-bg text-app-text-primary">
-      <AmbientGlow className="opacity-60" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(6,8,12,0.18),rgba(6,8,12,0.58))]" />
+      <AmbientGlow className="opacity-0 dark:opacity-60" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(248,250,252,0.6),rgba(241,245,249,0.92))] dark:bg-[linear-gradient(180deg,rgba(12,12,14,0.14),rgba(12,12,14,0.46))]" />
 
-      <div className="relative z-10 flex h-full min-h-0 gap-3 p-3">
-        <aside className={cn(panelClassName, "flex w-[304px] shrink-0 flex-col overflow-hidden")}>
-          <div className="border-b border-white/8 px-4 py-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h1 className="truncate text-[15px] font-semibold text-white">
-                  AI Workbench
-                </h1>
-                <p className="mt-1 truncate text-sm text-white/44">
-                  {currentWorkspace.name}
-                </p>
-              </div>
-
-              <Button
-                type="button"
-                size="sm"
-                className="h-9 rounded-xl bg-white/92 px-3 text-slate-950 hover:bg-white"
-                disabled={createThreadMutation.isPending}
-                onClick={() => void handleStartNewThread()}
-              >
-                <Plus className="mr-1 size-4" />
-                新建
-              </Button>
-            </div>
-          </div>
-
-          <div className="border-b border-white/8 px-4 py-4">
-            <div className="space-y-3">
-              <Select
-                value={projectSelectValue}
-                onValueChange={handleProjectSelection}
-              >
-                <SelectTrigger className="h-10 rounded-xl border-white/8 bg-white/[0.03] text-white shadow-none">
-                  <SelectValue
-                    placeholder={
-                      isProjectsLoading ? "正在加载项目..." : "选择项目"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value={NONE_VALUE}>直接从想法开始</SelectItem>
-                    {sidebarProjects.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={issueSelectValue}
-                onValueChange={handleIssueSelection}
-                disabled={
-                  projectSelectValue === NONE_VALUE ||
-                  displayCandidateIssues.length === 0
-                }
-              >
-                <SelectTrigger className="h-10 rounded-xl border-white/8 bg-white/[0.03] text-white shadow-none">
-                  <SelectValue
-                    placeholder={
-                      isIssuesLoading
-                        ? "正在加载 issue..."
-                        : projectSelectValue !== NONE_VALUE
-                          ? "选择 issue"
-                          : "先选择项目"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value={NONE_VALUE}>只围绕当前项目来聊</SelectItem>
-                    {displayCandidateIssues.map((issue) => (
-                      <SelectItem key={issue.id} value={issue.id}>
-                        {getIssueLabel(issue)}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <ScrollArea className="min-h-0 flex-1">
-            <div className="px-3 py-3">
-              <button
-                type="button"
-                onClick={() => {
-                  router.push("/ai");
-                  setSelectedProjectId("");
-                  setSelectedIssueId("");
-                }}
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition",
-                  projectSelectValue === NONE_VALUE
-                    ? "bg-white/[0.08] text-white"
-                    : "text-white/72 hover:bg-white/[0.05] hover:text-white",
-                )}
-              >
-                <Bot className="size-4 shrink-0" />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">从想法开始</p>
-                  <p className="truncate text-xs text-white/36">不预设上下文</p>
-                </div>
-              </button>
-
-              <div className="mt-4 px-2 text-[11px] font-medium text-white/28">
-                最近线程
-              </div>
-
-              <div className="mt-2 space-y-1">
-                {sortedThreads.length === 0 ? (
-                  <div className="px-3 py-6 text-sm leading-6 text-white/40">
-                    还没有历史线程。先发一条消息，这里会开始沉淀记录。
-                  </div>
-                ) : (
-                  sortedThreads.map((item) => {
-                    const active = resolvedThread?.id === item.id;
-
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => applyThreadSelection(item)}
-                        className={cn(
-                          "w-full rounded-2xl px-3 py-2.5 text-left transition",
-                          active
-                            ? "bg-white/[0.08]"
-                            : "hover:bg-white/[0.05]",
-                        )}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-white">
-                              {item.title || "AI 协作线程"}
-                            </p>
-                            <p className="mt-1 truncate text-xs text-white/34">
-                              {getThreadContextLabel(
-                                item,
-                                issueMap,
-                                projectNameMap,
-                                currentWorkspace.name,
-                              )}
-                            </p>
-                          </div>
-                          <span className="shrink-0 text-[11px] text-white/24">
-                            {formatRelativeThreadTime(
-                              item.lastMessageAt || item.updatedAt,
-                            )}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          </ScrollArea>
-        </aside>
+      <div className="relative z-10 flex h-full min-h-0 gap-2">
+        <AiWorkbenchSidebar
+          workspaceName={currentWorkspace.name}
+          threads={sortedThreads}
+          resolvedThreadId={resolvedThread?.id ?? null}
+          projectOptions={sidebarProjects.map((project) => ({
+            id: project.id,
+            name: project.name,
+          }))}
+          issueOptions={displayCandidateIssues}
+          issueMap={issueMap}
+          projectNameMap={projectNameMap}
+          projectSelectValue={projectSelectValue}
+          issueSelectValue={issueSelectValue}
+          noneValue={NONE_VALUE}
+          currentProject={displaySelectedProject ?? null}
+          currentIssue={displaySelectedIssue ?? null}
+          contextSummary={contextSummary}
+          isProjectsLoading={isProjectsLoading}
+          isIssuesLoading={isIssuesLoading}
+          issueSelectDisabled={
+            projectSelectValue === NONE_VALUE || displayCandidateIssues.length === 0
+          }
+          isCreatingThread={createThreadMutation.isPending}
+          onProjectChange={handleProjectSelection}
+          onIssueChange={handleIssueSelection}
+          onResetContext={() => {
+            router.push("/ai");
+            setSelectedProjectId("");
+            setSelectedIssueId("");
+          }}
+          onStartNewThread={handleStartNewThread}
+          onSelectThread={applyThreadSelection}
+        />
 
         <main className={cn(panelClassName, "min-w-0 flex-1 overflow-hidden")}>
           <div className="flex h-full min-h-0 flex-col">
-            <header className="border-b border-white/8 px-5 py-4">
+            <header className="border-b border-black/[0.06] px-5 py-5 dark:border-white/8">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0">
-                  <h2 className="truncate text-lg font-semibold text-white">
+                  <h2 className="truncate text-lg font-semibold text-slate-950 dark:text-white">
                     {resolvedThread?.title || originTitle}
                   </h2>
-                  <p className="mt-1 truncate text-sm text-white/42">
-                    {contextSummary}
-                  </p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
                   {currentContextBadges.map((item) => (
                     <span
                       key={item.key}
-                      className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/8 bg-white/[0.04] px-3 py-1 text-xs text-white/62"
+                      className="inline-flex max-w-full items-center gap-2 rounded-full border border-black/[0.06] bg-black/[0.03] px-3 py-1 text-xs text-slate-600 dark:border-white/8 dark:bg-white/[0.04] dark:text-white/62"
                     >
                       {item.tone === "project" ? (
                         <FolderOpen className="size-3.5" />

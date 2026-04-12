@@ -243,7 +243,7 @@ export default function AppearanceSettingsSection() {
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="flex flex-row gap-3">
         <ToggleRow
           label="启用背景光晕"
           description="关闭后将不再渲染氛围光，页面背景保持纯色。"

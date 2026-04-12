@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { RiFileTextLine, RiFolder3Line, RiAddLine } from "react-icons/ri";
 import DocsProvider, {
   useDocs,
@@ -12,6 +12,15 @@ import DocsTabs from "./DocsTabs";
 import DocsEditor from "./DocsEditor";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import AmbientGlow from "@/components/global/AmbientGlow";
+import { useDocStore } from "@/stores/doc-store";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 // import {
 //   ResizablePanelGroup,
 //   ResizablePanel,
@@ -50,6 +59,70 @@ interface DocsPageProps {
   userId: string;
   context?: DocumentContext; // 可选，如果不提供则自动检测
   projectId?: string;
+}
+
+interface DocsSourceOption {
+  value: DocumentContext;
+  label: string;
+}
+
+const TEAM_DOC_SOURCE_OPTIONS: DocsSourceOption[] = [
+  { value: "team", label: "团队文档" },
+  { value: "team-personal", label: "我的私有文档" },
+];
+
+function resolveDocumentContext(
+  providedContext: DocumentContext | undefined,
+  workspaceType: "PERSONAL" | "TEAM",
+  currentWorkspaceType?: "PERSONAL" | "TEAM",
+): DocumentContext {
+  if (providedContext) {
+    return providedContext;
+  }
+
+  if (currentWorkspaceType === "PERSONAL" || workspaceType === "PERSONAL") {
+    return "personal";
+  }
+
+  return "team";
+}
+
+function DocsSourceSwitcher({
+  value,
+  options,
+  onValueChange,
+}: {
+  value: DocumentContext;
+  options: DocsSourceOption[];
+  onValueChange: (value: DocumentContext) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="text-right">
+        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-app-text-muted">
+          文档源
+        </p>
+        <p className="mt-1 text-xs text-app-text-secondary">
+          切换团队共享文档或你的私有文档
+        </p>
+      </div>
+
+      <Select value={value} onValueChange={(next) => onValueChange(next as DocumentContext)}>
+        <SelectTrigger size="sm" className="w-[220px]">
+          <SelectValue placeholder="选择文档源" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {options.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    </div>
+  );
 }
 
 // MARK: - 文档概览页面组件
@@ -681,10 +754,15 @@ function DocsOverviewPage({ context }: { context: DocumentContext }) {
 }
 
 // MARK: - 内部文档页面组件
-function DocsPageContent() {
+function DocsPageContent({ sourceSwitcher }: { sourceSwitcher?: React.ReactNode }) {
   const { documents, openDocs, activeDocId, openDoc, isLoading, context } =
     useDocs();
   const [isExpanded, setIsExpanded] = useState(false);
+  const sourceSwitcherBar = sourceSwitcher ? (
+    <div className="relative z-20 flex items-center justify-end border-b border-app-border/80 bg-app-bg/80 px-4 py-3 backdrop-blur sm:px-6">
+      {sourceSwitcher}
+    </div>
+  ) : null;
 
   const activeDoc = openDocs.find((doc) => doc._id === activeDocId);
 
@@ -698,11 +776,14 @@ function DocsPageContent() {
 
   if (isLoading) {
     return (
-      <div className="relative flex h-full min-h-full items-center justify-center bg-app-bg">
-        <AmbientGlow />
-        <div className="relative z-10 text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-sky-600"></div>
-          <p className="text-app-text-muted">加载文档...</p>
+      <div className="flex h-full min-h-full flex-col">
+        {sourceSwitcherBar}
+        <div className="relative flex min-h-0 flex-1 items-center justify-center bg-app-bg">
+          <AmbientGlow />
+          <div className="relative z-10 text-center">
+            <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-sky-600"></div>
+            <p className="text-app-text-muted">加载文档...</p>
+          </div>
         </div>
       </div>
     );
@@ -711,64 +792,70 @@ function DocsPageContent() {
   // 如果没有激活文档且没有打开的文档，显示概览页面
   if (!activeDocId && openDocs.length === 0) {
     return (
-      <div className="h-full min-h-full bg-app-bg">
-        <DocsOverviewPage context={context} />
+      <div className="flex h-full min-h-full flex-col">
+        {sourceSwitcherBar}
+        <div className="min-h-0 flex-1 bg-app-bg">
+          <DocsOverviewPage context={context} />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="relative flex h-full min-h-full bg-app-bg">
-      <AmbientGlow />
-      {/* Sidebar */}
-      {!isExpanded && (
-        <div className="relative z-10 w-64 flex-shrink-0">
-          <DocsSidebar onSelectDoc={handleSelectDoc} />
-        </div>
-      )}
+    <div className="flex h-full min-h-full flex-col">
+      {sourceSwitcherBar}
+      <div className="relative flex min-h-0 flex-1 bg-app-bg">
+        <AmbientGlow />
+        {/* Sidebar */}
+        {!isExpanded && (
+          <div className="relative z-10 w-64 flex-shrink-0">
+            <DocsSidebar onSelectDoc={handleSelectDoc} />
+          </div>
+        )}
 
-      {/* Main Content */}
-      <div className="relative z-10 flex-1 flex flex-col">
-        {/* Tabs */}
-        <DocsTabs onSelectDoc={handleSelectDoc} />
+        {/* Main Content */}
+        <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+          {/* Tabs */}
+          <DocsTabs onSelectDoc={handleSelectDoc} />
 
-        {/* Content */}
-        <div className="flex-1">
-          {activeDoc ? (
-            <DocsEditor
-              doc={activeDoc}
-              isExpanded={isExpanded}
-              onToggleExpand={handleToggleExpand}
-            />
-          ) : (
-            <div className="h-full flex items-center justify-center bg-app-bg">
-              <div className="text-center">
-                <div className="mb-4">
-                  <svg
-                    className="w-16 h-16 mx-auto text-app-text-muted"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
+          {/* Content */}
+          <div className="flex-1">
+            {activeDoc ? (
+              <DocsEditor
+                doc={activeDoc}
+                isExpanded={isExpanded}
+                onToggleExpand={handleToggleExpand}
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center bg-app-bg">
+                <div className="text-center">
+                  <div className="mb-4">
+                    <svg
+                      className="w-16 h-16 mx-auto text-app-text-muted"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-app-text-primary mb-2">
+                    欢迎使用文档系统
+                  </h3>
+                  <p className="text-app-text-muted max-w-sm">
+                    {documents.length === 0
+                      ? "还没有文档，点击侧边栏的 + 按钮开始创建"
+                      : "从左侧选择一个文档开始编辑"}
+                  </p>
                 </div>
-                <h3 className="text-lg font-medium text-app-text-primary mb-2">
-                  欢迎使用文档系统
-                </h3>
-                <p className="text-app-text-muted max-w-sm">
-                  {documents.length === 0
-                    ? "还没有文档，点击侧边栏的 + 按钮开始创建"
-                    : "从左侧选择一个文档开始编辑"}
-                </p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -783,25 +870,44 @@ export default function DocsPage({
   projectId,
 }: DocsPageProps) {
   const { currentWorkspace } = useWorkspace();
+  const setActiveDocId = useDocStore((state) => state.setActiveDocId);
+  const defaultDocumentContext = useMemo(
+    () =>
+      resolveDocumentContext(context, workspaceType, currentWorkspace?.type),
+    [context, currentWorkspace?.type, workspaceType],
+  );
+  const canSwitchSource = workspaceType === "TEAM" && !projectId;
+  const [selectedContext, setSelectedContext] =
+    useState<DocumentContext>(defaultDocumentContext);
 
-  // 如果没有提供 context，则根据工作空间类型自动检测
-  const documentContext: DocumentContext =
-    context ||
-    (currentWorkspace?.type === "PERSONAL"
-      ? "personal"
-      : currentWorkspace?.type === "TEAM"
-      ? "team"
-      : "team-personal");
+  useEffect(() => {
+    setSelectedContext(defaultDocumentContext);
+  }, [defaultDocumentContext, workspaceId, projectId]);
+
+  useEffect(() => {
+    setActiveDocId(null);
+  }, [projectId, selectedContext, setActiveDocId, workspaceId]);
+
+  const activeContext = canSwitchSource ? selectedContext : defaultDocumentContext;
+  const providerKey = `${workspaceId}-${workspaceType}-${activeContext}-${projectId ?? "root"}`;
+  const sourceSwitcher = canSwitchSource ? (
+    <DocsSourceSwitcher
+      value={activeContext}
+      options={TEAM_DOC_SOURCE_OPTIONS}
+      onValueChange={setSelectedContext}
+    />
+  ) : null;
 
   return (
     <DocsProvider
-      context={documentContext}
+      key={providerKey}
+      context={activeContext}
       workspaceId={workspaceId}
       workspaceType={workspaceType}
       userId={userId}
       projectId={projectId}
     >
-      <DocsPageContent />
+      <DocsPageContent sourceSwitcher={sourceSwitcher} />
     </DocsProvider>
   );
 }

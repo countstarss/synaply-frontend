@@ -6,7 +6,6 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SidebarBrand from "../sidebar/SidebarBrand";
 import SidebarNavItem from "../sidebar/SidebarNavItem";
-import SidebarSection from "../sidebar/SidebarSection";
 import SettingSection from "../sidebar/SettingSection";
 import SidebarFooter from "../sidebar/SidebarFooter";
 import UtilsSidebarSection from "../sidebar/UtilsSidebarSection";
@@ -16,7 +15,6 @@ import { useRouter } from "@/i18n/navigation";
 import {
   getReadyNavItems,
   mainNavItems,
-  personalItems,
   personalNavItems,
 } from "@/lib/data/constant";
 import { buildSettingsSections } from "@/lib/data/settingData";
@@ -115,7 +113,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
                 /* MARK: TEAM 导航
                  */
                 <>
-                  <div className="space-y-1 py-2">
+                  <div className="flex flex-col py-2 gap-1">
                     {readyMainNavItems.map((item) => (
                       <SidebarNavItem
                         key={item.href}
@@ -125,18 +123,6 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
                       />
                     ))}
                   </div>
-
-                  {/* Personal 部分 */}
-                  <SidebarSection title="Personal">
-                    {personalItems.map((item) => (
-                      <SidebarNavItem
-                        key={item.href}
-                        icon={item.icon}
-                        label={item.label}
-                        href={item.href}
-                      />
-                    ))}
-                  </SidebarSection>
 
                   <UtilsSidebarSection />
                 </>

@@ -5,8 +5,8 @@ import { RiSendPlane2Line } from "react-icons/ri";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const MIN_COMPOSER_HEIGHT = 56;
-const MAX_COMPOSER_HEIGHT = 220;
+const MIN_COMPOSER_HEIGHT = 40;
+const MAX_COMPOSER_HEIGHT = 200;
 
 interface AiWorkbenchChatComposerProps {
   value: string;
@@ -34,7 +34,7 @@ export function AiWorkbenchChatComposer({
       return;
     }
 
-    textarea.style.height = "0px";
+    textarea.style.height = "auto";
     const nextHeight = Math.min(
       Math.max(textarea.scrollHeight, MIN_COMPOSER_HEIGHT),
       MAX_COMPOSER_HEIGHT,
@@ -48,57 +48,57 @@ export function AiWorkbenchChatComposer({
   const canSend = Boolean(value.trim()) && !disabled && !isSubmitting;
 
   return (
-    <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,22,30,0.98),rgba(9,11,16,0.98))] shadow-[0_24px_90px_-48px_rgba(0,0,0,0.9)] backdrop-blur-xl">
-      <div className="flex items-end gap-3 p-4">
-        <div className="min-w-0 flex-1">
-          <textarea
-            ref={textareaRef}
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                if (canSend) {
-                  void onSend();
-                }
+    <div className="w-full">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (canSend) {
+            void onSend();
+          }
+        }}
+        className={cn(
+          "mx-auto grid w-full max-w-4xl grid-cols-[minmax(0,1fr)_auto] items-end gap-3 rounded-4xl p-3",
+          "border border-black/[0.08] bg-white/88 shadow-[0_18px_44px_-28px_rgba(15,23,42,0.24)] ring-1 ring-black/[0.04] backdrop-blur-sm transition-all duration-300 hover:scale-[1.02]",
+          "dark:border-white/10 dark:bg-[rgba(24,24,27,0.92)] dark:ring-white/[0.06] dark:shadow-[0_18px_44px_-28px_rgba(0,0,0,0.86)]",
+        )}
+      >
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              if (canSend) {
+                void onSend();
               }
-            }}
-            disabled={disabled || isSubmitting}
-            placeholder="直接说你的想法，或者告诉 AI 现在想推进哪个项目 / issue。"
-            rows={1}
+            }
+          }}
+          disabled={disabled || isSubmitting}
+          placeholder="继续输入你的想法、blocker 或下一步动作..."
+          rows={1}
+          className={cn(
+            "min-h-[40px] max-h-[200px] min-w-0 w-full resize-none rounded-xl border-none px-4 py-2 text-base leading-6 outline-none",
+            "bg-transparent text-slate-950 [overflow-wrap:anywhere] dark:text-white",
+            "placeholder:text-slate-400 dark:placeholder:text-white/28",
+            "disabled:cursor-not-allowed disabled:opacity-60",
+          )}
+        />
+
+        <div className="flex items-end self-end">
+          <Button
+            type="submit"
+            disabled={!canSend}
             className={cn(
-              "w-full resize-none border-0 bg-transparent px-0 py-0 text-[15px] leading-7 text-white outline-none placeholder:text-white/28",
-              "[overflow-wrap:anywhere]",
-              "disabled:cursor-not-allowed disabled:opacity-60",
+              "rounded-full px-4 py-2 text-white ring-inset transition-all duration-300 hover:scale-[1.02]",
+              "bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700",
             )}
-          />
+          >
+            <RiSendPlane2Line className="size-4" />
+            {isSubmitting ? "发送中..." : "发送"}
+          </Button>
         </div>
-
-        <Button
-          type="button"
-          disabled={!canSend}
-          className="h-11 rounded-2xl bg-white px-4 text-slate-950 hover:bg-white/92"
-          onClick={() => void onSend()}
-        >
-          <RiSendPlane2Line className="size-4" />
-          发送
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/8 px-4 py-3 text-xs">
-        <p className="text-white/38">
-          当前会写入 AI thread / runs / steps。Tool 与审批卡片保持可执行。
-        </p>
-
-        <div className="flex max-w-full flex-wrap items-center justify-end gap-3">
-          {error ? (
-            <span className="max-w-sm text-right leading-5 text-amber-200/90">
-              {error}
-            </span>
-          ) : null}
-          <span className="text-white/26">Enter 发送，Shift + Enter 换行</span>
-        </div>
-      </div>
+      </form>
     </div>
   );
 }

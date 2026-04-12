@@ -13,9 +13,12 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+// MARK: 无边框模式配置
 const BORDERLESS_CONTENT_SHELL_ROUTES = [
   "/issues/:issueId",
   "/projects/:projectId/:issueId",
+  "/ai/:threadId",
+  "/ai"
 ] as const;
 const PROJECT_SUBVIEW_ROUTE_SEGMENTS = new Set([
   "issues",

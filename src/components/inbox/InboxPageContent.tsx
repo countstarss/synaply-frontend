@@ -387,7 +387,7 @@ function InboxRow({
     >
       <div
         className={cn(
-          "grid gap-4 rounded-[22px] border px-5 py-4 transition-all duration-200 md:grid-cols-[240px_minmax(0,1fr)_auto]",
+          "grid gap-4 rounded-sm border px-4 py-3 transition-all duration-200 md:grid-cols-[240px_minmax(0,1fr)_auto] cursor-pointer",
           shouldRaiseRow
             ? "border-[#e7e1ef] bg-app-content-bg shadow-[0_14px_34px_rgba(29,25,38,0.06)] dark:border-white/10 dark:!bg-[#171717] dark:shadow-[0_20px_42px_rgba(0,0,0,0.32)]"
             : "border-transparent bg-transparent shadow-none",
@@ -432,8 +432,13 @@ function InboxRow({
           className="flex items-start justify-between gap-3 md:min-w-[220px] md:justify-end"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="pt-1 text-sm text-[#8a8595] dark:text-[#9c96aa]">
-            {formatRelativeTime(item.occurredAt)}
+          <div className="pt-[3px]">
+            <Button
+                type="button"
+                className="text-sm text-[#8a8595] dark:text-[#9c96aa] bg-transparent px-1 hover:bg-transparent"
+              >
+                {formatRelativeTime(item.occurredAt)}
+              </Button>
           </div>
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
             {showReadToggle ? (
