@@ -11,6 +11,10 @@ interface UseAiThreadStreamOptions {
   threadId: string | null;
 }
 
+interface SendAiThreadMessageOptions {
+  onLocalMessage?: (messageId: string) => void;
+}
+
 export function useAiThreadStream({
   workspaceId,
   threadId,
@@ -27,7 +31,11 @@ export function useAiThreadStream({
   } = useAiThreadStore();
 
   const sendMessage = useCallback(
-    async (text: string, threadIdOverride?: string) => {
+    async (
+      text: string,
+      threadIdOverride?: string,
+      options?: SendAiThreadMessageOptions,
+    ) => {
       const trimmedText = text.trim();
       const activeThreadId = threadIdOverride ?? threadId;
 
@@ -43,8 +51,10 @@ export function useAiThreadStream({
         throw new Error("AI 线程尚未准备好");
       }
 
+      const localMessageId = `local-user-${Date.now()}`;
+
       addMessage({
-        id: `local-user-${Date.now()}`,
+        id: localMessageId,
         threadId: activeThreadId,
         runId: null,
         role: "USER",
@@ -56,6 +66,7 @@ export function useAiThreadStream({
         ],
         createdAt: new Date().toISOString(),
       });
+      options?.onLocalMessage?.(localMessageId);
 
       setError(null);
       startStreaming();

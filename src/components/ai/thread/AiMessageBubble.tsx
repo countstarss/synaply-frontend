@@ -6,11 +6,13 @@ import {
   type AiMessageRecord,
 } from "@/lib/ai/types";
 import { AiApprovalRequestCard } from "@/components/ai/thread/AiApprovalRequestCard";
+import { AiClarificationOptionsCard } from "@/components/ai/thread/AiClarificationOptionsCard";
 import { AiToolResultCard } from "@/components/ai/thread/AiToolResultCard";
 import { AiCodingPromptCard } from "@/components/ai/thread/AiCodingPromptCard";
 
 interface AiMessageBubbleProps {
   message: AiMessageRecord;
+  onQuickReply?: (value: string) => Promise<void> | void;
 }
 
 function renderTextPart(text: string, className?: string) {
@@ -26,7 +28,11 @@ function renderTextPart(text: string, className?: string) {
   );
 }
 
-function renderStructuredPart(message: AiMessageRecord, part: AiMessagePart) {
+function renderStructuredPart(
+  message: AiMessageRecord,
+  part: AiMessagePart,
+  onQuickReply?: (value: string) => Promise<void> | void,
+) {
   switch (part.type) {
     case "text":
       return renderTextPart(part.text);
@@ -42,6 +48,8 @@ function renderStructuredPart(message: AiMessageRecord, part: AiMessagePart) {
       return <AiApprovalRequestCard threadId={message.threadId} part={part} />;
     case "coding-prompt":
       return <AiCodingPromptCard part={part} />;
+    case "clarification-options":
+      return <AiClarificationOptionsCard part={part} onSelect={onQuickReply} />;
     case "context-chip":
       return (
         <div className="inline-flex w-fit items-center rounded-full border border-app-border bg-app-bg px-3 py-1 text-xs text-app-text-secondary">
@@ -55,7 +63,10 @@ function renderStructuredPart(message: AiMessageRecord, part: AiMessagePart) {
   }
 }
 
-export function AiMessageBubble({ message }: AiMessageBubbleProps) {
+export function AiMessageBubble({
+  message,
+  onQuickReply,
+}: AiMessageBubbleProps) {
   const isUser = message.role === "USER";
   const isSystem = message.role === "SYSTEM";
   const visibleParts = message.parts.filter((part) => part.type !== "tool-call");
@@ -90,7 +101,7 @@ export function AiMessageBubble({ message }: AiMessageBubbleProps) {
           {visibleParts.length > 0 ? (
             visibleParts.map((part, index) => (
               <div key={`${message.id}-${part.type}-${index}`}>
-                {renderStructuredPart(message, part)}
+                {renderStructuredPart(message, part, onQuickReply)}
               </div>
             ))
           ) : (

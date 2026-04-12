@@ -69,6 +69,14 @@ function getPartText(part: AiMessagePart) {
       return `审批请求\n${getApprovalSummary(part)}`;
     case "coding-prompt":
       return `编码 Prompt\n${part.prompt}`;
+    case "clarification-options":
+      return `候选项\n${part.options
+        .map((option) =>
+          option.description
+            ? `- ${option.label} (${option.description})`
+            : `- ${option.label}`,
+        )
+        .join("\n")}`;
     case "tool-call":
       return "";
     default:

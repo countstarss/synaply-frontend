@@ -25,6 +25,7 @@ import {
   searchAiDocs,
   searchAiIssues,
   searchAiProjects,
+  searchAiWorkflows,
   searchAiWorkspaceMembers,
   startAiRun,
   type ServerFetchOptions,
@@ -60,9 +61,11 @@ const EXECUTION_ACTION_ALLOWLIST = new Set([
   "create_project",
   "create_issue",
   "create_comment",
+  "update_issue",
   "advance_workflow_run",
   "request_workflow_review",
   "attach_coding_prompt_to_issue",
+  "create_workflow_run",
 ]);
 const READ_TOOL_NAMES = [
   "get_workspace_summary",
@@ -72,6 +75,7 @@ const READ_TOOL_NAMES = [
   "list_issues",
   "search_issues",
   "get_issue_detail",
+  "search_workflows",
   "get_workflow_run_detail",
   "search_docs",
   "get_doc_detail",
@@ -131,6 +135,8 @@ function describeMessagePartForRuntime(part: AiMessagePart) {
       }
 
       return `[工具结果 ${part.toolName}]`;
+    case "clarification-options":
+      return `[候选项] ${part.options.map((item) => item.label).join(" / ")}`;
     default:
       return "";
   }
@@ -234,6 +240,8 @@ function buildReadToolResultText(toolName: ReadToolName, output: unknown) {
       return clipText(text || "已按条件列出 issue。");
     case "search_issues":
       return clipText(text || "已完成 issue 搜索。");
+    case "search_workflows":
+      return clipText(text || "已完成 workflow 搜索。");
     case "search_docs":
       return clipText(text || "已完成文档搜索。");
     case "search_workspace_members":
@@ -337,6 +345,15 @@ async function invokeReadTool(
         query:
           typeof args.query === "string" ? args.query.trim() : undefined,
         projectId: readStringArg(args, "projectId") ?? undefined,
+        limit:
+          typeof args.limit === "number" && Number.isFinite(args.limit)
+            ? args.limit
+            : undefined,
+      });
+    case "search_workflows":
+      return searchAiWorkflows(opts, {
+        query:
+          typeof args.query === "string" ? args.query.trim() : undefined,
         limit:
           typeof args.limit === "number" && Number.isFinite(args.limit)
             ? args.limit
@@ -492,6 +509,136 @@ function allowsDirectExecution(text: string) {
   return /(直接执行|直接创建|直接批量创建|直接帮我创建|不用确认|无需确认|你可以直接执行|你可以直接创建|一次创建|一次性创建|一并创建|一次生成创建|batch create|go ahead|without confirmation)/i.test(
     normalized,
   );
+}
+
+function getScopedProjectId(
+  runtimeContext: ReturnType<typeof createRuntimeContext>,
+  thread: Awaited<ReturnType<typeof getAiThread>>,
+) {
+  const projectIds = new Set<string>();
+
+  if (runtimeContext.surface?.type === "PROJECT") {
+    projectIds.add(runtimeContext.surface.id);
+  }
+
+  if (
+    thread.originSurfaceType === "PROJECT" &&
+    typeof thread.originSurfaceId === "string"
+  ) {
+    projectIds.add(thread.originSurfaceId);
+  }
+
+  for (const pin of thread.pins ?? []) {
+    if (pin.surfaceType === "PROJECT" && pin.surfaceId) {
+      projectIds.add(pin.surfaceId);
+    }
+  }
+
+  return projectIds.size === 1 ? Array.from(projectIds)[0] : undefined;
+}
+
+function detectScopedIssueReadPlan(params: {
+  text: string;
+  runtimeContext: ReturnType<typeof createRuntimeContext>;
+  thread: Awaited<ReturnType<typeof getAiThread>>;
+}): IntentPlan | null {
+  const normalized = params.text.trim().toLowerCase();
+  const scopedProjectId = getScopedProjectId(
+    params.runtimeContext,
+    params.thread,
+  );
+  const asksMyIssues = /(我负责|我的|assigned to me|我在跟)/i.test(normalized);
+
+  if (!normalized) {
+    return null;
+  }
+
+  if (
+    /(创建|新建|添加|评论|回复|review|评审|推进|写回|prompt|交接|更新|标记|完成它|完成这个)/i.test(
+      normalized,
+    )
+  ) {
+    return null;
+  }
+
+  const mentionsIssues = /(任务|issue|issues|流程任务)/i.test(normalized);
+  const asksForScopedRead =
+    /(多少|几条|几个|列出|看看|看下|有哪些|哪些|清单|列表|还剩|未完成|进行中|已完成|统计)/i.test(
+      normalized,
+    );
+
+  if (!mentionsIssues || !asksForScopedRead) {
+    return null;
+  }
+
+  if (!scopedProjectId && !asksMyIssues) {
+    return null;
+  }
+
+  const stateCategories: string[] = [];
+
+  if (/(未完成|没完成|开放|open|待办|还剩)/i.test(normalized)) {
+    stateCategories.push("BACKLOG", "TODO", "IN_PROGRESS");
+  } else if (/(已完成|完成了|done)/i.test(normalized)) {
+    stateCategories.push("DONE");
+  } else if (/(已取消|取消了|canceled)/i.test(normalized)) {
+    stateCategories.push("CANCELED");
+  } else if (/(进行中|推进中|in progress)/i.test(normalized)) {
+    stateCategories.push("IN_PROGRESS");
+  }
+
+  return {
+    type: "read",
+    tool: "list_issues",
+    arguments: {
+      projectId: scopedProjectId,
+      assigneeScope: asksMyIssues ? "ME" : "ANY",
+      stateCategories: stateCategories.length > 0 ? stateCategories : undefined,
+      limit: 50,
+    },
+  };
+}
+
+function looksLikePlainTextPlannerReply(rawText: string) {
+  const trimmed = rawText.trim();
+  const looksLikeEmbeddedJson = /\{[\s\S]*"type"\s*:/.test(trimmed);
+
+  return Boolean(
+    trimmed &&
+      !trimmed.startsWith("{") &&
+      !trimmed.startsWith("```json") &&
+      !trimmed.startsWith("```") &&
+      !looksLikeEmbeddedJson,
+  );
+}
+
+function getLatestUserText(messages: AiRuntimeMessage[]) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+
+    if (message.role === "user" && message.content.trim()) {
+      return message.content.trim();
+    }
+  }
+
+  return "";
+}
+
+function requiresStructuredPlannerOutput(text: string) {
+  const mentionsStructuredObject =
+    /(项目|project|任务|issue|issues|workflow|流程|文档|doc|评论|comment|review|评审|prompt|成员|负责人|assignee)/i.test(
+      text,
+    );
+  const asksStructuredRead =
+    /(多少|几条|几个|列出|看看|看下|有哪些|哪些|清单|列表|统计|搜索|查找|状态|进度|谁负责|谁在跟|未完成|已完成|进行中)/i.test(
+      text,
+    );
+  const asksStructuredWrite =
+    /(创建|新建|添加|更新|修改|标记|完成|取消|推进|指派|分配|写回|评论|回复|review|评审|handoff|交接|attach|生成)/i.test(
+      text,
+    );
+
+  return mentionsStructuredObject && (asksStructuredRead || asksStructuredWrite);
 }
 
 async function findPendingApprovals(
@@ -782,7 +929,7 @@ async function requestIntentPlan(params: {
   let stepIndex = params.stepIndex;
   let totalTokensUsed = 0;
   let retryInstruction = "";
-  let lastError: unknown = null;
+  const latestUserText = getLatestUserText(params.messages);
 
   while (attempts < 2) {
     const effectiveSystemPrompt = retryInstruction
@@ -828,7 +975,21 @@ async function requestIntentPlan(params: {
         totalTokensUsed,
       };
     } catch (error) {
-      lastError = error;
+      if (
+        looksLikePlainTextPlannerReply(llmResult.text) &&
+        latestUserText &&
+        !requiresStructuredPlannerOutput(latestUserText)
+      ) {
+        return {
+          plan: {
+            type: "final",
+            reply: llmResult.text.trim(),
+          } satisfies IntentPlan,
+          stepIndex,
+          totalTokensUsed,
+        };
+      }
+
       attempts += 1;
       retryInstruction =
         "上一次输出无法被 runtime 解析。请严格只返回一个合法 JSON object，并且 type 必须是 final / clarify / read / prepare_execute / prepare_execute_many 之一。";
@@ -837,17 +998,49 @@ async function requestIntentPlan(params: {
 
   return {
     plan: {
-      type: "clarify",
-      question:
-        "为了避免错误执行，我还需要你再明确一下目标对象、项目范围或评审人。",
-      reason:
-        lastError instanceof Error
-          ? lastError.message
-          : "planner 输出无法解析成合法 JSON。",
+      type: "final",
+      reply:
+        "我刚才没能稳定解析规划结果，但不会执行任何动作。你可以继续直接提问，或更明确地说明要操作的对象和目标。",
     } satisfies IntentPlan,
     stepIndex,
     totalTokensUsed,
   };
+}
+
+function buildAssistantParts(params: {
+  text: string;
+  codingPrompt?: AiCodingPromptAssembly | null;
+  options?: Array<{
+    label: string;
+    value: string;
+    description?: string;
+  }>;
+}) {
+  const parts: AiMessagePart[] = [
+    {
+      type: "text",
+      text: params.text,
+    },
+  ];
+
+  if (params.options && params.options.length > 0) {
+    parts.push({
+      type: "clarification-options",
+      title: "请直接点击选择一个目标",
+      options: params.options,
+    });
+  }
+
+  if (params.codingPrompt) {
+    parts.push({
+      type: "coding-prompt",
+      issueId: params.codingPrompt.issueId,
+      prompt: params.codingPrompt.prompt,
+      generatedAt: new Date().toISOString(),
+    });
+  }
+
+  return parts;
 }
 
 export async function GET(
@@ -1079,48 +1272,56 @@ export async function POST(
         projectId?: string;
         limit?: number;
       }) => searchAiIssues(backendOptions, params),
+      listIssues: (params: {
+        projectId?: string;
+        assigneeScope?: "ANY" | "ME";
+        stateCategories?: string[];
+        limit?: number;
+      }) => listAiIssues(backendOptions, params),
+      searchWorkflows: (params: { query: string; limit?: number }) =>
+        searchAiWorkflows(backendOptions, params),
       searchWorkspaceMembers: (params: { query: string; limit?: number }) =>
         searchAiWorkspaceMembers(backendOptions, params),
     };
 
+    const deterministicReadPlan = detectScopedIssueReadPlan({
+      text: payload.text,
+      runtimeContext,
+      thread,
+    });
+
     for (let iteration = 0; iteration < MAX_AGENT_STEPS; iteration += 1) {
       const llmMessages = [...toolContextMessages, ...historyMessages];
-      const plannedStep = await requestIntentPlan({
-        systemPrompt: agentSystemPrompt,
-        messages: llmMessages,
-        runtimeContext,
-        signal: request.signal,
-        durableBackendOptions,
-        threadId,
-        runId: run.id,
-        stepIndex,
-      });
+      let plan: IntentPlan;
 
-      stepIndex = plannedStep.stepIndex;
-      totalTokensUsed += plannedStep.totalTokensUsed;
+      if (iteration === 0 && deterministicReadPlan) {
+        plan = deterministicReadPlan;
+      } else {
+        const plannedStep = await requestIntentPlan({
+          systemPrompt: agentSystemPrompt,
+          messages: llmMessages,
+          runtimeContext,
+          signal: request.signal,
+          durableBackendOptions,
+          threadId,
+          runId: run.id,
+          stepIndex,
+        });
 
-      const plan = plannedStep.plan;
+        stepIndex = plannedStep.stepIndex;
+        totalTokensUsed += plannedStep.totalTokensUsed;
+        plan = plannedStep.plan;
+      }
 
       if (plan.type === "final" || plan.type === "clarify") {
         const assistantText =
           plan.type === "final"
             ? plan.reply
             : [plan.question, plan.reason].filter(Boolean).join("\n");
-        const assistantParts: AiMessagePart[] = [
-          {
-            type: "text",
-            text: assistantText,
-          },
-        ];
-
-        if (latestCodingPrompt) {
-          assistantParts.push({
-            type: "coding-prompt",
-            issueId: latestCodingPrompt.issueId,
-            prompt: latestCodingPrompt.prompt,
-            generatedAt: new Date().toISOString(),
-          });
-        }
+        const assistantParts = buildAssistantParts({
+          text: assistantText,
+          codingPrompt: latestCodingPrompt,
+        });
 
         await appendAiMessage(durableBackendOptions, threadId, {
           role: "ASSISTANT",
@@ -1216,21 +1417,11 @@ export async function POST(
       const compiledPlan = await compileIntentPlan(plan, compilerContext);
 
       if (compiledPlan?.type === "clarify") {
-        const assistantParts: AiMessagePart[] = [
-          {
-            type: "text",
-            text: compiledPlan.reply,
-          },
-        ];
-
-        if (latestCodingPrompt) {
-          assistantParts.push({
-            type: "coding-prompt",
-            issueId: latestCodingPrompt.issueId,
-            prompt: latestCodingPrompt.prompt,
-            generatedAt: new Date().toISOString(),
-          });
-        }
+        const assistantParts = buildAssistantParts({
+          text: compiledPlan.reply,
+          codingPrompt: latestCodingPrompt,
+          options: compiledPlan.options,
+        });
 
         await appendAiMessage(durableBackendOptions, threadId, {
           role: "ASSISTANT",

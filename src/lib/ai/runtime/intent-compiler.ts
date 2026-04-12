@@ -5,10 +5,12 @@ import type {
   AiExecutionActionDefinition,
   AiExecutionActionEnumHint,
   AiExecutionActionField,
+  AiIssueListResult,
   AiExecutionManifest,
   AiIssueSearchResult,
   AiProjectSearchResult,
   AiThreadRecord,
+  AiWorkflowSearchResult,
   AiWorkspaceMemberSearchResult,
 } from "@/lib/ai/types";
 
@@ -103,8 +105,14 @@ export const intentPlanSchema = z.discriminatedUnion("type", [
 export type IntentPlan = z.infer<typeof intentPlanSchema>;
 export type PreparedExecution = z.infer<typeof preparedExecutionSchema>;
 
+export interface ClarificationOption {
+  label: string;
+  value: string;
+  description?: string;
+}
+
 export type CompiledIntentResult =
-  | { type: "clarify"; reply: string }
+  | { type: "clarify"; reply: string; options?: ClarificationOption[] }
   | { type: "execute"; actionKey: string; input: Record<string, unknown> }
   | {
       type: "execute_many";
@@ -127,6 +135,16 @@ export interface IntentCompilerLookups {
     projectId?: string;
     limit?: number;
   }) => Promise<AiIssueSearchResult>;
+  listIssues: (params: {
+    projectId?: string;
+    assigneeScope?: "ANY" | "ME";
+    stateCategories?: string[];
+    limit?: number;
+  }) => Promise<AiIssueListResult>;
+  searchWorkflows: (params: {
+    query: string;
+    limit?: number;
+  }) => Promise<AiWorkflowSearchResult>;
   searchWorkspaceMembers: (params: {
     query: string;
     limit?: number;
@@ -163,6 +181,51 @@ export function parseIntentPlan(rawText: string): IntentPlan {
 
 function normalizeText(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function normalizeComparableText(value: string) {
+  return normalizeText(value)
+    .replace(/[“”"'`]/g, "")
+    .replace(/[，,。.!！?？:：;；/\\()（）[\]【】]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function cleanReferenceDraft(value: string) {
+  return value
+    .trim()
+    .replace(/^[“"'`「『]+|[”"'`」』]+$/g, "")
+    .replace(
+      /^(?:使用|就用|选择|选|给我用|请用|麻烦用|继续用|按|按这个|按这条|按这个来|围绕)\s*/i,
+      "",
+    )
+    .replace(
+      /\b(?:issue|issues|workflow|project|projects|member|members|任务|这条任务|那个任务|该任务|流程|这个流程|那个流程|项目|这个项目|那个项目|成员|评审人|负责人)\b/gi,
+      " ",
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildQueryCandidates(value: string) {
+  const cleaned = cleanReferenceDraft(value);
+  return Array.from(new Set([value.trim(), cleaned].filter(Boolean)));
+}
+
+function pickPrimaryQuery(value: string) {
+  const candidates = buildQueryCandidates(value);
+  return candidates[candidates.length - 1] ?? value.trim();
+}
+
+function getQueryTokens(value: string) {
+  return Array.from(
+    new Set(
+      normalizeComparableText(value)
+        .split(/\s+/)
+        .map((token) => token.trim())
+        .filter((token) => token.length >= 2),
+    ),
+  );
 }
 
 function isUuidLike(value: string) {
@@ -228,6 +291,63 @@ function splitDraftStringList(value: unknown) {
     .filter(Boolean);
 }
 
+interface RankedCandidate<T> {
+  item: T;
+  score: number;
+}
+
+function rankCandidates<T>(
+  items: T[],
+  queries: string[],
+  getHaystack: (item: T) => string[],
+): RankedCandidate<T>[] {
+  return items
+    .map((item) => {
+      const haystackParts = getHaystack(item)
+        .filter(Boolean)
+        .map(normalizeComparableText);
+      const combinedHaystack = haystackParts.join(" ");
+      let score = 0;
+
+      for (const query of queries) {
+        const normalizedQuery = normalizeComparableText(query);
+        if (!normalizedQuery) {
+          continue;
+        }
+
+        if (haystackParts.some((part) => part === normalizedQuery)) {
+          score += 180;
+        } else if (haystackParts.some((part) => part.startsWith(normalizedQuery))) {
+          score += 130;
+        } else if (combinedHaystack.includes(normalizedQuery)) {
+          score += 90;
+        }
+
+        for (const token of getQueryTokens(normalizedQuery)) {
+          if (combinedHaystack.includes(token)) {
+            score += 12;
+          }
+        }
+      }
+
+      return { item, score };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((left, right) => right.score - left.score);
+}
+
+function shouldAcceptTopCandidate<T>(ranked: RankedCandidate<T>[]) {
+  if (ranked.length === 0) {
+    return false;
+  }
+
+  if (ranked.length === 1) {
+    return ranked[0].score >= 40;
+  }
+
+  return ranked[0].score >= 120 && ranked[0].score - ranked[1].score >= 24;
+}
+
 function getSurfaceIds(
   thread: Pick<AiThreadRecord, "originSurfaceType" | "originSurfaceId" | "pins"> | null | undefined,
   runtimeContext: AiRuntimeContext,
@@ -258,11 +378,12 @@ function getImplicitProjectId(context: IntentCompilerContext) {
 }
 
 function getImplicitIssueId(context: IntentCompilerContext) {
-  const issueIds = [
-    ...getSurfaceIds(context.thread, context.runtimeContext, "ISSUE"),
-    ...getSurfaceIds(context.thread, context.runtimeContext, "WORKFLOW"),
-  ];
-  const ids = Array.from(new Set(issueIds));
+  const ids = getSurfaceIds(context.thread, context.runtimeContext, "ISSUE");
+  return ids.length === 1 ? ids[0] : null;
+}
+
+function getImplicitWorkflowId(context: IntentCompilerContext) {
+  const ids = getSurfaceIds(context.thread, context.runtimeContext, "WORKFLOW");
   return ids.length === 1 ? ids[0] : null;
 }
 
@@ -289,6 +410,18 @@ function buildGenericClarifyMessage(
   return reason
     ? `要执行“${action.label}”，我还需要先把“${field.label}”确定清楚：${reason}`
     : `要执行“${action.label}”，我还需要先把“${field.label}”确定清楚。`;
+}
+
+function withFieldClarifyContext(
+  action: AiExecutionActionDefinition,
+  field: AiExecutionActionField,
+  result: { reason?: string; options?: ClarificationOption[] },
+) {
+  return {
+    status: "clarify" as const,
+    reason: buildGenericClarifyMessage(action, field, result.reason),
+    options: result.options,
+  };
 }
 
 function matchEnumByHint(
@@ -372,7 +505,7 @@ async function resolveMemberReference(
   }
 
   const result = await context.searchWorkspaceMembers({
-    query: draft,
+    query: pickPrimaryQuery(draft),
     limit: 8,
   });
   const items = result.items;
@@ -387,21 +520,34 @@ async function resolveMemberReference(
   const exactMatches = items.filter((item) => {
     const candidates = [item.name, item.email, item.userId, item.teamMemberId]
       .filter((candidate): candidate is string => Boolean(candidate))
-      .map(normalizeText);
-    return candidates.includes(normalizeText(draft));
+      .map(normalizeComparableText);
+    return buildQueryCandidates(draft)
+      .map(normalizeComparableText)
+      .some((query) => candidates.includes(query));
   });
+  const ranked = rankCandidates(
+    exactMatches.length > 0 ? exactMatches : items,
+    buildQueryCandidates(draft),
+    (item) => [item.name ?? "", item.email ?? "", item.userId, item.teamMemberId],
+  );
+  const matches =
+    exactMatches.length === 1
+      ? exactMatches
+      : ranked.length > 0
+        ? ranked.map((entry) => entry.item)
+        : items;
 
-  const matches = exactMatches.length === 1 ? exactMatches : items;
-  if (matches.length === 1) {
+  if (matches.length === 1 || shouldAcceptTopCandidate(ranked)) {
+    const target = matches[0];
     return {
       status: "compiled" as const,
-      userId: matches[0].userId,
-      teamMemberId: matches[0].teamMemberId,
+      userId: target.userId,
+      teamMemberId: target.teamMemberId,
       label:
-        matches[0].name ??
-        matches[0].email ??
-        matches[0].userId ??
-        matches[0].teamMemberId,
+        target.name ??
+        target.email ??
+        target.userId ??
+        target.teamMemberId,
     };
   }
 
@@ -411,6 +557,13 @@ async function resolveMemberReference(
       .slice(0, 4)
       .map((item) => item.name ?? item.email ?? item.userId)
       .join(" / ")}。`,
+    options: matches.slice(0, 4).map((item) => ({
+      label: item.name ?? item.email ?? item.userId,
+      value: `选择成员 ${item.name ?? item.email ?? item.userId}`,
+      description: item.email
+        ? `${item.email} · ${item.role}`
+        : item.role,
+    })),
   };
 }
 
@@ -429,7 +582,10 @@ async function resolveProjectReference(
     }
   }
 
-  const result = await context.searchProjects({ query: draft, limit: 8 });
+  const result = await context.searchProjects({
+    query: pickPrimaryQuery(draft),
+    limit: 8,
+  });
   const items = result.items;
 
   if (items.length === 0) {
@@ -440,15 +596,29 @@ async function resolveProjectReference(
   }
 
   const exactMatches = items.filter(
-    (item) => normalizeText(item.name) === normalizeText(draft),
+    (item) =>
+      buildQueryCandidates(draft)
+        .map(normalizeComparableText)
+        .includes(normalizeComparableText(item.name)),
   );
-  const matches = exactMatches.length === 1 ? exactMatches : items;
+  const ranked = rankCandidates(
+    exactMatches.length > 0 ? exactMatches : items,
+    buildQueryCandidates(draft),
+    (item) => [item.name, item.brief ?? "", item.phase ?? ""],
+  );
+  const matches =
+    exactMatches.length === 1
+      ? exactMatches
+      : ranked.length > 0
+        ? ranked.map((entry) => entry.item)
+        : items;
 
-  if (matches.length === 1) {
+  if (matches.length === 1 || shouldAcceptTopCandidate(ranked)) {
+    const target = matches[0];
     return {
       status: "compiled" as const,
-      projectId: matches[0].id,
-      label: matches[0].name,
+      projectId: target.id,
+      label: target.name,
     };
   }
 
@@ -458,6 +628,13 @@ async function resolveProjectReference(
       .slice(0, 4)
       .map((item) => item.name)
       .join(" / ")}。`,
+    options: matches.slice(0, 4).map((item) => ({
+      label: item.name,
+      value: `使用项目 ${item.name}`,
+      description: [item.status, item.phase, item.riskLevel]
+        .filter(Boolean)
+        .join(" · "),
+    })),
   };
 }
 
@@ -477,12 +654,46 @@ async function resolveIssueReference(
     }
   }
 
-  const result = await context.searchIssues({
-    query: draft,
+  const queryCandidates = buildQueryCandidates(draft);
+  const issueMap = new Map<
+    string,
+    AiIssueSearchResult["items"][number] & { fromList?: boolean }
+  >();
+
+  for (const query of queryCandidates) {
+    const result = await context.searchIssues({
+      query,
+      projectId,
+      limit: 12,
+    });
+
+    for (const item of result.items) {
+      issueMap.set(item.id, item);
+    }
+  }
+
+  const listedIssues = await context.listIssues({
     projectId,
-    limit: 8,
+    limit: projectId ? 50 : 30,
   });
-  const items = result.items;
+
+  for (const item of listedIssues.items) {
+    issueMap.set(item.id, {
+      id: item.id,
+      key: item.key,
+      title: item.title,
+      description: null,
+      state: item.state,
+      projectId: projectId ?? null,
+      projectName: item.projectName ?? null,
+      updatedAt: item.updatedAt,
+      assigneeLabels: item.assigneeLabels,
+      currentStepStatus: item.currentStepStatus,
+      fromList: true,
+    });
+  }
+
+  const items = Array.from(issueMap.values());
 
   if (items.length === 0) {
     return {
@@ -494,18 +705,42 @@ async function resolveIssueReference(
   const exactMatches = items.filter((item) => {
     const candidates = [item.key, item.title]
       .filter((candidate): candidate is string => Boolean(candidate))
-      .map(normalizeText);
-    return candidates.includes(normalizeText(draft));
+      .map(normalizeComparableText);
+    return queryCandidates
+      .map(normalizeComparableText)
+      .some((query) => candidates.includes(query));
   });
-  const matches = exactMatches.length === 1 ? exactMatches : items;
+  const ranked = rankCandidates(
+    exactMatches.length > 0 ? exactMatches : items,
+    queryCandidates,
+    (item) => [
+      item.key ?? "",
+      item.title,
+      item.description ?? "",
+      item.projectName ?? "",
+      item.assigneeLabels.join(" "),
+    ],
+  );
+  const matches =
+    exactMatches.length === 1
+      ? exactMatches
+      : ranked.length > 0
+        ? ranked.map((entry) => entry.item)
+        : items;
 
-  if (matches.length === 1) {
+  if (exactMatches.length === 0 && ranked.length === 0) {
+    return {
+      status: "clarify" as const,
+      reason: `我没有在当前范围里找到和“${draft}”足够接近的任务或流程。`,
+    };
+  }
+
+  if (matches.length === 1 || shouldAcceptTopCandidate(ranked)) {
+    const target = matches[0];
     return {
       status: "compiled" as const,
-      issueId: matches[0].id,
-      label: matches[0].key
-        ? `${matches[0].key} ${matches[0].title}`
-        : matches[0].title,
+      issueId: target.id,
+      label: target.key ? `${target.key} ${target.title}` : target.title,
     };
   }
 
@@ -515,6 +750,77 @@ async function resolveIssueReference(
       .slice(0, 4)
       .map((item) => (item.key ? `${item.key} ${item.title}` : item.title))
       .join(" / ")}。`,
+    options: matches.slice(0, 4).map((item) => ({
+      label: item.key ? `${item.key} ${item.title}` : item.title,
+      value: `使用任务 ${item.key ? `${item.key} ${item.title}` : item.title}`,
+      description: [item.projectName, item.state]
+        .filter(Boolean)
+        .join(" · "),
+    })),
+  };
+}
+
+async function resolveWorkflowReference(
+  draft: string,
+  context: IntentCompilerContext,
+) {
+  if (isUuidLike(draft)) {
+    return { status: "compiled" as const, workflowId: draft, label: draft };
+  }
+
+  const queryCandidates = buildQueryCandidates(draft);
+  const result = await context.searchWorkflows({
+    query: pickPrimaryQuery(draft),
+    limit: 8,
+  });
+  const items = result.items;
+
+  if (items.length === 0) {
+    return {
+      status: "clarify" as const,
+      reason: `我没有找到“${draft}”这个 workflow。`,
+    };
+  }
+
+  const exactMatches = items.filter((item) =>
+    queryCandidates
+      .map(normalizeComparableText)
+      .includes(normalizeComparableText(item.name)),
+  );
+  const ranked = rankCandidates(
+    exactMatches.length > 0 ? exactMatches : items,
+    queryCandidates,
+    (item) => [item.name, item.description ?? "", item.version ?? ""],
+  );
+  const matches =
+    exactMatches.length === 1
+      ? exactMatches
+      : ranked.length > 0
+        ? ranked.map((entry) => entry.item)
+        : items;
+
+  if (matches.length === 1 || shouldAcceptTopCandidate(ranked)) {
+    const target = matches[0];
+    return {
+      status: "compiled" as const,
+      workflowId: target.id,
+      label: target.name,
+    };
+  }
+
+  return {
+    status: "clarify" as const,
+    reason: `我找到了多个匹配 workflow：${matches
+      .slice(0, 4)
+      .map((item) => item.name)
+      .join(" / ")}。`,
+    options: matches.slice(0, 4).map((item) => ({
+      label: item.name,
+      value: `使用 workflow ${item.name}`,
+      description: [item.status, item.version]
+        .filter(Boolean)
+        .join(" · "),
+    })),
   };
 }
 
@@ -543,10 +849,7 @@ async function compileIdValue(params: {
 
     const result = await resolveProjectReference(draft, context);
     if (result.status !== "compiled") {
-      return {
-        status: "clarify" as const,
-        reason: buildGenericClarifyMessage(action, field, result.reason),
-      };
+      return withFieldClarifyContext(action, field, result);
     }
 
     return { status: "compiled" as const, value: result.projectId };
@@ -570,10 +873,7 @@ async function compileIdValue(params: {
 
     const result = await resolveIssueReference(draft, context, scopedProjectId);
     if (result.status !== "compiled") {
-      return {
-        status: "clarify" as const,
-        reason: buildGenericClarifyMessage(action, field, result.reason),
-      };
+      return withFieldClarifyContext(action, field, result);
     }
 
     return { status: "compiled" as const, value: result.issueId };
@@ -603,10 +903,7 @@ async function compileIdValue(params: {
 
       const result = await resolveMemberReference(draft, context);
       if (result.status !== "compiled") {
-        return {
-          status: "clarify" as const,
-          reason: buildGenericClarifyMessage(action, field, result.reason),
-        };
+        return withFieldClarifyContext(action, field, result);
       }
       resolvedIds.push(result.teamMemberId);
     }
@@ -631,13 +928,31 @@ async function compileIdValue(params: {
 
     const result = await resolveMemberReference(singleDraft, context);
     if (result.status !== "compiled") {
-      return {
-        status: "clarify" as const,
-        reason: buildGenericClarifyMessage(action, field, result.reason),
-      };
+      return withFieldClarifyContext(action, field, result);
     }
 
     return { status: "compiled" as const, value: result.userId };
+  }
+
+  if (field.name === "workflowId" || field.entityRef === "workflow") {
+    const fallbackWorkflowId = getImplicitWorkflowId(context);
+    const draft = singleDraft ?? fallbackWorkflowId;
+
+    if (!draft) {
+      return field.required
+        ? {
+            status: "clarify" as const,
+            reason: buildGenericClarifyMessage(action, field),
+          }
+        : { status: "omit" as const };
+    }
+
+    const result = await resolveWorkflowReference(draft, context);
+    if (result.status !== "compiled") {
+      return withFieldClarifyContext(action, field, result);
+    }
+
+    return { status: "compiled" as const, value: result.workflowId };
   }
 
   if (field.name === "parentId" || field.name === "stateId" || field.name === "labelIds") {
@@ -822,6 +1137,7 @@ async function compilePreparedAction(
       return {
         type: "clarify" as const,
         reply: fieldResult.reason,
+        options: "options" in fieldResult ? fieldResult.options : undefined,
       };
     }
 

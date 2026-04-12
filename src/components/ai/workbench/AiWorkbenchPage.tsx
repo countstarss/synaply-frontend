@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot, FolderOpen, MessageSquareText } from "lucide-react";
@@ -143,7 +143,11 @@ export function AiWorkbenchPage() {
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [selectedIssueId, setSelectedIssueId] = useState("");
   const [draft, setDraft] = useState("");
+  const [pendingViewportAnchorId, setPendingViewportAnchorId] = useState<
+    string | null
+  >(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
   const { isStreaming, streamingText, error, setError } = useAiThreadStore();
 
   const { data: projects = [], isLoading: isProjectsLoading } =
@@ -444,24 +448,46 @@ export function AiWorkbenchPage() {
   const handleSend = async () => {
     const trimmedText = draft.trim();
 
-    if (!trimmedText || !workspaceId || !originSurfaceId) {
+    if (!trimmedText) {
       return;
     }
 
+    await sendDraftText(trimmedText);
+    setDraft("");
+  };
+
+  const sendDraftText = async (text: string) => {
+    const trimmedText = text.trim();
+
+    if (
+      !trimmedText ||
+      !workspaceId ||
+      !originSurfaceId ||
+      isSubmittingRef.current
+    ) {
+      return;
+    }
+
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
     setError(null);
 
     try {
       const ensuredThreadId = activeThreadId || (await ensureThread());
-      await sendMessage(trimmedText, ensuredThreadId);
+      await sendMessage(trimmedText, ensuredThreadId, {
+        onLocalMessage: (messageId) => {
+          setPendingViewportAnchorId(messageId);
+        },
+      });
       if (activeThreadId !== ensuredThreadId) {
         router.push(getAiThreadPath(ensuredThreadId));
       }
-      setDraft("");
       await queryClient.invalidateQueries({
         queryKey: ["ai-threads", workspaceId],
       });
     } finally {
+      setPendingViewportAnchorId(null);
+      isSubmittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -558,10 +584,12 @@ export function AiWorkbenchPage() {
                 draft={draft}
                 onDraftChange={setDraft}
                 onPrefillSuggestion={setDraft}
+                onQuickReply={sendDraftText}
                 onSend={handleSend}
                 isLoading={isLoading && messages.length === 0}
                 isStreaming={isStreaming}
                 streamingText={streamingText}
+                pendingViewportAnchorId={pendingViewportAnchorId}
                 disabled={
                   isSubmitting ||
                   createThreadMutation.isPending ||

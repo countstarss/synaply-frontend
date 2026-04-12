@@ -14,10 +14,12 @@ interface AiWorkbenchChatPanelProps {
   draft: string;
   onDraftChange: (value: string) => void;
   onPrefillSuggestion?: (value: string) => void;
+  onQuickReply?: (value: string) => Promise<void> | void;
   onSend: () => Promise<void> | void;
   isLoading?: boolean;
   isStreaming?: boolean;
   streamingText?: string;
+  pendingViewportAnchorId?: string | null;
   disabled?: boolean;
   isSubmitting?: boolean;
   error?: string | null;
@@ -52,10 +54,12 @@ export function AiWorkbenchChatPanel({
   draft,
   onDraftChange,
   onPrefillSuggestion,
+  onQuickReply,
   onSend,
   isLoading = false,
   isStreaming = false,
   streamingText = "",
+  pendingViewportAnchorId = null,
   disabled = false,
   isSubmitting = false,
   error = null,
@@ -63,8 +67,11 @@ export function AiWorkbenchChatPanel({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const previousMessagesCountRef = useRef(0);
+  const lastAnchoredMessageIdRef = useRef<string | null>(null);
+  const scrollAnimationFrameRef = useRef<number | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
+  const [containerViewportHeight, setContainerViewportHeight] = useState(0);
   const isSelectionMode = useAiWorkbenchSelectionStore(
     (state) => state.isSelectionMode,
   );
@@ -83,6 +90,55 @@ export function AiWorkbenchChatPanel({
     [isStreaming, messages.length],
   );
   const threadKey = messages[0]?.threadId ?? "__empty__";
+  const lastMessage = messages.at(-1);
+  const shouldReserveViewportSpace =
+    !!pendingViewportAnchorId || isStreaming || lastMessage?.role === "USER";
+  const viewportSpacerHeight = shouldReserveViewportSpace
+    ? Math.max(containerViewportHeight - 256, 220)
+    : 0;
+
+  const stopScrollAnimation = () => {
+    if (scrollAnimationFrameRef.current !== null) {
+      cancelAnimationFrame(scrollAnimationFrameRef.current);
+      scrollAnimationFrameRef.current = null;
+    }
+  };
+
+  const animateScrollTo = (top: number, duration = 240) => {
+    const container = containerRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    stopScrollAnimation();
+
+    const startTop = container.scrollTop;
+    const delta = top - startTop;
+
+    if (Math.abs(delta) < 4) {
+      container.scrollTop = top;
+      return;
+    }
+
+    const startTime = performance.now();
+
+    const step = (currentTime: number) => {
+      const progress = Math.min(1, (currentTime - startTime) / duration);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+
+      container.scrollTop = startTop + delta * easedProgress;
+
+      if (progress < 1) {
+        scrollAnimationFrameRef.current = requestAnimationFrame(step);
+        return;
+      }
+
+      scrollAnimationFrameRef.current = null;
+    };
+
+    scrollAnimationFrameRef.current = requestAnimationFrame(step);
+  };
 
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
     endRef.current?.scrollIntoView({ behavior, block: "end" });
@@ -102,22 +158,67 @@ export function AiWorkbenchChatPanel({
       return;
     }
 
-    const handleScroll = () => {
+    const syncViewportMetrics = () => {
       const distanceFromBottom =
         container.scrollHeight - container.scrollTop - container.clientHeight;
       const isNearBottom = distanceFromBottom < 120;
 
       setShowScrollButton(!isNearBottom);
       setIsAutoScrollEnabled(isNearBottom);
+      setContainerViewportHeight(container.clientHeight);
     };
 
-    handleScroll();
-    container.addEventListener("scroll", handleScroll, { passive: true });
+    syncViewportMetrics();
+    container.addEventListener("scroll", syncViewportMetrics, { passive: true });
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => {
+            syncViewportMetrics();
+          })
+        : null;
+
+    resizeObserver?.observe(container);
 
     return () => {
-      container.removeEventListener("scroll", handleScroll);
+      container.removeEventListener("scroll", syncViewportMetrics);
+      resizeObserver?.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    return () => {
+      stopScrollAnimation();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!pendingViewportAnchorId) {
+      return;
+    }
+
+    if (lastAnchoredMessageIdRef.current === pendingViewportAnchorId) {
+      return;
+    }
+
+    const container = containerRef.current;
+    const target = document.getElementById(`message-${pendingViewportAnchorId}`);
+
+    if (!container || !target) {
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const targetTop = Math.max(
+      0,
+      container.scrollTop + (targetRect.top - containerRect.top),
+    );
+
+    animateScrollTo(targetTop, 260);
+    lastAnchoredMessageIdRef.current = pendingViewportAnchorId;
+    setIsAutoScrollEnabled(false);
+  }, [messages.length, pendingViewportAnchorId]);
 
   useEffect(() => {
     const hasNewMessage = messages.length > previousMessagesCountRef.current;
@@ -196,6 +297,8 @@ export function AiWorkbenchChatPanel({
                   key={message.id}
                   message={message}
                   onInView={handleMessageInView}
+                  onQuickReply={onQuickReply}
+                  disableQuickReply={isSubmitting}
                 />
               ))}
 
@@ -204,6 +307,14 @@ export function AiWorkbenchChatPanel({
               ) : null}
             </div>
           )}
+
+          {hasMessages && viewportSpacerHeight > 0 ? (
+            <div
+              aria-hidden
+              className="pointer-events-none shrink-0 transition-[height] duration-200 ease-out"
+              style={{ height: `${viewportSpacerHeight}px` }}
+            />
+          ) : null}
 
           <div ref={endRef} />
         </div>

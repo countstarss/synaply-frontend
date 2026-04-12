@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { AiMessagePart, AiMessageRecord } from "@/lib/ai/types";
 import { AiApprovalRequestCard } from "@/components/ai/thread/AiApprovalRequestCard";
+import { AiClarificationOptionsCard } from "@/components/ai/thread/AiClarificationOptionsCard";
 import { AiCodingPromptCard } from "@/components/ai/thread/AiCodingPromptCard";
 import { AiToolResultCard } from "@/components/ai/thread/AiToolResultCard";
 import { AiWorkbenchLoadingDots } from "@/components/ai/workbench/modules/chat/AiWorkbenchLoadingDots";
@@ -31,6 +32,8 @@ interface AiWorkbenchChatMessageProps {
   message?: AiMessageRecord;
   streamingText?: string;
   onInView?: (isInView: boolean, message: AiMessageRecord) => void;
+  onQuickReply?: (value: string) => Promise<void> | void;
+  disableQuickReply?: boolean;
 }
 
 function renderTextPart(text: string, className?: string) {
@@ -46,7 +49,13 @@ function renderTextPart(text: string, className?: string) {
   );
 }
 
-function renderPart(message: AiMessageRecord, part: AiMessagePart, index: number) {
+function renderPart(
+  message: AiMessageRecord,
+  part: AiMessagePart,
+  index: number,
+  onQuickReply?: (value: string) => Promise<void> | void,
+  disableQuickReply = false,
+) {
   switch (part.type) {
     case "text":
       return (
@@ -84,6 +93,16 @@ function renderPart(message: AiMessageRecord, part: AiMessagePart, index: number
           <AiCodingPromptCard part={part} />
         </div>
       );
+    case "clarification-options":
+      return (
+        <div key={`${message.id}-${part.type}-${index}`} className="min-w-0">
+          <AiClarificationOptionsCard
+            part={part}
+            onSelect={onQuickReply}
+            disabled={disableQuickReply}
+          />
+        </div>
+      );
     case "context-chip":
       return (
         <div
@@ -104,6 +123,8 @@ export function AiWorkbenchChatMessage({
   message,
   streamingText = "",
   onInView,
+  onQuickReply,
+  disableQuickReply = false,
 }: AiWorkbenchChatMessageProps) {
   const messageRef = useRef<HTMLDivElement | null>(null);
   const isSelectionMode = useAiWorkbenchSelectionStore(
@@ -268,8 +289,10 @@ export function AiWorkbenchChatMessage({
               isSelectionMode && isSelected && "rounded-[28px] ring-1 ring-sky-400/32 ring-offset-2 ring-offset-transparent",
             )}
           >
-            {visibleParts.length > 0 ? (
-              visibleParts.map((part, index) => renderPart(message, part, index))
+              {visibleParts.length > 0 ? (
+                visibleParts.map((part, index) =>
+                renderPart(message, part, index, onQuickReply, disableQuickReply),
+              )
             ) : (
               <div className="rounded-[24px] border border-black/[0.06] bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.98))] px-4 py-3.5 text-sm leading-7 text-slate-500 dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(26,26,29,0.96),rgba(14,14,16,0.98))] dark:text-white/60">
                 暂无可展示的消息内容。

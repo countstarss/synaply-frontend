@@ -18,6 +18,7 @@ import type {
   AiRunRecord,
   AiSurfaceSummary,
   AiThreadRecord,
+  AiWorkflowSearchResult,
   AiWorkflowRunDetail,
   AiWorkspaceMemberSearchResult,
   AiWorkspaceSummaryDetail,
@@ -466,6 +467,22 @@ export function searchAiIssues(
 ) {
   return fetchAiBackend<AiIssueSearchResult>(
     `${getContextBasePath(opts.workspaceId)}/issues/search`,
+    opts,
+    {
+      query: params,
+    },
+  );
+}
+
+export function searchAiWorkflows(
+  opts: ServerFetchOptions,
+  params: {
+    query?: string;
+    limit?: number;
+  },
+) {
+  return fetchAiBackend<AiWorkflowSearchResult>(
+    `${getContextBasePath(opts.workspaceId)}/workflows/search`,
     opts,
     {
       query: params,

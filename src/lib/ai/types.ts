@@ -71,6 +71,16 @@ export interface AiCodingPromptPart {
   generatedAt: string;
 }
 
+export interface AiClarificationOptionPart {
+  type: "clarification-options";
+  title?: string;
+  options: Array<{
+    label: string;
+    value: string;
+    description?: string;
+  }>;
+}
+
 export interface AiContextChipPart {
   type: "context-chip";
   surfaceType: AiSurfaceType;
@@ -90,6 +100,7 @@ export type AiMessagePart =
   | AiToolResultPart
   | AiApprovalRequestPart
   | AiCodingPromptPart
+  | AiClarificationOptionPart
   | AiContextChipPart
   | AiErrorPart;
 
@@ -247,6 +258,19 @@ export interface AiIssueSearchResult {
     updatedAt: string;
     assigneeLabels: string[];
     currentStepStatus?: string | null;
+  }>;
+  text: string;
+}
+
+export interface AiWorkflowSearchResult {
+  items: Array<{
+    id: string;
+    name: string;
+    description?: string | null;
+    status?: string | null;
+    visibility?: string | null;
+    version?: string | null;
+    updatedAt: string;
   }>;
   text: string;
 }
@@ -419,6 +443,10 @@ export function getAiMessageText(parts: AiMessagePart[]) {
         return [part.prompt];
       }
 
+      if (part.type === "clarification-options") {
+        return part.options.map((option) => option.label);
+      }
+
       if (part.type === "error") {
         return [part.message];
       }
@@ -434,6 +462,7 @@ export function hasUnsupportedAiParts(parts: AiMessagePart[]) {
     (part) =>
       part.type !== "text" &&
       part.type !== "error" &&
-      part.type !== "coding-prompt",
+      part.type !== "coding-prompt" &&
+      part.type !== "clarification-options",
   );
 }
