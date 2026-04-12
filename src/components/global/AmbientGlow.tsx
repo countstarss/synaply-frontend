@@ -168,6 +168,96 @@ vec4 renderRibbon(vec2 uv, float aspect, float t) {
   return vec4(color, clamp(alpha, 0.0, 0.36));
 }
 
+vec4 renderPrism(vec2 uv, float aspect, float t) {
+  float sweep = sin(t * 0.45) * 0.08;
+  float drift = cos(t * 0.32) * 0.06;
+  float beamA =
+    smoothstep(
+      0.14,
+      0.0,
+      abs(uv.y - (0.14 + (uv.x + sweep) * 0.78 + 0.05 * sin(t * 0.8 + uv.x * 7.4)))
+    );
+  float beamB =
+    smoothstep(
+      0.12,
+      0.0,
+      abs(uv.y - (0.02 + (uv.x + drift) * 1.02 - 0.045 * sin(t * 0.72 + uv.x * 8.8)))
+    );
+  float beamC =
+    smoothstep(
+      0.11,
+      0.0,
+      abs(uv.y - (0.28 + (uv.x - sweep * 0.7) * 0.62 + 0.038 * cos(t * 0.68 + uv.x * 6.2)))
+    );
+
+  float diffraction =
+    0.58 +
+    0.42 * sin((uv.x * aspect * 11.0 - uv.y * 4.6) + t * 1.05);
+  float sparkle = fbm(vec2(uv.x * 3.2 + t * 0.08, uv.y * 3.8 - t * 0.06));
+  float caustic =
+    0.5 +
+    0.5 *
+      sin((uv.x * aspect * 15.0 + uv.y * 3.2) - t * 1.25 + sparkle * 3.2);
+
+  vec3 color = uColorA * beamA + uColorB * beamB + uColorC * beamC;
+  color += mix(uColorC, uColorA, diffraction) * (beamA + beamB + beamC) * 0.42;
+  color += mix(uColorB, uColorC, caustic) * (beamA * 0.22 + beamB * 0.16 + beamC * 0.18);
+
+  float flare =
+    (1.0 - smoothstep(0.0, 0.5, length(vec2((uv.x - (0.8 + sweep * 0.35)) * aspect * 1.08, (uv.y - 0.16) * 1.32)))) *
+    0.22;
+  float alpha =
+    ((beamA + beamB + beamC) * (0.085 + diffraction * 0.024) + flare + sparkle * 0.015) *
+    uIntensity;
+  return vec4(color, clamp(alpha, 0.0, 0.4));
+}
+
+vec4 renderPulse(vec2 uv, float aspect, float t) {
+  vec2 pulseSpace = vec2((uv.x - 0.5) * aspect, uv.y - 0.56);
+  float radius = length(pulseSpace);
+  float pulsePhase = radius * 14.0 - t * 1.15;
+  float rings =
+    smoothstep(0.96, 1.0, 0.5 + 0.5 * sin(pulsePhase)) *
+    (1.0 - smoothstep(0.28, 0.86, radius));
+
+  float core = 1.0 - smoothstep(0.0, 0.18, radius);
+  float halo = 1.0 - smoothstep(0.12, 0.62, radius);
+  float scatter = fbm(vec2(uv.x * 3.4 - t * 0.045, uv.y * 3.0 + t * 0.03));
+
+  vec3 color = mix(uColorA, uColorB, clamp(radius * 1.6, 0.0, 1.0));
+  color = mix(color, uColorC, clamp(rings * 0.42 + scatter * 0.2, 0.0, 0.62));
+  float alpha = (core * 0.12 + halo * 0.038 + rings * 0.11) * uIntensity;
+  return vec4(color, clamp(alpha, 0.0, 0.38));
+}
+
+vec4 renderCorona(vec2 uv, float aspect, float t) {
+  vec2 coreSpace = vec2((uv.x - 0.5) * aspect * 0.95, (uv.y - 0.48) * 1.05);
+  float radius = length(coreSpace);
+  float ring =
+    smoothstep(0.27, 0.23, radius) +
+    smoothstep(0.29, 0.24, radius) * 0.6;
+  ring *= 1.0 + 0.16 * sin(t * 0.9 + atan(coreSpace.y, coreSpace.x) * 6.0);
+
+  float innerGlow = 1.0 - smoothstep(0.0, 0.22, radius);
+  float outerHalo = 1.0 - smoothstep(0.18, 0.74, radius);
+  float rays =
+    pow(max(0.0, sin(atan(coreSpace.y, coreSpace.x) * 8.0 + t * 0.55)), 3.0) *
+    smoothstep(0.18, 0.42, radius) *
+    (1.0 - smoothstep(0.42, 0.88, radius));
+
+  vec2 edgeBurstA = vec2((uv.x - 0.12) * aspect * 1.2, (uv.y - 0.14) * 1.1);
+  vec2 edgeBurstB = vec2((uv.x - 0.88) * aspect * 1.18, (uv.y - 0.2) * 1.08);
+  float burstA = 1.0 - smoothstep(0.0, 0.34, length(edgeBurstA));
+  float burstB = 1.0 - smoothstep(0.0, 0.32, length(edgeBurstB));
+
+  vec3 color = mix(uColorB, uColorA, clamp(innerGlow + ring * 0.35, 0.0, 1.0));
+  color = mix(color, uColorC, clamp(rays * 0.55 + burstA * 0.2 + burstB * 0.2, 0.0, 0.72));
+  float alpha =
+    (innerGlow * 0.082 + outerHalo * 0.026 + ring * 0.11 + rays * 0.08 + burstA * 0.03 + burstB * 0.03) *
+    uIntensity;
+  return vec4(color, clamp(alpha, 0.0, 0.42));
+}
+
 void main() {
   float aspect = uResolution.x / max(uResolution.y, 1.0);
   vec2 uv = vUv;
@@ -179,6 +269,12 @@ void main() {
     layer = renderAurora(uv, aspect, uTime);
   } else if (uMode == 2) {
     layer = renderRibbon(uv, aspect, uTime);
+  } else if (uMode == 3) {
+    layer = renderPrism(uv, aspect, uTime);
+  } else if (uMode == 4) {
+    layer = renderPulse(uv, aspect, uTime);
+  } else if (uMode == 5) {
+    layer = renderCorona(uv, aspect, uTime);
   }
 
   float dither = (interleavedGradientNoise(gl_FragCoord.xy) - 0.5) / 255.0;
@@ -252,6 +348,9 @@ function usePrefersReducedMotion() {
 function modeToShaderMode(mode: GlowMode) {
   if (mode === "aurora") return 1;
   if (mode === "ribbon") return 2;
+  if (mode === "prism") return 3;
+  if (mode === "pulse") return 4;
+  if (mode === "corona") return 5;
   return 0;
 }
 
@@ -274,6 +373,33 @@ function getFallbackBackground(
       `linear-gradient(145deg, transparent 4%, ${b}18 28%, transparent 58%)`,
       `linear-gradient(28deg, transparent 16%, ${a}1f 46%, transparent 76%)`,
       `radial-gradient(circle at 20% 72%, ${c}18, transparent 44%)`,
+    ].join(", ");
+  }
+
+  if (mode === "prism") {
+    return [
+      `linear-gradient(134deg, transparent 8%, ${a}1a 26%, transparent 42%)`,
+      `linear-gradient(146deg, transparent 18%, ${b}22 42%, transparent 62%)`,
+      `linear-gradient(158deg, transparent 28%, ${c}1c 58%, transparent 76%)`,
+      `radial-gradient(circle at 76% 20%, ${a}12, transparent 24%)`,
+    ].join(", ");
+  }
+
+  if (mode === "pulse") {
+    return [
+      `radial-gradient(circle at 50% 56%, ${a}22 0%, transparent 18%)`,
+      `radial-gradient(circle at 50% 56%, transparent 20%, ${b}1b 32%, transparent 44%)`,
+      `radial-gradient(circle at 50% 56%, transparent 38%, ${c}15 52%, transparent 66%)`,
+      `radial-gradient(circle at 50% 56%, ${a}0f, transparent 74%)`,
+    ].join(", ");
+  }
+
+  if (mode === "corona") {
+    return [
+      `radial-gradient(circle at 50% 48%, transparent 26%, ${a}20 34%, transparent 48%)`,
+      `radial-gradient(circle at 50% 48%, ${b}16, transparent 62%)`,
+      `radial-gradient(circle at 14% 14%, ${c}14, transparent 28%)`,
+      `radial-gradient(circle at 86% 18%, ${a}12, transparent 30%)`,
     ].join(", ");
   }
 

@@ -7,7 +7,13 @@ export interface GlowPreset {
   colors: [string, string, string];
 }
 
-export type GlowMode = "glow" | "aurora" | "ribbon";
+export type GlowMode =
+  | "glow"
+  | "aurora"
+  | "ribbon"
+  | "prism"
+  | "pulse"
+  | "corona";
 
 export interface GlowModeOption {
   id: GlowMode;
@@ -31,7 +37,28 @@ export const GLOW_MODES: GlowModeOption[] = [
     label: "流光",
     description: "更宽的斜向光带在背景中游移，适合更有能量的界面氛围。",
   },
+  {
+    id: "prism",
+    label: "棱镜",
+    description: "多层折射色带切过画面，带来更强的科技感和色散张力。",
+  },
+  {
+    id: "pulse",
+    label: "脉冲",
+    description: "围绕核心区域扩散能量脉冲，适合更有节奏和存在感的界面。",
+  },
+  {
+    id: "corona",
+    label: "日冕",
+    description: "高亮晕环和边缘炽光叠加，形成更具冲击力的戏剧化氛围。",
+  },
 ];
+
+const LEGACY_GLOW_MODE_ALIASES = {
+  mist: "prism",
+  softwave: "pulse",
+  edgeglow: "corona",
+} as const;
 
 // Each preset defines three hues. The primary color fills the three larger
 // blobs and the accent color fills the fourth — matching the reference SVG
@@ -116,15 +143,27 @@ function isGlowMode(value: unknown): value is GlowMode {
   return GLOW_MODES.some((mode) => mode.id === value);
 }
 
+function coerceGlowMode(value: unknown): GlowMode | null {
+  if (isGlowMode(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value in LEGACY_GLOW_MODE_ALIASES) {
+    return LEGACY_GLOW_MODE_ALIASES[
+      value as keyof typeof LEGACY_GLOW_MODE_ALIASES
+    ];
+  }
+
+  return null;
+}
+
 function normalizePreferences(
   preferences?: Partial<AppearancePreferences>,
 ): AppearancePreferences {
   return {
     ...DEFAULT_PREFERENCES,
     ...preferences,
-    mode: isGlowMode(preferences?.mode)
-      ? preferences.mode
-      : DEFAULT_PREFERENCES.mode,
+    mode: coerceGlowMode(preferences?.mode) ?? DEFAULT_PREFERENCES.mode,
   };
 }
 

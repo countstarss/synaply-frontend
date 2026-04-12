@@ -35,6 +35,33 @@ function getModePreviewBackground(
     ].join(", ");
   }
 
+  if (mode === "prism") {
+    return [
+      `linear-gradient(134deg, transparent 8%, ${a}26 26%, transparent 42%)`,
+      `linear-gradient(146deg, transparent 18%, ${b}3a 42%, transparent 62%)`,
+      `linear-gradient(158deg, transparent 28%, ${c}30 58%, transparent 76%)`,
+      `radial-gradient(circle at 76% 20%, ${a}1e, transparent 26%)`,
+    ].join(", ");
+  }
+
+  if (mode === "pulse") {
+    return [
+      `radial-gradient(circle at 50% 56%, ${a}32 0%, transparent 18%)`,
+      `radial-gradient(circle at 50% 56%, transparent 20%, ${b}2a 32%, transparent 44%)`,
+      `radial-gradient(circle at 50% 56%, transparent 38%, ${c}22 52%, transparent 66%)`,
+      `radial-gradient(circle at 50% 56%, ${a}16, transparent 74%)`,
+    ].join(", ");
+  }
+
+  if (mode === "corona") {
+    return [
+      `radial-gradient(circle at 50% 48%, transparent 26%, ${a}2c 34%, transparent 48%)`,
+      `radial-gradient(circle at 50% 48%, ${b}20, transparent 62%)`,
+      `radial-gradient(circle at 14% 14%, ${c}20, transparent 28%)`,
+      `radial-gradient(circle at 86% 18%, ${a}1c, transparent 30%)`,
+    ].join(", ");
+  }
+
   return [
     `radial-gradient(circle at 92% 55%, ${a}33, transparent 55%)`,
     `radial-gradient(circle at 19% 75%, ${b}33, transparent 55%)`,
@@ -214,7 +241,7 @@ export default function AppearanceSettingsSection() {
         <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
           光效模式
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {GLOW_MODES.map((modeOption) => (
             <ModeOption
               key={modeOption.id}
