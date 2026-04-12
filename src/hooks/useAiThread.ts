@@ -73,7 +73,7 @@ export function useAiThread({
       }
 
       return createAiThreadRequest(workspaceId, session.access_token, {
-        title: originTitle ? `${originTitle} · AI 助手` : "AI 协作线程",
+        title: originTitle ? `${originTitle} · Intelligence` : "Intelligence 对话",
         originSurfaceType,
         originSurfaceId,
       });
@@ -166,7 +166,7 @@ export function useAiThread({
         thread.originSurfaceId === originSurfaceId,
     );
 
-    if (existingThread) {
+    if (existingThread && autoCreate) {
       if (currentThreadId !== existingThread.id) {
         setCurrentThreadId(existingThread.id);
       }

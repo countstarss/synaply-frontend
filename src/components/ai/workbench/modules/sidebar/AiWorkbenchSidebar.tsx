@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getAiThreadDisplayTitle } from "@/components/ai/workbench/aiWorkbenchUtils";
 import type { AiThreadRecord } from "@/lib/ai/types";
 import type { Issue } from "@/lib/fetchers/issue";
 import { cn } from "@/lib/utils";
@@ -242,7 +243,7 @@ export function AiWorkbenchSidebar({
 
         return {
           thread,
-          title: thread.title || "AI 协作线程",
+          title: getAiThreadDisplayTitle(thread.title),
           contextLabel: getThreadContextLabel(
             thread,
             issueMap,
@@ -368,7 +369,7 @@ export function AiWorkbenchSidebar({
 
             <div className="min-w-0">
               <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400 dark:text-white/24">
-                AI Workbench
+                Intelligence
               </p>
               <h2 className="truncate text-[15px] font-semibold text-slate-950 dark:text-white">
                 {workspaceName}

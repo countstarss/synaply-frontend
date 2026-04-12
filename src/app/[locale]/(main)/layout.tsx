@@ -17,8 +17,8 @@ interface LayoutProps {
 const BORDERLESS_CONTENT_SHELL_ROUTES = [
   "/issues/:issueId",
   "/projects/:projectId/:issueId",
-  "/ai/:threadId",
-  "/ai"
+  "/intelligence/:threadId",
+  "/intelligence"
 ] as const;
 const PROJECT_SUBVIEW_ROUTE_SEGMENTS = new Set([
   "issues",

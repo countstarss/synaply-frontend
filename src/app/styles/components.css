@@ -100,6 +100,10 @@
     scrollbar-width: none;
   }
 
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+
   /* 滚动条样式 */
   .scrollbar-thin {
     scrollbar-width: thin;

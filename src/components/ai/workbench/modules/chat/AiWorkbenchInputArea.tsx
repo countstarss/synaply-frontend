@@ -12,6 +12,7 @@ interface AiWorkbenchInputAreaProps {
   disabled?: boolean;
   isSubmitting?: boolean;
   error?: string | null;
+  variant?: "hero" | "docked";
 }
 
 export function AiWorkbenchInputArea({
@@ -21,6 +22,7 @@ export function AiWorkbenchInputArea({
   disabled = false,
   isSubmitting = false,
   error = null,
+  variant = "docked",
 }: AiWorkbenchInputAreaProps) {
   const isSelectionMode = useAiWorkbenchSelectionStore(
     (state) => state.isSelectionMode,
@@ -46,14 +48,22 @@ export function AiWorkbenchInputArea({
           exit={{ opacity: 0, y: 10 }}
           transition={{ duration: 0.2 }}
         >
-          <AiWorkbenchChatComposer
-            value={value}
-            onChange={onChange}
-            onSend={onSend}
-            disabled={disabled}
-            isSubmitting={isSubmitting}
-            error={error}
-          />
+          <div className="space-y-3">
+            <AiWorkbenchChatComposer
+              value={value}
+              onChange={onChange}
+              onSend={onSend}
+              disabled={disabled}
+              isSubmitting={isSubmitting}
+              error={error}
+              variant={variant}
+            />
+            {error ? (
+              <p className="px-3 text-xs text-amber-600 dark:text-amber-300/90">
+                {error}
+              </p>
+            ) : null}
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

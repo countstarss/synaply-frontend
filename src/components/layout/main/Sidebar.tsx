@@ -9,6 +9,7 @@ import SidebarNavItem from "../sidebar/SidebarNavItem";
 import SettingSection from "../sidebar/SettingSection";
 import SidebarFooter from "../sidebar/SidebarFooter";
 import UtilsSidebarSection from "../sidebar/UtilsSidebarSection";
+import AiSidebarSection from "../sidebar/AiSidebarSection";
 import { useSidebarStore } from "@/stores/sidebar";
 import { useSidebarMode } from "@/hooks/useSidebarMode";
 import { useRouter } from "@/i18n/navigation";
@@ -95,7 +96,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
           >
             {/* MARK: Personal导航
              */}
-            <div className="h-full overflow-y-auto">
+            <div className="h-full overflow-y-auto scrollbar-hidden">
               {currentWorkspace?.type === "PERSONAL" ? (
                 /* PERSONAL空间的简化导航 */
                 <div className="space-y-1 py-2">
@@ -107,6 +108,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
                       href={item.href}
                     />
                   ))}
+                  <AiSidebarSection />
                   <UtilsSidebarSection />
                 </div>
               ) : (
@@ -124,6 +126,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
                     ))}
                   </div>
 
+                  <AiSidebarSection />
                   <UtilsSidebarSection />
                 </>
               )}
@@ -139,7 +142,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
               mode === "settings" ? "translate-x-0" : "translate-x-full",
             )}
           >
-            <div className="h-full overflow-y-auto">
+            <div className="h-full overflow-y-auto scrollbar-hidden">
               {/* 返回按钮 */}
               <div className="px-2 py-2 border-b border-app-border">
                 <Button

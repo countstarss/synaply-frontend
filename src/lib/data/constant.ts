@@ -1,6 +1,6 @@
 import {
   BookAIcon,
-  Bot,
+  Sparkles,
   FolderOpen,
   Inbox,
   ListCheck,
@@ -30,12 +30,12 @@ export const getReadyNavItems = (items: NavItem[]) =>
 
 export const mainNavItems: NavItem[] = [
   { icon: ListCheck, label: "My Work", href: "/tasks" },
-  { icon: Bot, label: "AI", href: "/ai" },
   { icon: Inbox, label: "Inbox", href: "/inbox" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
   { icon: Bug, label: "Issues", href: "/issues" },
   { icon: FolderOpen, label: "Projects", href: "/projects" },
   { icon: Workflow, label: "Workflows", href: "/workflows" },
+  { icon: Sparkles, label: "Intelligence", href: "/intelligence" },
   // 顶部不再显示setting选项, 因为它会扰乱UI切换逻辑, 代为一个单独按钮打开
   // { icon: Settings, label: "Settings", href: "/settings" },
 ];
@@ -43,11 +43,11 @@ export const mainNavItems: NavItem[] = [
 // MARK: - PERSONAL导航
 export const personalNavItems: NavItem[] = [
   { icon: ListCheck, label: "My Work", href: "/tasks" },
-  { icon: Bot, label: "AI", href: "/ai" },
   { icon: Inbox, label: "Inbox", href: "/inbox" },
   { icon: BookAIcon, label: "Docs", href: "/docs" },
   { icon: Bug, label: "Issues", href: "/issues" },
   { icon: FolderOpen, label: "Projects", href: "/projects" },
+  { icon: Sparkles, label: "Intelligence", href: "/intelligence" },
   // { icon: Settings, label: "Settings", href: "/settings" },
 ];
 

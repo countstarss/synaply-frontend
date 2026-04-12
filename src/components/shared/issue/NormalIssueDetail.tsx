@@ -1034,6 +1034,16 @@ export default function NormalIssueDetail({
                   )?.name || getIssueMemberName(assignee.member)}
                 </Badge>
               ))}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="border-app-border bg-transparent text-app-text-primary"
+                onClick={() => setIsAiThreadOpen(true)}
+              >
+                <RiSparklingLine className="h-4 w-4 text-sky-600" />
+                打开 AI 助手
+              </Button>
             </div>
 
             {canEditIssue && canQuickComplete && (
@@ -1049,16 +1059,6 @@ export default function NormalIssueDetail({
               </Button>
             )}
 
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="border-app-border bg-transparent text-app-text-primary"
-              onClick={() => setIsAiThreadOpen(true)}
-            >
-              <RiSparklingLine className="h-4 w-4 text-sky-600" />
-              打开 AI 助手
-            </Button>
           </div>
 
           <Button

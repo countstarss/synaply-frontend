@@ -294,7 +294,7 @@ export default function AiExecutionSettingsSection() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <div className="border border-app-border bg-app-bg/40 p-2 text-muted-foreground">
-                <Bot className="size-4" />
+                <Sparkles className="size-4"/>
               </div>
               <div>
                 <CardTitle>动作调试台</CardTitle>

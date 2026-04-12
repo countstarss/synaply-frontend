@@ -33,13 +33,13 @@ export default function TabList() {
             href={item.href}
             onClick={() => setActiveTab(item.label)}
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium",
+              "flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium",
               "transition-all duration-200 hover:scale-105",
               "hover:bg-accent/80 hover:text-accent-foreground",
               "focus:outline-none focus:ring-2 focus:ring-primary/20",
               isActive
-                ? "bg-primary/90 text-primary-foreground shadow-md"
-                : "text-muted-foreground hover:text-foreground bg-background/60 backdrop-blur-sm border border-border/30"
+                ? "border-transparent bg-[#2b2b2b] text-white shadow-none dark:text-gray-300"
+                : "border-border/30 bg-background/60 text-muted-foreground backdrop-blur-sm hover:text-foreground"
             )}
             title={item.label}
           >
