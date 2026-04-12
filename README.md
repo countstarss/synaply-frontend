@@ -1,197 +1,194 @@
-npx swagger-typescript-api generate --path http://localhost:5678/api-json -o src/api -n index.ts
+# Synaply Frontend
 
-# Synaply 认证系统
+Synaply Frontend 是 Synaply 的前端应用，负责提供产品界面、国际化路由、协作文档体验、Workflow 可视化，以及围绕 Projects / Issues / Docs / Inbox 的核心交互。
 
-基于 Next.js 和 Supabase 构建的现代化认证系统，采用炫酷的黑绿色主题设计。
+它不是一个独立的“认证系统示例项目”，而是 Synaply 这套协作产品的用户界面层。
 
-## ✨ 特性
+如果你想先了解整个项目的定位、仓库关系和完整本地部署方式，建议优先查看根仓库文档。
 
-- 🔐 **安全认证**: 基于 Supabase 的企业级认证系统
-- 🎨 **现代化设计**: 炫酷的黑绿色主题，响应式设计
-- ⚡ **动画效果**: 流畅的 Framer Motion 动画
-- 🛡️ **路由保护**: 自动保护需要认证的页面
-- 📧 **邮箱验证**: 支持用户注册邮箱验证
-- 🔄 **密码重置**: 完整的密码重置流程
-- 🚀 **高性能**: 基于 Next.js App Router 构建
-- 💻 **TypeScript**: 完整的类型安全支持
+## 前端职责
 
-## 🛠️ 技术栈
+这个仓库当前主要负责：
 
-- **前端框架**: Next.js 15 (App Router)
-- **认证服务**: Supabase Auth
-- **样式框架**: Tailwind CSS 4
-- **动画库**: Framer Motion
-- **图标库**: Lucide React
-- **语言**: TypeScript
-- **包管理器**: pnpm
+- 基于 Next.js App Router 的产品界面与页面结构
+- 多语言路由与国际化内容加载
+- Projects、Issues、Docs、Inbox、Settings 等核心产品页面
+- Workflow 可视化与交互编辑体验
+- Supabase 前端认证接入
+- 与后端 API 的数据通信
+- AI workbench 与相关交互界面
 
-## 📦 安装依赖
+## 技术栈
+
+- Next.js 15
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Radix UI primitives
+- `next-intl`
+- Framer Motion
+- TanStack Query
+- Zustand
+- Supabase SSR / Supabase JS
+- BlockNote
+- React Flow
+- Yjs
+
+## 当前能力
+
+从当前代码结构看，前端已经包含这些主要能力区域：
+
+- `app/[locale]` 下的国际化页面路由
+- `components/projects` 项目相关界面
+- `components/issue` Issue 相关界面
+- `components/workflow` Workflow 相关界面
+- `components/inbox` Inbox 相关界面
+- `components/auth` 认证相关界面
+- `components/settings` 设置页与成员管理
+- `components/ai` AI workbench 与线程界面
+- `lib/realtime`、`hooks/realtime` 下的实时能力接入
+- `lib/data`、`lib/fetchers` 下的数据获取与客户端封装
+
+这些能力共同服务于 Synaply 的核心产品链路：
+
+`Project -> Issue -> Workflow -> Doc -> Inbox`
+
+## 快速开始
+
+### 1. 安装依赖
 
 ```bash
-# 使用 pnpm 安装依赖
 pnpm install
 ```
 
-## ⚙️ 环境配置
+### 2. 配置环境变量
 
-1. 创建 `.env.local` 文件：
+先复制或补全本地环境变量：
 
 ```bash
-# Supabase 配置
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+cp .env.example .env.local
 ```
 
-2. 在 [Supabase](https://supabase.com) 创建项目并获取以下信息：
-   - Project URL
-   - API Keys (anon/public key)
+最关键的变量是：
 
-3. 在 Supabase 项目中配置认证设置：
-   - 启用邮箱认证
-   - 设置重定向 URL：
-     - `http://localhost:3000/auth/callback` (开发环境)
-     - `https://yourdomain.com/auth/callback` (生产环境)
+```env
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-local-supabase-anon-key>
+NEXT_PUBLIC_BACKEND_URL=http://localhost:5678
+NEXT_PUBLIC_BACKEND_DEV_URL=http://localhost:5678
+```
 
-## 🚀 运行项目
+如果你需要启用 AI runtime，还需要补充：
+
+```env
+LLM_BASE_URL=
+LLM_MODEL=
+LLM_API_KEY=
+```
+
+说明：
+
+- `NEXT_PUBLIC_SUPABASE_URL` 和 `NEXT_PUBLIC_SUPABASE_ANON_KEY` 对应本地 Supabase
+- `NEXT_PUBLIC_BACKEND_URL` 指向 `synaply-backend`
+- 本仓库不应提交真实 `.env.local`
+
+### 3. 启动开发服务器
 
 ```bash
-# 启动开发服务器
 pnpm dev
+```
 
-# 构建生产版本
+默认访问地址：
+
+- Frontend: [http://localhost:3000](http://localhost:3000)
+
+如果你在完整联调环境中开发，建议同时启动：
+
+- 本地 Supabase
+- `synaply-backend`
+
+## 常用命令
+
+```bash
+pnpm dev
 pnpm build
-
-# 启动生产服务器
 pnpm start
+pnpm lint
 ```
 
-访问 [http://localhost:3000](http://localhost:3000) 查看应用。
+## 页面与模块结构
 
-## 📁 目录结构
-
-```
-src/
-├── app/                    # Next.js App Router 页面
-│   ├── auth/              # 认证相关页面
-│   │   ├── callback/      # 认证回调处理
-│   │   ├── reset-password/ # 密码重置页面
-│   │   └── page.tsx       # 登录/注册页面
-│   ├── dashboard/         # 受保护的仪表盘页面
-│   ├── layout.tsx         # 根布局
-│   └── page.tsx           # 主页
-├── components/            # 可复用组件
-│   └── ProtectedRoute.tsx # 路由保护组件
-├── context/               # React Context
-│   └── AuthContext.tsx    # 认证状态管理
-└── lib/                   # 工具库
-    └── supabase.ts        # Supabase 客户端配置
-```
-
-## 🎯 核心功能
-
-### 1. 用户注册
-- 邮箱/密码注册
-- 邮箱验证流程
-- 实时表单验证
-- 错误处理
-
-### 2. 用户登录
-- 邮箱/密码登录
-- 记住登录状态
-- 自动重定向
-
-### 3. 密码重置
-- 邮箱重置密码
-- 安全的重置流程
-- 链接验证
-
-### 4. 认证状态管理
-- 全局认证状态
-- 自动状态同步
-- 路由保护
-
-### 5. 用户界面
-- 现代化黑绿色主题
-- 流畅动画效果
-- 响应式设计
-- 无障碍支持
-
-## 🎨 设计主题
-
-项目采用炫酷的黑绿色主题：
-
-- **主色调**: 黑色背景渐变
-- **强调色**: 绿色到翠绿色渐变
-- **动画效果**: 模糊光球背景动画
-- **玻璃态效果**: 半透明背景模糊
-- **交互反馈**: 悬停和点击动画
-
-## 🔧 自定义配置
-
-### 修改主题颜色
-
-在 Tailwind CSS 中修改颜色配置：
-
-```css
-/* 绿色主题 */
-from-green-500 to-emerald-500
-
-/* 蓝色主题 */
-from-blue-500 to-cyan-500
-
-/* 紫色主题 */
-from-purple-500 to-pink-500
+```text
+synaply-frontend/
+├── src/app/              # App Router 页面与 API routes
+├── src/components/       # 产品组件
+│   ├── ai/
+│   ├── auth/
+│   ├── inbox/
+│   ├── issue/
+│   ├── projects/
+│   ├── settings/
+│   ├── workflow/
+│   └── ui/
+├── src/i18n/             # 国际化配置与文案
+├── src/lib/              # 数据访问、AI、realtime、类型与工具
+├── src/providers/        # 全局 provider
+├── src/stores/           # 客户端状态
+└── src/hooks/            # 业务 hooks
 ```
 
-### 添加新的认证页面
+## 设计与产品原则
 
-1. 在 `src/app/auth/` 目录下创建新页面
-2. 使用 `useAuth` Hook 获取认证状态
-3. 实现相应的认证逻辑
+这个前端仓库不应被理解成一个“什么都往里塞”的 Next.js 壳子。它服务于 Synaply 的产品边界：
 
-### 扩展用户资料
+- 强化跨角色 handoff 和协作上下文
+- 降低远程团队中的状态追问与信息散落
+- 让项目、事项、流程、文档和收件箱形成一个连贯界面
 
-1. 更新 Supabase 数据库表结构
-2. 修改 `src/lib/supabase.ts` 中的类型定义
-3. 在认证流程中添加额外字段
+不建议把它快速扩展成：
 
-## 🔒 安全最佳实践
+- chat-first 产品
+- 泛化的大而全项目管理套件
+- 重型 planning / gantt / timesheet 系统
 
-本项目实现了以下安全措施：
+## 与后端的关系
 
-- ✅ 客户端和服务端认证分离
-- ✅ 安全的密码重置流程
-- ✅ 邮箱验证要求
-- ✅ 客户端路由保护
-- ✅ 错误信息脱敏
-- ✅ 会话管理
+`synaply-frontend` 不是独立产品，而是 Synaply 的前端界面层。
 
-## 🚀 部署
+前端负责：
 
-### Vercel 部署
+- 页面结构与交互体验
+- 国际化与用户界面
+- 富文本、流程图、状态面板等前端能力
+- API 数据展示与用户操作发起
 
-1. 连接 GitHub 仓库到 Vercel
-2. 添加环境变量
-3. 更新 Supabase 重定向 URL
-4. 部署
+后端负责：
 
-### 其他平台
+- 领域逻辑
+- 权限校验
+- 数据持久化
+- GraphQL / REST 暴露
 
-确保设置正确的环境变量并更新 Supabase 配置中的重定向 URL。
+## 本地联调建议
 
-## 🤝 贡献
+如果你是从根仓库一起开发，推荐按这个顺序：
 
-欢迎提交 Issue 和 Pull Request！
+1. 启动本地 Supabase
+2. 启动 `synaply-backend`
+3. 启动 `synaply-frontend`
 
-## 📄 许可证
+完整说明请参考根仓库的 `DEPLOYMENT.md`。
 
-MIT License
+## Contributing
 
-## 🎉 开始使用
+欢迎提交 issue、PR 和围绕产品方向的高质量反馈。
 
-1. 克隆项目并安装依赖
-2. 配置 Supabase 环境变量
-3. 启动开发服务器
-4. 访问 `/auth` 开始使用认证功能
+更完整的贡献与仓库策略，请参考根仓库的 `CONTRIBUTING.md`。
 
-享受编码吧！🚀
+## License
+
+本仓库当前采用 `Elastic License 2.0 (ELv2)`。
+
+这意味着源码公开可见并可在许可范围内使用，但不应被表述成标准 OSI 开源项目。更准确的说法是：`source-available`。
+
+如果要将 Synaply 本身作为 hosted / managed service 对外提供，需要额外的商业授权。
