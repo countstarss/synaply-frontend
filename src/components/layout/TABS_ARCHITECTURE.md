@@ -115,11 +115,6 @@ const filteredTasks = tasks.filter(task => task.category === activeTab);
 - **搜索**: ✅ 在InfoBar中
 - **视图切换**: ✅ Grid/List
 
-### Chat Page
-- **标签页**: ❌ 不需要
-- **搜索**: ❌ 不需要
-- **视图切换**: ❌ 不需要
-
 ## 🚀 扩展性
 
 ### 添加新的页面标签页

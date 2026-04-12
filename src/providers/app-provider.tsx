@@ -1,6 +1,5 @@
 import React from "react";
 import { ThemeProvider } from "./theme-provider";
-import { ConvexClientProvider } from "./convex-provider";
 import { NextIntlClientProvider } from "next-intl";
 import { AuthProvider } from "@/context/AuthContext";
 import { QueryProvider } from "./query-provider"; // 导入 QueryProvider
@@ -18,13 +17,11 @@ const AppProvider = ({ children }: AppProviderProps) => {
       disableTransitionOnChange
       storageKey="synaply-theme"
     >
-      <ConvexClientProvider>
-        <NextIntlClientProvider>
-          <QueryProvider>
-            <AuthProvider>{children}</AuthProvider>
-          </QueryProvider>
-        </NextIntlClientProvider>
-      </ConvexClientProvider>
+      <NextIntlClientProvider>
+        <QueryProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </QueryProvider>
+      </NextIntlClientProvider>
     </ThemeProvider>
   );
 };

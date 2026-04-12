@@ -29,36 +29,6 @@ function getIssueLabel(issue: Issue) {
   return issue.key ? `${issue.key} · ${issue.title}` : issue.title;
 }
 
-function formatRelativeThreadTime(value?: string | null) {
-  if (!value) {
-    return "刚刚";
-  }
-
-  const diffMs = Date.now() - new Date(value).getTime();
-  const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
-
-  if (diffMinutes < 60) {
-    return `${diffMinutes} 分钟前`;
-  }
-
-  const diffHours = Math.floor(diffMinutes / 60);
-
-  if (diffHours < 24) {
-    return `${diffHours} 小时前`;
-  }
-
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffDays < 7) {
-    return `${diffDays} 天前`;
-  }
-
-  return new Date(value).toLocaleDateString("zh-CN", {
-    month: "short",
-    day: "numeric",
-  });
-}
-
 function buildNewThreadTitle(
   workspaceName: string,
   selectedProjectName?: string | null,
@@ -74,32 +44,6 @@ function buildNewThreadTitle(
 
   return `${workspaceName} · 新对话`;
 }
-
-function getThreadContextLabel(
-  thread: AiThreadRecord,
-  issueMap: Map<string, Issue>,
-  projectNameMap: Map<string, string>,
-  workspaceName: string,
-) {
-  if (
-    thread.originSurfaceType === "ISSUE" &&
-    thread.originSurfaceId &&
-    issueMap.has(thread.originSurfaceId)
-  ) {
-    return getIssueLabel(issueMap.get(thread.originSurfaceId)!);
-  }
-
-  if (
-    thread.originSurfaceType === "PROJECT" &&
-    thread.originSurfaceId &&
-    projectNameMap.has(thread.originSurfaceId)
-  ) {
-    return projectNameMap.get(thread.originSurfaceId)!;
-  }
-
-  return `${workspaceName} · 自由对话`;
-}
-
 function getAiThreadPath(threadId: string) {
   return `/ai/${encodeURIComponent(threadId)}`;
 }

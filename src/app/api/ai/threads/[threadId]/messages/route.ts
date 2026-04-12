@@ -49,8 +49,6 @@ import {
 import {
   type AiCodingPromptAssembly,
   type AiApprovalRecord,
-  type AiExecutionCapabilities,
-  type AiExecutionManifest,
   type AiExecutionActionResult,
   type AiMessagePart,
   type AiMessageRecord,
@@ -974,7 +972,7 @@ async function requestIntentPlan(params: {
         stepIndex,
         totalTokensUsed,
       };
-    } catch (error) {
+    } catch {
       if (
         looksLikePlainTextPlannerReply(llmResult.text) &&
         latestUserText &&

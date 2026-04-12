@@ -23,7 +23,6 @@ export function AiWorkbenchChatComposer({
   onSend,
   disabled = false,
   isSubmitting = false,
-  error = null,
 }: AiWorkbenchChatComposerProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 

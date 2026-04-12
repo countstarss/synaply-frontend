@@ -21,8 +21,8 @@ export const infobarConfig: InfobarConfig = {
 
   // 可选：正则表达式匹配
   hiddenPatterns: [
-    // 示例：匹配所有以 /chat/ 开头后跟数字的路由
-    // /^\/chat\/\d+/
+    // 示例：匹配所有以 /admin/users/ 开头后跟数字的路由
+    // /^\/admin\/users\/\d+/
   ],
 };
 
@@ -33,7 +33,7 @@ export const infobarConfig: InfobarConfig = {
  */
 export function shouldHideInfobar(path: string): boolean {
   // 移除语言前缀，获取实际路由路径
-  // 例如: /en/chat -> /chat, /zh/chat -> /chat
+  // 例如: /en/projects -> /projects, /zh/settings -> /settings
   const pathWithoutLocale = path.replace(/^\/[a-z]{2}(?=\/|$)/, "");
 
   // 检查精确匹配

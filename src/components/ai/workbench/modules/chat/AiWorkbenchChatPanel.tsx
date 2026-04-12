@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bot, ChevronDown, GitBranchPlus, ShieldAlert, SplitSquareVertical } from "lucide-react";
 import type { AiMessageRecord } from "@/lib/ai/types";
 import { Button } from "@/components/ui/button";
@@ -97,14 +97,14 @@ export function AiWorkbenchChatPanel({
     ? Math.max(containerViewportHeight - 256, 220)
     : 0;
 
-  const stopScrollAnimation = () => {
+  const stopScrollAnimation = useCallback(() => {
     if (scrollAnimationFrameRef.current !== null) {
       cancelAnimationFrame(scrollAnimationFrameRef.current);
       scrollAnimationFrameRef.current = null;
     }
-  };
+  }, []);
 
-  const animateScrollTo = (top: number, duration = 240) => {
+  const animateScrollTo = useCallback((top: number, duration = 240) => {
     const container = containerRef.current;
 
     if (!container) {
@@ -138,7 +138,7 @@ export function AiWorkbenchChatPanel({
     };
 
     scrollAnimationFrameRef.current = requestAnimationFrame(step);
-  };
+  }, [stopScrollAnimation]);
 
   const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
     endRef.current?.scrollIntoView({ behavior, block: "end" });
@@ -190,7 +190,7 @@ export function AiWorkbenchChatPanel({
     return () => {
       stopScrollAnimation();
     };
-  }, []);
+  }, [stopScrollAnimation]);
 
   useEffect(() => {
     if (!pendingViewportAnchorId) {
@@ -218,7 +218,7 @@ export function AiWorkbenchChatPanel({
     animateScrollTo(targetTop, 260);
     lastAnchoredMessageIdRef.current = pendingViewportAnchorId;
     setIsAutoScrollEnabled(false);
-  }, [messages.length, pendingViewportAnchorId]);
+  }, [animateScrollTo, messages.length, pendingViewportAnchorId]);
 
   useEffect(() => {
     const hasNewMessage = messages.length > previousMessagesCountRef.current;

@@ -16,18 +16,18 @@
 export const infobarConfig: InfobarConfig = {
   // 精确匹配的路由
   hiddenRoutes: [
-    '/chat',          // 聊天主页
-    '/chat/',         // 聊天主页（带斜杠）
+    '/settings',      // 设置主页
+    '/settings/',     // 设置主页（带斜杠）
   ],
 
   // 前缀匹配的路由
   hiddenPrefixes: [
-    '/chat/',         // 所有聊天子页面 (/chat/room1, /chat/room2 等)
+    '/admin/',        // 所有后台子页面 (/admin/users, /admin/teams 等)
   ],
 
   // 正则表达式匹配（可选）
   hiddenPatterns: [
-    /^\/chat\/\d+$/   // 匹配 /chat/123 这样的路由
+    /^\/projects\/\d+$/   // 匹配 /projects/123 这样的路由
   ]
 };
 ```
@@ -54,40 +54,40 @@ removeHiddenRoute('/settings', 'exact');
 
 ### 1. 精确匹配 (exact)
 - 完全匹配指定的路由路径
-- 示例：`'/chat'` 只匹配 `/chat`，不匹配 `/chat/room1`
+- 示例：`'/settings'` 只匹配 `/settings`，不匹配 `/settings/profile`
 
 ### 2. 前缀匹配 (prefix)
 - 匹配以指定前缀开头的所有路由
-- 示例：`'/chat/'` 匹配 `/chat/room1`、`/chat/room2/messages` 等
+- 示例：`'/admin/'` 匹配 `/admin/users`、`/admin/teams/members` 等
 
 ### 3. 正则表达式匹配 (pattern)
 - 使用正则表达式进行复杂匹配
-- 示例：`/^\/chat\/\d+$/` 匹配 `/chat/123`，但不匹配 `/chat/abc`
+- 示例：`/^\/projects\/\d+$/` 匹配 `/projects/123`，但不匹配 `/projects/abc`
 
 ## 多语言支持
 
 系统自动处理多语言路由：
-- `/en/chat` → `/chat`
-- `/zh/chat` → `/chat`
-- `/fr/chat/room1` → `/chat/room1`
+- `/en/projects` → `/projects`
+- `/zh/settings` → `/settings`
+- `/fr/admin/users` → `/admin/users`
 
 配置时只需要指定不带语言前缀的路径。
 
 ## 使用示例
 
-### 示例1：隐藏聊天相关页面的 Infobar
+### 示例1：隐藏设置和后台页面的 Infobar
 
 ```typescript
 export const infobarConfig: InfobarConfig = {
-  hiddenRoutes: ['/chat'],
-  hiddenPrefixes: ['/chat/'],
+  hiddenRoutes: ['/settings'],
+  hiddenPrefixes: ['/admin/'],
 };
 ```
 
 这将隐藏以下页面的 Infobar：
-- `/en/chat`
-- `/zh/chat/room1`
-- `/en/chat/private/123`
+- `/en/settings`
+- `/zh/admin/users`
+- `/en/admin/teams/123`
 
 ### 示例2：隐藏管理员和设置页面
 
@@ -103,7 +103,7 @@ export const infobarConfig: InfobarConfig = {
 ```typescript
 export const infobarConfig: InfobarConfig = {
   hiddenPatterns: [
-    /^\/chat\/room\/\d+$/,     // 匹配 /chat/room/123
+    /^\/projects\/\d+$/,       // 匹配 /projects/123
     /^\/user\/[a-z]+\/edit$/,  // 匹配 /user/john/edit
   ]
 };

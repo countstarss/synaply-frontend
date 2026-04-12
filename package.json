@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.68",
     "@blocknote/core": "^0.32.0",
     "@blocknote/mantine": "^0.32.0",
     "@blocknote/react": "^0.32.0",
@@ -39,11 +38,9 @@
     "@tsparticles/slim": "^3.9.1",
     "@types/react-color": "^3.0.13",
     "@types/uuid": "^10.0.0",
-    "ai": "^6.0.158",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "convex": "1.25.1",
     "date-fns": "^4.1.0",
     "dexie": "^4.0.11",
     "dexie-react-hooks": "^1.1.7",

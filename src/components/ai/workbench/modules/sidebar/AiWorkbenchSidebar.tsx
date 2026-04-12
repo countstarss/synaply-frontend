@@ -9,7 +9,6 @@ import {
   MessageSquareText,
   Plus,
 } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { AiThreadRecord } from "@/lib/ai/types";
@@ -139,17 +138,6 @@ function getThreadContextLabel(
   return `${workspaceName} · 自由对话`;
 }
 
-function getWorkspaceInitials(workspaceName: string) {
-  const letters = workspaceName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((chunk) => chunk[0]?.toUpperCase())
-    .join("");
-
-  return letters || "AI";
-}
-
 function getToneMeta(item: SidebarThreadItem) {
   const neutralClassName =
     "border-black/[0.06] bg-black/[0.03] text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-white/72";
@@ -235,10 +223,8 @@ export function AiWorkbenchSidebar({
   projectNameMap,
   currentProject = null,
   currentIssue = null,
-  contextSummary,
   isCreatingThread = false,
   onProjectChange,
-  onResetContext,
   onStartNewThread,
   onSelectThread,
 }: AiWorkbenchSidebarProps) {
@@ -318,7 +304,6 @@ export function AiWorkbenchSidebar({
   );
 
   const activeProjectId = currentIssue?.projectId || currentProject?.id || null;
-  const isFreeModeActive = !activeProjectId;
   const resolvedThreadItem = useMemo(
     () =>
       resolvedThreadId
@@ -373,10 +358,6 @@ export function AiWorkbenchSidebar({
     }
 
     onProjectChange(group.project.id);
-  };
-
-  const handleSelectFreeMode = () => {
-    onResetContext();
   };
 
   return (
