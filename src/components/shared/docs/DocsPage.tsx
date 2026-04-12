@@ -776,7 +776,7 @@ function DocsPageContent({ sourceSwitcher }: { sourceSwitcher?: React.ReactNode 
 
   if (isLoading) {
     return (
-      <div className="flex h-full min-h-full flex-col">
+      <div className="flex h-full min-h-0 flex-col">
         {sourceSwitcherBar}
         <div className="relative flex min-h-0 flex-1 items-center justify-center bg-app-bg">
           <AmbientGlow />
@@ -792,7 +792,7 @@ function DocsPageContent({ sourceSwitcher }: { sourceSwitcher?: React.ReactNode 
   // 如果没有激活文档且没有打开的文档，显示概览页面
   if (!activeDocId && openDocs.length === 0) {
     return (
-      <div className="flex h-full min-h-full flex-col">
+      <div className="flex h-full min-h-0 flex-col">
         {sourceSwitcherBar}
         <div className="min-h-0 flex-1 bg-app-bg">
           <DocsOverviewPage context={context} />
@@ -802,7 +802,7 @@ function DocsPageContent({ sourceSwitcher }: { sourceSwitcher?: React.ReactNode 
   }
 
   return (
-    <div className="flex h-full min-h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       {sourceSwitcherBar}
       <div className="relative flex min-h-0 flex-1 bg-app-bg">
         <AmbientGlow />
@@ -819,7 +819,7 @@ function DocsPageContent({ sourceSwitcher }: { sourceSwitcher?: React.ReactNode 
           <DocsTabs onSelectDoc={handleSelectDoc} />
 
           {/* Content */}
-          <div className="flex-1">
+          <div className="min-h-0 flex-1 overflow-hidden">
             {activeDoc ? (
               <DocsEditor
                 doc={activeDoc}

@@ -69,7 +69,7 @@ export default function DocsEditor({
   };
 
   return (
-    <div className="relative flex h-full flex-col bg-app-bg">
+    <div className="relative flex h-full min-h-0 flex-col bg-app-bg">
       {/* Toolbar */}
       {onToggleExpand && (
         <DocsToolbar isExpanded={isExpanded} onToggleExpand={onToggleExpand} />
@@ -148,7 +148,7 @@ export default function DocsEditor({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-hidden">
         {doc.type === "folder" ? (
           <FolderIntro folder={doc} />
         ) : (

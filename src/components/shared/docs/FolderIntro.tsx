@@ -39,7 +39,7 @@ export default function FolderIntro({ folder }: FolderIntroProps) {
   }
 
   return (
-    <div className="h-full flex flex-col bg-app-bg">
+    <div className="flex h-full min-h-0 flex-col bg-app-bg">
       {/* Header */}
       <div className="px-8 py-6 border-b border-app-border bg-app-content-bg">
         <div className="flex items-center gap-3 mb-4">
@@ -69,7 +69,7 @@ export default function FolderIntro({ folder }: FolderIntroProps) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 px-8 py-6">
+      <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
         <div className="max-w-4xl">
           <h2 className="text-xl font-semibold text-app-text-primary mb-4">
             文件夹描述

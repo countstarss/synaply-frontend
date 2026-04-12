@@ -7,5 +7,5 @@ export default function PersonalDocsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="h-full">{children}</div>;
+  return <div className="h-full min-h-0">{children}</div>;
 }

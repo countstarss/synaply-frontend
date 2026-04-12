@@ -17,7 +17,7 @@ export default function PersonalDocPage() {
   const context = "team-personal" as const; // 团队工作空间中的个人文档上下文
 
   return (
-    <div className="h-full bg-app-bg">
+    <div className="h-full min-h-0 bg-app-bg">
       <DocsPage
         workspaceId={workspaceId}
         workspaceType={workspaceType}
