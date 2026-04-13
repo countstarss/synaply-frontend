@@ -293,7 +293,7 @@ const englishCopy: SiteCopy = {
 };
 
 const chineseCopy: SiteCopy = {
-  tagline: "The operating system for focused remote teams.",
+  tagline: "为专注远程团队打造的协作操作系统。",
   hero: {
     eyebrow: "为远程小团队打造的协作操作系统",
     title: "让每一次协作，都沿着清晰流程抵达交付。",
@@ -456,7 +456,7 @@ const chineseCopy: SiteCopy = {
     quoteBy: "让团队把精力放在交付本身，而不是信息搬运。",
   },
   finalCta: {
-    title: "Start with clarity. Move with momentum.",
+    title: "从清晰开始，让推进自然发生。",
     description:
       "把项目、流程、任务与文档收束进同一个工作系统，让团队进入同一套推进节奏。",
     primary: "用更清晰的方式推进每一个项目",

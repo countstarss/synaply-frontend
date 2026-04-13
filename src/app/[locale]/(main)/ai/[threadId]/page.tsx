@@ -1,7 +1,9 @@
-import { redirect } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
+
+import { normalizeSiteLocale } from "@/lib/seo";
 
 interface LegacyAiThreadPageProps {
-  params: Promise<{ threadId: string }>;
+  params: Promise<{ locale: string; threadId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
@@ -9,7 +11,7 @@ export default async function LegacyAiThreadPage({
   params,
   searchParams,
 }: LegacyAiThreadPageProps) {
-  const [{ threadId }, resolvedSearchParams] = await Promise.all([
+  const [{ locale, threadId }, resolvedSearchParams] = await Promise.all([
     params,
     searchParams,
   ]);
@@ -28,5 +30,8 @@ export default async function LegacyAiThreadPage({
 
   const targetPath = `/intelligence/${encodeURIComponent(threadId)}`;
 
-  redirect(query.size > 0 ? `${targetPath}?${query.toString()}` : targetPath);
+  redirect({
+    href: query.size > 0 ? `${targetPath}?${query.toString()}` : targetPath,
+    locale: normalizeSiteLocale(locale),
+  });
 }

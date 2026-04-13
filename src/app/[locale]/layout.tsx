@@ -1,10 +1,16 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
 import { IBM_Plex_Mono, Manrope } from "next/font/google";
+
 import { routing } from "@/i18n/routing";
 import "@/app/globals.css";
 import AppProvider from "@/providers/app-provider";
 import { Toaster } from "@/components/ui/sonner"; // 导入 Toaster
+import {
+  getBaseSiteMetadata,
+  normalizeSiteLocale,
+} from "@/lib/seo";
 
 const sans = Manrope({
   subsets: ["latin"],
@@ -16,6 +22,21 @@ const mono = IBM_Plex_Mono({
   variable: "--font-geist-mono",
   weight: ["400", "500", "600"],
 });
+
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+export const dynamicParams = false;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return getBaseSiteMetadata(normalizeSiteLocale(locale));
+}
 
 export default async function LocaleLayout({
   children,

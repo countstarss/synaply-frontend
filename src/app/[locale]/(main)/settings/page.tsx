@@ -1,5 +1,16 @@
-import { redirect } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
 
-export default function SettingsPage() {
-  redirect("/settings/general");
+import { normalizeSiteLocale } from "@/lib/seo";
+
+export default async function SettingsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+
+  redirect({
+    href: "/settings/general",
+    locale: normalizeSiteLocale(locale),
+  });
 }

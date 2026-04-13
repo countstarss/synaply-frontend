@@ -1,116 +1,15 @@
-"use client";
+import type { Metadata } from "next";
 
-import Infobar from "@/components/layout/main/Infobar";
-import Sidebar from "@/components/layout/main/Sidebar";
-import { GlobalPageCache } from "@/components/cache/GlobalPageCache";
-import React from "react";
-import { cn } from "@/lib/utils";
-import { useSidebarStore } from "@/stores/sidebar";
-import { useAppearanceScope } from "@/hooks/useAppearanceScope";
-import { shouldUseBorderlessContentShell } from "@/lib/navigation/page-registry";
-import { usePathname, useSelectedLayoutSegments } from "next/navigation";
+import MainLayoutClient from "./main-layout-client";
+
+import { getNoIndexMetadata } from "@/lib/seo";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-const Layout = ({ children }: LayoutProps) => {
-  useAppearanceScope();
-  const { isOpen: sidebarOpen } = useSidebarStore();
-  const segments = useSelectedLayoutSegments();
-  const pathname = usePathname();
-  const showCachedPage = segments.includes("(cached)");
-  const useBorderlessContentShell = shouldUseBorderlessContentShell(pathname);
-  const previousPathnameRef = React.useRef(pathname);
-  const shouldBypassShellAnimation =
-    pathname.includes("/settings") ||
-    previousPathnameRef.current.includes("/settings");
+export const metadata: Metadata = getNoIndexMetadata();
 
-  React.useEffect(() => {
-    previousPathnameRef.current = pathname;
-  }, [pathname]);
-
-  return (
-    <div className="flex h-screen bg-app-bg overflow-hidden">
-      {/* Sidebar - 使用动画控制显示/隐藏 */}
-      <div
-        className={cn(
-          "transition-all duration-300 ease-in-out",
-          sidebarOpen ? "w-64 opacity-100" : "w-0 opacity-0 overflow-hidden",
-        )}
-      >
-        <Sidebar />
-      </div>
-
-      {/* Main Content - 始终保持8px间隔 */}
-      <div
-        className={cn(
-          "flex-1 flex flex-col overflow-hidden relative",
-          sidebarOpen ? "ml-2" : "ml-0",
-        )}
-      >
-        {/* InfoBar - 始终保持在顶部，不参与动画 */}
-        <Infobar />
-
-        {/* 内容区域 - 相对定位用于切换动画 */}
-        <div className="relative flex-1 overflow-hidden">
-          {/* 常规页面内容 - 正确的从左向右滑动 */}
-          <div
-            className={cn(
-              "absolute inset-0",
-              !shouldBypassShellAnimation &&
-                "transition-all duration-300 ease-in-out",
-              showCachedPage
-                ? "opacity-0 translate-x-full pointer-events-none" // 向右退出
-                : "opacity-100 translate-x-0 pointer-events-auto",
-            )}
-          >
-            <main
-              className={cn(
-                "mx-2 mb-2 h-[calc(100vh-64px)] overflow-hidden rounded-lg",
-                !useBorderlessContentShell &&
-                  "border border-app-border bg-app-content-bg",
-              )}
-            >
-              <div
-                className={cn(
-                  "flex-1 h-full overflow-y-auto rounded-lg",
-                  !useBorderlessContentShell && "bg-app-content-bg",
-                )}
-              >
-                {children}
-              </div>
-            </main>
-          </div>
-
-          {/* 全局页面缓存系统 - 正确的从左向右滑动 */}
-          <div
-            className={cn(
-              "absolute inset-0",
-              !shouldBypassShellAnimation &&
-                "transition-all duration-300 ease-in-out",
-              showCachedPage
-                ? "opacity-100 translate-x-0 pointer-events-auto" // 从左滑入到中央
-                : "opacity-0 translate-x-[-100%] pointer-events-none", // 在左侧待命
-            )}
-          >
-            {/* 保持与常规内容相同的结构和间距 */}
-            <div className="flex flex-col h-full">
-              <div
-                className={cn(
-                  "mx-2 mb-2 h-[calc(100vh-64px)] overflow-hidden rounded-lg",
-                  !useBorderlessContentShell &&
-                    "border border-app-border bg-app-content-bg",
-                )}
-              >
-                <GlobalPageCache />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default Layout;
+export default function MainLayout({ children }: LayoutProps) {
+  return <MainLayoutClient>{children}</MainLayoutClient>;
+}
