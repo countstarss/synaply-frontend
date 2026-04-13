@@ -7,68 +7,11 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/stores/sidebar";
 import { useAppearanceScope } from "@/hooks/useAppearanceScope";
+import { shouldUseBorderlessContentShell } from "@/lib/navigation/page-registry";
 import { usePathname, useSelectedLayoutSegments } from "next/navigation";
 
 interface LayoutProps {
   children: React.ReactNode;
-}
-
-// MARK: 无边框模式配置
-const BORDERLESS_CONTENT_SHELL_ROUTES = [
-  "/issues/:issueId",
-  "/projects/:projectId/:issueId",
-  "/intelligence/:threadId",
-  "/intelligence"
-] as const;
-const PROJECT_SUBVIEW_ROUTE_SEGMENTS = new Set([
-  "issues",
-  "docs",
-  "workflow",
-  "sync",
-]);
-
-function normalizeRoutePathname(pathname: string) {
-  const segments = pathname.split("/").filter(Boolean);
-  const firstSegment = segments[0];
-
-  if (firstSegment && /^[a-z]{2}(?:-[A-Z]{2})?$/.test(firstSegment)) {
-    segments.shift();
-  }
-
-  return `/${segments.join("/")}` || "/";
-}
-
-function shouldUseBorderlessContentShell(pathname: string) {
-  const routePathname = normalizeRoutePathname(pathname);
-
-  return BORDERLESS_CONTENT_SHELL_ROUTES.some((route) =>
-    routeMatchesPattern(routePathname, route),
-  );
-}
-
-function routeMatchesPattern(pathname: string, routePattern: string) {
-  const pathnameSegments = pathname.split("/").filter(Boolean);
-  const routePatternSegments = routePattern.split("/").filter(Boolean);
-
-  if (pathnameSegments.length !== routePatternSegments.length) {
-    return false;
-  }
-
-  return routePatternSegments.every((segment, index) => {
-    if (segment.startsWith(":")) {
-      if (
-        routePatternSegments[0] === "projects" &&
-        segment === ":issueId" &&
-        PROJECT_SUBVIEW_ROUTE_SEGMENTS.has(pathnameSegments[index])
-      ) {
-        return false;
-      }
-
-      return Boolean(pathnameSegments[index]);
-    }
-
-    return segment === pathnameSegments[index];
-  });
 }
 
 const Layout = ({ children }: LayoutProps) => {

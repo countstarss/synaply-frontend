@@ -9,11 +9,12 @@ import { useAiThread } from "@/hooks/useAiThread";
 import { useAiThreadStream } from "@/hooks/useAiThreadStream";
 import { useIssues } from "@/hooks/useIssueApi";
 import { useProjects } from "@/hooks/useProjectApi";
+import { useWorkspaceRealtime } from "@/hooks/realtime/useWorkspaceRealtime";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useCachedPageVisibility } from "@/components/cache/CachedPageVisibility";
 import { AiWorkbenchChatPanel } from "@/components/ai/workbench/modules/chat/AiWorkbenchChatPanel";
 import type { AiSurfaceType } from "@/lib/ai/types";
 import { createAiThread, listAiThreads } from "@/lib/fetchers/ai-thread";
-import { cn } from "@/lib/utils";
 import { useAiThreadStore } from "@/stores/ai-thread";
 import { IssueStateCategory } from "@/types/prisma";
 import AmbientGlow from "@/components/global/AmbientGlow";
@@ -24,11 +25,10 @@ import {
   getIssueLabel,
   getSelectionFromThread,
 } from "@/components/ai/workbench/aiWorkbenchUtils";
-
-const panelClassName =
-  "rounded-lg border border-black/[0.06] bg-white/84 shadow-[0_24px_72px_-56px_rgba(15,23,42,0.22)] ring-1 ring-black/[0.03] backdrop-blur-2xl dark:border-white/8 dark:bg-[rgba(18,18,20,0.72)] dark:ring-white/[0.04] dark:shadow-[0_24px_72px_-56px_rgba(0,0,0,0.88)]";
+import { cn } from "@/lib/utils";
 
 export function AiWorkbenchPage() {
+  const isPageVisible = useCachedPageVisibility();
   const params = useParams<{ threadId?: string }>();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -51,12 +51,16 @@ export function AiWorkbenchPage() {
   const isSubmittingRef = useRef(false);
   const { isStreaming, streamingText, error, setError } = useAiThreadStore();
 
+  useWorkspaceRealtime(workspaceId, {
+    enabled: isPageVisible,
+  });
+
   const { data: projects = [], isLoading: isProjectsLoading } =
-    useProjects(workspaceId);
+    useProjects(workspaceId, { enabled: isPageVisible });
   const { data: allIssues = [], isLoading: isIssuesLoading } = useIssues(
     workspaceId,
     { limit: 200 },
-    { enabled: !!workspaceId },
+    { enabled: !!workspaceId && isPageVisible },
   );
   const threadsQuery = useQuery({
     queryKey: ["ai-threads", workspaceId],
@@ -67,7 +71,7 @@ export function AiWorkbenchPage() {
 
       return listAiThreads(workspaceId, session.access_token);
     },
-    enabled: !!session?.access_token && !!workspaceId,
+    enabled: isPageVisible && !!session?.access_token && !!workspaceId,
   });
 
   const localSelectedProject = projects.find(
@@ -183,7 +187,7 @@ export function AiWorkbenchPage() {
     originSurfaceType,
     originSurfaceId,
     originTitle,
-    enabled: !!workspaceId && !!originSurfaceId,
+    enabled: isPageVisible && !!workspaceId && !!originSurfaceId,
     autoCreate: false,
     threadIdOverride: activeThreadId,
   });
@@ -339,12 +343,11 @@ export function AiWorkbenchPage() {
   }
 
   return (
-    <div className="relative h-full min-h-full overflow-hidden bg-app-content-bg/80 text-app-text-primary">
-      <AmbientGlow className="opacity-0 dark:opacity-60" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(248,250,252,0.6),rgba(241,245,249,0.92))] dark:bg-[linear-gradient(180deg,rgba(12,12,14,0.14),rgba(12,12,14,0.46))]" />
+    <div className="relative flex h-full min-h-0 flex-col bg-app-bg text-app-text-primary">
+      <AmbientGlow className="opacity-0 dark:opacity-100" />
 
       <div className="relative z-10 flex h-full min-h-0">
-        <main className={cn(panelClassName, "min-w-0 flex-1 overflow-hidden")}>
+        <main className={cn("min-w-0 flex-1 overflow-hidden", "rounded-lg border border-black/[0.06] bg-white/84 shadow-[0_24px_72px_-56px_rgba(15,23,42,0.22)] ring-1 ring-black/[0.03] backdrop-blur-md dark:border-white/8 dark:bg-[rgba(18,18,20,0.4)] dark:ring-white/[0.04] dark:shadow-[0_24px_72px_-56px_rgba(0,0,0,0.4)]")}>
           <div className="flex h-full min-h-0 flex-col">
             {hasConversation ? (
               <header className="border-b border-black/[0.06] px-5 py-5 dark:border-white/8">

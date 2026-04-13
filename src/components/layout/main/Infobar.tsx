@@ -3,11 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Menu, PanelLeft, PanelRight } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import {
-  getReadyNavItems,
-  mainNavItems,
-  personalNavItems,
-} from "@/lib/data/constant";
+import { getWorkspaceNavItems } from "@/lib/navigation/page-registry";
 import Link from "next/link";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
 // import RouterIndicator from "@/components/global/RouterIndicator";
@@ -33,10 +29,7 @@ const InfoBar = ({ showViewToggle = true, className }: InfoBarProps) => {
   // const [activeView, setActiveView] = useState("list");
   const { isOpen, toggleSidebar } = useSidebarStore();
   const { currentWorkspace } = useWorkspace();
-  const mobileNavItems =
-    currentWorkspace?.type === "TEAM"
-      ? getReadyNavItems(mainNavItems)
-      : getReadyNavItems(personalNavItems);
+  const mobileNavItems = getWorkspaceNavItems(currentWorkspace?.type);
 
   const onGetPayment = async () => {};
 

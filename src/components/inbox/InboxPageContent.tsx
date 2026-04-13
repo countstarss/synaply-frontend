@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   differenceInCalendarDays,
   format,
@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import WorkflowIssueDetail from "@/components/issue/WorkflowIssueDetail";
 import NormalIssueDetail from "@/components/shared/issue/NormalIssueDetail";
 import { Button } from "@/components/ui/button";
+import { useCachedPageVisibility } from "@/components/cache/CachedPageVisibility";
 import { useAcceptWorkflowHandoff } from "@/hooks/useIssueApi";
 import {
   useClearInboxItems,
@@ -512,6 +513,8 @@ function InboxRow({
 }
 
 export default function InboxPageContent() {
+  const isPageVisible = useCachedPageVisibility();
+  const hasMountedRef = useRef(false);
   const [activeView, setActiveView] = useState<InboxViewId>("primary");
   const [onlyActionable, setOnlyActionable] = useState(false);
   const [unreadOnly, setUnreadOnly] = useState(false);
@@ -558,7 +561,7 @@ export default function InboxPageContent() {
     error,
     refetch,
     isRefetching,
-  } = useInbox(workspaceId, inboxParams);
+  } = useInbox(workspaceId, inboxParams, { enabled: isPageVisible });
   const markSeen = useMarkInboxItemSeen();
   const markUnread = useMarkInboxItemUnread();
   const markDone = useMarkInboxItemDone();
@@ -567,8 +570,21 @@ export default function InboxPageContent() {
   const acceptWorkflowHandoff = useAcceptWorkflowHandoff();
 
   useWorkspaceRealtime(workspaceId, {
-    enabled: !selectedIssueId,
+    enabled: isPageVisible && !selectedIssueId,
   });
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
+    if (!isPageVisible) {
+      return;
+    }
+
+    void refetch();
+  }, [isPageVisible, refetch]);
 
   const rawItems = useMemo(() => feed?.items ?? [], [feed?.items]);
   const visibleItems = useMemo(

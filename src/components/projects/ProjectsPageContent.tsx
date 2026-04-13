@@ -12,6 +12,7 @@ import { RiLoader4Line } from "react-icons/ri";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/context/AuthContext";
 import AmbientGlow from "@/components/global/AmbientGlow";
+import { useCachedPageVisibility } from "@/components/cache/CachedPageVisibility";
 import { useIssues } from "@/hooks/useIssueApi";
 import { useWorkspaceRealtime } from "@/hooks/realtime/useWorkspaceRealtime";
 import {
@@ -79,15 +80,22 @@ export default function ProjectsPageContent() {
   const { session } = useAuth();
   const queryClient = useQueryClient();
   const [isSelectionPending, startTransition] = useTransition();
+  const isPageVisible = useCachedPageVisibility();
   const pathname = usePathname();
   const router = useRouter();
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id || "";
   const workspaceType = currentWorkspace?.type || "PERSONAL";
   const { data: projects = [], isLoading, error, isFetching } =
-    useProjects(workspaceId);
-  const { data: allIssues = [] } = useIssues(workspaceId);
-  const { data: teamMembers = [] } = useTeamMembers(currentWorkspace?.teamId);
+    useProjects(workspaceId, { enabled: isPageVisible });
+  const { data: allIssues = [] } = useIssues(
+    workspaceId,
+    {},
+    { enabled: isPageVisible },
+  );
+  const { data: teamMembers = [] } = useTeamMembers(currentWorkspace?.teamId, {
+    enabled: isPageVisible,
+  });
 
   const currentTeamMember = teamMembers.find(
     (member) =>
@@ -103,7 +111,7 @@ export default function ProjectsPageContent() {
   const selectedProjectIssueId = getProjectIssueIdFromPathname(pathname);
   const projectViewMode = getProjectViewModeFromPathname(pathname);
   useWorkspaceRealtime(workspaceId, {
-    enabled: !selectedProjectIssueId,
+    enabled: isPageVisible && !selectedProjectIssueId,
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
@@ -128,14 +136,14 @@ export default function ProjectsPageContent() {
   const deleteProjectMutation = useDeleteProject();
   const detailProjectId = isLoading ? "" : selectedProjectId;
   const { data: selectedProjectDetail, isLoading: isLoadingProjectDetail } =
-    useProject(workspaceId, detailProjectId);
+    useProject(workspaceId, detailProjectId, { enabled: isPageVisible });
   const { data: projectSummary, isLoading: isLoadingProjectSummary } =
-    useProjectSummary(workspaceId, detailProjectId);
+    useProjectSummary(workspaceId, detailProjectId, { enabled: isPageVisible });
   const { data: projectIssues = [], isLoading: isLoadingProjectIssues } =
     useIssues(
       workspaceId,
       { projectId: selectedProjectId },
-      { enabled: !!selectedProjectId },
+      { enabled: isPageVisible && !!selectedProjectId },
     );
 
   useEffect(() => {

@@ -13,7 +13,14 @@ import {
   updateProject,
 } from "@/lib/fetchers/project";
 
-export const useProjects = (workspaceId: string) => {
+interface QueryEnabledOptions {
+  enabled?: boolean;
+}
+
+export const useProjects = (
+  workspaceId: string,
+  options: QueryEnabledOptions = {},
+) => {
   const { session } = useAuth();
 
   return useQuery({
@@ -22,11 +29,16 @@ export const useProjects = (workspaceId: string) => {
       if (!session?.access_token) return [];
       return getProjects(workspaceId, session.access_token);
     },
-    enabled: !!session?.access_token && !!workspaceId,
+    enabled:
+      (options.enabled ?? true) && !!session?.access_token && !!workspaceId,
   });
 };
 
-export const useProject = (workspaceId: string, projectId: string) => {
+export const useProject = (
+  workspaceId: string,
+  projectId: string,
+  options: QueryEnabledOptions = {},
+) => {
   const { session } = useAuth();
 
   return useQuery({
@@ -38,11 +50,19 @@ export const useProject = (workspaceId: string, projectId: string) => {
 
       return getProject(workspaceId, projectId, session.access_token);
     },
-    enabled: !!session?.access_token && !!workspaceId && !!projectId,
+    enabled:
+      (options.enabled ?? true) &&
+      !!session?.access_token &&
+      !!workspaceId &&
+      !!projectId,
   });
 };
 
-export const useProjectSummary = (workspaceId: string, projectId: string) => {
+export const useProjectSummary = (
+  workspaceId: string,
+  projectId: string,
+  options: QueryEnabledOptions = {},
+) => {
   const { session } = useAuth();
 
   return useQuery({
@@ -54,7 +74,11 @@ export const useProjectSummary = (workspaceId: string, projectId: string) => {
 
       return getProjectSummary(workspaceId, projectId, session.access_token);
     },
-    enabled: !!session?.access_token && !!workspaceId && !!projectId,
+    enabled:
+      (options.enabled ?? true) &&
+      !!session?.access_token &&
+      !!workspaceId &&
+      !!projectId,
   });
 };
 

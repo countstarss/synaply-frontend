@@ -100,13 +100,16 @@ export const useCurrentTeam = () => {
 /**
  * MARK: 获取团队成员列表
  */
-export const useTeamMembers = (teamId: string | undefined) => {
+export const useTeamMembers = (
+  teamId: string | undefined,
+  options: { enabled?: boolean } = {},
+) => {
   const { session } = useAuth();
 
   return useQuery<TeamMember[]>({
     queryKey: ["team-members", teamId],
     queryFn: () => fetchTeamMembers(teamId!, session?.access_token || ""),
-    enabled: !!session?.access_token && !!teamId,
+    enabled: (options.enabled ?? true) && !!session?.access_token && !!teamId,
     staleTime: 2 * 60 * 1000, // 2分钟内认为数据新鲜
     retry: 2,
   });

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import {
   AlertTriangle,
@@ -26,6 +26,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useMyWork } from "@/hooks/useMyWork";
+import { useCachedPageVisibility } from "@/components/cache/CachedPageVisibility";
 import {
   useAcceptWorkflowHandoff,
   useUpdateWorkflowRunStatus,
@@ -665,6 +666,8 @@ function getActiveSection(activeTab: WorkTabId): SectionId | null {
 }
 
 export default function TasksPageContent() {
+  const isPageVisible = useCachedPageVisibility();
+  const hasMountedRef = useRef(false);
   const [activeTab, setActiveTab] = useState<WorkTabId>("today");
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
   const [selectedIssueIsWorkflow, setSelectedIssueIsWorkflow] = useState(false);
@@ -674,13 +677,26 @@ export default function TasksPageContent() {
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id || "";
   const { data, isLoading, error, refetch, isRefetching } =
-    useMyWork(workspaceId);
+    useMyWork(workspaceId, { enabled: isPageVisible });
   const updateWorkflowRunStatus = useUpdateWorkflowRunStatus();
   const acceptWorkflowHandoff = useAcceptWorkflowHandoff();
 
   useWorkspaceRealtime(workspaceId, {
-    enabled: !selectedIssueId,
+    enabled: isPageVisible && !selectedIssueId,
   });
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
+    if (!isPageVisible) {
+      return;
+    }
+
+    void refetch();
+  }, [isPageVisible, refetch]);
 
   const tabs = useMemo(() => buildTabs(data), [data]);
   const sectionItems = useMemo(

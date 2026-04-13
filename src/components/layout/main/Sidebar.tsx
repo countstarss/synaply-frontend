@@ -13,11 +13,7 @@ import AiSidebarSection from "../sidebar/AiSidebarSection";
 import { useSidebarStore } from "@/stores/sidebar";
 import { useSidebarMode } from "@/hooks/useSidebarMode";
 import { useRouter } from "@/i18n/navigation";
-import {
-  getReadyNavItems,
-  mainNavItems,
-  personalNavItems,
-} from "@/lib/data/constant";
+import { getWorkspaceNavItems } from "@/lib/navigation/page-registry";
 import { buildSettingsSections } from "@/lib/data/settingData";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -39,8 +35,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
   const { teams = [] } = useTeam();
   const { setCurrentWorkspaceId } = useWorkspaceStore();
   const [isCreateTeamDialogOpen, setIsCreateTeamDialogOpen] = useState(false);
-  const readyMainNavItems = getReadyNavItems(mainNavItems);
-  const readyPersonalNavItems = getReadyNavItems(personalNavItems);
+  const navItems = getWorkspaceNavItems(currentWorkspace?.type);
   const modeTransitionClass = isModeTransitionEnabled
     ? "transition-transform duration-300 ease-in-out"
     : "transition-none";
@@ -100,7 +95,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
               {currentWorkspace?.type === "PERSONAL" ? (
                 /* PERSONAL空间的简化导航 */
                 <div className="space-y-1 py-2">
-                  {readyPersonalNavItems.map((item) => (
+                  {navItems.map((item) => (
                     <SidebarNavItem
                       key={item.href}
                       icon={item.icon}
@@ -116,7 +111,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
                  */
                 <>
                   <div className="flex flex-col py-2 gap-1">
-                    {readyMainNavItems.map((item) => (
+                    {navItems.map((item) => (
                       <SidebarNavItem
                         key={item.href}
                         icon={item.icon}

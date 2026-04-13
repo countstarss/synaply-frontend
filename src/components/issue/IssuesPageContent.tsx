@@ -10,6 +10,7 @@ import {
 } from "react-icons/ri";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useCachedPageVisibility } from "@/components/cache/CachedPageVisibility";
 import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
 import IssueDetailPageSurface from "@/components/issue/IssueDetailPageSurface";
 import {
@@ -173,6 +174,7 @@ function getIssueIdFromPathname(pathname: string) {
 }
 
 export default function IssuesPageContent() {
+  const isPageVisible = useCachedPageVisibility();
   const pathname = usePathname();
   const router = useRouter();
   const routedIssueId = getIssueIdFromPathname(pathname);
@@ -208,17 +210,19 @@ export default function IssuesPageContent() {
   const [pendingIssueIds, setPendingIssueIds] = useState<Set<string>>(new Set());
   const { data: currentUserTeamMember } = useTeamMemberByUserId(user?.id);
   const { data: issues = [], isLoading: isLoadingIssues } =
-    useIssues(workspaceId);
-  const { data: projects = [] } = useProjects(workspaceId);
+    useIssues(workspaceId, {}, { enabled: isPageVisible });
+  const { data: projects = [] } = useProjects(workspaceId, {
+    enabled: isPageVisible,
+  });
   const { data: issueStates = [] } = useIssueStates(workspaceId, {
-    enabled: !!workspaceId,
+    enabled: !!workspaceId && isPageVisible,
   });
   const queryClient = useQueryClient();
   const cancelIssueMutation = useCancelIssue();
   const updateIssueMutation = useUpdateIssue();
 
   useWorkspaceRealtime(workspaceId, {
-    enabled: !routedIssueId,
+    enabled: isPageVisible && !routedIssueId,
   });
 
   useEffect(() => {

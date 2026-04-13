@@ -3,12 +3,18 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import ContextMenuWrapper from "@/components/ContextMenuWrapper";
+import { CachedPageVisibilityProvider } from "@/components/cache/CachedPageVisibility";
+import {
+  getProductPageIdFromPathname,
+  pageOrderById,
+} from "@/lib/navigation/page-registry";
 import { CachedTasksPage } from "./pages/CachedTasksPage";
 import { CachedInboxPage } from "./pages/CachedInboxPage";
 import { CachedDocsPage } from "./pages/CachedDocsPage";
 import { CachedIssuesPage } from "./pages/CachedIssuesPage";
 import { CachedProjectsPage } from "./pages/CachedProjectsPage";
 import { CachedWorkflowsPage } from "./pages/CachedWorkflowsPage";
+import { CachedIntelligencePage } from "./pages/CachedIntelligencePage";
 
 const PAGE_COMPONENTS = {
   tasks: CachedTasksPage,
@@ -17,30 +23,17 @@ const PAGE_COMPONENTS = {
   issues: CachedIssuesPage,
   projects: CachedProjectsPage,
   workflows: CachedWorkflowsPage,
+  intelligence: CachedIntelligencePage,
 } as const;
 
 type PageId = keyof typeof PAGE_COMPONENTS;
 type PagePosition = "left" | "center" | "right" | "hidden";
 
-const PAGE_ORDER: Record<PageId, number> = {
-  tasks: 1,
-  inbox: 2,
-  docs: 3,
-  issues: 4,
-  projects: 5,
-  workflows: 6,
-};
-
 const getPageIdFromPath = (pathname: string): PageId | null => {
-  const segments = pathname.split("/").filter(Boolean);
+  const pageId = getProductPageIdFromPathname(pathname);
 
-  for (const segment of segments) {
-    if (segment === "tasks") return "tasks";
-    if (segment === "inbox") return "inbox";
-    if (segment === "docs") return "docs";
-    if (segment === "issues") return "issues";
-    if (segment === "projects") return "projects";
-    if (segment === "workflows") return "workflows";
+  if (pageId && pageId in PAGE_COMPONENTS) {
+    return pageId as PageId;
   }
 
   return null;
@@ -138,7 +131,9 @@ const PageRenderer = React.memo(
 
     return (
       <div style={getPageStyle(state)} aria-hidden={state.position !== "center"}>
-        <PageComponent />
+        <CachedPageVisibilityProvider isActive={state.position === "center"}>
+          <PageComponent />
+        </CachedPageVisibilityProvider>
       </div>
     );
   },
@@ -176,8 +171,8 @@ export const GlobalPageCache = React.memo(() => {
         ...(fromPageId ? { [fromPageId]: true } : {}),
       }));
 
-      const fromOrder = fromPageId ? PAGE_ORDER[fromPageId] : 0;
-      const toOrder = PAGE_ORDER[toPageId];
+      const fromOrder = fromPageId ? pageOrderById[fromPageId] : 0;
+      const toOrder = pageOrderById[toPageId];
       const isForward = toOrder > fromOrder;
 
       setPageStates((prev) => {
