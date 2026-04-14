@@ -145,7 +145,7 @@ export function ProductPreview({
                       <div className="flex h-6 w-6 items-center justify-center border border-white/10 bg-white/[0.04] text-[11px] text-white/72">
                         {index + 1}
                       </div>
-                      {index < workflowSteps.length - 1 ? (
+                      {index < preview.workflow.steps.length - 1 ? (
                         <div className="mt-1 h-full w-px bg-gradient-to-b from-white/16 to-transparent" />
                       ) : null}
                     </div>
