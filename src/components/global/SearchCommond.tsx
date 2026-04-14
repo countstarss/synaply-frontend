@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl"
 import {
     Calculator,
     Calendar,
@@ -19,40 +20,42 @@ import {
   } from "@/components/ui/command"
   
   export function SearchCommond() {
+    const tShell = useTranslations("shell")
+
     return (
       <Command className="rounded-lg border shadow-md md:min-w-[450px] w-[500px] mx-auto hidden lg:block">
-        <CommandInput placeholder="Type a command or search..." />
+        <CommandInput placeholder={tShell("search.placeholder")} />
         <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup heading="Suggestions">
+          <CommandEmpty>{tShell("search.empty")}</CommandEmpty>
+          <CommandGroup heading={tShell("search.groups.suggestions")}>
             <CommandItem>
               <Calendar />
-              <span>Calendar</span>
+              <span>{tShell("search.items.calendar")}</span>
             </CommandItem>
             <CommandItem>
               <Smile />
-              <span>Search Emoji</span>
+              <span>{tShell("search.items.searchEmoji")}</span>
             </CommandItem>
             <CommandItem disabled>
               <Calculator />
-              <span>Calculator</span>
+              <span>{tShell("search.items.calculator")}</span>
             </CommandItem>
           </CommandGroup>
           <CommandSeparator />
-          <CommandGroup heading="Settings">
+          <CommandGroup heading={tShell("search.groups.settings")}>
             <CommandItem>
               <User />
-              <span>Profile</span>
+              <span>{tShell("search.items.profile")}</span>
               <CommandShortcut>⌘P</CommandShortcut>
             </CommandItem>
             <CommandItem>
               <CreditCard />
-              <span>Billing</span>
+              <span>{tShell("search.items.billing")}</span>
               <CommandShortcut>⌘B</CommandShortcut>
             </CommandItem>
             <CommandItem>
               <Settings />
-              <span>Settings</span>
+              <span>{tShell("search.items.settings")}</span>
               <CommandShortcut>⌘S</CommandShortcut>
             </CommandItem>
           </CommandGroup>

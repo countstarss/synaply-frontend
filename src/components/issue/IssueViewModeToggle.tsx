@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { RiLayoutGridLine, RiListUnordered } from "react-icons/ri";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,7 @@ export function IssueViewModeToggle({
   onValueChange,
   className,
 }: IssueViewModeToggleProps) {
+  const tIssues = useTranslations("issues");
   return (
     <div
       className={cn(
@@ -38,7 +40,7 @@ export function IssueViewModeToggle({
         )}
       >
         <RiListUnordered className="size-3.5" />
-        列表
+        {tIssues("page.viewMode.list")}
       </Button>
       <Button
         type="button"
@@ -53,7 +55,7 @@ export function IssueViewModeToggle({
         )}
       >
         <RiLayoutGridLine className="size-3.5" />
-        看板
+        {tIssues("page.viewMode.board")}
       </Button>
     </div>
   );

@@ -1,4 +1,7 @@
+"use client";
+
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { RiSearchLine, RiUser3Line, RiUser2Line } from "react-icons/ri";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -19,16 +22,16 @@ interface TeamMemberSelectProps {
 export default function TeamMemberSelect({
   value,
   onChange,
-  placeholder = "选择负责人...",
+  placeholder,
   className = "",
 }: TeamMemberSelectProps) {
+  const tWorkflows = useTranslations("workflows");
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [teamMembers] = useState<TeamMember[]>([]);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 如果有初始值，查找对应的团队成员
   useEffect(() => {
     if (value) {
       const member = teamMembers.find(
@@ -37,7 +40,6 @@ export default function TeamMemberSelect({
       if (member) {
         setSelectedMember(member);
       } else {
-        // 如果找不到匹配的成员但有value，创建一个临时成员
         setSelectedMember({ id: "temp", name: value });
       }
     } else {
@@ -45,7 +47,6 @@ export default function TeamMemberSelect({
     }
   }, [value, teamMembers]);
 
-  // 处理点击外部关闭下拉框
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -71,7 +72,7 @@ export default function TeamMemberSelect({
 
   const handleSelectMember = (member: TeamMember) => {
     setSelectedMember(member);
-    onChange(member.name); // 选择成员名称作为值
+    onChange(member.name);
     setIsOpen(false);
   };
 
@@ -108,7 +109,9 @@ export default function TeamMemberSelect({
             <span className="text-sm">{selectedMember.name}</span>
           </div>
         ) : (
-          <span className="text-sm text-app-text-muted">{placeholder}</span>
+          <span className="text-sm text-app-text-muted">
+            {placeholder || tWorkflows("teamMemberSelect.placeholder")}
+          </span>
         )}
         <div className="ml-2">
           <svg
@@ -137,7 +140,7 @@ export default function TeamMemberSelect({
               <RiSearchLine className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
               <input
                 type="text"
-                placeholder="搜索成员..."
+                placeholder={tWorkflows("teamMemberSelect.searchPlaceholder")}
                 value={searchQuery}
                 onChange={handleSearchChange}
                 className="w-full pl-8 pr-3 py-1.5 bg-app-bg border border-app-border rounded-md text-sm text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -176,11 +179,10 @@ export default function TeamMemberSelect({
               ))
             ) : (
               <div className="px-3 py-4 text-sm text-app-text-muted text-center">
-                没有找到匹配的成员
+                {tWorkflows("teamMemberSelect.noMatching")}
               </div>
             )}
 
-            {/* 允许添加自定义负责人 */}
             {searchQuery &&
               !filteredMembers.some((m) => m.name === searchQuery) && (
                 <div
@@ -198,10 +200,12 @@ export default function TeamMemberSelect({
                   </div>
                   <div>
                     <div className="text-sm font-medium text-app-text-primary">
-                      添加: {searchQuery}
+                      {tWorkflows("teamMemberSelect.customLabel", {
+                        value: searchQuery,
+                      })}
                     </div>
                     <div className="text-xs text-app-text-secondary">
-                      自定义负责人
+                      {tWorkflows("teamMemberSelect.customHint")}
                     </div>
                   </div>
                 </div>

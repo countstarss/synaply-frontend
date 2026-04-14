@@ -82,7 +82,7 @@ export default function AuthCallbackPage() {
       } = await supabase.auth.getSession();
 
       if (error) {
-        console.error("认证回调错误:", error);
+        console.error("Auth callback error:", error);
         finishError(error.message || t("auth.failedToVerify"));
         return true;
       }
@@ -135,7 +135,7 @@ export default function AuthCallbackPage() {
           finishError(t("auth.failedToVerify"));
         }, 5000);
       } catch (callbackError) {
-        console.error("处理认证回调时出错:", callbackError);
+        console.error("Failed to handle auth callback:", callbackError);
         finishError(t("auth.failedToVerify"));
       }
     };

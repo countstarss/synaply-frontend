@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { RiCloseLine, RiFlowChart } from "react-icons/ri";
 import { toast } from "sonner";
 import { WorkflowResponse } from "@/lib/fetchers/workflow";
@@ -21,6 +22,8 @@ export default function WorkflowInstanceModal({
   workspaceId,
   onCreated,
 }: WorkflowInstanceModalProps) {
+  const tWorkflows = useTranslations("workflows");
+  const tCommon = useTranslations("common");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -42,7 +45,7 @@ export default function WorkflowInstanceModal({
     }
 
     if (!title.trim()) {
-      toast.error("请输入标题");
+      toast.error(tWorkflows("instance.validation.titleRequired"));
       return;
     }
 
@@ -61,13 +64,12 @@ export default function WorkflowInstanceModal({
 
       handleClose();
     } catch (error) {
-      console.error("创建工作流实例失败:", error);
+      console.error("Failed to create workflow instance:", error);
     }
   };
 
   if (!isOpen || !workflow) return null;
 
-  // 解析工作流JSON
   let parsedJson = null;
   try {
     if (workflow.json) {
@@ -77,7 +79,7 @@ export default function WorkflowInstanceModal({
           : workflow.json;
     }
   } catch (error) {
-    console.error("解析工作流JSON失败:", error);
+    console.error("Failed to parse workflow JSON:", error);
   }
 
   return (
@@ -85,11 +87,12 @@ export default function WorkflowInstanceModal({
       <div className="bg-app-content-bg rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-app-border">
           <h2 className="text-xl font-semibold text-app-text-primary">
-            创建工作流实例
+            {tWorkflows("instance.title")}
           </h2>
           <button
             onClick={handleClose}
             className="p-2 hover:bg-app-button-hover rounded-lg transition-colors"
+            aria-label={tCommon("actions.close")}
           >
             <RiCloseLine className="w-5 h-5 text-app-text-secondary" />
           </button>
@@ -108,20 +111,20 @@ export default function WorkflowInstanceModal({
             </p>
           )}
           <div className="mt-2 text-xs text-app-text-muted">
-            包含 {workflow.totalSteps || 0} 个步骤
+            {tWorkflows("instance.steps", { count: workflow.totalSteps || 0 })}
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-app-text-primary mb-2">
-              Issue 标题 *
+              {tWorkflows("instance.fields.title")}
             </label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="输入 Issue 标题..."
+              placeholder={tWorkflows("instance.fields.titlePlaceholder")}
               className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
               autoFocus
@@ -130,12 +133,12 @@ export default function WorkflowInstanceModal({
 
           <div>
             <label className="block text-sm font-medium text-app-text-primary mb-2">
-              描述
+              {tWorkflows("instance.fields.description")}
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="输入详细描述..."
+              placeholder={tWorkflows("instance.fields.descriptionPlaceholder")}
               rows={4}
               className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -143,7 +146,7 @@ export default function WorkflowInstanceModal({
 
           <div>
             <label className="block text-sm font-medium text-app-text-primary mb-2">
-              截止日期
+              {tWorkflows("instance.fields.dueDate")}
             </label>
             <input
               type="date"
@@ -159,7 +162,7 @@ export default function WorkflowInstanceModal({
               onClick={handleClose}
               className="px-4 py-2 text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors"
             >
-              取消
+              {tCommon("actions.cancel")}
             </button>
             <button
               type="submit"
@@ -167,8 +170,8 @@ export default function WorkflowInstanceModal({
               disabled={workflowInstanceMutation.isPending}
             >
               {workflowInstanceMutation.isPending
-                ? "创建中..."
-                : "创建工作流实例"}
+                ? tWorkflows("instance.actions.creating")
+                : tWorkflows("instance.actions.submit")}
             </button>
           </div>
         </form>

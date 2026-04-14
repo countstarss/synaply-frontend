@@ -115,7 +115,7 @@ export default function AuthPage() {
         }
       }
     } catch (submitError) {
-      console.error("提交表单时出错:", submitError);
+      console.error("Failed to submit auth form:", submitError);
     } finally {
       setIsSubmitting(false);
     }
@@ -132,7 +132,7 @@ export default function AuthPage() {
         setMessage({ type: "error", text: t("auth.googleAuthError") });
       }
     } catch (signInError) {
-      console.error("Google 登录时出错:", signInError);
+      console.error("Google sign-in failed:", signInError);
       setMessage({ type: "error", text: t("auth.googleAuthError") });
     } finally {
       setIsSubmitting(false);
@@ -149,7 +149,7 @@ export default function AuthPage() {
         <div className="space-y-7">
           <div className="space-y-4">
             <div className="inline-flex border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-white/62">
-              Synaply Access
+              {t("auth.accessBadge")}
             </div>
             <div className="space-y-3">
               <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white">
@@ -236,7 +236,7 @@ export default function AuthPage() {
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  placeholder="your@team.com"
+                  placeholder={t("auth.emailPlaceholder")}
                   className="h-12 border-white/10 bg-white/[0.03] pl-11 text-white placeholder:text-white/26 focus-visible:border-white/16 focus-visible:ring-white/10"
                   required
                 />
@@ -252,7 +252,7 @@ export default function AuthPage() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    placeholder="••••••••"
+                    placeholder={t("auth.passwordPlaceholder")}
                     className="h-12 border-white/10 bg-white/[0.03] pl-11 pr-12 text-white placeholder:text-white/26 focus-visible:border-white/16 focus-visible:ring-white/10"
                     required
                   />

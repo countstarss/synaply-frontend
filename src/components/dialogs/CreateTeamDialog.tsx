@@ -16,6 +16,7 @@ import { useTeam } from "@/hooks/useTeam";
 import { toast } from "sonner";
 import { Users } from "lucide-react";
 import type { Team } from "@/lib/fetchers/team";
+import { useTranslations } from "next-intl";
 
 interface CreateTeamDialogProps {
   children?: React.ReactNode;
@@ -30,6 +31,8 @@ export const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
   onOpenChange,
   onCreated,
 }) => {
+  const tDialogs = useTranslations("dialogs");
+  const tCommon = useTranslations("common");
   const [internalOpen, setInternalOpen] = useState(false);
   const [teamName, setTeamName] = useState("");
   const { createTeam, isCreatingTeam } = useTeam();
@@ -50,19 +53,21 @@ export const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!teamName.trim()) {
-      toast.error("请输入团队名称");
+      toast.error(tDialogs("createTeam.validation.nameRequired"));
       return;
     }
 
     try {
       const createdTeam = await createTeam({ name: teamName.trim() });
-      toast.success("团队创建成功！");
+      toast.success(tDialogs("createTeam.toasts.created"));
       handleOpenChange(false);
       await onCreated?.(createdTeam);
     } catch (error) {
-      console.error("创建团队失败:", error);
+      console.error("Failed to create team:", error);
       toast.error(
-        error instanceof Error ? error.message : "创建团队失败，请稍后重试",
+        error instanceof Error
+          ? error.message
+          : tDialogs("createTeam.toasts.createFailed"),
       );
     }
   };
@@ -74,20 +79,20 @@ export const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            创建团队
+            {tDialogs("createTeam.title")}
           </DialogTitle>
           <DialogDescription>
-            创建一个新团队来与同事协作。团队将自动创建一个专属的工作空间。
+            {tDialogs("createTeam.description")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="team-name">团队名称</Label>
+            <Label htmlFor="team-name">{tDialogs("createTeam.nameLabel")}</Label>
             <Input
               id="team-name"
               value={teamName}
               onChange={(e) => setTeamName(e.target.value)}
-              placeholder="输入团队名称"
+              placeholder={tDialogs("createTeam.namePlaceholder")}
               disabled={isCreatingTeam}
             />
           </div>
@@ -98,10 +103,12 @@ export const CreateTeamDialog: React.FC<CreateTeamDialogProps> = ({
               onClick={() => handleOpenChange(false)}
               disabled={isCreatingTeam}
             >
-              取消
+              {tCommon("actions.cancel")}
             </Button>
             <Button type="submit" disabled={isCreatingTeam}>
-              {isCreatingTeam ? "创建中..." : "创建团队"}
+              {isCreatingTeam
+                ? tDialogs("createTeam.actions.creating")
+                : tDialogs("createTeam.actions.submit")}
             </Button>
           </div>
         </form>

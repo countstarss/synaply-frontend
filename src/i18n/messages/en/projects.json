@@ -184,11 +184,66 @@
     "selectWorkspaceDescription": "Choose a workspace and the project module will automatically scope data to it.",
     "loading": "Loading projects...",
     "loadFailedTitle": "Failed to load projects",
-    "loadFailedDescription": "We could not fetch the project list."
+    "loadFailedDescription": "We could not fetch the project list.",
+    "emptyState": {
+      "title": "No projects yet",
+      "description": "The project module is connected to the live backend now. Create a project container first, then attach related work to it.",
+      "createAction": "Create the first project",
+      "readOnlyHint": "Only OWNER and ADMIN members can create, edit, or delete projects in the current team workspace."
+    }
   },
   "owner": {
     "missing": "No owner assigned",
     "unnamedMember": "Unnamed member"
+  },
+  "editor": {
+    "title": {
+      "create": "Create project",
+      "edit": "Edit project"
+    },
+    "subtitle": {
+      "create": "Turn the project into a collaboration context, not just an issue container.",
+      "edit": "Maintain the brief, phase, risk level, owner, and other collaboration semantics here."
+    },
+    "fields": {
+      "name": "Project name",
+      "namePlaceholder": "For example: Q2 Launch, AI Search Revamp",
+      "brief": "One-line brief",
+      "briefPlaceholder": "Explain why this project exists and what the team is moving toward delivery.",
+      "description": "Project background / goals",
+      "descriptionPlaceholder": "Add scope, success criteria, and key background so the team can understand the project context.",
+      "status": "Current status",
+      "statusPlaceholder": "Choose a project status",
+      "phase": "Current phase",
+      "phasePlaceholder": "For example: Kickoff, Design Review, Build, Launch",
+      "risk": "Risk level",
+      "riskPlaceholder": "Choose a risk level",
+      "owner": "Project owner",
+      "ownerPlaceholder": "Choose an owner",
+      "visibility": "Visibility",
+      "visibilityPlaceholder": "Choose project visibility"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "saving": "Saving...",
+      "create": "Create project",
+      "save": "Save changes"
+    },
+    "statusDescriptions": {
+      "planning": "The goal and scope are still converging. This is a good time to add the brief and define success criteria.",
+      "active": "The project already has an execution rhythm and can serve as the main collaboration surface.",
+      "blocked": "There is a key blocker, and the team should identify who will unblock it soon.",
+      "shipping": "The work is in release, acceptance, or launch wrap-up.",
+      "done": "The goal has been reached and can stay as historical context.",
+      "archived": "The project has left the day-to-day collaboration flow, but the context should still be kept."
+    },
+    "riskDescriptions": {
+      "low": "The rhythm looks stable and no clear handoff or delivery risk has appeared yet.",
+      "medium": "There are already waits or uncertainties worth tracking on the project page.",
+      "high": "Delivery, review, or coordination has a visible risk and needs attention.",
+      "critical": "The project is already being materially affected and needs immediate intervention."
+    }
   },
   "deleteDialog": {
     "title": "Delete project",

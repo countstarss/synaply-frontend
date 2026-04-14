@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { RiCloseLine, RiFlowChart } from "react-icons/ri";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
@@ -94,6 +94,7 @@ export default function CreateIssueModal({
   initialProjectId,
   projectContextName,
 }: CreateIssueModalProps) {
+  const locale = useLocale();
   const t = useTranslations("issues");
   const tCommon = useTranslations("common");
   const { session, user } = useAuth();
@@ -159,7 +160,7 @@ export default function CreateIssueModal({
           workflow.edges = parsedData.edges || [];
           workflow.description = parsedData.description || "";
         } catch (error) {
-          console.error("解析工作流 JSON 失败:", error);
+          console.error("Failed to parse workflow JSON:", error);
         }
       }
 
@@ -198,8 +199,8 @@ export default function CreateIssueModal({
           name: getTeamMemberName(member),
           email: member.user.email,
         }))
-        .sort((left, right) => left.name.localeCompare(right.name, "zh-CN")),
-    [teamMembers],
+        .sort((left, right) => left.name.localeCompare(right.name, locale)),
+    [locale, teamMembers],
   );
 
   const personalAssigneeId = currentUserTeamMember?.id || "";
@@ -383,7 +384,7 @@ export default function CreateIssueModal({
       onCreated();
       handleClose();
     } catch (error) {
-      console.error("创建任务失败:", error);
+      console.error("Failed to create issue:", error);
       toast.error(error instanceof Error ? error.message : t("toasts.createFailed"));
     }
   };

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { RiArrowLeftLine, RiLoader4Line } from "react-icons/ri";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -29,6 +30,7 @@ function IssueDetailFallback({
   isLoading = false,
   onClose,
 }: IssueDetailFallbackProps) {
+  const tIssues = useTranslations("issues");
   return (
     <div className="flex h-full w-full items-center justify-center bg-app-bg px-6">
       <div className="flex max-w-md flex-col items-center text-center">
@@ -48,7 +50,7 @@ function IssueDetailFallback({
           onClick={onClose}
         >
           <RiArrowLeftLine className="h-4 w-4" />
-          返回列表
+          {tIssues("detailPage.backToList")}
         </Button>
       </div>
     </div>
@@ -61,6 +63,7 @@ export default function IssueDetailPageSurface({
   onClose,
   onUpdate,
 }: IssueDetailPageSurfaceProps) {
+  const tIssues = useTranslations("issues");
   const { loading: isAuthLoading } = useAuth();
   const { data: issue, isLoading } = useIssue(workspaceId, issueId, {
     enabled: Boolean(workspaceId && issueId),
@@ -69,8 +72,8 @@ export default function IssueDetailPageSurface({
   if (!workspaceId) {
     return (
       <IssueDetailFallback
-        title="暂无工作空间"
-        description="选择一个 workspace 后，才能查看这条任务。"
+        title={tIssues("detailPage.missingWorkspaceTitle")}
+        description={tIssues("detailPage.missingWorkspaceDescription")}
         onClose={onClose}
       />
     );
@@ -79,11 +82,15 @@ export default function IssueDetailPageSurface({
   if (isAuthLoading || isLoading || !issue) {
     return (
       <IssueDetailFallback
-        title={isAuthLoading || isLoading ? "正在加载任务" : "任务不存在"}
+        title={
+          isAuthLoading || isLoading
+            ? tIssues("detailPage.loadingTitle")
+            : tIssues("detailPage.notFoundTitle")
+        }
         description={
           isAuthLoading || isLoading
-            ? "正在同步任务详情和协作上下文。"
-            : "这条任务可能已经被删除，或你当前没有访问权限。"
+            ? tIssues("detailPage.loadingDescription")
+            : tIssues("detailPage.notFoundDescription")
         }
         isLoading={isAuthLoading || isLoading}
         onClose={onClose}

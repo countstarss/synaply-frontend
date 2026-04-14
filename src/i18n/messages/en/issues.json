@@ -121,6 +121,10 @@
       "cancelIssue": "Cancel issue",
       "viewOrEdit": "View or edit"
     },
+    "viewMode": {
+      "list": "List",
+      "board": "Board"
+    },
     "states": {
       "unassigned": "Unassigned",
       "assignee": "Assignee",
@@ -185,6 +189,15 @@
     "loading": "Loading workflow issue...",
     "notFound": "This workflow issue does not exist or has been deleted.",
     "back": "Back to list"
+  },
+  "detailPage": {
+    "backToList": "Back to list",
+    "missingWorkspaceTitle": "No workspace selected",
+    "missingWorkspaceDescription": "Choose a workspace before opening this issue.",
+    "loadingTitle": "Loading issue",
+    "loadingDescription": "Syncing the issue details and collaboration context.",
+    "notFoundTitle": "Issue not found",
+    "notFoundDescription": "This issue may have been deleted, or your current account no longer has access."
   },
   "normalDetail": {
     "memberFallback": "Member {id}",

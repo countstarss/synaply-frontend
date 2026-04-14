@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 import {
   ChevronDown,
   ChevronRight,
@@ -42,34 +43,43 @@ interface SidebarProjectGroup {
   issueThreads: SidebarThreadItem[];
 }
 
-function formatRelativeThreadTime(value?: string | null) {
+type SidebarTranslationFn = (
+  key: string,
+  values?: Record<string, string | number>,
+) => string;
+
+function formatRelativeThreadTime(
+  value: string | null | undefined,
+  locale: string,
+  tAi: SidebarTranslationFn,
+) {
   if (!value) {
-    return "刚刚";
+    return tAi("workbench.sidebar.justNow");
   }
 
   const diffMs = Date.now() - new Date(value).getTime();
   const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
 
   if (diffMinutes < 60) {
-    return `${diffMinutes} 分钟前`;
+    return tAi("workbench.sidebar.minutesAgo", { count: diffMinutes });
   }
 
   const diffHours = Math.floor(diffMinutes / 60);
 
   if (diffHours < 24) {
-    return `${diffHours} 小时前`;
+    return tAi("workbench.sidebar.hoursAgo", { count: diffHours });
   }
 
   const diffDays = Math.floor(diffHours / 24);
 
   if (diffDays < 7) {
-    return `${diffDays} 天前`;
+    return tAi("workbench.sidebar.daysAgo", { count: diffDays });
   }
 
-  return new Date(value).toLocaleDateString("zh-CN", {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
-  });
+  }).format(new Date(value));
 }
 
 function SidebarThreadRow({
@@ -111,6 +121,8 @@ function SidebarThreadRow({
 }
 
 export default function AiSidebarSection() {
+  const locale = useLocale();
+  const tAi = useTranslations("ai");
   const pathname = usePathname();
   const router = useRouter();
   const params = useParams<{ threadId?: string }>();
@@ -181,10 +193,14 @@ export default function AiSidebarSection() {
           thread,
           title: getAiThreadDisplayTitle(thread.title),
           projectId,
-          timestampLabel: formatRelativeThreadTime(thread.lastMessageAt || thread.updatedAt),
+          timestampLabel: formatRelativeThreadTime(
+            thread.lastMessageAt || thread.updatedAt,
+            locale,
+            tAi,
+          ),
         };
       }),
-    [issueMap, sortedThreads],
+    [issueMap, locale, sortedThreads, tAi],
   );
   const freeThreads = useMemo(
     () => threadItems.filter((item) => item.thread.originSurfaceType === "WORKSPACE"),
@@ -283,7 +299,7 @@ export default function AiSidebarSection() {
   }
 
   return (
-    <SidebarSection title="Intelligence" defaultExpanded>
+    <SidebarSection title={tAi("workbench.sidebar.sectionTitle")} defaultExpanded>
       <div className="space-y-1">
         <button
           type="button"
@@ -294,13 +310,15 @@ export default function AiSidebarSection() {
           )}
         >
           <Plus className="size-4 shrink-0" />
-          <span className="truncate text-sm font-medium">新建对话</span>
+          <span className="truncate text-sm font-medium">
+            {tAi("shared.newConversation")}
+          </span>
         </button>
 
         {freeThreads.length > 0 ? (
           <>
             <div className="px-4 pt-2 text-[10px] font-medium tracking-[0.16em] text-gray-400">
-              自由对话
+              {tAi("workbench.sidebar.workspaceSection")}
             </div>
             {freeThreads.map((item) => (
               <SidebarThreadRow
@@ -316,7 +334,7 @@ export default function AiSidebarSection() {
         {projectGroups.length > 0 ? (
           <div className="pt-2">
             <div className="px-4 pb-1 text-[10px] font-medium tracking-[0.16em] text-gray-400">
-              项目对话
+              {tAi("workbench.sidebar.projectsSection")}
             </div>
 
             {projectGroups.map((group) => {
@@ -339,8 +357,12 @@ export default function AiSidebarSection() {
                       className="flex h-8 w-8 items-center justify-center opacity-70 transition-colors"
                       aria-label={
                         expanded
-                          ? `收起 ${group.project.name}`
-                          : `展开 ${group.project.name}`
+                          ? tAi("workbench.sidebar.collapseProject", {
+                              name: group.project.name,
+                            })
+                          : tAi("workbench.sidebar.expandProject", {
+                              name: group.project.name,
+                            })
                       }
                     >
                       {expanded ? (
@@ -381,7 +403,7 @@ export default function AiSidebarSection() {
                       >
                         <MessageSquareText className="size-3.5 shrink-0" />
                         <span className="truncate">
-                          先从这个项目开一条主对话
+                          {tAi("workbench.sidebar.projectStart")}
                         </span>
                       </button>
                     )
@@ -393,12 +415,14 @@ export default function AiSidebarSection() {
         ) : null}
 
         {threadsQuery.isLoading ? (
-          <div className="px-4 py-2 text-xs text-gray-400">正在同步对话...</div>
+          <div className="px-4 py-2 text-xs text-gray-400">
+            {tAi("workbench.sidebar.syncing")}
+          </div>
         ) : null}
 
         {!threadsQuery.isLoading && threadItems.length === 0 ? (
           <div className="px-4 py-2 text-xs leading-6 text-gray-400 dark:text-gray-500">
-            还没有对话记录。先发出第一条消息，输入框会从中间落到工作台底部。
+            {tAi("workbench.sidebar.empty")}
           </div>
         ) : null}
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ interface SidebarBrandProps {
 }
 
 const SidebarBrand = ({ className }: SidebarBrandProps) => {
+  const tShell = useTranslations("shell");
   const { user, signOut } = useAuth();
   const router = useRouter();
   const {
@@ -44,7 +46,9 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
 
   const fallbackWorkspaceName =
-    user?.user_metadata.name || user?.email?.split("@")[0] || "My workspace";
+    user?.user_metadata.name ||
+    user?.email?.split("@")[0] ||
+    tShell("sidebar.brand.fallbackWorkspaceName");
   const displayWorkspace = currentWorkspace ?? {
     id: "fallback-workspace",
     name: fallbackWorkspaceName,
@@ -64,23 +68,19 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
   };
 
   const handleCreateWorkspace = () => {
-    // TODO: 打开创建工作空间对话框
-    console.log("创建新工作空间");
+    console.log("Create new workspace");
   };
 
   const handleSettings = () => {
     router.push("/settings/general");
   };
 
-  // 包装switchWorkspace函数，添加日志记录并刷新页面
   const handleSwitchWorkspace = (workspaceId: string) => {
     const targetWorkspace = workspaces.find((w) => w.id === workspaceId);
     const currentType = currentWorkspace?.type;
     const targetType = targetWorkspace?.type;
-    // 执行切换
     switchWorkspace(workspaceId);
 
-    // 如果工作区类型发生变化，直接刷新浏览器
     if (currentType !== targetType) {
       setTimeout(() => {
         window.location.reload();
@@ -88,7 +88,6 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
     }
   };
 
-  // 加载状态
   if (loading) {
     return (
       <div className={cn("flex items-center gap-3 p-4", className)}>
@@ -130,10 +129,10 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {workspaceLoadFailed
-                    ? "工作空间加载失败"
+                    ? tShell("sidebar.brand.loadFailed")
                     : displayWorkspace.type === "PERSONAL"
-                      ? "个人空间"
-                      : "团队空间"}
+                      ? tShell("sidebar.brand.personal")
+                      : tShell("sidebar.brand.team")}
                 </span>
               </div>
             </div>
@@ -148,8 +147,6 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
         side="bottom"
         sideOffset={4}
       >
-        {/* 当前工作空间信息 */}
-
         <div className="px-1">
           {workspaceLoadFailed && (
             <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
@@ -157,7 +154,7 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div className="space-y-2">
                   <p>
-                    无法加载工作空间数据。请检查前端的后端地址配置，或稍后重试。
+                    {tShell("sidebar.brand.loadFailedDescription")}
                   </p>
                   <Button
                     variant="outline"
@@ -166,7 +163,7 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
                     onClick={() => void refetch()}
                   >
                     <RefreshCw className="mr-1 h-3 w-3" />
-                    重新加载
+                    {tShell("sidebar.brand.retry")}
                   </Button>
                 </div>
               </div>
@@ -187,7 +184,11 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
               <div className="font-semibold">{displayWorkspace.name}</div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
                 <Users className="h-3 w-3" />
-                <span>{displayWorkspace.memberCount || 1}位成员</span>
+                <span>
+                  {tShell("sidebar.brand.memberCount", {
+                    count: displayWorkspace.memberCount || 1,
+                  })}
+                </span>
                 {currentWorkspace?.type === "TEAM" && (
                   <Button
                     variant="outline"
@@ -195,7 +196,7 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
                     className="h-6 px-2 py-0 text-xs"
                     onClick={handleInviteMember}
                   >
-                    邀请新成员
+                    {tShell("sidebar.brand.inviteMember")}
                   </Button>
                 )}
               </div>
@@ -205,16 +206,14 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
 
         <DropdownMenuSeparator />
 
-        {/* 用户邮箱 */}
         <div className="px-2 py-2">
           <div className="text-sm text-muted-foreground">
-            {user?.email || "用户邮箱"}
+            {user?.email || tShell("sidebar.brand.emailFallback")}
           </div>
         </div>
 
         <DropdownMenuSeparator />
 
-        {/* 工作空间列表 */}
         <div className="space-y-1">
           {workspaces.length > 0 ? (
             workspaces.map((workspace) => (
@@ -235,7 +234,9 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
                 <div className="flex-1">
                   <div className="font-medium text-sm">{workspace.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {workspace.type === "PERSONAL" ? "个人空间" : "团队空间"}
+                    {workspace.type === "PERSONAL"
+                      ? tShell("sidebar.brand.personal")
+                      : tShell("sidebar.brand.team")}
                   </div>
                 </div>
                 {workspace.isActive && (
@@ -246,45 +247,41 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
           ) : (
             <div className="px-2 py-2 text-xs text-muted-foreground">
               {error
-                ? "工作空间列表请求失败"
-                : "当前账号还没有可用的工作空间"}
+                ? tShell("sidebar.brand.workspaceListFailed")
+                : tShell("sidebar.brand.workspaceEmpty")}
             </div>
           )}
         </div>
 
         <DropdownMenuSeparator />
 
-        {/* 创建新工作空间 */}
         <DropdownMenuItem
           className="flex items-center gap-3 px-2 py-2 cursor-pointer"
           onClick={handleCreateWorkspace}
         >
           <Plus className="h-4 w-4" />
-          <span>Create new workspace</span>
+          <span>{tShell("sidebar.brand.createWorkspace")}</span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
 
-        {/* 设置 */}
         <DropdownMenuItem
           className="flex items-center gap-3 px-2 py-2 cursor-pointer"
           onClick={handleSettings}
         >
           <Settings className="h-4 w-4" />
-          <span>Setting</span>
+          <span>{tShell("sidebar.brand.settings")}</span>
         </DropdownMenuItem>
 
-        {/* 登出 */}
         <DropdownMenuItem
           className="flex items-center gap-3 px-2 py-2 cursor-pointer"
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
-          <span>Logout</span>
+          <span>{tShell("sidebar.brand.logout")}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
 
-      {/* 邀请成员对话框 */}
       {currentWorkspace?.type === "TEAM" && (
         <InviteMemberDialog
           open={showInviteDialog}

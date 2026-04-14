@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, ChevronDown, Languages } from 'lucide-react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useTransition } from 'react';
 
 import {
@@ -13,13 +13,6 @@ import {
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 
-const languages = [
-  { code: 'en', name: 'English', flag: 'EN' },
-  { code: 'zh', name: '中文', flag: '中' },
-  { code: 'ko', name: '한국어', flag: 'KO' },
-  { code: 'ja', name: '日本語', flag: 'JA' },
-];
-
 interface LanguageSwitcherProps {
   variant?: 'light' | 'dark';
 }
@@ -29,8 +22,15 @@ export default function LanguageSwitcher({
 }: LanguageSwitcherProps) {
   const [isPending, startTransition] = useTransition();
   const locale = useLocale();
+  const tLanguage = useTranslations('language');
   const router = useRouter();
   const pathname = usePathname();
+  const languages = [
+    { code: 'en', name: tLanguage('english'), flag: 'EN' },
+    { code: 'zh', name: tLanguage('chinese'), flag: 'ZH' },
+    { code: 'ko', name: tLanguage('korean'), flag: 'KO' },
+    { code: 'ja', name: tLanguage('japanese'), flag: 'JA' },
+  ] as const;
 
   const currentLanguage =
     languages.find((language) => language.code === locale) || languages[0];
@@ -70,10 +70,20 @@ export default function LanguageSwitcher({
             {currentLanguage.flag}
           </span>
           <span className="hidden min-w-0 sm:block">
-            <span className="block text-[9px] uppercase tracking-[0.22em] text-white/38">
-              Lang
+            <span
+              className={cn(
+                'block text-[9px] uppercase tracking-[0.22em]',
+                isDark ? 'text-white/38' : 'text-neutral-500',
+              )}
+            >
+              {tLanguage('label')}
             </span>
-            <span className="block truncate text-sm text-white/84">
+            <span
+              className={cn(
+                'block truncate text-sm',
+                isDark ? 'text-white/84' : 'text-neutral-800',
+              )}
+            >
               {currentLanguage.name}
             </span>
           </span>

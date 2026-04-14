@@ -91,7 +91,7 @@ export default function ResetPasswordPage() {
       } = await supabase.auth.getSession();
 
       if (error) {
-        console.error("检查重置会话时出错:", error);
+        console.error("Failed to check reset session:", error);
         markInvalid(error.message || t("auth.linkExpired"));
         return true;
       }
@@ -125,7 +125,7 @@ export default function ResetPasswordPage() {
           });
 
           if (setSessionError) {
-            console.error("设置重置会话失败:", setSessionError);
+            console.error("Failed to set reset session:", setSessionError);
             markInvalid(setSessionError.message || t("auth.linkExpired"));
             return;
           }
@@ -165,7 +165,7 @@ export default function ResetPasswordPage() {
           markInvalid(t("auth.linkExpired"));
         }, 5000);
       } catch (tokenError) {
-        console.error("检查重置令牌时出错:", tokenError);
+        console.error("Failed to verify reset token:", tokenError);
         markInvalid(t("auth.linkInvalid"));
       }
     };
@@ -219,7 +219,7 @@ export default function ResetPasswordPage() {
         router.replace(AUTH_ROUTE);
       }, 1500);
     } catch (resetError) {
-      console.error("重置密码时出错:", resetError);
+      console.error("Failed to reset password:", resetError);
       setMessage({ type: "error", text: t("auth.linkInvalid") });
     } finally {
       setIsSubmitting(false);
@@ -257,7 +257,7 @@ export default function ResetPasswordPage() {
           <div className="space-y-7">
             <div className="space-y-4">
               <div className="inline-flex border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-white/62">
-                Secure recovery
+                {t("auth.recoveryBadge")}
               </div>
               <div className="space-y-3">
                 <h1 className="text-3xl font-semibold tracking-[-0.04em] text-white">
@@ -291,7 +291,7 @@ export default function ResetPasswordPage() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    placeholder="••••••••"
+                    placeholder={t("auth.passwordPlaceholder")}
                     className="h-12 border-white/10 bg-white/[0.03] pl-11 pr-12 text-white placeholder:text-white/26 focus-visible:border-white/16 focus-visible:ring-white/10"
                     required
                   />
@@ -319,7 +319,7 @@ export default function ResetPasswordPage() {
                     type={showConfirmPassword ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(event) => setConfirmPassword(event.target.value)}
-                    placeholder="••••••••"
+                    placeholder={t("auth.passwordPlaceholder")}
                     className="h-12 border-white/10 bg-white/[0.03] pl-11 pr-12 text-white placeholder:text-white/26 focus-visible:border-white/16 focus-visible:ring-white/10"
                     required
                   />

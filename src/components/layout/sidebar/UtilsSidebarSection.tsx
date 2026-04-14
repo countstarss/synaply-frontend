@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Pencil, Plus, Trash2, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -120,12 +121,14 @@ const readStoredShortcuts = (storageKey: string): UtilityShortcut[] => {
       }, [])
       .slice(0, MAX_UTILITY_SHORTCUTS);
   } catch (error) {
-    console.error("读取侧边栏快捷方式失败:", error);
+    console.error("Failed to read sidebar shortcuts:", error);
     return [];
   }
 };
 
 const UtilsSidebarSection = () => {
+  const tShell = useTranslations("shell");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const { user } = useAuth();
   const { currentWorkspace } = useWorkspace();
@@ -164,25 +167,25 @@ const UtilsSidebarSection = () => {
     try {
       window.localStorage.setItem(storageKey, JSON.stringify(shortcuts));
     } catch (error) {
-      console.error("保存侧边栏快捷方式失败:", error);
+      console.error("Failed to save sidebar shortcuts:", error);
     }
   }, [hasLoadedShortcuts, shortcuts, storageKey]);
 
   const dialogCopy = useMemo(() => {
     if (dialogState?.mode === "edit") {
       return {
-        title: "编辑快捷方式",
-        description: "更新展示文字和站内路由。",
-        submitLabel: "保存",
+        title: tShell("sidebar.utils.dialog.editTitle"),
+        description: tShell("sidebar.utils.dialog.editDescription"),
+        submitLabel: tShell("sidebar.utils.dialog.save"),
       };
     }
 
     return {
-      title: "新增快捷方式",
-      description: "填写展示文字和站内路由，之后可以从侧边栏快速进入。",
-      submitLabel: "添加",
+      title: tShell("sidebar.utils.dialog.createTitle"),
+      description: tShell("sidebar.utils.dialog.createDescription"),
+      submitLabel: tShell("sidebar.utils.dialog.add"),
     };
-  }, [dialogState]);
+  }, [dialogState, tShell]);
 
   const routeExists = (route: string, ignoredShortcutId?: string) =>
     shortcuts.some(
@@ -226,12 +229,12 @@ const UtilsSidebarSection = () => {
     const normalizedRoute = normalizeRoute(routeInput);
 
     if (!normalizedRoute) {
-      toast.error("请输入要固定的站内路由");
+      toast.error(tShell("sidebar.utils.validation.routeRequired"));
       return;
     }
 
     if (isExternalRoute(routeInput)) {
-      toast.error("这里只能填写站内路由，例如 /projects");
+      toast.error(tShell("sidebar.utils.validation.routeInternalOnly"));
       return;
     }
 
@@ -241,7 +244,7 @@ const UtilsSidebarSection = () => {
         dialogState.mode === "edit" ? dialogState.shortcut.id : undefined,
       )
     ) {
-      toast.error("这个路由已经在快捷方式里了");
+      toast.error(tShell("sidebar.utils.validation.duplicateRoute"));
       return;
     }
 
@@ -260,7 +263,7 @@ const UtilsSidebarSection = () => {
     }
 
     if (!canAddShortcut) {
-      toast.error("最多只能添加 5 个快捷方式");
+      toast.error(tShell("sidebar.utils.validation.maxReached"));
       return;
     }
 
@@ -291,10 +294,9 @@ const UtilsSidebarSection = () => {
 
   return (
     <>
-      <SidebarSection title="Utils">
+      <SidebarSection title={tShell("sidebar.utils.title")}>
         <div className="flex flex-col gap-1">
           {shortcuts.map((shortcut) => {
-
             const shortcutButton = (
               <button
                 type="button"
@@ -320,7 +322,7 @@ const UtilsSidebarSection = () => {
                     onSelect={() => handleOpenEditDialog(shortcut)}
                   >
                     <Pencil />
-                    编辑
+                    {tCommon("actions.edit")}
                   </ContextMenuItem>
                   <ContextMenuSeparator />
                   <ContextMenuItem
@@ -328,7 +330,7 @@ const UtilsSidebarSection = () => {
                     onSelect={() => handleRemoveShortcut(shortcut.id)}
                   >
                     <Trash2 />
-                    删除
+                    {tCommon("actions.delete")}
                   </ContextMenuItem>
                 </ContextMenuContent>
               </ContextMenu>
@@ -344,7 +346,7 @@ const UtilsSidebarSection = () => {
               onClick={handleOpenAddDialog}
             >
               <Plus data-icon="inline-start" />
-              新增快捷方式
+              {tShell("sidebar.utils.actions.addShortcut")}
             </Button>
           ) : null}
         </div>
@@ -362,22 +364,26 @@ const UtilsSidebarSection = () => {
             className="flex flex-col gap-4"
           >
             <div className="flex flex-col gap-2">
-              <Label htmlFor="utility-shortcut-label">展示文字</Label>
+              <Label htmlFor="utility-shortcut-label">
+                {tShell("sidebar.utils.fields.label")}
+              </Label>
               <Input
                 id="utility-shortcut-label"
                 value={labelInput}
                 onChange={(event) => setLabelInput(event.target.value)}
-                placeholder="例如 阻塞事项"
+                placeholder={tShell("sidebar.utils.fields.labelPlaceholder")}
               />
             </div>
 
             <div className="flex flex-col gap-2">
-              <Label htmlFor="utility-shortcut-route">路由</Label>
+              <Label htmlFor="utility-shortcut-route">
+                {tShell("sidebar.utils.fields.route")}
+              </Label>
               <Input
                 id="utility-shortcut-route"
                 value={routeInput}
                 onChange={(event) => setRouteInput(event.target.value)}
-                placeholder="例如 /projects 或 /issues?state=blocked"
+                placeholder={tShell("sidebar.utils.fields.routePlaceholder")}
               />
             </div>
             <DialogFooter>
@@ -386,7 +392,7 @@ const UtilsSidebarSection = () => {
                 variant="outline"
                 onClick={() => handleDialogOpenChange(false)}
               >
-                取消
+                {tCommon("actions.cancel")}
               </Button>
               <Button type="submit">{dialogCopy.submitLabel}</Button>
             </DialogFooter>

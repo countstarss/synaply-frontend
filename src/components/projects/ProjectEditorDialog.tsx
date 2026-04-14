@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { RiFolder2Line, RiSparklingLine } from "react-icons/ri";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,77 +22,17 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  PROJECT_VISIBILITY_OPTIONS,
   Project,
   ProjectVisibility,
   getDefaultProjectVisibility,
 } from "@/lib/fetchers/project";
 import type { TeamMember } from "@/lib/fetchers/team";
+import {
+  getProjectRiskMeta,
+  getProjectStatusMeta,
+  getProjectVisibilityMeta,
+} from "@/components/projects/project-view-utils";
 import { ProjectRiskLevel, ProjectStatus } from "@/types/prisma";
-
-const PROJECT_STATUS_OPTIONS: Array<{
-  value: ProjectStatus;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: ProjectStatus.PLANNING,
-    label: "规划中",
-    description: "目标和范围还在收敛，适合补 brief、定义成功标准。",
-  },
-  {
-    value: ProjectStatus.ACTIVE,
-    label: "推进中",
-    description: "已有执行节奏，适合作为团队协作主上下文。",
-  },
-  {
-    value: ProjectStatus.BLOCKED,
-    label: "阻塞中",
-    description: "存在关键卡点，需要尽快明确解阻责任人。",
-  },
-  {
-    value: ProjectStatus.SHIPPING,
-    label: "发布中",
-    description: "工作已进入发布、验收或上线收尾阶段。",
-  },
-  {
-    value: ProjectStatus.DONE,
-    label: "已完成",
-    description: "目标已经达成，适合保留为历史上下文。",
-  },
-  {
-    value: ProjectStatus.ARCHIVED,
-    label: "已归档",
-    description: "项目已退出日常协作视野，但上下文仍需保留。",
-  },
-];
-
-const PROJECT_RISK_OPTIONS: Array<{
-  value: ProjectRiskLevel;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: ProjectRiskLevel.LOW,
-    label: "低风险",
-    description: "节奏稳定，暂未出现明显的交接或延期风险。",
-  },
-  {
-    value: ProjectRiskLevel.MEDIUM,
-    label: "中风险",
-    description: "已有等待或不确定项，建议在项目页持续跟踪。",
-  },
-  {
-    value: ProjectRiskLevel.HIGH,
-    label: "高风险",
-    description: "交付、评审或协调存在明显风险，需要重点关注。",
-  },
-  {
-    value: ProjectRiskLevel.CRITICAL,
-    label: "关键风险",
-    description: "项目推进已受到明显影响，需要立刻介入处理。",
-  },
-];
 
 export interface ProjectEditorValues {
   name: string;
@@ -127,6 +68,8 @@ export function ProjectEditorDialog({
   onOpenChange,
   onSubmit,
 }: ProjectEditorDialogProps) {
+  const tProjects = useTranslations("projects");
+  const tCommon = useTranslations("common");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [brief, setBrief] = useState("");
@@ -139,6 +82,29 @@ export function ProjectEditorDialog({
   const [visibility, setVisibility] = useState<ProjectVisibility>(
     getDefaultProjectVisibility(workspaceType),
   );
+  const projectStatusMeta = getProjectStatusMeta(tProjects);
+  const projectRiskMeta = getProjectRiskMeta(tProjects);
+  const projectVisibilityMeta = getProjectVisibilityMeta(tProjects);
+  const projectStatusOptions = [
+    ProjectStatus.PLANNING,
+    ProjectStatus.ACTIVE,
+    ProjectStatus.BLOCKED,
+    ProjectStatus.SHIPPING,
+    ProjectStatus.DONE,
+    ProjectStatus.ARCHIVED,
+  ];
+  const projectRiskOptions = [
+    ProjectRiskLevel.LOW,
+    ProjectRiskLevel.MEDIUM,
+    ProjectRiskLevel.HIGH,
+    ProjectRiskLevel.CRITICAL,
+  ];
+  const projectVisibilityOptions = [
+    "PRIVATE",
+    "TEAM_READONLY",
+    "TEAM_EDITABLE",
+    "PUBLIC",
+  ] as const satisfies ProjectVisibility[];
 
   useEffect(() => {
     if (!open) {
@@ -178,11 +144,14 @@ export function ProjectEditorDialog({
     });
   };
 
-  const title = mode === "create" ? "新建项目" : "编辑项目";
+  const title =
+    mode === "create"
+      ? tProjects("editor.title.create")
+      : tProjects("editor.title.edit");
   const subtitle =
     mode === "create"
-      ? "把项目建成协作上下文，而不是单纯的 issue 容器。"
-      : "这里可以维护项目 brief、阶段、风险和负责人等协作语义。";
+      ? tProjects("editor.subtitle.create")
+      : tProjects("editor.subtitle.edit");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -210,12 +179,12 @@ export function ProjectEditorDialog({
           <div className="grid gap-5">
             <div className="grid gap-2">
               <label className="text-sm font-medium text-app-text-primary">
-                项目名称
+                {tProjects("editor.fields.name")}
               </label>
               <Input
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                placeholder="例如：Q2 Launch, AI Search Revamp"
+                placeholder={tProjects("editor.fields.namePlaceholder")}
                 className="border-app-border bg-app-bg text-app-text-primary"
                 autoFocus
                 maxLength={100}
@@ -225,12 +194,12 @@ export function ProjectEditorDialog({
 
             <div className="grid gap-2">
               <label className="text-sm font-medium text-app-text-primary">
-                一句话 Brief
+                {tProjects("editor.fields.brief")}
               </label>
               <Input
                 value={brief}
                 onChange={(event) => setBrief(event.target.value)}
-                placeholder="一句话说明这个项目为什么存在，以及团队要把什么推进到交付。"
+                placeholder={tProjects("editor.fields.briefPlaceholder")}
                 className="border-app-border bg-app-bg text-app-text-primary"
                 maxLength={240}
               />
@@ -238,12 +207,12 @@ export function ProjectEditorDialog({
 
             <div className="grid gap-2">
               <label className="text-sm font-medium text-app-text-primary">
-                项目背景 / 目标说明
+                {tProjects("editor.fields.description")}
               </label>
               <Textarea
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
-                placeholder="补充范围、成功标准、关键背景，帮助团队理解项目语境。"
+                placeholder={tProjects("editor.fields.descriptionPlaceholder")}
                 className="min-h-28 border-app-border bg-app-bg text-app-text-primary"
                 maxLength={500}
               />
@@ -252,19 +221,21 @@ export function ProjectEditorDialog({
             <div className="grid gap-5 md:grid-cols-2">
               <div className="grid gap-2">
                 <label className="text-sm font-medium text-app-text-primary">
-                  当前状态
+                  {tProjects("editor.fields.status")}
                 </label>
                 <Select
                   value={status}
                   onValueChange={(value) => setStatus(value as ProjectStatus)}
                 >
                   <SelectTrigger className="h-11 w-full border-app-border bg-app-bg text-app-text-primary">
-                    <SelectValue placeholder="选择项目状态" />
+                    <SelectValue
+                      placeholder={tProjects("editor.fields.statusPlaceholder")}
+                    />
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
-                    {PROJECT_STATUS_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
+                    {projectStatusOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {projectStatusMeta[option].label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -273,12 +244,12 @@ export function ProjectEditorDialog({
 
               <div className="grid gap-2">
                 <label className="text-sm font-medium text-app-text-primary">
-                  当前阶段
+                  {tProjects("editor.fields.phase")}
                 </label>
                 <Input
                   value={phase}
                   onChange={(event) => setPhase(event.target.value)}
-                  placeholder="例如：Kickoff、Design Review、Build、Launch"
+                  placeholder={tProjects("editor.fields.phasePlaceholder")}
                   className="border-app-border bg-app-bg text-app-text-primary"
                   maxLength={120}
                 />
@@ -288,7 +259,7 @@ export function ProjectEditorDialog({
             <div className="grid gap-5 md:grid-cols-2">
               <div className="grid gap-2">
                 <label className="text-sm font-medium text-app-text-primary">
-                  风险等级
+                  {tProjects("editor.fields.risk")}
                 </label>
                 <Select
                   value={riskLevel}
@@ -297,12 +268,14 @@ export function ProjectEditorDialog({
                   }
                 >
                   <SelectTrigger className="h-11 w-full border-app-border bg-app-bg text-app-text-primary">
-                    <SelectValue placeholder="选择风险等级" />
+                    <SelectValue
+                      placeholder={tProjects("editor.fields.riskPlaceholder")}
+                    />
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
-                    {PROJECT_RISK_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
+                    {projectRiskOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {projectRiskMeta[option].label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -312,14 +285,16 @@ export function ProjectEditorDialog({
               {teamMembers.length > 0 ? (
                 <div className="grid gap-2">
                   <label className="text-sm font-medium text-app-text-primary">
-                    项目负责人
+                    {tProjects("editor.fields.owner")}
                   </label>
                   <Select
                     value={ownerMemberId}
                     onValueChange={(value) => setOwnerMemberId(value)}
                   >
                     <SelectTrigger className="h-11 w-full border-app-border bg-app-bg text-app-text-primary">
-                      <SelectValue placeholder="选择负责人" />
+                      <SelectValue
+                        placeholder={tProjects("editor.fields.ownerPlaceholder")}
+                      />
                     </SelectTrigger>
                     <SelectContent className="border-app-border bg-app-content-bg">
                       {teamMembers.map((member) => (
@@ -335,7 +310,7 @@ export function ProjectEditorDialog({
 
             <div className="grid gap-3">
               <label className="text-sm font-medium text-app-text-primary">
-                可见性
+                {tProjects("editor.fields.visibility")}
               </label>
               <Select
                 value={visibility}
@@ -344,12 +319,16 @@ export function ProjectEditorDialog({
                 }
               >
                 <SelectTrigger className="h-11 w-full border-app-border bg-app-bg text-app-text-primary">
-                  <SelectValue placeholder="选择项目可见性" />
+                  <SelectValue
+                    placeholder={tProjects(
+                      "editor.fields.visibilityPlaceholder",
+                    )}
+                  />
                 </SelectTrigger>
                 <SelectContent className="border-app-border bg-app-content-bg">
-                  {PROJECT_VISIBILITY_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
+                  {projectVisibilityOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {projectVisibilityMeta[option].label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -365,7 +344,7 @@ export function ProjectEditorDialog({
               onClick={() => onOpenChange(false)}
               disabled={isPending}
             >
-              取消
+              {tCommon("actions.cancel")}
             </Button>
             <Button
               type="submit"
@@ -374,11 +353,11 @@ export function ProjectEditorDialog({
             >
               {isPending
                 ? mode === "create"
-                  ? "创建中..."
-                  : "保存中..."
+                  ? tProjects("editor.actions.creating")
+                  : tProjects("editor.actions.saving")
                 : mode === "create"
-                  ? "创建项目"
-                  : "保存更改"}
+                  ? tProjects("editor.actions.create")
+                  : tProjects("editor.actions.save")}
             </Button>
           </DialogFooter>
         </form>

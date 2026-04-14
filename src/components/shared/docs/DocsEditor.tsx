@@ -7,13 +7,19 @@ import { useDocs, DocsDocument } from "./DocsContext";
 import DocsToolbar from "./DocsToolbar";
 import FolderIntro from "./FolderIntro";
 
+function DocsEditorLoadingState() {
+  const tDocs = useTranslations("docs");
+
+  return (
+    <div className="h-full flex items-center justify-center">
+      <p className="text-app-text-muted">{tDocs("states.loadingEditor")}</p>
+    </div>
+  );
+}
+
 const DocsBlockNoteEditor = dynamic(() => import("./BlockNoteEditor"), {
   ssr: false,
-  loading: () => (
-    <div className="h-full flex items-center justify-center">
-      <p className="text-app-text-muted">Loading editor...</p>
-    </div>
-  ),
+  loading: () => <DocsEditorLoadingState />,
 });
 
 interface DocsEditorProps {
@@ -71,12 +77,10 @@ export default function DocsEditor({
 
   return (
     <div className="relative flex h-full min-h-0 flex-col bg-app-bg">
-      {/* Toolbar */}
       {onToggleExpand && (
         <DocsToolbar isExpanded={isExpanded} onToggleExpand={onToggleExpand} />
       )}
 
-      {/* Title */}
       <div className="border-b border-app-border bg-app-content-bg px-8 py-[14.5px]">
         {isEditingTitle ? (
           <div className="space-y-2">
@@ -150,7 +154,6 @@ export default function DocsEditor({
         )}
       </div>
 
-      {/* Content */}
       <div className="min-h-0 flex-1 overflow-hidden">
         {doc.type === "folder" ? (
           <FolderIntro folder={doc} />

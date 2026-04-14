@@ -234,6 +234,13 @@
     "noMembers": "No team members available",
     "createCustom": "Create a custom owner: {value}"
   },
+  "teamMemberSelect": {
+    "placeholder": "Choose an owner...",
+    "searchPlaceholder": "Search members...",
+    "noMatching": "No matching members found",
+    "customLabel": "Add: {value}",
+    "customHint": "Custom owner"
+  },
   "colors": {
     "blue": "Blue",
     "purple": "Purple",
@@ -251,5 +258,23 @@
     "statusSyncFailed": "Failed to sync the node status.",
     "advanceFailed": "Failed to advance the workflow run.",
     "revertFailed": "Failed to revert the workflow run."
+  },
+  "instance": {
+    "title": "Create workflow instance",
+    "steps": "{count} step(s) included",
+    "fields": {
+      "title": "Issue title *",
+      "titlePlaceholder": "Enter the issue title...",
+      "description": "Description",
+      "descriptionPlaceholder": "Enter a detailed description...",
+      "dueDate": "Due date"
+    },
+    "validation": {
+      "titleRequired": "Please enter a title."
+    },
+    "actions": {
+      "creating": "Creating...",
+      "submit": "Create workflow instance"
+    }
   }
 }

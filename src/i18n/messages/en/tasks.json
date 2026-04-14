@@ -84,6 +84,32 @@
   "actions": {
     "retry": "Retry"
   },
+  "addModal": {
+    "title": "Create task",
+    "fields": {
+      "titlePlaceholder": "Title",
+      "descriptionPlaceholder": "Description (optional)",
+      "dueDatePlaceholder": "Due date (optional)"
+    },
+    "actions": {
+      "submit": "Create"
+    }
+  },
+  "calendar": {
+    "newTask": "Create task",
+    "noTasks": "No tasks yet",
+    "close": "Close",
+    "more": "+{count} more",
+    "weekdays": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    }
+  },
   "states": {
     "loading": "Organizing your work queue...",
     "errorTitle": "Failed to load your work overview",

@@ -10,11 +10,10 @@ import {
   addDays,
   isSameDay,
   isSameMonth,
-  format,
 } from "date-fns";
 import { ArrowLeftIcon, ArrowRightIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-// 不使用 Sheet，改为内嵌面板
+import { useLocale, useTranslations } from "next-intl";
 import { AddTaskModal } from "./add-task-modal";
 import { Task } from "@/lib/fetchers/task";
 import { cn } from "@/lib/utils";
@@ -34,6 +33,8 @@ export const TaskCalendar: React.FC<TaskCalendarProps> = ({
   tasks,
   onCreateTask,
 }) => {
+  const locale = useLocale();
+  const t = useTranslations("tasks");
   const [currentMonth, setCurrentMonth] = useState(new Date());
   void _workspaceId;
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -41,7 +42,6 @@ export const TaskCalendar: React.FC<TaskCalendarProps> = ({
   const handlePrevMonth = () => setCurrentMonth((prev) => subMonths(prev, 1));
   const handleNextMonth = () => setCurrentMonth((prev) => addMonths(prev, 1));
 
-  // MARK: 生成网格数据
   const generateCalendar = () => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
@@ -63,14 +63,25 @@ export const TaskCalendar: React.FC<TaskCalendarProps> = ({
 
   const rows = generateCalendar();
 
-  // MARK: 计算动态行高 (可复用)
-  const WEEK_HEADER_HEIGHT = 32; // px (h-8)
-  const GRID_GAP = 0; // border 已占
+  const WEEK_HEADER_HEIGHT = 32;
+  const GRID_GAP = 0;
+  const weekdayKeys = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+  const monthLabel = new Intl.DateTimeFormat(locale, {
+    month: "long",
+    year: "numeric",
+  }).format(currentMonth);
+  const selectedDateLabel = selectedDate
+    ? new Intl.DateTimeFormat(locale, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(selectedDate)
+    : "";
 
   const calcCellHeight = () => {
-    if (typeof window === "undefined") return 100; // SSR fallback
-    const available = window.innerHeight - 130 - WEEK_HEADER_HEIGHT - GRID_GAP; // 保留 header & padding
-    return available / 6; // 六行
+    if (typeof window === "undefined") return 100;
+    const available = window.innerHeight - 130 - WEEK_HEADER_HEIGHT - GRID_GAP;
+    return available / 6;
   };
 
   const renderDayCell = (date: Date) => {
@@ -105,11 +116,10 @@ export const TaskCalendar: React.FC<TaskCalendarProps> = ({
         ))}
         {dayTasks.length > 3 && (
           <div className="text-[10px] text-muted-foreground">
-            +{dayTasks.length - 3} more
+            {t("calendar.more", { count: dayTasks.length - 3 })}
           </div>
         )}
 
-        {/* Hover 快速添加 */}
         <AddTaskModal
           onCreate={onCreateTask}
           defaultDate={date}
@@ -148,7 +158,7 @@ export const TaskCalendar: React.FC<TaskCalendarProps> = ({
             <ArrowRightIcon className="size-4" />
           </Button>
           <span className="font-semibold text-base">
-            {format(currentMonth, "MMMM yyyy")}
+            {monthLabel}
           </span>
         </div>
 
@@ -156,32 +166,29 @@ export const TaskCalendar: React.FC<TaskCalendarProps> = ({
           onCreate={onCreateTask}
           trigger={
             <Button size="sm" variant="outline" className="gap-1">
-              <PlusIcon className="size-4" /> 新建任务
+              <PlusIcon className="size-4" /> {t("calendar.newTask")}
             </Button>
           }
         />
       </div>
 
-      {/* Grid + Tasks  */}
       <div
         className={cn(
           "flex flex-1  overflow-hidden h-full",
           "-mb-4",
           "transition-all duration-300 ease-in-out"
-          // "xl:py-0 xl:px-2 py-0 px-1 "
         )}
       >
         <div
           className="flex-1 grid grid-cols-7 border-t border-l overflow-hidden"
           style={{ height: "calc(100vh - 124px)" }}
         >
-          {/* Weekday headers */}
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+          {weekdayKeys.map((dayKey) => (
             <div
-              key={d}
+              key={dayKey}
               className="h-10 border-b border-r flex items-center justify-center text-xs font-medium bg-muted sticky top-0 z-10"
             >
-              {d}
+              {t(`calendar.weekdays.${dayKey}`)}
             </div>
           ))}
 
@@ -200,11 +207,12 @@ export const TaskCalendar: React.FC<TaskCalendarProps> = ({
           >
             <div className="h-10 sticky top-0 bg-background py-1 px-4 border-b flex items-center justify-between">
               <span className="font-semibold text-sm">
-                {format(selectedDate, "yyyy-MM-dd")}
+                {selectedDateLabel}
               </span>
               <button
                 className="size-6 flex items-center justify-center rounded hover:bg-muted"
                 onClick={() => setSelectedDate(null)}
+                aria-label={t("calendar.close")}
               >
                 ✕
               </button>
@@ -213,7 +221,7 @@ export const TaskCalendar: React.FC<TaskCalendarProps> = ({
             <div className="flex flex-col gap-2 p-4 flex-1 overflow-y-auto">
               {selectedDayTasks.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center">
-                  暂无任务
+                  {t("calendar.noTasks")}
                 </p>
               ) : (
                 selectedDayTasks.map((task) => (
@@ -230,7 +238,7 @@ export const TaskCalendar: React.FC<TaskCalendarProps> = ({
                 defaultDate={selectedDate}
                 trigger={
                   <Button variant="outline" className="w-full gap-1">
-                    <PlusIcon className="size-4" /> 新建任务
+                    <PlusIcon className="size-4" /> {t("calendar.newTask")}
                   </Button>
                 }
               />
@@ -238,7 +246,6 @@ export const TaskCalendar: React.FC<TaskCalendarProps> = ({
           </div>
         )}
       </div>
-      {/* END Flex */}
     </div>
   );
 };

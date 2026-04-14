@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,7 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
   trigger,
   defaultDate,
 }) => {
+  const tTasks = useTranslations("tasks");
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -54,32 +56,32 @@ export const AddTaskModal: React.FC<AddTaskModalProps> = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
-      <DialogContent>
+        <DialogContent>
         <DialogHeader>
-          <DialogTitle>新建任务</DialogTitle>
+          <DialogTitle>{tTasks("addModal.title")}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4 py-4">
           <Input
-            placeholder="标题"
+            placeholder={tTasks("addModal.fields.titlePlaceholder")}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
           <Textarea
-            placeholder="描述 (可选)"
+            placeholder={tTasks("addModal.fields.descriptionPlaceholder")}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
           />
           <Input
             type="date"
-            placeholder="到期日期 (可选)"
+            placeholder={tTasks("addModal.fields.dueDatePlaceholder")}
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
           />
         </div>
         <DialogFooter>
           <Button onClick={handleSubmit} disabled={!title || loading}>
-            创建
+            {tTasks("addModal.actions.submit")}
           </Button>
         </DialogFooter>
       </DialogContent>
