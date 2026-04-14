@@ -17,6 +17,7 @@ import type { Team } from "@/lib/fetchers/team";
 export interface SettingItem {
   id: string;
   label: string;
+  labelKey?: string;
   icon: LucideIcon;
   href?: string;
   action?: () => void;
@@ -25,29 +26,36 @@ export interface SettingItem {
 export interface SettingSection {
   id: string;
   title: string;
+  titleKey?: string;
   items: SettingItem[];
 }
+
+type TranslationFn = (key: string) => string;
 
 export const baseSettingSections: SettingSection[] = [
   {
     id: "general",
-    title: "General",
+    title: "",
+    titleKey: "sidebar.sections.general",
     items: [
       {
         id: "profile",
-        label: "Profile",
+        label: "",
+        labelKey: "settingsNav.profile",
         icon: User,
         href: "/settings/general#profile",
       },
       {
         id: "notifications",
-        label: "Notifications",
+        label: "",
+        labelKey: "settingsNav.notifications",
         icon: Bell,
         href: "/settings/general#notifications",
       },
       {
         id: "appearance",
-        label: "Appearance",
+        label: "",
+        labelKey: "settingsNav.appearance",
         icon: Palette,
         href: "/settings/general#appearance",
       },
@@ -55,47 +63,55 @@ export const baseSettingSections: SettingSection[] = [
   },
   {
     id: "administration",
-    title: "Administration",
+    title: "",
+    titleKey: "sidebar.sections.administration",
     items: [
       {
         id: "workspace",
-        label: "Workspace",
+        label: "",
+        labelKey: "settingsNav.workspace",
         icon: Building2,
         href: "/settings/admin#workspace",
       },
       {
         id: "teams",
-        label: "Teams",
+        label: "",
+        labelKey: "settingsNav.teams",
         icon: Users,
         href: "/settings/admin#teams",
       },
       {
         id: "members",
-        label: "Members",
+        label: "",
+        labelKey: "settingsNav.members",
         icon: UserCheck,
         href: "/settings/admin#members",
       },
       {
         id: "ai-execution",
-        label: "AI Execution",
+        label: "",
+        labelKey: "settingsNav.aiExecution",
         icon: BotIcon,
         href: "/settings/admin#ai-execution",
       },
       {
         id: "security",
-        label: "Security",
+        label: "",
+        labelKey: "settingsNav.security",
         icon: Shield,
         href: "/settings/admin#security",
       },
       {
         id: "application",
-        label: "Application",
+        label: "",
+        labelKey: "settingsNav.application",
         icon: Smartphone,
         href: "/settings/admin#application",
       },
       {
         id: "billing",
-        label: "Billing",
+        label: "",
+        labelKey: "settingsNav.billing",
         icon: CreditCard,
         href: "/settings/admin#billing",
       },
@@ -104,13 +120,21 @@ export const baseSettingSections: SettingSection[] = [
 ];
 
 export const buildSettingsSections = (
+  t: TranslationFn,
   teams: Team[] = [],
   onCreateTeam?: () => void,
 ): SettingSection[] => [
-  ...baseSettingSections,
+  ...baseSettingSections.map((section) => ({
+    ...section,
+    title: section.titleKey ? t(section.titleKey) : section.title,
+    items: section.items.map((item) => ({
+      ...item,
+      label: item.labelKey ? t(item.labelKey) : item.label,
+    })),
+  })),
   {
     id: "team",
-    title: "Team",
+    title: t("sidebar.sections.team"),
     items: [
       ...teams.map((team) => ({
         id: team.id,
@@ -120,7 +144,7 @@ export const buildSettingsSections = (
       })),
       {
         id: "create-team",
-        label: "Create new team",
+        label: t("sidebar.createTeam"),
         icon: Plus,
         action: onCreateTeam,
       },

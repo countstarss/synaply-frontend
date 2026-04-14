@@ -24,6 +24,8 @@ import {
   ProjectStatus,
 } from "@/types/prisma";
 
+type TranslationFn = (key: string, values?: Record<string, string | number>) => string;
+
 export const VISIBILITY_META: Record<
   ProjectVisibility,
   {
@@ -37,28 +39,28 @@ export const VISIBILITY_META: Record<
     label: "Private",
     chipClassName:
       "border-slate-300/70 bg-slate-500/10 text-slate-700 dark:border-slate-700 dark:bg-slate-500/15 dark:text-slate-200",
-    description: "默认适用于个人空间，当前权限并非严格按 visibility 做资源级过滤。",
+    description: "Best for personal workspaces. Resource-level permissions are not strictly enforced by visibility yet.",
     icon: <RiLockLine className="size-3.5" />,
   },
   TEAM_READONLY: {
     label: "Team Readonly",
     chipClassName:
       "border-sky-300/70 bg-sky-500/10 text-sky-700 dark:border-sky-800 dark:bg-sky-500/15 dark:text-sky-200",
-    description: "团队成员可以查看，实际写权限仍由 OWNER / ADMIN 控制。",
+    description: "Team members can view this project. Write access is still controlled by OWNER and ADMIN roles.",
     icon: <RiTeamLine className="size-3.5" />,
   },
   TEAM_EDITABLE: {
     label: "Team Editable",
     chipClassName:
       "border-emerald-300/70 bg-emerald-500/10 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
-    description: "适合协作型项目，但当前后端仍按 workspace 成员角色做权限判断。",
+    description: "Best for collaborative projects. Backend write permissions are still determined by workspace member roles.",
     icon: <RiSparklingLine className="size-3.5" />,
   },
   PUBLIC: {
     label: "Public",
     chipClassName:
       "border-amber-300/70 bg-amber-500/10 text-amber-700 dark:border-amber-800 dark:bg-amber-500/15 dark:text-amber-200",
-    description: "公开展示的项目视图，便于共享背景信息或状态。",
+    description: "A public-facing project view for sharing context and status.",
     icon: <Globe2 className="size-3.5" />,
   },
 };
@@ -72,37 +74,37 @@ export const PROJECT_STATUS_META: Record<
   }
 > = {
   PLANNING: {
-    label: "规划中",
+    label: "Planning",
     chipClassName:
       "border-slate-300/70 bg-slate-500/10 text-slate-700 dark:border-slate-700 dark:bg-slate-500/15 dark:text-slate-200",
     icon: <RiRoadMapLine className="size-3.5" />,
   },
   ACTIVE: {
-    label: "推进中",
+    label: "Active",
     chipClassName:
       "border-sky-300/70 bg-sky-500/10 text-sky-700 dark:border-sky-800 dark:bg-sky-500/15 dark:text-sky-200",
     icon: <RiSparklingLine className="size-3.5" />,
   },
   BLOCKED: {
-    label: "阻塞中",
+    label: "Blocked",
     chipClassName:
       "border-rose-300/70 bg-rose-500/10 text-rose-700 dark:border-rose-800 dark:bg-rose-500/15 dark:text-rose-200",
     icon: <RiAlarmWarningLine className="size-3.5" />,
   },
   SHIPPING: {
-    label: "发布中",
+    label: "Shipping",
     chipClassName:
       "border-amber-300/70 bg-amber-500/10 text-amber-700 dark:border-amber-800 dark:bg-amber-500/15 dark:text-amber-200",
     icon: <RiTimeLine className="size-3.5" />,
   },
   DONE: {
-    label: "已完成",
+    label: "Done",
     chipClassName:
       "border-emerald-300/70 bg-emerald-500/10 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
     icon: <RiCheckboxCircleLine className="size-3.5" />,
   },
   ARCHIVED: {
-    label: "已归档",
+    label: "Archived",
     chipClassName:
       "border-zinc-300/70 bg-zinc-500/10 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-500/15 dark:text-zinc-200",
     icon: <RiLockLine className="size-3.5" />,
@@ -118,56 +120,134 @@ export const PROJECT_RISK_META: Record<
   }
 > = {
   LOW: {
-    label: "低风险",
+    label: "Low risk",
     chipClassName:
       "border-emerald-300/70 bg-emerald-500/10 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200",
     icon: <RiFlag2Line className="size-3.5" />,
   },
   MEDIUM: {
-    label: "中风险",
+    label: "Medium risk",
     chipClassName:
       "border-amber-300/70 bg-amber-500/10 text-amber-700 dark:border-amber-800 dark:bg-amber-500/15 dark:text-amber-200",
     icon: <RiErrorWarningLine className="size-3.5" />,
   },
   HIGH: {
-    label: "高风险",
+    label: "High risk",
     chipClassName:
       "border-orange-300/70 bg-orange-500/10 text-orange-700 dark:border-orange-800 dark:bg-orange-500/15 dark:text-orange-200",
     icon: <RiAlarmWarningLine className="size-3.5" />,
   },
   CRITICAL: {
-    label: "关键风险",
+    label: "Critical risk",
     chipClassName:
       "border-rose-300/70 bg-rose-500/10 text-rose-700 dark:border-rose-800 dark:bg-rose-500/15 dark:text-rose-200",
     icon: <RiAlarmWarningLine className="size-3.5" />,
   },
 };
 
-export function formatShortDate(date: string) {
-  return new Date(date).toLocaleDateString("zh-CN", {
-    month: "short",
-    day: "numeric",
-  });
+export function getProjectVisibilityMeta(t: TranslationFn) {
+  return {
+    PRIVATE: {
+      ...VISIBILITY_META.PRIVATE,
+      label: t("visibility.private.label"),
+      description: t("visibility.private.description"),
+    },
+    TEAM_READONLY: {
+      ...VISIBILITY_META.TEAM_READONLY,
+      label: t("visibility.teamReadonly.label"),
+      description: t("visibility.teamReadonly.description"),
+    },
+    TEAM_EDITABLE: {
+      ...VISIBILITY_META.TEAM_EDITABLE,
+      label: t("visibility.teamEditable.label"),
+      description: t("visibility.teamEditable.description"),
+    },
+    PUBLIC: {
+      ...VISIBILITY_META.PUBLIC,
+      label: t("visibility.public.label"),
+      description: t("visibility.public.description"),
+    },
+  } as const satisfies typeof VISIBILITY_META;
 }
 
-export function formatPreciseDate(date: string) {
-  return new Date(date).toLocaleString("zh-CN", {
+export function getProjectStatusMeta(t: TranslationFn) {
+  return {
+    PLANNING: {
+      ...PROJECT_STATUS_META.PLANNING,
+      label: t("status.planning"),
+    },
+    ACTIVE: {
+      ...PROJECT_STATUS_META.ACTIVE,
+      label: t("status.active"),
+    },
+    BLOCKED: {
+      ...PROJECT_STATUS_META.BLOCKED,
+      label: t("status.blocked"),
+    },
+    SHIPPING: {
+      ...PROJECT_STATUS_META.SHIPPING,
+      label: t("status.shipping"),
+    },
+    DONE: {
+      ...PROJECT_STATUS_META.DONE,
+      label: t("status.done"),
+    },
+    ARCHIVED: {
+      ...PROJECT_STATUS_META.ARCHIVED,
+      label: t("status.archived"),
+    },
+  } as const satisfies typeof PROJECT_STATUS_META;
+}
+
+export function getProjectRiskMeta(t: TranslationFn) {
+  return {
+    LOW: {
+      ...PROJECT_RISK_META.LOW,
+      label: t("risk.low"),
+    },
+    MEDIUM: {
+      ...PROJECT_RISK_META.MEDIUM,
+      label: t("risk.medium"),
+    },
+    HIGH: {
+      ...PROJECT_RISK_META.HIGH,
+      label: t("risk.high"),
+    },
+    CRITICAL: {
+      ...PROJECT_RISK_META.CRITICAL,
+      label: t("risk.critical"),
+    },
+  } as const satisfies typeof PROJECT_RISK_META;
+}
+
+export function formatShortDate(date: string, locale = "en") {
+  return new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(date));
+}
+
+export function formatPreciseDate(date: string, locale = "en") {
+  return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-  });
+  }).format(new Date(date));
 }
 
-export function getProjectOwnerLabel(project?: Pick<Project, "owner"> | null) {
+export function getProjectOwnerLabel(
+  project: Pick<Project, "owner"> | null | undefined,
+  t?: TranslationFn,
+) {
   const owner = project?.owner;
 
   if (!owner) {
-    return "未指定负责人";
+    return t ? t("owner.missing") : "No owner assigned";
   }
 
-  return owner.user.name || owner.user.email || "未命名成员";
+  return owner.user.name || owner.user.email || (t ? t("owner.unnamedMember") : "Unnamed member");
 }
 
 export function getPriorityTone(issue: Issue) {
@@ -194,7 +274,7 @@ export function getIssueStateMeta(issue: Issue) {
   }
 
   return {
-    label: issue.state?.name || "未分类",
+    label: issue.state?.name || "Uncategorized",
     icon: <span className="size-2 rounded-full bg-app-text-muted" />,
     className: "text-app-text-secondary",
   };

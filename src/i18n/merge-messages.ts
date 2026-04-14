@@ -1,59 +1,109 @@
-import { readdirSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readdirSync, statSync } from "fs";
+import { join, relative, sep } from "path";
 
-/**
- * 合并指定语言的所有翻译文件
- * @param locale 语言代码 (如: 'en', 'zh', 'ko', 'ja')
- * @returns 合并后的翻译对象
- */
+type MessageValue = string | number | boolean | null | MessageTree | MessageValue[];
+type MessageTree = Record<string, MessageValue>;
+
+function isPlainObject(value: unknown): value is MessageTree {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function deepMergeMessages(base: MessageTree, override: MessageTree) {
+  const merged: MessageTree = { ...base };
+
+  for (const [key, value] of Object.entries(override)) {
+    const current = merged[key];
+
+    if (isPlainObject(current) && isPlainObject(value)) {
+      merged[key] = deepMergeMessages(current, value);
+      continue;
+    }
+
+    merged[key] = value;
+  }
+
+  return merged;
+}
+
+function getJsonFiles(locale: string) {
+  const localeDir = join(process.cwd(), "src", "i18n", "messages", locale);
+
+  if (!existsSync(localeDir)) {
+    return [];
+  }
+
+  const discovered: string[] = [];
+
+  const visit = (currentDir: string) => {
+    for (const entry of readdirSync(currentDir)) {
+      const fullPath = join(currentDir, entry);
+      const stats = statSync(fullPath);
+
+      if (stats.isDirectory()) {
+        visit(fullPath);
+        continue;
+      }
+
+      if (entry.endsWith(".json")) {
+        discovered.push(relative(localeDir, fullPath).split(sep).join("/"));
+      }
+    }
+  };
+
+  visit(localeDir);
+
+  return discovered.sort();
+}
+
+function setNestedMessage(
+  target: MessageTree,
+  relativeFilePath: string,
+  value: MessageTree,
+) {
+  const segments = relativeFilePath.replace(/\.json$/, "").split("/");
+  let cursor = target;
+
+  for (const segment of segments.slice(0, -1)) {
+    if (!isPlainObject(cursor[segment])) {
+      cursor[segment] = {};
+    }
+
+    cursor = cursor[segment] as MessageTree;
+  }
+
+  const leafKey = segments[segments.length - 1];
+  const existingLeaf = cursor[leafKey];
+
+  cursor[leafKey] =
+    isPlainObject(existingLeaf) && isPlainObject(value)
+      ? deepMergeMessages(existingLeaf, value)
+      : value;
+}
+
+async function loadLocaleMessages(locale: string) {
+  const messages: MessageTree = {};
+
+  for (const file of getJsonFiles(locale)) {
+    const moduleMessages = await import(`./messages/${locale}/${file}`);
+    setNestedMessage(messages, file, moduleMessages.default as MessageTree);
+  }
+
+  return messages;
+}
+
 export async function mergeMessages(locale: string) {
   try {
-    // 动态导入所有该语言下的 JSON 文件
-    const commonMessages = await import(`./messages/${locale}/common.json`);
-    const navMessages = await import(`./messages/${locale}/nav.json`);
-    const authMessages = await import(`./messages/${locale}/auth.json`);
-    const homeMessages = await import(`./messages/${locale}/home.json`);
-    const dashboardMessages = await import(`./messages/${locale}/dashboard.json`);
-    const languageMessages = await import(`./messages/${locale}/language.json`);
+    const baseLocale = "en";
+    const baseMessages = await loadLocaleMessages(baseLocale);
 
-    // 合并所有消息文件
-    return {
-      common: commonMessages.default,
-      nav: navMessages.default,
-      auth: authMessages.default,
-      home: homeMessages.default,
-      dashboard: dashboardMessages.default,
-      language: languageMessages.default
-    };
+    if (locale === baseLocale) {
+      return baseMessages;
+    }
+
+    const localeMessages = await loadLocaleMessages(locale);
+    return deepMergeMessages(baseMessages, localeMessages);
   } catch (error) {
     console.error(`Failed to load messages for locale: ${locale}`, error);
     throw error;
   }
 }
-
-/**
- * 自动发现并合并指定语言目录下的所有 JSON 文件
- * 这个版本可以自动发现新添加的 JSON 文件，无需手动更新代码
- * @param locale 语言代码
- * @returns 合并后的翻译对象
- */
-export async function mergeMessagesAuto(locale: string) {
-  try {
-    const messagesDir = join(process.cwd(), 'messages', locale);
-    const files = readdirSync(messagesDir).filter(file => file.endsWith('.json'));
-    
-    const messages: Record<string, Record<string, unknown>> = {};
-    
-    for (const file of files) {
-      const moduleName = file.replace('.json', '');
-      const moduleMessages = await import(`./messages/${locale}/${file}`);
-      messages[moduleName] = moduleMessages.default;
-    }
-    
-    return messages;
-  } catch (error) {
-    console.error(`Failed to auto-load messages for locale: ${locale}`, error);
-    // 如果自动加载失败，回退到手动加载
-    return mergeMessages(locale);
-  }
-} 

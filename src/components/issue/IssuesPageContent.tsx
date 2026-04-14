@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   RiAddLine,
   RiSearchLine,
@@ -80,15 +81,15 @@ const ALL_FILTER_VALUE: FilterValue = "__all__";
 const UNASSIGNED_PROJECT_VALUE = "__unassigned__";
 
 const ISSUE_TYPE_LABELS: Record<IssueType, string> = {
-  [IssueType.NORMAL]: "普通",
-  [IssueType.WORKFLOW]: "工作流",
+  [IssueType.NORMAL]: "Standard",
+  [IssueType.WORKFLOW]: "Workflow",
 };
 
 const PRIORITY_LABELS: Record<IssuePriority, string> = {
-  [IssuePriority.LOW]: "低",
-  [IssuePriority.NORMAL]: "中",
-  [IssuePriority.HIGH]: "高",
-  [IssuePriority.URGENT]: "紧急",
+  [IssuePriority.LOW]: "Low",
+  [IssuePriority.NORMAL]: "Normal",
+  [IssuePriority.HIGH]: "High",
+  [IssuePriority.URGENT]: "Urgent",
 };
 
 const STATE_CATEGORY_ORDER = [
@@ -116,7 +117,7 @@ function getAssigneeName(issue: Issue) {
   const firstAssignee = directAssignee || issue.assignees?.[0];
   const user = firstAssignee?.member?.user;
 
-  return user?.name?.trim() || user?.email?.split("@")[0] || "未分配";
+  return user?.name?.trim() || user?.email?.split("@")[0] || "Unassigned";
 }
 
 function issueBelongsToUser(
@@ -174,6 +175,7 @@ function getIssueIdFromPathname(pathname: string) {
 }
 
 export default function IssuesPageContent() {
+  const t = useTranslations("issues");
   const isPageVisible = useCachedPageVisibility();
   const pathname = usePathname();
   const router = useRouter();
@@ -413,10 +415,16 @@ export default function IssuesPageContent() {
       ? null
       : ISSUE_STATE_CATEGORY_LABELS[selectedStateCategory];
   const issueSummaryText = selectedStateCategoryLabel
-    ? `当前显示 ${filteredIssues.length} 条状态为「${selectedStateCategoryLabel}」的任务`
+    ? t("page.summary.withState", {
+        count: filteredIssues.length,
+        state: selectedStateCategoryLabel,
+      })
     : shouldListHideClosedIssues
-      ? `当前有效 ${activeFilteredIssueCount} 条任务`
-      : `当前显示 ${filteredIssues.length} 条任务，其中 ${activeFilteredIssueCount} 条有效`;
+      ? t("page.summary.activeOnly", { count: activeFilteredIssueCount })
+      : t("page.summary.mixed", {
+          total: filteredIssues.length,
+          active: activeFilteredIssueCount,
+        });
 
   const handleCreateIssue = () => {
     queryClient.invalidateQueries({ queryKey: ["issues", workspaceId] });
@@ -444,7 +452,7 @@ export default function IssuesPageContent() {
 
   const handleSaveIssueBoardCategoryOrder = () => {
     if (!workspaceId) {
-      toast.error("当前工作空间无效，无法保存看板顺序");
+      toast.error(t("toasts.boardOrderMissingWorkspace"));
       return;
     }
 
@@ -453,7 +461,7 @@ export default function IssuesPageContent() {
     );
 
     if (isSameCategoryOrder(savedIssueBoardCategoryOrder, normalizedOrder)) {
-      toast.message("当前看板顺序没有变化");
+      toast.message(t("toasts.boardOrderUnchanged"));
       return;
     }
 
@@ -463,7 +471,7 @@ export default function IssuesPageContent() {
     );
 
     if (!didPersist) {
-      toast.error("看板类型顺序保存失败，请重试");
+      toast.error(t("toasts.boardOrderSaveFailed"));
       return;
     }
 
@@ -471,7 +479,7 @@ export default function IssuesPageContent() {
 
     setIssueBoardCategoryOrder(persistedOrder);
     setSavedIssueBoardCategoryOrder(persistedOrder);
-    toast.success("看板类型顺序已更新");
+    toast.success(t("toasts.boardOrderSaved"));
   };
 
   const handleMoveIssueToCategory = (
@@ -520,7 +528,7 @@ export default function IssuesPageContent() {
         },
         onError: (error) => {
           toast.error(
-            error instanceof Error ? error.message : "任务状态更新失败，请重试",
+            error instanceof Error ? error.message : t("toasts.updateFailed"),
           );
           setOptimisticIssueStates((current) => {
             const nextState = { ...current };
@@ -566,7 +574,7 @@ export default function IssuesPageContent() {
 
     const issue = pendingCancelIssue;
     if (!canCancelIssue(issue)) {
-      toast.error("只有创建者可以取消这个 Issue");
+      toast.error(t("page.onlyCreatorCanCancel"));
       setPendingCancelIssue(null);
       return;
     }
@@ -596,7 +604,7 @@ export default function IssuesPageContent() {
       { workspaceId, issueId: issue.id },
       {
         onSuccess: () => {
-          toast.success("Issue 已取消，列表视图会默认隐藏它");
+          toast.success(t("page.cancelled"));
           setPendingCancelIssue(null);
           setPendingIssueIds((current) => {
             const nextState = new Set(current);
@@ -606,7 +614,7 @@ export default function IssuesPageContent() {
         },
         onError: (error) => {
           toast.error(
-            error instanceof Error ? error.message : "取消 Issue 失败，请重试",
+            error instanceof Error ? error.message : t("page.cancelFailed"),
           );
           setOptimisticIssueStates((current) => {
             const nextState = { ...current };
@@ -656,7 +664,9 @@ export default function IssuesPageContent() {
                 }`}
                 onClick={() => setSelectedView("all")}
               >
-                全部 {activeIssueCount ? `(${activeIssueCount})` : ""}
+                {t("page.tabs.all", {
+                  count: activeIssueCount ? `(${activeIssueCount})` : "",
+                })}
               </Button>
               <Button
                 type="button"
@@ -669,7 +679,9 @@ export default function IssuesPageContent() {
                 }`}
                 onClick={() => setSelectedView("my")}
               >
-                我的 {myIssueCount ? `(${myIssueCount})` : ""}
+                {t("page.tabs.my", {
+                  count: myIssueCount ? `(${myIssueCount})` : "",
+                })}
               </Button>
             </div>
           </div>
@@ -684,7 +696,7 @@ export default function IssuesPageContent() {
               className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white transition-colors hover:bg-blue-700"
             >
               <RiAddLine className="h-4 w-4" />
-              新建任务
+              {t("page.actions.create")}
             </Button>
           </div>
         </div>
@@ -697,7 +709,7 @@ export default function IssuesPageContent() {
               <RiSearchLine className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-app-text-muted" />
               <Input
                 type="text"
-                placeholder="搜索标题、项目、负责人或编号..."
+                placeholder={t("page.filters.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 className="h-9 w-full rounded-lg border-app-border bg-app-content-bg pl-8 pr-3 text-sm text-app-text-primary placeholder-app-text-muted"
@@ -711,16 +723,16 @@ export default function IssuesPageContent() {
               }
             >
               <SelectTrigger
-                aria-label="按项目筛选"
+                aria-label={t("page.filters.projectAria")}
                 className="h-9 w-[160px] border-app-border bg-app-content-bg text-app-text-primary"
               >
-                <SelectValue placeholder="所有项目" />
+                <SelectValue placeholder={t("page.filters.allProjects")} />
               </SelectTrigger>
               <SelectContent className="border-app-border bg-app-content-bg">
                 <SelectGroup>
-                  <SelectItem value={ALL_FILTER_VALUE}>所有项目</SelectItem>
+                  <SelectItem value={ALL_FILTER_VALUE}>{t("page.filters.allProjects")}</SelectItem>
                   <SelectItem value={UNASSIGNED_PROJECT_VALUE}>
-                    未归属项目
+                    {t("page.filters.unassignedProject")}
                   </SelectItem>
                   {projects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
@@ -738,14 +750,14 @@ export default function IssuesPageContent() {
               }
             >
               <SelectTrigger
-                aria-label="按状态筛选"
+                aria-label={t("page.filters.stateAria")}
                 className="h-9 w-[140px] border-app-border bg-app-content-bg text-app-text-primary"
               >
-                <SelectValue placeholder="所有状态" />
+                <SelectValue placeholder={t("page.filters.allStates")} />
               </SelectTrigger>
               <SelectContent className="border-app-border bg-app-content-bg">
                 <SelectGroup>
-                  <SelectItem value={ALL_FILTER_VALUE}>所有状态</SelectItem>
+                  <SelectItem value={ALL_FILTER_VALUE}>{t("page.filters.allStates")}</SelectItem>
                   {issueStateCategoryOptions.map((category) => (
                     <SelectItem key={category} value={category}>
                       {ISSUE_STATE_CATEGORY_LABELS[category]}
@@ -762,14 +774,14 @@ export default function IssuesPageContent() {
               }
             >
               <SelectTrigger
-                aria-label="按优先级筛选"
+                aria-label={t("page.filters.priorityAria")}
                 className="h-9 w-[140px] border-app-border bg-app-content-bg text-app-text-primary"
               >
-                <SelectValue placeholder="所有优先级" />
+                <SelectValue placeholder={t("page.filters.allPriorities")} />
               </SelectTrigger>
               <SelectContent className="border-app-border bg-app-content-bg">
                 <SelectGroup>
-                  <SelectItem value={ALL_FILTER_VALUE}>所有优先级</SelectItem>
+                  <SelectItem value={ALL_FILTER_VALUE}>{t("page.filters.allPriorities")}</SelectItem>
                   {Object.values(IssuePriority).map((priority) => (
                     <SelectItem key={priority} value={priority}>
                       {PRIORITY_LABELS[priority]}
@@ -786,14 +798,14 @@ export default function IssuesPageContent() {
               }
             >
               <SelectTrigger
-                aria-label="按类型筛选"
+                aria-label={t("page.filters.typeAria")}
                 className="h-9 w-[130px] border-app-border bg-app-content-bg text-app-text-primary"
               >
-                <SelectValue placeholder="所有类型" />
+                <SelectValue placeholder={t("page.filters.allTypes")} />
               </SelectTrigger>
               <SelectContent className="border-app-border bg-app-content-bg">
                 <SelectGroup>
-                  <SelectItem value={ALL_FILTER_VALUE}>所有类型</SelectItem>
+                  <SelectItem value={ALL_FILTER_VALUE}>{t("page.filters.allTypes")}</SelectItem>
                   {Object.values(IssueType).map((issueType) => (
                     <SelectItem key={issueType} value={issueType}>
                       {ISSUE_TYPE_LABELS[issueType]}
@@ -812,7 +824,7 @@ export default function IssuesPageContent() {
               disabled={!hasActiveFilters}
             >
               <RiFilter3Line className="h-4 w-4" />
-              清空筛选
+              {t("page.filters.clear")}
             </Button>
 
             {issuesViewMode === "board" && (
@@ -825,8 +837,8 @@ export default function IssuesPageContent() {
                 disabled={!hasUnsavedIssueBoardCategoryOrder}
               >
                 {hasUnsavedIssueBoardCategoryOrder
-                  ? "保存看板顺序"
-                  : "已保存顺序"}
+                  ? t("page.actions.saveBoardOrder")
+                  : t("page.actions.savedOrder")}
               </Button>
             )}
           </div>
@@ -834,13 +846,15 @@ export default function IssuesPageContent() {
           <div className="text-xs text-app-text-muted">
             {issueSummaryText}
             {selectedView === "my"
-              ? "，只包含你负责、参与或创建的任务。"
-              : "。"}
+              ? t("page.summary.mySuffix")
+              : "."}
             {shouldListHideClosedIssues && closedFilteredIssueCount > 0
-              ? ` 另有 ${closedFilteredIssueCount} 条已完成或已取消。`
+              ? t("page.summary.closedSuffix", {
+                  count: closedFilteredIssueCount,
+                })
               : ""}
             {shouldListHideClosedIssues
-              ? " 列表视图默认隐藏已完成和已取消，切到看板可查看完整状态。"
+              ? t("page.summary.listViewHint")
               : ""}
           </div>
         </div>
@@ -860,7 +874,7 @@ export default function IssuesPageContent() {
         >
           {isLoadingIssues ? (
             <div className="py-12 text-center text-app-text-muted">
-              正在加载任务...
+              {t("page.loading")}
             </div>
           ) : issuesViewMode === "board" ? (
             <ProjectIssuesKanbanBoard
@@ -876,7 +890,7 @@ export default function IssuesPageContent() {
           ) : filteredIssues.length === 0 ? (
             <div className="py-12 text-center">
               <div className="mb-4 text-app-text-muted">
-                {issues.length === 0 ? "还没有任务" : "没有找到匹配的任务"}
+                {issues.length === 0 ? t("page.empty.none") : t("page.empty.filtered")}
               </div>
               {issues.length === 0 && (
                 <Button
@@ -885,7 +899,7 @@ export default function IssuesPageContent() {
                   className="mx-auto flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700"
                 >
                   <RiAddLine className="h-4 w-4" />
-                  创建第一条任务
+                  {t("page.empty.createFirst")}
                 </Button>
               )}
             </div>
@@ -904,7 +918,7 @@ export default function IssuesPageContent() {
                 const projectName =
                   issue.project?.name ||
                   (issue.projectId ? projectNameById.get(issue.projectId) : "") ||
-                  "未归属项目";
+                  t("page.filters.unassignedProject");
 
                 const isPending = pendingIssueIds.has(issue.id);
                 const canCancel = canCancelIssue(issue);
@@ -933,7 +947,7 @@ export default function IssuesPageContent() {
                         {issueType === IssueType.WORKFLOW && (
                           <div className="flex items-center gap-1 rounded bg-purple-100 px-2 py-0.5 text-xs text-purple-700 dark:bg-purple-900/20 dark:text-purple-400">
                             <RiFlowChart className="h-3 w-3" />
-                            <span>工作流</span>
+                            <span>{t("page.states.workflow")}</span>
                           </div>
                         )}
                         <span className="rounded border border-app-border px-2 py-0.5 text-xs text-app-text-secondary">
@@ -943,7 +957,7 @@ export default function IssuesPageContent() {
                       <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-app-text-muted">
                         <span>{issue.key || `#${issue.id.slice(0, 8)}`}</span>
                         <span>{projectName}</span>
-                        <span>负责人：{getAssigneeName(issue)}</span>
+                        <span>{t("page.states.assignee")}：{getAssigneeName(issue)}</span>
                       </div>
                     </div>
 
@@ -963,7 +977,7 @@ export default function IssuesPageContent() {
                             handleViewIssue(issue);
                           }}
                           className="size-7 rounded p-1 transition-colors hover:bg-app-content-bg"
-                          title="查看或编辑"
+                          title={t("page.actions.viewOrEdit")}
                         >
                           <RiEdit2Line className="h-4 w-4 text-app-text-secondary" />
                         </Button>
@@ -978,14 +992,14 @@ export default function IssuesPageContent() {
                     <ContextMenuContent className="w-44">
                       <ContextMenuGroup>
                         <ContextMenuItem onSelect={() => handleViewIssue(issue)}>
-                          打开 Issue
+                          {t("page.actions.openIssue")}
                         </ContextMenuItem>
                         <ContextMenuItem
                           variant="destructive"
                           disabled={isPending || !canCancel}
                           onSelect={() => setPendingCancelIssue(issue)}
                         >
-                          取消 Issue
+                          {t("page.actions.cancelIssue")}
                         </ContextMenuItem>
                       </ContextMenuGroup>
                     </ContextMenuContent>
@@ -1013,9 +1027,9 @@ export default function IssuesPageContent() {
       >
         <DialogContent className="border-app-border bg-app-content-bg text-app-text-primary sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>取消这个 Issue？</DialogTitle>
+            <DialogTitle>{t("page.cancelDialog.title")}</DialogTitle>
             <DialogDescription className="text-app-text-secondary">
-              状态会设置为已取消，并在列表视图中默认隐藏。记录不会删除，相关负责人会收到通知。
+              {t("page.cancelDialog.description")}
             </DialogDescription>
           </DialogHeader>
           {pendingCancelIssue && (
@@ -1031,7 +1045,7 @@ export default function IssuesPageContent() {
                 variant="outline"
                 disabled={cancelIssueMutation.isPending}
               >
-                先保留
+                {t("page.cancelDialog.keep")}
               </Button>
             </DialogClose>
             <Button
@@ -1040,7 +1054,9 @@ export default function IssuesPageContent() {
               disabled={cancelIssueMutation.isPending}
               onClick={handleCancelIssue}
             >
-              {cancelIssueMutation.isPending ? "正在取消..." : "确认取消"}
+              {cancelIssueMutation.isPending
+                ? t("page.cancelDialog.pending")
+                : t("page.cancelDialog.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

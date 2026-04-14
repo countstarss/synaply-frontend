@@ -1,0 +1,37 @@
+{
+  "nav": {
+    "docs": "Docs",
+    "inbox": "Inbox",
+    "intelligence": "Intelligence",
+    "issues": "Issues",
+    "myWork": "My Work",
+    "projects": "Projects",
+    "workflows": "Workflows"
+  },
+  "sidebar": {
+    "backToMain": "Back",
+    "createTeam": "Create new team",
+    "sections": {
+      "administration": "Administration",
+      "general": "General",
+      "team": "Team"
+    }
+  },
+  "settingsNav": {
+    "aiExecution": "AI Execution",
+    "appearance": "Appearance",
+    "application": "Application",
+    "billing": "Billing",
+    "members": "Members",
+    "notifications": "Notifications",
+    "profile": "Profile",
+    "security": "Security",
+    "teams": "Teams",
+    "workspace": "Workspace"
+  },
+  "infobar": {
+    "menu": "Menu",
+    "showSidebar": "Show sidebar",
+    "hideSidebar": "Hide sidebar"
+  }
+}

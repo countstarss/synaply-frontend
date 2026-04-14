@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { RiAtLine, RiLoader4Line, RiSendPlaneLine } from "react-icons/ri";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,8 @@ export const DiscussionTab: React.FC<DiscussionTabProps> = ({
   workspaceId,
   members,
 }) => {
+  const tIssues = useTranslations("issues");
+  const locale = useLocale();
   const { session } = useAuth();
   const { data: comments = [], isLoading } = useComments(issueId);
   const { mutate: submitComment, isPending: isSubmitting } = useCreateComment();
@@ -124,7 +127,7 @@ export const DiscussionTab: React.FC<DiscussionTabProps> = ({
   );
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString("zh-CN");
+    return new Date(dateString).toLocaleString(locale);
   };
 
   return (
@@ -137,7 +140,7 @@ export const DiscussionTab: React.FC<DiscussionTabProps> = ({
             </div>
           ) : comments.length === 0 ? (
             <div className="py-8 text-center text-app-text-muted">
-              暂无评论，成为第一个发表评论的人吧
+              {tIssues("tabs.discussion.empty")}
             </div>
           ) : (
             <div className="mb-4 space-y-4">
@@ -189,7 +192,7 @@ export const DiscussionTab: React.FC<DiscussionTabProps> = ({
               ref={commentInputRef}
               value={commentText}
               onChange={handleCommentChange}
-              placeholder="添加评论... 使用@提及团队成员"
+              placeholder={tIssues("tabs.discussion.placeholder")}
               className="min-h-24 resize-none border-app-border bg-app-bg text-app-text-primary placeholder:text-app-text-muted"
               rows={2}
               disabled={isSubmitting}
@@ -199,7 +202,7 @@ export const DiscussionTab: React.FC<DiscussionTabProps> = ({
               <div className="absolute inset-x-0 bottom-full z-50 mb-2 max-h-60 overflow-y-auto rounded-md border border-app-border bg-app-content-bg shadow-lg">
                 {filteredMembers.length === 0 ? (
                   <div className="px-3 py-2 text-sm text-app-text-muted">
-                    没有找到匹配的成员
+                    {tIssues("tabs.discussion.noMembers")}
                   </div>
                 ) : (
                   filteredMembers.map((member) => (
@@ -233,7 +236,7 @@ export const DiscussionTab: React.FC<DiscussionTabProps> = ({
             <div className="mt-2 flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs text-app-text-muted">
                 <RiAtLine className="h-3 w-3" />
-                <span>使用@提及团队成员</span>
+                <span>{tIssues("tabs.discussion.mentionHint")}</span>
               </div>
               <Button
                 type="button"
@@ -246,7 +249,7 @@ export const DiscussionTab: React.FC<DiscussionTabProps> = ({
                 ) : (
                   <RiSendPlaneLine className="h-3 w-3" />
                 )}
-                发送
+                {tIssues("tabs.discussion.send")}
               </Button>
             </div>
           </div>

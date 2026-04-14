@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   RiAddLine,
   RiAlarmWarningLine,
@@ -25,9 +26,9 @@ import type {
 import {
   formatPreciseDate,
   formatShortDate,
+  getProjectRiskMeta,
   getProjectOwnerLabel,
-  PROJECT_RISK_META,
-  PROJECT_STATUS_META,
+  getProjectStatusMeta,
 } from "@/components/projects/project-view-utils";
 import { buildProjectPath } from "@/components/projects/project-route-utils";
 import { useDocStore } from "@/stores/doc-store";
@@ -71,29 +72,33 @@ type IssueStatusLike = {
   currentStepStatus?: IssueStatus | null;
 };
 
-function formatRelativeTime(date: string) {
+function formatRelativeTime(
+  date: string,
+  t: (key: string, values?: Record<string, string | number>) => string,
+  locale: string,
+) {
   const diffMs = Date.now() - new Date(date).getTime();
   const diffMinutes = Math.max(Math.floor(diffMs / (1000 * 60)), 0);
 
   if (diffMinutes < 1) {
-    return "刚刚";
+    return t("detail.relativeTime.justNow");
   }
 
   if (diffMinutes < 60) {
-    return `${diffMinutes} 分钟前`;
+    return t("detail.relativeTime.minutesAgo", { count: diffMinutes });
   }
 
   const diffHours = Math.floor(diffMinutes / 60);
   if (diffHours < 24) {
-    return `${diffHours} 小时前`;
+    return t("detail.relativeTime.hoursAgo", { count: diffHours });
   }
 
   const diffDays = Math.floor(diffHours / 24);
   if (diffDays < 30) {
-    return `${diffDays} 天前`;
+    return t("detail.relativeTime.daysAgo", { count: diffDays });
   }
 
-  return formatShortDate(date);
+  return formatShortDate(date, locale);
 }
 
 function isCompletedIssueLike(issue: IssueStatusLike) {
@@ -112,9 +117,7 @@ function isBlockedIssueLike(issue: IssueStatusLike) {
   const stateName = issue.state?.name?.toLowerCase() ?? "";
   return (
     stateName.includes("blocked") ||
-    stateName.includes("block") ||
-    stateName.includes("阻塞") ||
-    stateName.includes("卡住")
+    stateName.includes("block")
   );
 }
 
@@ -135,24 +138,26 @@ function getIssuePriorityWeight(priority?: IssuePriority | null) {
 
 function getIssueStateLabel(
   issue: Pick<ProjectSummaryIssue, "state" | "currentStepStatus">,
+  t: (key: string) => string,
 ) {
   if (issue.currentStepStatus === IssueStatus.BLOCKED) {
-    return "阻塞";
+    return t("detail.issueState.blocked");
   }
 
   if (issue.currentStepStatus === IssueStatus.DONE) {
-    return "已完成";
+    return t("detail.issueState.done");
   }
 
   if (issue.currentStepStatus === IssueStatus.IN_PROGRESS) {
-    return "进行中";
+    return t("detail.issueState.inProgress");
   }
 
-  return issue.state?.name || "未分类";
+  return issue.state?.name || t("detail.issueState.uncategorized");
 }
 
 function getAssigneeLabel(
   issue: Pick<ProjectSummaryIssue, "assignees" | "directAssigneeId">,
+  t: (key: string) => string,
 ) {
   const firstAssignee = issue.assignees.find((item) => item.member?.user);
 
@@ -160,11 +165,13 @@ function getAssigneeLabel(
     return (
       firstAssignee.member.user.name ||
       firstAssignee.member.user.email ||
-      "已分配"
+      t("detail.assignee.assigned")
     );
   }
 
-  return issue.directAssigneeId ? "已分配" : "待分配";
+  return issue.directAssigneeId
+    ? t("detail.assignee.assigned")
+    : t("detail.assignee.pending");
 }
 
 function normalizeIssueForSummary(issue: Issue): ProjectSummaryIssue {
@@ -276,6 +283,7 @@ function buildFallbackMetrics(
 function buildFallbackAttentionItems(
   project: Project | ProjectDetail,
   metrics: ProjectSummary["metrics"],
+  t: (key: string, values?: Record<string, string | number>) => string,
 ): ProjectSummary["attentionItems"] {
   const items: ProjectSummary["attentionItems"] = [];
 
@@ -283,8 +291,10 @@ function buildFallbackAttentionItems(
     items.push({
       id: "blocked-issues",
       severity: "high",
-      title: "存在阻塞中的任务",
-      description: `当前有 ${metrics.blockedIssues} 个任务需要解阻。`,
+      title: t("detail.attention.blockedTitle"),
+      description: t("detail.attention.blockedDescription", {
+        count: metrics.blockedIssues,
+      }),
     });
   }
 
@@ -292,8 +302,10 @@ function buildFallbackAttentionItems(
     items.push({
       id: "overdue-issues",
       severity: "medium",
-      title: "有任务已经延期",
-      description: `${metrics.overdueIssues} 个任务超过了截止时间。`,
+      title: t("detail.attention.overdueTitle"),
+      description: t("detail.attention.overdueDescription", {
+        count: metrics.overdueIssues,
+      }),
     });
   }
 
@@ -301,8 +313,10 @@ function buildFallbackAttentionItems(
     items.push({
       id: "stale-sync",
       severity: "medium",
-      title: "同步节奏偏慢",
-      description: `距离上次同步已经过去 ${metrics.staleSyncDays} 天。`,
+      title: t("detail.attention.staleSyncTitle"),
+      description: t("detail.attention.staleSyncDescription", {
+        count: metrics.staleSyncDays ?? 0,
+      }),
     });
   }
 
@@ -314,8 +328,8 @@ function buildFallbackAttentionItems(
     items.push({
       id: "healthy",
       severity: "low",
-      title: "项目状态总体稳定",
-      description: "当前没有明显的延期或阻塞信号，可以继续围绕关键事项推进。",
+      title: t("detail.attention.healthyTitle"),
+      description: t("detail.attention.healthyDescription"),
     });
   }
 
@@ -339,7 +353,7 @@ function ProjectPanel({
   return (
     <section
       className={cn(
-        // 这里isolate是不透明的关键
+        // Keep this isolated so the panel remains visually opaque over the backdrop.
         "rounded-[28px] border border-app-border bg-app-content-bg/80 p-5 shadow-sm isolate",
         className,
       )}
@@ -401,10 +415,14 @@ function ProjectIssueRow({
   issue,
   isHighlighted = false,
   onOpenIssue,
+  tProjects,
+  locale,
 }: {
   issue: ProjectSummaryIssue;
   isHighlighted?: boolean;
   onOpenIssue?: (issueId: string) => void;
+  tProjects: (key: string, values?: Record<string, string | number>) => string;
+  locale: string;
 }) {
   const priorityTone = getIssuePriorityWeight(issue.priority);
 
@@ -437,18 +455,18 @@ function ProjectIssueRow({
           </span>
           {priorityTone >= 3 && (
             <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-300">
-              {issue.priority === IssuePriority.URGENT ? "紧急" : "高优先级"}
+              {issue.priority === IssuePriority.URGENT ? "Urgent" : "High priority"}
             </span>
           )}
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-app-text-muted">
-          <span>{getIssueStateLabel(issue)}</span>
+          <span>{getIssueStateLabel(issue, tProjects)}</span>
           <span>·</span>
-          <span>{getAssigneeLabel(issue)}</span>
+          <span>{getAssigneeLabel(issue, tProjects)}</span>
           {issue.dueDate && (
             <>
               <span>·</span>
-              <span>{formatShortDate(issue.dueDate)}</span>
+              <span>{formatShortDate(issue.dueDate, locale)}</span>
             </>
           )}
         </div>
@@ -479,6 +497,8 @@ export function ProjectDetailView({
   onOpenIssue,
   showBackButton = true,
 }: ProjectDetailViewProps) {
+  const tProjects = useTranslations("projects");
+  const locale = useLocale();
   const router = useRouter();
   const setActiveDocId = useDocStore((state) => state.setActiveDocId);
   const createProjectDoc = useCreateDocMutation();
@@ -515,7 +535,7 @@ export function ProjectDetailView({
       .map(normalizeIssueForSummary);
   const attentionItems =
     projectSummary?.attentionItems ??
-    buildFallbackAttentionItems(selectedProject, fallbackMetrics);
+    buildFallbackAttentionItems(selectedProject, fallbackMetrics, tProjects);
   const relatedWorkflows = projectSummary?.workflows ?? [];
 
   const projectIssueMap = useMemo(
@@ -524,8 +544,8 @@ export function ProjectDetailView({
     [projectIssues],
   );
 
-  const statusMeta = PROJECT_STATUS_META[selectedProject.status];
-  const riskMeta = PROJECT_RISK_META[selectedProject.riskLevel];
+  const statusMeta = getProjectStatusMeta(tProjects)[selectedProject.status];
+  const riskMeta = getProjectRiskMeta(tProjects)[selectedProject.riskLevel];
   const docsStorageKey = `docs-open-${workspaceId}-${workspaceType}-${docsContext}-${selectedProject.id}`;
   const projectDocsRoute = buildProjectPath(selectedProject.id, "docs");
 
@@ -533,7 +553,7 @@ export function ProjectDetailView({
     const issue = projectIssueMap.get(issueId);
 
     if (!issue) {
-      toast.message("Issue 详情正在同步，请稍后再试");
+      toast.message(tProjects("detail.summary.missingIssue"));
       return;
     }
 
@@ -555,7 +575,7 @@ export function ProjectDetailView({
 
   const handleCreateProjectDoc = async () => {
     if (!currentUserId) {
-      toast.error("当前用户信息不可用，暂时无法创建文档");
+      toast.error(tProjects("detail.summary.docCreateAuthRequired"));
       return;
     }
 
@@ -563,7 +583,7 @@ export function ProjectDetailView({
       const createdDoc = await createProjectDoc.mutateAsync({
         workspaceId,
         data: {
-          title: `${selectedProject.name} 项目文档`,
+          title: `${selectedProject.name} doc`,
           projectId: selectedProject.id,
           visibility:
             workspaceType === "TEAM"
@@ -579,10 +599,12 @@ export function ProjectDetailView({
         },
       });
 
-      toast.success("已创建项目文档");
+      toast.success(tProjects("detail.summary.docCreated"));
       openProjectDoc(createdDoc._id);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "创建文档失败");
+      toast.error(
+        error instanceof Error ? error.message : tProjects("detail.summary.docCreateFailed"),
+      );
     }
   };
 
@@ -623,7 +645,7 @@ export function ProjectDetailView({
 
                   <p className="mt-3 max-w-4xl text-sm leading-6 text-app-text-primary/90">
                     {selectedProject.brief ||
-                      "这个项目还没有写一句话 brief，建议补充项目目标、交付方向和成功标准。"}
+                      tProjects("detail.summary.missingBrief")}
                   </p>
 
                   {selectedProject.description && (
@@ -653,23 +675,31 @@ export function ProjectDetailView({
                     </span>
                     {selectedProject.phase && (
                       <span className="rounded-full border border-app-border bg-app-content-bg px-2.5 py-1 text-[11px] text-app-text-secondary">
-                        阶段 · {selectedProject.phase}
+                        {tProjects("detail.summary.phase")} · {selectedProject.phase}
                       </span>
                     )}
                     <span className="rounded-full border border-app-border bg-app-content-bg px-2.5 py-1 text-[11px] text-app-text-secondary">
-                      负责人 · {getProjectOwnerLabel(selectedProject)}
+                      {tProjects("detail.summary.owner")} · {getProjectOwnerLabel(selectedProject, tProjects)}
                     </span>
                     <span className="rounded-full border border-app-border bg-app-content-bg px-2.5 py-1 text-[11px] text-app-text-secondary">
-                      {metrics.totalIssues} 个有效 issue
+                      {tProjects("detail.summary.activeIssues", {
+                        count: metrics.totalIssues,
+                      })}
                     </span>
                     <span className="rounded-full border border-app-border bg-app-content-bg px-2.5 py-1 text-[11px] text-app-text-secondary">
-                      {metrics.workflowCount} workflows
+                      {tProjects("detail.summary.workflowCount", {
+                        count: metrics.workflowCount,
+                      })}
                     </span>
                     <span className="rounded-full border border-app-border bg-app-content-bg px-2.5 py-1 text-[11px] text-app-text-secondary">
-                      {projectDocs.length} docs
+                      {tProjects("detail.summary.docsCount", {
+                        count: projectDocs.length,
+                      })}
                     </span>
                     <span className="rounded-full border border-app-border bg-app-content-bg px-2.5 py-1 text-[11px] text-app-text-secondary">
-                      更新于 {formatPreciseDate(selectedProject.updatedAt)}
+                      {tProjects("detail.summary.updatedAt", {
+                        value: formatPreciseDate(selectedProject.updatedAt, locale),
+                      })}
                     </span>
                   </div>
                 </div>
@@ -681,7 +711,7 @@ export function ProjectDetailView({
                       className="inline-flex items-center gap-2 rounded-xl border border-app-border bg-app-content-bg px-3 py-2 text-sm text-app-text-primary transition hover:bg-app-button-hover cursor-pointer"
                     >
                       <RiEdit2Line className="size-4" />
-                      编辑
+                      {tProjects("detail.summary.edit")}
                     </button>
                   )}
                   {canManageProjects && (
@@ -690,7 +720,7 @@ export function ProjectDetailView({
                       className="inline-flex items-center gap-2 rounded-xl border border-red-500/20 bg-app-content-bg px-3 py-2 text-sm text-red-600 transition hover:bg-red-500/15 dark:text-red-300 cursor-pointer"
                     >
                       <RiDeleteBinLine className="size-4" />
-                      删除
+                      {tProjects("detail.summary.delete")}
                     </button>
                   )}
                 </div>
@@ -698,15 +728,21 @@ export function ProjectDetailView({
 
               <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <ProjectMetricCard
-                  label="推进进度"
+                  label={tProjects("detail.summary.completion")}
                   value={`${metrics.completionRate}%`}
-                  hint={`${metrics.completedIssues} 已完成 · ${metrics.totalIssues} 有效`}
+                  hint={tProjects("detail.summary.completionHint", {
+                    completed: metrics.completedIssues,
+                    total: metrics.totalIssues,
+                  })}
                   tone={metrics.completionRate >= 70 ? "success" : "default"}
                 />
                 <ProjectMetricCard
-                  label="阻塞与延期"
+                  label={tProjects("detail.summary.riskAndDelay")}
                   value={`${metrics.blockedIssues + metrics.overdueIssues}`}
-                  hint={`${metrics.blockedIssues} 阻塞 · ${metrics.overdueIssues} 延期`}
+                  hint={tProjects("detail.summary.riskAndDelayHint", {
+                    blocked: metrics.blockedIssues,
+                    overdue: metrics.overdueIssues,
+                  })}
                   tone={
                     metrics.blockedIssues > 0
                       ? "danger"
@@ -716,21 +752,24 @@ export function ProjectDetailView({
                   }
                 />
                 <ProjectMetricCard
-                  label="关键执行面"
+                  label={tProjects("detail.summary.executionSurface")}
                   value={`${metrics.workflowIssueCount}`}
-                  hint={`${metrics.workflowCount} 个关联流程 · ${metrics.highPriorityIssues} 个高优先级`}
+                  hint={tProjects("detail.summary.executionSurfaceHint", {
+                    workflowCount: metrics.workflowCount,
+                    highPriority: metrics.highPriorityIssues,
+                  })}
                 />
                 <ProjectMetricCard
-                  label="最近同步"
+                  label={tProjects("detail.summary.recentSync")}
                   value={
                     selectedProject.lastSyncAt
-                      ? formatRelativeTime(selectedProject.lastSyncAt)
-                      : "未记录"
+                      ? formatRelativeTime(selectedProject.lastSyncAt, tProjects, locale)
+                      : tProjects("detail.summary.notRecorded")
                   }
                   hint={
                     selectedProject.lastSyncAt
-                      ? formatPreciseDate(selectedProject.lastSyncAt)
-                      : "建议在关键评审或异步同步后更新"
+                      ? formatPreciseDate(selectedProject.lastSyncAt, locale)
+                      : tProjects("detail.summary.recentSyncHint")
                   }
                   tone={
                     (metrics.staleSyncDays ?? 0) >= 7 ? "warning" : "default"
@@ -743,7 +782,7 @@ export function ProjectDetailView({
 
         <div className="mt-4">
           <ProjectPanel
-            title="Project Workspace"
+            title={tProjects("detail.summary.workspaceTitle")}
             // MARK: -- Workspace
             action={
               <div className="flex flex-wrap items-center gap-2">
@@ -753,7 +792,7 @@ export function ProjectDetailView({
                   className="inline-flex items-center gap-1 rounded-full border border-app-border bg-app-content-bg px-3 py-1 text-xs text-app-text-primary transition hover:bg-app-button-hover"
                 >
                   <RiAddLine className="size-3.5" />
-                  新建 Issue
+                  {tProjects("detail.summary.createIssue")}
                 </button>
                 <button
                   type="button"
@@ -761,7 +800,7 @@ export function ProjectDetailView({
                   className="inline-flex items-center gap-1 rounded-full border border-app-border bg-app-content-bg px-3 py-1 text-xs text-app-text-primary transition hover:bg-app-button-hover"
                 >
                   <RiFileList3Line className="size-3.5" />
-                  新建文档
+                  {tProjects("detail.summary.createDoc")}
                 </button>
               </div>
             }
@@ -775,7 +814,7 @@ export function ProjectDetailView({
                 className="rounded-2xl border border-app-border bg-app-content-bg px-4 py-4 text-left transition hover:bg-app-button-hover/35 cursor-pointer"
               >
                 <div className="text-xs uppercase tracking-[0.18em] text-app-text-muted">
-                  有效任务
+                  {tProjects("detail.summary.workspaceCards.issues")}
                 </div>
                 <div className="mt-3 text-2xl font-semibold text-app-text-primary">
                   {metrics.totalIssues}
@@ -788,7 +827,7 @@ export function ProjectDetailView({
                 className="rounded-2xl border border-app-border bg-app-content-bg px-4 py-4 text-left transition hover:bg-app-button-hover/35 cursor-pointer"
               >
                 <div className="text-xs uppercase tracking-[0.18em] text-app-text-muted">
-                  Docs
+                  {tProjects("detail.summary.workspaceCards.docs")}
                 </div>
                 <div className="mt-3 text-2xl font-semibold text-app-text-primary">
                   {projectDocs.length}
@@ -803,7 +842,7 @@ export function ProjectDetailView({
                 className="rounded-2xl border border-app-border bg-app-content-bg px-4 py-4 text-left transition hover:bg-app-button-hover/35 cursor-pointer"
               >
                 <div className="text-xs uppercase tracking-[0.18em] text-app-text-muted">
-                  Workflow
+                  {tProjects("detail.summary.workspaceCards.workflow")}
                 </div>
                 <div className="mt-3 text-2xl font-semibold text-app-text-primary">
                   {relatedWorkflows.length}
@@ -818,12 +857,12 @@ export function ProjectDetailView({
                 className="rounded-2xl border border-app-border bg-app-content-bg px-4 py-4 text-left transition hover:bg-app-button-hover/35 cursor-pointer"
               >
                 <div className="text-xs uppercase tracking-[0.18em] text-app-text-muted">
-                  Sync
+                  {tProjects("detail.summary.workspaceCards.sync")}
                 </div>
                 <div className="mt-3 text-2xl font-semibold text-app-text-primary">
                   {selectedProject.lastSyncAt
-                    ? formatRelativeTime(selectedProject.lastSyncAt)
-                    : "未记录"}
+                    ? formatRelativeTime(selectedProject.lastSyncAt, tProjects, locale)
+                    : tProjects("detail.summary.notRecorded")}
                 </div>
               </button>
             </div>
@@ -832,7 +871,7 @@ export function ProjectDetailView({
 
         <div className="mt-4">
           <ProjectPanel
-            title="Risks"
+            title={tProjects("detail.summary.risksTitle")}
             // MARK: -- Risks
           >
             <div className="space-y-3">
@@ -860,11 +899,11 @@ export function ProjectDetailView({
 
               <div className="pt-1">
                 <div className="mb-2 text-xs uppercase tracking-[0.18em] text-app-text-muted">
-                  Blocked Issues
+                  {tProjects("detail.summary.blockedIssuesTitle")}
                 </div>
                 {blockedIssues.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-app-border bg-app-content-bg px-4 py-5 text-sm text-app-text-secondary">
-                    当前没有被识别为阻塞中的任务。
+                    {tProjects("detail.summary.blockedIssuesEmpty")}
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -873,6 +912,8 @@ export function ProjectDetailView({
                         key={issue.id}
                         issue={issue}
                         onOpenIssue={openSummaryIssue}
+                        tProjects={tProjects}
+                        locale={locale}
                       />
                     ))}
                   </div>

@@ -1,0 +1,163 @@
+{
+  "priority": {
+    "default": "Use default priority (Normal)",
+    "low": "Low",
+    "normal": "Normal",
+    "high": "High",
+    "urgent": "Urgent"
+  },
+  "status": {
+    "todo": "To do",
+    "inProgress": "In progress",
+    "almostDone": "Almost done",
+    "blocked": "Blocked",
+    "done": "Done"
+  },
+  "stateCategory": {
+    "backlog": "Backlog",
+    "todo": "To do",
+    "inProgress": "In progress",
+    "done": "Done",
+    "canceled": "Canceled"
+  },
+  "visibility": {
+    "private": "Only me",
+    "teamReadonly": "Team read-only",
+    "teamEditable": "Team editable",
+    "public": "Public"
+  },
+  "createModal": {
+    "title": "Create issue",
+    "workspace": {
+      "personal": "Personal workspace",
+      "team": "Team workspace"
+    },
+    "currentProject": "Current project: {name}",
+    "type": {
+      "label": "Issue type",
+      "normal": "Standard issue",
+      "workflow": "Workflow issue"
+    },
+    "workflow": {
+      "label": "Workflow",
+      "placeholder": "Choose a workflow",
+      "missingDescription": "No description"
+    },
+    "project": {
+      "label": "Project",
+      "placeholder": "Choose a project",
+      "none": "No project"
+    },
+    "fields": {
+      "title": "Title",
+      "titlePlaceholder": "Describe the work clearly",
+      "description": "Description",
+      "descriptionPlaceholder": "Add context, acceptance criteria, or follow-up notes",
+      "dueDatePlaceholder": "Choose a due date",
+      "clearDate": "Clear date",
+      "priorityPlaceholder": "Use the default priority",
+      "statePlaceholder": "Choose a state",
+      "visibilityPlaceholder": "Choose visibility",
+      "directAssignee": "Direct assignee",
+      "directAssigneePlaceholder": "Choose an assignee",
+      "additionalAssignees": "Additional assignees"
+    },
+    "assignee": {
+      "none": "No direct assignee",
+      "currentUser": "Assign to me"
+    },
+    "actions": {
+      "creating": "Creating...",
+      "submit": "Create issue"
+    }
+  },
+  "toasts": {
+    "titleRequired": "Please enter an issue title.",
+    "workflowRequired": "Please choose a workflow template.",
+    "authRequired": "Authentication could not be verified. Please sign in again.",
+    "memberSyncPending": "We are still syncing your member identity. Please wait a moment and try again.",
+    "createFailed": "Failed to create the issue. Please try again.",
+    "boardOrderMissingWorkspace": "The current workspace is invalid, so the board order cannot be saved.",
+    "boardOrderUnchanged": "The board order has not changed.",
+    "boardOrderSaveFailed": "Failed to save the board order. Please try again.",
+    "boardOrderSaved": "Board order updated.",
+    "updateFailed": "Failed to update the issue state. Please try again."
+  },
+  "page": {
+    "type": {
+      "normal": "Standard",
+      "workflow": "Workflow"
+    },
+    "summary": {
+      "withState": "Currently showing {count} issues in “{state}”.",
+      "activeOnly": "{count} active issues right now.",
+      "mixed": "Currently showing {total} issues, including {active} active ones.",
+      "mySuffix": " Only issues you own, participate in, or created are included.",
+      "closedSuffix": " {count} more are done or canceled.",
+      "listViewHint": " List view hides done and canceled issues by default. Switch to board view to see every state."
+    },
+    "filters": {
+      "searchPlaceholder": "Search by title, project, assignee, or issue key...",
+      "projectAria": "Filter by project",
+      "stateAria": "Filter by state",
+      "priorityAria": "Filter by priority",
+      "typeAria": "Filter by type",
+      "allProjects": "All projects",
+      "unassignedProject": "No project",
+      "allStates": "All states",
+      "allPriorities": "All priorities",
+      "allTypes": "All types",
+      "clear": "Clear filters"
+    },
+    "tabs": {
+      "all": "All {count}",
+      "my": "Mine {count}"
+    },
+    "actions": {
+      "create": "Create issue",
+      "saveBoardOrder": "Save board order",
+      "savedOrder": "Board order saved",
+      "openIssue": "Open issue",
+      "cancelIssue": "Cancel issue",
+      "viewOrEdit": "View or edit"
+    },
+    "states": {
+      "unassigned": "Unassigned",
+      "assignee": "Assignee",
+      "workflow": "Workflow"
+    },
+    "onlyCreatorCanCancel": "Only the creator can cancel this issue.",
+    "cancelled": "Issue canceled. It is now hidden in list view by default.",
+    "cancelFailed": "Failed to cancel the issue. Please try again.",
+    "loading": "Loading issues...",
+    "empty": {
+      "none": "There are no issues yet",
+      "filtered": "No matching issues found",
+      "createFirst": "Create the first issue"
+    },
+    "cancelDialog": {
+      "title": "Cancel this issue?",
+      "description": "The issue will be moved to Canceled and hidden in list view by default. The record stays in place and related assignees will still see it.",
+      "keep": "Keep it",
+      "confirm": "Confirm cancel",
+      "pending": "Canceling..."
+    }
+  },
+  "tabs": {
+    "discussion": {
+      "empty": "No comments yet. Be the first to add context here.",
+      "placeholder": "Add a comment... Use @ to mention teammates",
+      "noMembers": "No matching team members found",
+      "mentionHint": "Use @ to mention teammates",
+      "send": "Send"
+    },
+    "history": {
+      "empty": "No activity has been recorded yet."
+    },
+    "records": {
+      "stepLabel": "{name} (Step {step})",
+      "unknownMember": "Unknown member",
+      "empty": "No outputs have been recorded yet."
+    }
+  }
+}

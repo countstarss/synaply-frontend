@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   RiAddLine,
   RiArrowRightLine,
@@ -55,29 +56,33 @@ import {
 
 type OptimisticIssueState = Pick<Issue, "state" | "stateId">;
 
-function formatRelativeTime(date: string) {
+function formatRelativeTime(
+  date: string,
+  t: (key: string, values?: Record<string, string | number>) => string,
+  locale: string,
+) {
   const diffMs = Date.now() - new Date(date).getTime();
   const diffMinutes = Math.max(Math.floor(diffMs / (1000 * 60)), 0);
 
   if (diffMinutes < 1) {
-    return "刚刚";
+    return t("subviews.relativeTime.justNow");
   }
 
   if (diffMinutes < 60) {
-    return `${diffMinutes} 分钟前`;
+    return t("subviews.relativeTime.minutesAgo", { count: diffMinutes });
   }
 
   const diffHours = Math.floor(diffMinutes / 60);
   if (diffHours < 24) {
-    return `${diffHours} 小时前`;
+    return t("subviews.relativeTime.hoursAgo", { count: diffHours });
   }
 
   const diffDays = Math.floor(diffHours / 24);
   if (diffDays < 30) {
-    return `${diffDays} 天前`;
+    return t("subviews.relativeTime.daysAgo", { count: diffDays });
   }
 
-  return formatShortDate(date);
+  return formatShortDate(date, locale);
 }
 
 function ProjectSurfaceCard({
@@ -125,12 +130,16 @@ function ProjectIssueList({
   onOpenIssue,
   onCancelIssue,
   canCancelIssue,
+  tProjects,
+  locale,
 }: {
   issues: Issue[];
   pendingIssueIds: Set<string>;
   onOpenIssue: (issue: Issue) => void;
   onCancelIssue: (issue: Issue) => void;
   canCancelIssue: (issue: Issue) => boolean;
+  tProjects: (key: string, values?: Record<string, string | number>) => string;
+  locale: string;
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-app-border bg-app-content-bg">
@@ -168,7 +177,7 @@ function ProjectIssueList({
             <div className="hidden items-center gap-2 md:flex">
               {issue.dueDate && (
                 <b className="text-bold text-xs text-white/80">
-                  {formatShortDate(issue.dueDate)}
+                  {formatShortDate(issue.dueDate, locale)}
                 </b>
               )}
               <span className="text-xs text-app-text-muted">
@@ -196,14 +205,14 @@ function ProjectIssueList({
             <ContextMenuContent className="w-44">
               <ContextMenuGroup>
                 <ContextMenuItem onSelect={() => onOpenIssue(issue)}>
-                  打开 Issue
+                  {tProjects("subviews.issues.openIssue")}
                 </ContextMenuItem>
                 <ContextMenuItem
                   variant="destructive"
                   disabled={isPending || !canCancel}
                   onSelect={() => onCancelIssue(issue)}
                 >
-                  取消 Issue
+                  {tProjects("subviews.issues.cancelIssue")}
                 </ContextMenuItem>
               </ContextMenuGroup>
             </ContextMenuContent>
@@ -242,6 +251,8 @@ export function ProjectIssuesSubview({
   onSaveIssueBoardCategoryOrder: () => void;
   onIssuesViewModeChange: (viewMode: IssueViewMode) => void;
 }) {
+  const tProjects = useTranslations("projects");
+  const locale = useLocale();
   const { data: issueStates = [] } = useIssueStates(workspaceId, {
     enabled: !!workspaceId,
   });
@@ -315,13 +326,6 @@ export function ProjectIssuesSubview({
   const visibleProjectIssues = shouldListHideClosedIssues
     ? activeProjectIssues
     : displayedIssues;
-  const issueSummaryText = `${activeProjectIssues.length} 条有效项目任务${
-    hiddenClosedIssueCount > 0
-      ? ` · ${hiddenClosedIssueCount} 条已完成或已取消${
-          shouldListHideClosedIssues ? "已隐藏" : ""
-        }`
-      : ""
-  }`;
   const canCancelIssue = (issue: Issue) => {
     const creatorMemberId = issue.creatorMemberId || issue.creatorId;
 
@@ -406,7 +410,7 @@ export function ProjectIssuesSubview({
 
     const issue = pendingCancelIssue;
     if (!canCancelIssue(issue)) {
-      toast.error("只有创建者可以取消这个 Issue");
+      toast.error(tProjects("subviews.issues.onlyCreatorCanCancel"));
       setPendingCancelIssue(null);
       return;
     }
@@ -439,7 +443,7 @@ export function ProjectIssuesSubview({
       },
       {
         onSuccess: () => {
-          toast.success("Issue 已取消，列表视图会默认隐藏它");
+          toast.success(tProjects("subviews.issues.cancelled"));
           setPendingCancelIssue(null);
           setPendingIssueIds((current) => {
             const nextState = new Set(current);
@@ -449,7 +453,7 @@ export function ProjectIssuesSubview({
         },
         onError: (error) => {
           toast.error(
-            error instanceof Error ? error.message : "取消 Issue 失败，请重试",
+            error instanceof Error ? error.message : tProjects("subviews.issues.cancelFailed"),
           );
           setOptimisticIssueStates((current) => {
             const nextState = { ...current };
@@ -469,22 +473,33 @@ export function ProjectIssuesSubview({
   return (
     <div className="flex h-full min-h-0 flex-col p-4 isolate">
       <ProjectSurfaceCard
-        title="Issues"
-        subtitle="把项目执行层单独沉到一层，保留现有 list / board 双视图。"
+        title={tProjects("subviews.issues.title")}
+        subtitle={tProjects("subviews.issues.subtitle")}
         action={
           <button
             onClick={onCreateIssue}
             className="inline-flex items-center gap-2 rounded-xl border border-app-border bg-app-bg px-3 py-2 text-sm text-app-text-primary transition hover:bg-app-button-hover"
           >
             <RiAddLine className="size-4" />
-            新建 Issue
+            {tProjects("subviews.issues.createIssue")}
           </button>
         }
       >
         <div className="flex h-full min-h-0 flex-col">
           <div className="z-10 flex shrink-0 flex-wrap items-center justify-between gap-3 pb-4">
             <div className="text-xs text-app-text-secondary">
-              {issueSummaryText}
+              {tProjects("subviews.issues.summary", {
+                active: activeProjectIssues.length,
+                suffix:
+                  hiddenClosedIssueCount > 0
+                    ? tProjects("subviews.issues.hiddenSuffix", {
+                        count: hiddenClosedIssueCount,
+                        hidden: shouldListHideClosedIssues
+                          ? tProjects("subviews.issues.hiddenLabel")
+                          : "",
+                      })
+                    : "",
+              })}
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
               {issuesViewMode === "board" && (
@@ -498,7 +513,9 @@ export function ProjectIssuesSubview({
                       : "border-app-border bg-app-bg text-app-text-secondary hover:bg-app-button-hover",
                   )}
                 >
-                  {hasUnsavedIssueBoardCategoryOrder ? "保存看板顺序" : "已保存顺序"}
+                  {hasUnsavedIssueBoardCategoryOrder
+                    ? tProjects("subviews.issues.saveBoardOrder")
+                    : tProjects("subviews.issues.boardOrderSaved")}
                 </button>
               )}
               <IssueViewModeToggle
@@ -512,23 +529,23 @@ export function ProjectIssuesSubview({
             {isLoadingProjectIssues ? (
               <div className="flex h-full items-center justify-center px-6 text-app-text-secondary">
                 <RiLoader4Line className="mr-2 size-5 animate-spin" />
-                正在加载项目任务...
+                {tProjects("subviews.issues.loading")}
               </div>
             ) : visibleProjectIssues.length === 0 ? (
               <div className="flex h-full items-center justify-center overflow-y-auto px-2">
                 <div className="w-full h-full rounded-2xl border border-dashed border-app-border bg-app-bg p-6 text-center">
                   <div className="text-base font-semibold text-app-text-primary">
-                    这个项目还没有有效任务
+                    {tProjects("subviews.issues.emptyTitle")}
                   </div>
                   <div className="mt-2 text-sm text-app-text-secondary">
-                    列表视图默认隐藏已完成或已取消的 issue，切到看板可查看完整状态。
+                    {tProjects("subviews.issues.emptyDescription")}
                   </div>
                   <button
                     onClick={onCreateIssue}
                     className="mt-4 inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-500"
                   >
                     <RiAddLine className="size-4" />
-                    创建项目任务
+                    {tProjects("subviews.issues.createIssue")}
                   </button>
                 </div>
               </div>
@@ -551,6 +568,8 @@ export function ProjectIssuesSubview({
                   onOpenIssue={onOpenIssue}
                   onCancelIssue={setPendingCancelIssue}
                   canCancelIssue={canCancelIssue}
+                  tProjects={tProjects}
+                  locale={locale}
                 />
               </div>
             )}
@@ -568,9 +587,9 @@ export function ProjectIssuesSubview({
       >
         <DialogContent className="border-app-border bg-app-content-bg text-app-text-primary sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>取消这个 Issue？</DialogTitle>
+            <DialogTitle>{tProjects("subviews.issues.cancelDialog.title")}</DialogTitle>
             <DialogDescription>
-              状态会设置为已取消，并在列表视图中默认隐藏。记录不会删除，相关负责人会收到通知。
+              {tProjects("subviews.issues.cancelDialog.description")}
             </DialogDescription>
           </DialogHeader>
           {pendingCancelIssue && (
@@ -586,7 +605,7 @@ export function ProjectIssuesSubview({
                 variant="outline"
                 disabled={cancelIssueMutation.isPending}
               >
-                先保留
+                {tProjects("subviews.issues.cancelDialog.keep")}
               </Button>
             </DialogClose>
             <Button
@@ -595,7 +614,9 @@ export function ProjectIssuesSubview({
               disabled={cancelIssueMutation.isPending}
               onClick={handleCancelIssue}
             >
-              {cancelIssueMutation.isPending ? "正在取消..." : "确认取消"}
+              {cancelIssueMutation.isPending
+                ? tProjects("subviews.issues.cancelDialog.pending")
+                : tProjects("subviews.issues.cancelDialog.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -615,11 +636,12 @@ export function ProjectDocsSubview({
   currentUserId?: string;
   projectId: string;
 }) {
+  const tProjects = useTranslations("projects");
   if (!currentUserId) {
     return (
       <div className="flex h-full items-center justify-center px-6 py-8">
         <div className="rounded-2xl border border-dashed border-app-border bg-app-content-bg/95 px-6 py-10 text-center text-sm text-app-text-secondary">
-          当前用户信息不可用，暂时无法加载项目文档。
+          {tProjects("subviews.docs.missingUser")}
         </div>
       </div>
     );
@@ -646,24 +668,25 @@ export function ProjectWorkflowSubview({
 }: {
   relatedWorkflows: ProjectWorkflowSummary[];
 }) {
+  const tProjects = useTranslations("projects");
   return (
     <div className="flex h-full min-h-0 flex-col p-4 isolate">
       <ProjectSurfaceCard
-        title="Workflow"
-        subtitle="这里聚合当前项目真实关联的流程，不再埋在项目总览中间。"
+        title={tProjects("subviews.workflow.title")}
+        subtitle={tProjects("subviews.workflow.subtitle")}
         action={
           <Link
             href="/workflows"
             className="inline-flex items-center gap-1 rounded-full border border-app-border bg-app-bg px-3 py-1 text-xs text-app-text-primary transition hover:bg-app-button-hover"
           >
-            打开工作流中心
+            {tProjects("subviews.workflow.openCenter")}
             <RiArrowRightLine className="size-3.5" />
           </Link>
         }
       >
         {relatedWorkflows.length === 0 ? (
           <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-app-border bg-app-bg/60 px-4 py-8 text-sm text-app-text-secondary">
-            当前项目还没有关联 workflow issue。把流程型 Issue 归到此项目后，这里会自动聚合。
+            {tProjects("subviews.workflow.empty")}
           </div>
         ) : (
           <div className="h-full overflow-y-auto">
@@ -679,19 +702,24 @@ export function ProjectWorkflowSubview({
                         {workflow.name}
                       </div>
                       <div className="mt-1 text-xs text-app-text-secondary">
-                        {workflow.issueCount} 个关联 issue · {workflow.status}
+                        {tProjects("subviews.workflow.linkedIssues", {
+                          count: workflow.issueCount,
+                          status: workflow.status,
+                        })}
                       </div>
                     </div>
                     <div className="rounded-full border border-app-border bg-app-content-bg px-2 py-1 text-[11px] text-app-text-secondary">
-                      {workflow.totalSteps} steps
+                      {tProjects("subviews.workflow.steps", {
+                        count: workflow.totalSteps,
+                      })}
                     </div>
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-app-text-secondary">
                     <div className="rounded-xl border border-app-border bg-app-content-bg/80 px-3 py-2">
-                      版本 · {workflow.version || "N/A"}
+                      {tProjects("subviews.workflow.version")} · {workflow.version || tProjects("subviews.workflow.notAvailable")}
                     </div>
                     <div className="rounded-xl border border-app-border bg-app-content-bg/80 px-3 py-2">
-                      可见性 · {workflow.visibility}
+                      {tProjects("subviews.workflow.visibility")} · {workflow.visibility}
                     </div>
                   </div>
                 </div>
@@ -720,6 +748,8 @@ export function ProjectSyncSubview({
   isMarkingSync?: boolean;
   onOpenIssue: (issue: Issue) => void;
 }) {
+  const tProjects = useTranslations("projects");
+  const locale = useLocale();
   const projectIssueMap = useMemo(
     () =>
       new Map<string, Issue>(projectIssues.map((issue) => [issue.id, issue])),
@@ -729,8 +759,8 @@ export function ProjectSyncSubview({
   return (
     <div className="flex h-full min-h-0 flex-col p-4 isolate">
       <ProjectSurfaceCard
-        title="Project Sync"
-        subtitle="把异步同步痕迹和近期变更沉到单独一层，阅读时不被其他模块打断。"
+        title={tProjects("subviews.sync.title")}
+        subtitle={tProjects("subviews.sync.subtitle")}
         action={
           <button
             type="button"
@@ -743,37 +773,37 @@ export function ProjectSyncSubview({
             ) : (
               <RiLoopLeftLine className="size-3.5" />
             )}
-            更新同步时间
+            {tProjects("subviews.sync.updateSync")}
           </button>
         }
       >
         <div className="flex h-full min-h-0 flex-col gap-4">
           <div className="grid gap-3 md:grid-cols-3">
             <div className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-3">
-              <div className="text-xs text-app-text-muted">最近同步</div>
+              <div className="text-xs text-app-text-muted">{tProjects("subviews.sync.recentSync")}</div>
               <div className="mt-2 text-lg font-semibold text-app-text-primary">
                 {selectedProject.lastSyncAt
-                  ? formatRelativeTime(selectedProject.lastSyncAt)
-                  : "未记录"}
+                  ? formatRelativeTime(selectedProject.lastSyncAt, tProjects, locale)
+                  : tProjects("subviews.sync.notRecorded")}
               </div>
             </div>
             <div className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-3">
-              <div className="text-xs text-app-text-muted">活动数量</div>
+              <div className="text-xs text-app-text-muted">{tProjects("subviews.sync.activityCount")}</div>
               <div className="mt-2 text-lg font-semibold text-app-text-primary">
                 {recentActivity.length}
               </div>
             </div>
             <div className="rounded-2xl border border-app-border bg-app-bg/70 px-4 py-3">
-              <div className="text-xs text-app-text-muted">项目更新时间</div>
+              <div className="text-xs text-app-text-muted">{tProjects("subviews.sync.updatedAt")}</div>
               <div className="mt-2 text-lg font-semibold text-app-text-primary">
-                {formatRelativeTime(selectedProject.updatedAt)}
+                {formatRelativeTime(selectedProject.updatedAt, tProjects, locale)}
               </div>
             </div>
           </div>
 
           {recentActivity.length === 0 ? (
             <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-app-border bg-app-bg/60 px-4 py-8 text-sm text-app-text-secondary">
-              项目活动流还没有积累起来。Issue 上的步骤推进和活动记录会自动沉淀到这里。
+              {tProjects("subviews.sync.empty")}
             </div>
           ) : (
             <div className="min-h-0 flex-1 overflow-y-auto">
@@ -795,9 +825,9 @@ export function ProjectSyncSubview({
                       <div className="mt-1 text-xs leading-5 text-app-text-secondary">
                         {(activity.actor?.user?.name ||
                           activity.actor?.user?.email ||
-                          "团队成员") +
+                          tProjects("subviews.sync.teamMember")) +
                           " · " +
-                          formatRelativeTime(activity.createdAt)}
+                          formatRelativeTime(activity.createdAt, tProjects, locale)}
                       </div>
                       {issue && (
                         <button

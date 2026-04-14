@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { RiAlertLine, RiDeleteBinLine, RiLoader4Line } from "react-icons/ri";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +33,8 @@ export function DeleteProjectDialog({
   onOpenChange,
   onConfirm,
 }: DeleteProjectDialogProps) {
+  const t = useTranslations("projects");
+  const tCommon = useTranslations("common");
   const [confirmationName, setConfirmationName] = useState("");
   const { data: projectIssues = [], isLoading: isLoadingIssues } = useIssues(
     workspaceId,
@@ -58,23 +61,23 @@ export function DeleteProjectDialog({
             <span className="flex size-10 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10">
               <RiAlertLine className="size-5" />
             </span>
-            删除项目
+            {t("deleteDialog.title")}
           </DialogTitle>
           <DialogDescription className="text-app-text-secondary">
-            删除项目后，该项目内的所有 issues 都会被永久删除，此操作不可恢复。
+            {t("deleteDialog.description")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 px-6 py-6">
           <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
             <div className="text-sm font-medium text-app-text-primary">
-              即将删除
+              {t("deleteDialog.aboutToDelete")}
             </div>
             <div className="mt-2 text-base font-semibold text-app-text-primary">
-              {project?.name || "未选择项目"}
+              {project?.name || t("deleteDialog.missingProject")}
             </div>
             <div className="mt-2 text-sm leading-6 text-app-text-secondary">
-              {project?.description || "这个项目当前没有补充描述。"}
+              {project?.description || t("deleteDialog.missingProjectDescription")}
             </div>
           </div>
 
@@ -82,31 +85,27 @@ export function DeleteProjectDialog({
             {isLoadingIssues ? (
               <div className="flex items-center gap-2">
                 <RiLoader4Line className="size-4 animate-spin" />
-                正在统计该项目下将被级联删除的 issues...
+                {t("deleteDialog.countingIssues")}
               </div>
             ) : (
               <span>
-                预计会同时删除{" "}
-                <span className="font-semibold text-app-text-primary">
-                  {projectIssues.length}
-                </span>{" "}
-                个相关任务。
+                {t("deleteDialog.issueCount", { count: projectIssues.length })}
               </span>
             )}
           </div>
 
           <div className="grid gap-2">
             <label className="text-sm font-medium text-app-text-primary">
-              请输入项目名称以确认删除
+              {t("deleteDialog.confirmLabel")}
             </label>
             <Input
               value={confirmationName}
               onChange={(event) => setConfirmationName(event.target.value)}
-              placeholder={project?.name || "输入项目名称"}
+              placeholder={project?.name || t("deleteDialog.confirmPlaceholder")}
               className="border-app-border bg-app-bg text-app-text-primary"
             />
             <div className="text-xs text-app-text-muted">
-              只有当输入内容与项目名完全一致时，才允许最终删除。
+              {t("deleteDialog.confirmHint")}
             </div>
           </div>
         </div>
@@ -119,7 +118,7 @@ export function DeleteProjectDialog({
             onClick={() => onOpenChange(false)}
             disabled={isDeleting}
           >
-            取消
+            {tCommon("actions.cancel")}
           </Button>
           <Button
             type="button"
@@ -129,7 +128,9 @@ export function DeleteProjectDialog({
             onClick={() => project && onConfirm(project)}
           >
             <RiDeleteBinLine className="size-4" />
-            {isDeleting ? "删除中..." : "确认删除"}
+            {isDeleting
+              ? t("deleteDialog.deleting")
+              : t("deleteDialog.confirmDelete")}
           </Button>
         </DialogFooter>
       </DialogContent>

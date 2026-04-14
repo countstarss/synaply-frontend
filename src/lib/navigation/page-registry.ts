@@ -24,8 +24,11 @@ interface ProductPageDefinition extends NavItem {
   order: number;
   cached: boolean;
   navVisibility: WorkspaceNavVisibility;
+  labelKey: string;
   borderlessShellPatterns?: readonly string[];
 }
+
+type TranslationFn = (key: string) => string;
 
 export const productPages = [
   {
@@ -35,7 +38,8 @@ export const productPages = [
     cached: true,
     navVisibility: "all",
     icon: ListCheck,
-    label: "My Work",
+    label: "",
+    labelKey: "nav.myWork",
     href: "/tasks",
   },
   {
@@ -45,7 +49,8 @@ export const productPages = [
     cached: true,
     navVisibility: "all",
     icon: Inbox,
-    label: "Inbox",
+    label: "",
+    labelKey: "nav.inbox",
     href: "/inbox",
   },
   {
@@ -55,7 +60,8 @@ export const productPages = [
     cached: true,
     navVisibility: "all",
     icon: BookAIcon,
-    label: "Docs",
+    label: "",
+    labelKey: "nav.docs",
     href: "/docs",
   },
   {
@@ -65,7 +71,8 @@ export const productPages = [
     cached: true,
     navVisibility: "all",
     icon: Bug,
-    label: "Issues",
+    label: "",
+    labelKey: "nav.issues",
     href: "/issues",
     borderlessShellPatterns: ["/issues/:issueId"],
   },
@@ -76,7 +83,8 @@ export const productPages = [
     cached: true,
     navVisibility: "all",
     icon: FolderOpen,
-    label: "Projects",
+    label: "",
+    labelKey: "nav.projects",
     href: "/projects",
     borderlessShellPatterns: ["/projects/:projectId/:issueId"],
   },
@@ -87,7 +95,8 @@ export const productPages = [
     cached: true,
     navVisibility: "team",
     icon: Workflow,
-    label: "Workflows",
+    label: "",
+    labelKey: "nav.workflows",
     href: "/workflows",
   },
   {
@@ -97,7 +106,8 @@ export const productPages = [
     cached: true,
     navVisibility: "all",
     icon: Sparkles,
-    label: "Intelligence",
+    label: "",
+    labelKey: "nav.intelligence",
     href: "/intelligence",
     borderlessShellPatterns: ["/intelligence", "/intelligence/:threadId"],
   },
@@ -137,8 +147,26 @@ const getNavItemsByVisibility = (
 export const mainNavItems = getNavItemsByVisibility("team");
 export const personalNavItems = getNavItemsByVisibility("personal");
 
-export const getWorkspaceNavItems = (workspaceType?: string | null) =>
-  getReadyNavItems(workspaceType === "TEAM" ? mainNavItems : personalNavItems);
+function withResolvedLabels(
+  items: readonly ProductPageDefinition[],
+  t: TranslationFn,
+): NavItem[] {
+  return items.map(({ labelKey, ...item }) => ({
+    ...item,
+    label: t(labelKey),
+  }));
+}
+
+export const getWorkspaceNavItems = (
+  t: TranslationFn,
+  workspaceType?: string | null,
+) =>
+  getReadyNavItems(
+    withResolvedLabels(
+      workspaceType === "TEAM" ? mainNavItems : personalNavItems,
+      t,
+    ),
+  );
 
 export const normalizeProductPathname = (pathname: string) => {
   const segments = pathname.split("/").filter(Boolean);

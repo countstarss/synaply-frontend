@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 interface HistoryTabProps {
   activities: Array<{
@@ -18,6 +19,9 @@ interface HistoryTabProps {
 }
 
 export const HistoryTab: React.FC<HistoryTabProps> = ({ activities }) => {
+  const tIssues = useTranslations("issues");
+  const locale = useLocale();
+
   return (
     <div className="h-full p-4 overflow-y-auto">
       <div className="space-y-3 overflow-y-auto">
@@ -33,14 +37,14 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ activities }) => {
                     activity.actorId}
                 </span>
                 <span>•</span>
-                <span>{new Date(activity.createdAt).toLocaleString()}</span>
+                <span>{new Date(activity.createdAt).toLocaleString(locale)}</span>
               </div>
             </div>
           </div>
         ))}
         {activities.length === 0 && (
           <div className="text-center text-app-text-muted py-8">
-            暂无操作历史
+            {tIssues("tabs.history.empty")}
           </div>
         )}
       </div>

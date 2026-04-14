@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ interface SidebarProps {
 
 const Sidebar = React.memo(({ className }: SidebarProps) => {
   const { isOpen: sidebarOpen } = useSidebarStore();
+  const t = useTranslations("shell");
   const { mode, switchToMain, returnToMainPath, isModeTransitionEnabled } =
     useSidebarMode();
   const router = useRouter();
@@ -35,7 +37,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
   const { teams = [] } = useTeam();
   const { setCurrentWorkspaceId } = useWorkspaceStore();
   const [isCreateTeamDialogOpen, setIsCreateTeamDialogOpen] = useState(false);
-  const navItems = getWorkspaceNavItems(currentWorkspace?.type);
+  const navItems = getWorkspaceNavItems(t, currentWorkspace?.type);
   const modeTransitionClass = isModeTransitionEnabled
     ? "transition-transform duration-300 ease-in-out"
     : "transition-none";
@@ -62,8 +64,8 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
   );
 
   const settingSections = useMemo(
-    () => buildSettingsSections(teams, handleOpenCreateTeamDialog),
-    [handleOpenCreateTeamDialog, teams],
+    () => buildSettingsSections(t, teams, handleOpenCreateTeamDialog),
+    [handleOpenCreateTeamDialog, t, teams],
   );
 
   return (
@@ -147,7 +149,7 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
                   className="flex items-center gap-2 text-sm"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  <span>返回</span>
+                  <span>{t("sidebar.backToMain")}</span>
                 </Button>
               </div>
 

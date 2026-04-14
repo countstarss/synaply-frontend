@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn, isRouteActive } from "@/lib/utils";
 import { useSidebarStore } from "@/stores/sidebar";
@@ -8,10 +9,11 @@ import { getWorkspaceNavItems } from "@/lib/navigation/page-registry";
 import { useWorkspace } from "@/hooks/useWorkspace";
 
 export default function TabList() {
+  const t = useTranslations("shell");
   const pathname = usePathname();
   const { setActiveTab } = useSidebarStore();
   const { currentWorkspace } = useWorkspace();
-  const tabItems = getWorkspaceNavItems(currentWorkspace?.type);
+  const tabItems = getWorkspaceNavItems(t, currentWorkspace?.type);
 
   return (
     <div className="flex items-center gap-2 animate-in slide-in-from-left-5 duration-300">

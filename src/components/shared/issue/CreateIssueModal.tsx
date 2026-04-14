@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { RiCloseLine, RiFlowChart } from "react-icons/ri";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
@@ -28,10 +29,7 @@ import { useWorkflows } from "@/hooks/useWorkflowApi";
 import type { CreateIssueDto } from "@/lib/fetchers/issue";
 import type { TeamMember } from "@/lib/fetchers/team";
 import type { WorkflowResponse } from "@/lib/fetchers/workflow";
-import {
-  ISSUE_STATE_CATEGORY_LABELS,
-  resolveIssueStateForCategory,
-} from "@/lib/issue-board";
+import { resolveIssueStateForCategory } from "@/lib/issue-board";
 import { cn } from "@/lib/utils";
 import {
   IssuePriority,
@@ -57,55 +55,27 @@ interface MemberOption {
 const NONE_VALUE = "__none__";
 const DEFAULT_PRIORITY_VALUE = "__default_priority__";
 
-const PRIORITY_OPTIONS = [
-  { value: DEFAULT_PRIORITY_VALUE, label: "按默认优先级（中）" },
-  { value: IssuePriority.LOW, label: "低" },
-  { value: IssuePriority.NORMAL, label: "中" },
-  { value: IssuePriority.HIGH, label: "高" },
-  { value: IssuePriority.URGENT, label: "紧急" },
-] as const;
-
-const STATE_CATEGORY_OPTIONS = [
-  {
-    value: IssueStateCategory.BACKLOG,
-    label: ISSUE_STATE_CATEGORY_LABELS[IssueStateCategory.BACKLOG],
-  },
-  {
-    value: IssueStateCategory.TODO,
-    label: ISSUE_STATE_CATEGORY_LABELS[IssueStateCategory.TODO],
-  },
-  {
-    value: IssueStateCategory.IN_PROGRESS,
-    label: ISSUE_STATE_CATEGORY_LABELS[IssueStateCategory.IN_PROGRESS],
-  },
-  {
-    value: IssueStateCategory.DONE,
-    label: ISSUE_STATE_CATEGORY_LABELS[IssueStateCategory.DONE],
-  },
-  {
-    value: IssueStateCategory.CANCELED,
-    label: ISSUE_STATE_CATEGORY_LABELS[IssueStateCategory.CANCELED],
-  },
-] as const;
-
 function getDefaultVisibility(workspaceType: "PERSONAL" | "TEAM") {
   return workspaceType === "TEAM"
     ? VisibilityType.TEAM_EDITABLE
     : VisibilityType.PRIVATE;
 }
 
-function getVisibilityOptions(workspaceType: "PERSONAL" | "TEAM") {
+function getVisibilityOptions(
+  workspaceType: "PERSONAL" | "TEAM",
+  t: (key: string) => string,
+) {
   if (workspaceType === "TEAM") {
     return [
-      { value: VisibilityType.PRIVATE, label: "仅自己可见" },
-      { value: VisibilityType.TEAM_READONLY, label: "团队只读" },
-      { value: VisibilityType.TEAM_EDITABLE, label: "团队可编辑" },
+      { value: VisibilityType.PRIVATE, label: t("visibility.private") },
+      { value: VisibilityType.TEAM_READONLY, label: t("visibility.teamReadonly") },
+      { value: VisibilityType.TEAM_EDITABLE, label: t("visibility.teamEditable") },
     ];
   }
 
   return [
-    { value: VisibilityType.PRIVATE, label: "仅自己可见" },
-    { value: VisibilityType.PUBLIC, label: "公开可见" },
+    { value: VisibilityType.PRIVATE, label: t("visibility.private") },
+    { value: VisibilityType.PUBLIC, label: t("visibility.public") },
   ];
 }
 
@@ -113,7 +83,7 @@ function getTeamMemberName(member: TeamMember) {
   return (
     member.user.name?.trim() ||
     member.user.email?.split("@")[0] ||
-    `成员 ${member.id.slice(0, 6)}`
+    `Member ${member.id.slice(0, 6)}`
   );
 }
 
@@ -124,13 +94,17 @@ export default function CreateIssueModal({
   initialProjectId,
   projectContextName,
 }: CreateIssueModalProps) {
+  const t = useTranslations("issues");
+  const tCommon = useTranslations("common");
   const { session, user } = useAuth();
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id || "";
   const workspaceType = currentWorkspace?.type || "PERSONAL";
   const teamId = currentWorkspace?.teamId;
   const currentUserLabel =
-    user?.user_metadata?.name?.trim() || user?.email?.split("@")[0] || "当前用户";
+    user?.user_metadata?.name?.trim() ||
+    user?.email?.split("@")[0] ||
+    tCommon("states.currentUser");
 
   const [issueType, setIssueType] = useState<"normal" | "workflow">("normal");
   const [title, setTitle] = useState("");
@@ -169,7 +143,7 @@ export default function CreateIssueModal({
         edges: [],
         createdAt: workflowResponse.createdAt,
         updatedAt: workflowResponse.updatedAt,
-        createdBy: workflowResponse.creator?.user?.name || "未知用户",
+        createdBy: workflowResponse.creator?.user?.name || "Unknown user",
         isDraft: workflowResponse.status === "DRAFT",
         totalSteps: workflowResponse.totalSteps,
       };
@@ -195,6 +169,26 @@ export default function CreateIssueModal({
   const availableWorkflowTemplates = workflows.filter(
     (workflow) => !workflow.isDraft && (workflow.totalSteps || 0) > 0,
   );
+  const priorityOptions = useMemo(
+    () => [
+      { value: DEFAULT_PRIORITY_VALUE, label: t("priority.default") },
+      { value: IssuePriority.LOW, label: t("priority.low") },
+      { value: IssuePriority.NORMAL, label: t("priority.normal") },
+      { value: IssuePriority.HIGH, label: t("priority.high") },
+      { value: IssuePriority.URGENT, label: t("priority.urgent") },
+    ],
+    [t],
+  );
+  const stateCategoryOptions = useMemo(
+    () => [
+      { value: IssueStateCategory.BACKLOG, label: t("stateCategory.backlog") },
+      { value: IssueStateCategory.TODO, label: t("stateCategory.todo") },
+      { value: IssueStateCategory.IN_PROGRESS, label: t("stateCategory.inProgress") },
+      { value: IssueStateCategory.DONE, label: t("stateCategory.done") },
+      { value: IssueStateCategory.CANCELED, label: t("stateCategory.canceled") },
+    ],
+    [t],
+  );
 
   const teamMemberOptions = useMemo<MemberOption[]>(
     () =>
@@ -219,7 +213,7 @@ export default function CreateIssueModal({
       ? resolveIssueStateForCategory(issueStates, selectedStateCategory)
       : issueStates.find((state) => state.isDefault) || issueStates[0]) || null;
   const isProjectContext = !!initialProjectId;
-  const visibilityOptions = getVisibilityOptions(workspaceType);
+  const visibilityOptions = getVisibilityOptions(workspaceType, (key) => t(key));
 
   useEffect(() => {
     if (!isOpen) {
@@ -319,22 +313,22 @@ export default function CreateIssueModal({
     event.preventDefault();
 
     if (!title.trim()) {
-      toast.error("请输入任务标题");
+      toast.error(t("toasts.titleRequired"));
       return;
     }
 
     if (issueType === "workflow" && !selectedWorkflowId) {
-      toast.error("请选择一个工作流模板");
+      toast.error(t("toasts.workflowRequired"));
       return;
     }
 
     if (!session?.access_token) {
-      toast.error("无法获取认证信息，请重新登录");
+      toast.error(t("toasts.authRequired"));
       return;
     }
 
     if (workspaceType === "PERSONAL" && !personalAssigneeId) {
-      toast.error("正在同步你的成员身份，请稍等片刻后再创建");
+      toast.error(t("toasts.memberSyncPending"));
       return;
     }
 
@@ -390,7 +384,7 @@ export default function CreateIssueModal({
       handleClose();
     } catch (error) {
       console.error("创建任务失败:", error);
-      toast.error(error instanceof Error ? error.message : "创建任务失败，请重试");
+      toast.error(error instanceof Error ? error.message : t("toasts.createFailed"));
     }
   };
 
@@ -404,12 +398,19 @@ export default function CreateIssueModal({
         <div className="flex items-center justify-between border-b border-app-border px-6 py-5">
           <div>
             <h2 className="text-xl font-semibold text-app-text-primary">
-              新建任务
+              {t("createModal.title")}
             </h2>
             <p className="mt-1 text-sm text-app-text-secondary">
-              {workspaceType === "PERSONAL" ? "个人空间" : "团队空间"}
+              {workspaceType === "PERSONAL"
+                ? t("createModal.workspace.personal")
+                : t("createModal.workspace.team")}
               {isProjectContext
-                ? ` · 当前项目：${projectContextName || selectedProject?.name || "未命名项目"}`
+                ? ` · ${t("createModal.currentProject", {
+                    name:
+                      projectContextName ||
+                      selectedProject?.name ||
+                      tCommon("states.noneNamed"),
+                  })}`
                 : ""}
             </p>
           </div>
@@ -426,7 +427,7 @@ export default function CreateIssueModal({
           {workspaceType === "TEAM" && (
             <div>
               <label className="mb-3 block text-sm font-medium text-app-text-primary">
-                任务类型
+                {t("createModal.type.label")}
               </label>
               <div className="flex gap-3">
                 <Button
@@ -440,7 +441,7 @@ export default function CreateIssueModal({
                   )}
                   onClick={() => setIssueType("normal")}
                 >
-                  普通任务
+                  {t("createModal.type.normal")}
                 </Button>
                 <Button
                   type="button"
@@ -453,7 +454,7 @@ export default function CreateIssueModal({
                   )}
                   onClick={() => setIssueType("workflow")}
                 >
-                  基于工作流
+                  {t("createModal.type.workflow")}
                 </Button>
               </div>
             </div>
@@ -462,7 +463,7 @@ export default function CreateIssueModal({
           {workspaceType === "TEAM" && issueType === "workflow" && (
             <div className="grid gap-2">
               <label className="text-sm font-medium text-app-text-primary">
-                工作流
+                {tCommon("entities.workflow")}
               </label>
               <Select
                 value={selectedWorkflowId || undefined}
@@ -470,7 +471,7 @@ export default function CreateIssueModal({
                 disabled={isLoadingWorkflows}
               >
                 <SelectTrigger className="h-11 w-full rounded-xl border-app-border bg-app-bg text-app-text-primary">
-                  <SelectValue placeholder="选择工作流" />
+                  <SelectValue placeholder={t("createModal.workflow.placeholder")} />
                 </SelectTrigger>
                 <SelectContent className="border-app-border bg-app-content-bg">
                   {availableWorkflowTemplates.map((workflow) => (
@@ -487,7 +488,8 @@ export default function CreateIssueModal({
                     {selectedWorkflow.name}
                   </div>
                   <p className="mt-2 text-sm text-app-text-secondary">
-                    {selectedWorkflow.description || "无描述"}
+                    {selectedWorkflow.description ||
+                      t("createModal.workflow.missingDescription")}
                   </p>
                 </div>
               )}
@@ -497,7 +499,7 @@ export default function CreateIssueModal({
           <div className="grid gap-5 md:grid-cols-2">
             <div className="grid gap-2">
               <label className="text-sm font-medium text-app-text-primary">
-                归属项目
+                {t("createModal.project.label")}
               </label>
               <Select
                 value={selectedProjectId || NONE_VALUE}
@@ -507,10 +509,12 @@ export default function CreateIssueModal({
                 disabled={isLoadingProjects}
               >
                 <SelectTrigger className="h-11 w-full rounded-xl border-app-border bg-app-bg text-app-text-primary">
-                  <SelectValue placeholder="选择项目" />
+                  <SelectValue placeholder={t("createModal.project.placeholder")} />
                 </SelectTrigger>
                 <SelectContent className="border-app-border bg-app-content-bg">
-                  <SelectItem value={NONE_VALUE}>不归属任何项目</SelectItem>
+                  <SelectItem value={NONE_VALUE}>
+                    {t("createModal.project.none")}
+                  </SelectItem>
                   {projects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.name}
@@ -522,14 +526,14 @@ export default function CreateIssueModal({
 
             <div className="grid gap-2">
               <label className="text-sm font-medium text-app-text-primary">
-                可见性
+                {tCommon("fields.visibility")}
               </label>
               <Select
                 value={selectedVisibility}
                 onValueChange={(value) => setSelectedVisibility(value as VisibilityType)}
               >
                 <SelectTrigger className="h-11 w-full rounded-xl border-app-border bg-app-bg text-app-text-primary">
-                  <SelectValue placeholder="选择可见性" />
+                  <SelectValue placeholder={t("createModal.fields.visibilityPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent className="border-app-border bg-app-content-bg">
                   {visibilityOptions.map((option) => (
@@ -544,12 +548,12 @@ export default function CreateIssueModal({
 
           <div className="grid gap-2">
             <label className="text-sm font-medium text-app-text-primary">
-              标题
+              {tCommon("fields.title")}
             </label>
             <Input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="输入任务标题..."
+              placeholder={t("createModal.fields.titlePlaceholder")}
               className="h-11 rounded-xl border-app-border bg-app-bg text-app-text-primary"
               autoFocus
               required
@@ -558,12 +562,12 @@ export default function CreateIssueModal({
 
           <div className="grid gap-2">
             <label className="text-sm font-medium text-app-text-primary">
-              描述
+              {tCommon("fields.description")}
             </label>
             <Textarea
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              placeholder="输入详细描述..."
+              placeholder={t("createModal.fields.descriptionPlaceholder")}
               className="min-h-28 rounded-2xl border-app-border bg-app-bg text-app-text-primary"
             />
           </div>
@@ -571,7 +575,7 @@ export default function CreateIssueModal({
           <div className="grid gap-5 md:grid-cols-3">
             <div className="grid gap-2">
               <label className="text-sm font-medium text-app-text-primary">
-                状态分类
+                {tCommon("fields.state")}
               </label>
               <Select
                 value={selectedStateCategory || undefined}
@@ -581,10 +585,10 @@ export default function CreateIssueModal({
                 disabled={isLoadingIssueStates || issueStates.length === 0}
               >
                 <SelectTrigger className="h-11 w-full rounded-xl border-app-border bg-app-bg text-app-text-primary">
-                  <SelectValue placeholder="选择状态分类" />
+                  <SelectValue placeholder={t("createModal.fields.statePlaceholder")} />
                 </SelectTrigger>
                 <SelectContent className="border-app-border bg-app-content-bg">
-                  {STATE_CATEGORY_OPTIONS.map((option) => (
+                  {stateCategoryOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -595,7 +599,7 @@ export default function CreateIssueModal({
 
             <div className="grid gap-2">
               <label className="text-sm font-medium text-app-text-primary">
-                优先级
+                {tCommon("fields.priority")}
               </label>
               <Select
                 value={selectedPriority || DEFAULT_PRIORITY_VALUE}
@@ -606,10 +610,10 @@ export default function CreateIssueModal({
                 }
               >
                 <SelectTrigger className="h-11 w-full rounded-xl border-app-border bg-app-bg text-app-text-primary">
-                  <SelectValue placeholder="选择优先级" />
+                  <SelectValue placeholder={t("createModal.fields.priorityPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent className="border-app-border bg-app-content-bg">
-                  {PRIORITY_OPTIONS.map((option) => (
+                  {priorityOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
@@ -620,7 +624,7 @@ export default function CreateIssueModal({
 
             <div className="grid gap-2">
               <label className="text-sm font-medium text-app-text-primary">
-                截止日期
+                {tCommon("fields.dueDate")}
               </label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -631,9 +635,11 @@ export default function CreateIssueModal({
                       "h-11 justify-start rounded-xl border-app-border bg-app-bg text-left font-normal text-app-text-primary hover:bg-app-button-hover",
                       !dueDate && "text-app-text-muted",
                     )}
-                  >
-                    <CalendarIcon className="h-4 w-4" />
-                    {dueDate ? format(dueDate, "yyyy-MM-dd") : "选择截止日期"}
+                    >
+                      <CalendarIcon className="h-4 w-4" />
+                    {dueDate
+                      ? format(dueDate, "yyyy-MM-dd")
+                      : t("createModal.fields.dueDatePlaceholder")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent
@@ -654,7 +660,7 @@ export default function CreateIssueModal({
                         className="h-8 px-2 text-app-text-secondary"
                         onClick={() => setDueDate(undefined)}
                       >
-                        清除日期
+                        {t("createModal.fields.clearDate")}
                       </Button>
                     </div>
                   )}
@@ -665,11 +671,13 @@ export default function CreateIssueModal({
 
           <div className="rounded-2xl border border-app-border bg-app-bg px-4 py-4">
             <div className="mb-4">
-              <div className="text-sm font-medium text-app-text-primary">负责人</div>
+              <div className="text-sm font-medium text-app-text-primary">
+                {t("createModal.fields.directAssignee")}
+              </div>
               <p className="mt-1 text-xs text-app-text-muted">
                 {workspaceType === "PERSONAL"
-                  ? "个人空间里负责人固定为你自己。"
-                  : "团队空间里可以从当前团队全部成员中选择。"}
+                  ? "You are always the assignee in a personal workspace."
+                  : "Choose from the full team member list in this workspace."}
               </p>
             </div>
 
@@ -679,19 +687,19 @@ export default function CreateIssueModal({
                   {currentUserLabel}
                 </div>
                 <div className="mt-1 text-xs text-app-text-secondary">
-                  {user?.email || "当前登录用户"}
+                  {user?.email || tCommon("states.currentUser")}
                 </div>
                 <div className="mt-2 text-xs text-app-text-muted">
                   {personalAssigneeId
-                    ? "创建后会自动归到你的个人工作队列。"
-                    : "正在同步你的成员身份，稍后即可创建。"}
+                    ? "This issue will automatically land in your personal queue."
+                    : "Your member identity is still syncing. You will be able to create the issue shortly."}
                 </div>
               </div>
             ) : (
               <div className="grid gap-5 lg:grid-cols-2">
                 <div className="grid gap-2">
                   <label className="text-sm font-medium text-app-text-primary">
-                    主负责人
+                    {t("createModal.fields.directAssignee")}
                   </label>
                   <Select
                     value={directAssigneeId || NONE_VALUE}
@@ -700,10 +708,12 @@ export default function CreateIssueModal({
                     }
                   >
                     <SelectTrigger className="h-11 w-full rounded-xl border-app-border bg-app-content-bg text-app-text-primary">
-                      <SelectValue placeholder="选择主负责人" />
+                      <SelectValue placeholder={t("createModal.fields.directAssigneePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent className="border-app-border bg-app-content-bg">
-                      <SelectItem value={NONE_VALUE}>暂不指定负责人</SelectItem>
+                      <SelectItem value={NONE_VALUE}>
+                        {t("createModal.assignee.none")}
+                      </SelectItem>
                       {teamMemberOptions.map((member) => (
                         <SelectItem key={member.id} value={member.id}>
                           {member.name}
@@ -715,11 +725,13 @@ export default function CreateIssueModal({
 
                 <div className="grid gap-2">
                   <label className="text-sm font-medium text-app-text-primary">
-                    协作成员
+                    {t("createModal.fields.additionalAssignees")}
                   </label>
                   <div className="max-h-44 space-y-2 overflow-y-auto rounded-2xl border border-app-border bg-app-content-bg p-3">
                     {teamMemberOptions.length === 0 ? (
-                      <p className="text-sm text-app-text-muted">当前没有可选成员。</p>
+                      <p className="text-sm text-app-text-muted">
+                        No team members are available right now.
+                      </p>
                     ) : (
                       teamMemberOptions.map((member) => (
                         <label
@@ -757,7 +769,7 @@ export default function CreateIssueModal({
               className="rounded-xl border-app-border bg-transparent text-app-text-primary"
               onClick={handleClose}
             >
-              取消
+              {tCommon("actions.cancel")}
             </Button>
             <Button
               type="submit"
@@ -768,8 +780,8 @@ export default function CreateIssueModal({
               }
             >
               {createIssueMutation.isPending || createWorkflowIssueMutation.isPending
-                ? "创建中..."
-                : "创建任务"}
+                ? t("createModal.actions.creating")
+                : t("createModal.actions.submit")}
             </Button>
           </div>
         </form>

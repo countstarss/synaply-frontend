@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Menu, PanelLeft, PanelRight } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { getWorkspaceNavItems } from "@/lib/navigation/page-registry";
@@ -26,10 +27,11 @@ interface InfoBarProps {
 
 const InfoBar = ({ showViewToggle = true, className }: InfoBarProps) => {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("shell");
   // const [activeView, setActiveView] = useState("list");
   const { isOpen, toggleSidebar } = useSidebarStore();
   const { currentWorkspace } = useWorkspace();
-  const mobileNavItems = getWorkspaceNavItems(currentWorkspace?.type);
+  const mobileNavItems = getWorkspaceNavItems(t, currentWorkspace?.type);
 
   const onGetPayment = async () => {};
 
@@ -61,7 +63,9 @@ const InfoBar = ({ showViewToggle = true, className }: InfoBarProps) => {
                 "md:opacity-100 opacity-0",
                 "md:block hidden pl-2"
               )}
-              title={isOpen ? "隐藏侧边栏" : "显示侧边栏"}
+              title={
+                isOpen ? t("infobar.hideSidebar") : t("infobar.showSidebar")
+              }
               disabled={false}
             >
               {isOpen ? (
@@ -103,7 +107,9 @@ const InfoBar = ({ showViewToggle = true, className }: InfoBarProps) => {
                   side="left"
                   className="w-1/2 bg-app-bg border-app-border"
                 >
-                  <DialogTitle className="sr-only">Menu</DialogTitle>
+                  <DialogTitle className="sr-only">
+                    {t("infobar.menu")}
+                  </DialogTitle>
                   <div className="flex flex-col gap-4 p-4">
                     {mobileNavItems.map((menuItem) => (
                       <Link

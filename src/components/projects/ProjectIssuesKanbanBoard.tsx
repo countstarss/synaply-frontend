@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   DragDropProvider,
   DragOverlay,
@@ -10,11 +11,7 @@ import {
 import { useSortable } from "@dnd-kit/react/sortable";
 import { RiDraggable, RiFlowChart, RiLoader4Line } from "react-icons/ri";
 import { cn } from "@/lib/utils";
-import {
-  ISSUE_STATE_CATEGORY_LABELS,
-  getIssueCategory,
-  normalizeIssueStateCategoryOrder,
-} from "@/lib/issue-board";
+import { getIssueCategory, normalizeIssueStateCategoryOrder } from "@/lib/issue-board";
 import { type Issue, isWorkflowIssue } from "@/lib/fetchers/issue";
 import {
   formatShortDate,
@@ -179,6 +176,8 @@ function ProjectIssueKanbanColumn({
   onOpenIssue,
   onCancelIssue,
   canCancelIssue,
+  tProjects,
+  tIssues,
 }: {
   category: IssueStateCategory;
   index: number;
@@ -187,7 +186,10 @@ function ProjectIssueKanbanColumn({
   onOpenIssue: (issue: Issue) => void;
   onCancelIssue?: (issue: Issue) => void;
   canCancelIssue?: (issue: Issue) => boolean;
+  tProjects: (key: string, values?: Record<string, string | number>) => string;
+  tIssues: (key: string, values?: Record<string, string | number>) => string;
 }) {
+  const categoryLabel = tIssues(`stateCategory.${category.toLowerCase()}`);
   const { ref, handleRef, isDragSource, isDropTarget } = useSortable({
     id: `project-issue-column:${category}`,
     index,
@@ -227,10 +229,10 @@ function ProjectIssueKanbanColumn({
       <div className="sticky top-0 z-10 mb-2 flex items-center justify-between gap-2 rounded-xl bg-app-content-bg/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-app-content-bg/80">
         <div className="min-w-0">
           <h3 className="truncate text-sm font-semibold text-app-text-primary">
-            {ISSUE_STATE_CATEGORY_LABELS[category]}
+            {categoryLabel}
           </h3>
           <p className="mt-0.5 text-[11px] text-app-text-muted">
-            {issues.length} issues
+            {tProjects("kanban.issueCount", { count: issues.length })}
           </p>
         </div>
 
@@ -238,8 +240,10 @@ function ProjectIssueKanbanColumn({
           ref={handleRef}
           type="button"
           className="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-app-text-muted transition hover:bg-app-button-hover hover:text-app-text-primary"
-          aria-label={`调整 ${ISSUE_STATE_CATEGORY_LABELS[category]} 列顺序`}
-          title="拖动排列类别列"
+          aria-label={tProjects("kanban.reorderColumn", {
+            label: categoryLabel,
+          })}
+          title={tProjects("kanban.dragColumn")}
         >
           <RiDraggable className="size-4" />
         </button>
@@ -256,11 +260,12 @@ function ProjectIssueKanbanColumn({
               onOpenIssue={onOpenIssue}
               onCancelIssue={onCancelIssue}
               canCancelIssue={canCancelIssue}
+              tProjects={tProjects}
             />
           ))}
           {issues.length === 0 && (
             <div className="flex min-h-24 items-center justify-center rounded-2xl border border-dashed border-app-border/80 bg-app-content-bg/40 px-3 text-center text-xs text-app-text-muted">
-              拖动 issue 到这一列
+              {tProjects("kanban.dropIssue")}
             </div>
           )}
         </div>
@@ -276,6 +281,7 @@ function ProjectIssueKanbanCard({
   onOpenIssue,
   onCancelIssue,
   canCancelIssue,
+  tProjects,
 }: {
   issue: Issue;
   category: IssueStateCategory;
@@ -283,6 +289,7 @@ function ProjectIssueKanbanCard({
   onOpenIssue: (issue: Issue) => void;
   onCancelIssue?: (issue: Issue) => void;
   canCancelIssue?: (issue: Issue) => boolean;
+  tProjects: (key: string, values?: Record<string, string | number>) => string;
 }) {
   const { ref, handleRef, isDragSource, isDropping } = useDraggable({
     id: `project-issue-card:${issue.id}`,
@@ -321,7 +328,7 @@ function ProjectIssueKanbanCard({
               {isWorkflowIssue(issue) && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-0.5 text-[10px] text-violet-200">
                   <RiFlowChart className="size-3" />
-                  工作流
+                  {tProjects("kanban.workflow")}
                 </span>
               )}
             </div>
@@ -354,8 +361,8 @@ function ProjectIssueKanbanCard({
           disabled={isPending}
           onClick={(event) => event.stopPropagation()}
           className="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-xl border border-app-border bg-app-content-bg text-app-text-muted transition hover:bg-app-button-hover hover:text-app-text-primary disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label={`拖动 ${issue.title}`}
-          title="拖动切换类别"
+          aria-label={tProjects("kanban.dragIssue", { title: issue.title })}
+          title={tProjects("kanban.dragIssueCategory")}
         >
           {isPending ? (
             <RiLoader4Line className="size-4 animate-spin" />
@@ -377,14 +384,14 @@ function ProjectIssueKanbanCard({
       <ContextMenuContent className="w-44">
         <ContextMenuGroup>
           <ContextMenuItem onSelect={() => onOpenIssue(issue)}>
-            打开 Issue
+            {tProjects("kanban.openIssue")}
           </ContextMenuItem>
           <ContextMenuItem
             variant="destructive"
             disabled={isPending || !canCancel}
             onSelect={() => onCancelIssue(issue)}
           >
-            取消 Issue
+            {tProjects("kanban.cancelIssue")}
           </ContextMenuItem>
         </ContextMenuGroup>
       </ContextMenuContent>
@@ -434,6 +441,8 @@ export function ProjectIssuesKanbanBoard({
   onCancelIssue,
   canCancelIssue,
 }: ProjectIssuesKanbanBoardProps) {
+  const tProjects = useTranslations("projects");
+  const tIssues = useTranslations("issues");
   const [activeIssueId, setActiveIssueId] = useState<string | null>(null);
   const lastOverCategoryRef = useRef<IssueStateCategory | null>(null);
   const activeIssue = useMemo(
@@ -588,6 +597,8 @@ export function ProjectIssuesKanbanBoard({
               onOpenIssue={onOpenIssue}
               onCancelIssue={onCancelIssue}
               canCancelIssue={canCancelIssue}
+              tProjects={tProjects}
+              tIssues={tIssues}
             />
           ))}
         </div>

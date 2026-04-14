@@ -25,10 +25,10 @@ export const CLOSED_ISSUE_STATE_CATEGORIES: readonly IssueStateCategory[] = [
 
 export const ISSUE_STATE_CATEGORY_LABELS: Record<IssueStateCategory, string> = {
   [IssueStateCategory.BACKLOG]: "Backlog",
-  [IssueStateCategory.TODO]: "待处理",
-  [IssueStateCategory.IN_PROGRESS]: "进行中",
-  [IssueStateCategory.DONE]: "已完成",
-  [IssueStateCategory.CANCELED]: "已取消",
+  [IssueStateCategory.TODO]: "To do",
+  [IssueStateCategory.IN_PROGRESS]: "In progress",
+  [IssueStateCategory.DONE]: "Done",
+  [IssueStateCategory.CANCELED]: "Canceled",
 };
 
 function hasIssueBoardStorage() {

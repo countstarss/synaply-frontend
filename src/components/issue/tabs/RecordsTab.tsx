@@ -1,12 +1,13 @@
 "use client";
 
 import React from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 interface StepRecord {
   id: string;
   stepName: string;
   index: number;
-  resultText?: string; // 改为可选
+  resultText?: string;
   createdAt: string;
   assignee?: {
     user?: {
@@ -21,12 +22,18 @@ interface RecordsTabProps {
 }
 
 export const RecordsTab: React.FC<RecordsTabProps> = ({ records }) => {
+  const tIssues = useTranslations("issues");
+  const locale = useLocale();
+
   return (
     <div className="h-full p-4 overflow-y-auto">
       {records.map((rec) => (
         <div key={rec.id} className="border-b border-app-border py-2 text-sm">
           <div className="font-medium">
-            {rec.stepName} (第{rec.index}步)
+            {tIssues("tabs.records.stepLabel", {
+              name: rec.stepName,
+              step: rec.index,
+            })}
           </div>
           <div className="text-app-text-secondary mt-1 whitespace-pre-wrap">
             {rec.resultText}
@@ -34,14 +41,16 @@ export const RecordsTab: React.FC<RecordsTabProps> = ({ records }) => {
           <div className="text-xs text-app-text-muted mt-1">
             {(rec.assignee?.user?.name ||
               rec.assignee?.user?.email?.split("@")[0] ||
-              "未知成员") +
+              tIssues("tabs.records.unknownMember")) +
               " · " +
-              new Date(rec.createdAt).toLocaleString()}
+              new Date(rec.createdAt).toLocaleString(locale)}
           </div>
         </div>
       ))}
       {records.length === 0 && (
-        <div className="text-app-text-muted text-center py-8">暂无成果物</div>
+        <div className="text-app-text-muted text-center py-8">
+          {tIssues("tabs.records.empty")}
+        </div>
       )}
     </div>
   );

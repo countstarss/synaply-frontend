@@ -6,6 +6,7 @@ import React, {
   useState,
   useTransition,
 } from "react";
+import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { RiLoader4Line } from "react-icons/ri";
@@ -41,7 +42,7 @@ import {
   type ProjectEditorValues,
 } from "@/components/projects/ProjectEditorDialog";
 import {
-  VISIBILITY_META,
+  getProjectVisibilityMeta,
 } from "@/components/projects/project-view-utils";
 import {
   buildProjectIssuePath,
@@ -77,6 +78,7 @@ function isSameCategoryOrder(
 
 // MARK: 项目页面内容
 export default function ProjectsPageContent() {
+  const t = useTranslations("projects");
   const { session } = useAuth();
   const queryClient = useQueryClient();
   const [isSelectionPending, startTransition] = useTransition();
@@ -186,7 +188,7 @@ export default function ProjectsPageContent() {
 
   const handleSaveIssueBoardCategoryOrder = () => {
     if (!workspaceId) {
-      toast.error("当前工作空间无效，无法保存看板顺序");
+      toast.error(t("toasts.boardOrderMissingWorkspace"));
       return;
     }
 
@@ -197,7 +199,7 @@ export default function ProjectsPageContent() {
     if (
       isSameCategoryOrder(savedIssueBoardCategoryOrder, normalizedOrder)
     ) {
-      toast.message("当前看板顺序没有变化");
+      toast.message(t("toasts.boardOrderUnchanged"));
       return;
     }
 
@@ -207,7 +209,7 @@ export default function ProjectsPageContent() {
     );
 
     if (!didPersist) {
-      toast.error("看板类型顺序保存失败，请重试");
+      toast.error(t("toasts.boardOrderSaveFailed"));
       return;
     }
 
@@ -215,10 +217,11 @@ export default function ProjectsPageContent() {
 
     setIssueBoardCategoryOrder(persistedOrder);
     setSavedIssueBoardCategoryOrder(persistedOrder);
-    toast.success("看板类型顺序已更新");
+    toast.success(t("toasts.boardOrderSaved"));
   };
 
   const normalizedSearch = deferredSearch.trim().toLowerCase();
+  const projectVisibilityMeta = getProjectVisibilityMeta(t);
   const filteredProjects = [...projects]
     .filter((project) => {
       if (!normalizedSearch) {
@@ -274,7 +277,7 @@ export default function ProjectsPageContent() {
     currentWorkspace?.name ||
     "";
   const selectedProjectVisibility = selectedProject
-    ? VISIBILITY_META[selectedProject.visibility]
+    ? projectVisibilityMeta[selectedProject.visibility]
     : null;
   const relatedWorkflows = projectSummary?.workflows ?? [];
   const recentActivity = projectSummary?.recentActivity ?? [];
@@ -293,7 +296,7 @@ export default function ProjectsPageContent() {
 
   const handleProjectSubmit = async (values: ProjectEditorValues) => {
     if (!workspaceId) {
-      toast.error("请先选择工作空间");
+      toast.error(t("toasts.workspaceRequired"));
       return;
     }
 
@@ -307,7 +310,7 @@ export default function ProjectsPageContent() {
         startTransition(() => {
           router.push(buildProjectPath(createdProject.id));
         });
-        toast.success("项目创建成功");
+        toast.success(t("toasts.created"));
       } else if (editingProject) {
         const updatedProject = await updateProjectMutation.mutateAsync({
           workspaceId,
@@ -318,20 +321,20 @@ export default function ProjectsPageContent() {
         startTransition(() => {
           router.push(buildProjectPath(updatedProject.id));
         });
-        toast.success("项目已更新");
+        toast.success(t("toasts.updated"));
       }
 
       setIsProjectDialogOpen(false);
     } catch (submitError) {
       toast.error(
-        submitError instanceof Error ? submitError.message : "保存项目失败",
+        submitError instanceof Error ? submitError.message : t("toasts.saveFailed"),
       );
     }
   };
 
   const handleDeleteProject = async (project: Project) => {
     if (!workspaceId) {
-      toast.error("请先选择工作空间");
+      toast.error(t("toasts.workspaceRequired"));
       return;
     }
 
@@ -348,11 +351,11 @@ export default function ProjectsPageContent() {
       });
       setProjectToDelete(null);
       toast.success(
-        `项目已删除，同时删除了 ${deletedResult.deletedIssueCount} 个相关任务`,
+        t("toasts.deleted", { count: deletedResult.deletedIssueCount }),
       );
     } catch (deleteError) {
       toast.error(
-        deleteError instanceof Error ? deleteError.message : "删除项目失败",
+        deleteError instanceof Error ? deleteError.message : t("toasts.deleteFailed"),
       );
     }
   };
@@ -361,7 +364,7 @@ export default function ProjectsPageContent() {
     const projectIdForRoute = selectedProjectId || issue.projectId;
 
     if (!projectIdForRoute) {
-      toast.error("当前项目路径无效，无法打开任务");
+      toast.error(t("toasts.invalidIssueRoute"));
       return;
     }
 
@@ -385,11 +388,11 @@ export default function ProjectsPageContent() {
       },
       {
         onSuccess: () => {
-          toast.success("项目同步时间已更新");
+          toast.success(t("toasts.syncUpdated"));
         },
         onError: (error) => {
           toast.error(
-            error instanceof Error ? error.message : "更新项目同步时间失败",
+            error instanceof Error ? error.message : t("toasts.syncFailed"),
           );
         },
       },
@@ -401,10 +404,10 @@ export default function ProjectsPageContent() {
       <div className="flex h-full items-center justify-center bg-app-bg">
         <div className="text-center">
           <h2 className="text-lg font-semibold text-app-text-primary">
-            暂无工作空间
+            {t("page.selectWorkspaceTitle")}
           </h2>
           <p className="mt-2 text-sm text-app-text-secondary">
-            选择一个 workspace 后，项目模块会自动按对应空间隔离数据。
+            {t("page.selectWorkspaceDescription")}
           </p>
         </div>
       </div>
@@ -416,7 +419,7 @@ export default function ProjectsPageContent() {
       <div className="flex h-full items-center justify-center bg-app-bg">
         <div className="flex items-center gap-2 text-app-text-secondary">
           <RiLoader4Line className="size-5 animate-spin" />
-          正在加载项目...
+          {t("page.loading")}
         </div>
       </div>
     );
@@ -427,10 +430,10 @@ export default function ProjectsPageContent() {
       <div className="flex h-full items-center justify-center bg-app-bg">
         <div className="max-w-md text-center">
           <h2 className="text-lg font-semibold text-app-text-primary">
-            项目加载失败
+            {t("page.loadFailedTitle")}
           </h2>
           <p className="mt-2 text-sm leading-6 text-app-text-secondary">
-            {error.message || "获取项目列表失败"}
+            {error.message || t("page.loadFailedDescription")}
           </p>
         </div>
       </div>
