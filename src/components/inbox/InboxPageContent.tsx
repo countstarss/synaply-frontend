@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   differenceInCalendarDays,
   format,
@@ -68,29 +69,36 @@ const ICON_BUTTON_CLASS =
 const PRIMARY_ACTION_CLASS =
   "border border-[#6a5cff] bg-[#6a5cff] text-white hover:bg-[#5d51ea] dark:border-white/12 dark:bg-[#262626] dark:text-[#f3f1f7] dark:hover:bg-[#303030] disabled:border-[#e3deef] disabled:bg-[#f3f1f9] disabled:text-[#9b96a8] dark:disabled:border-white/10 dark:disabled:bg-[#1a1a1a] dark:disabled:text-[#6f697a]";
 
-function formatRelativeTime(value: string) {
+function formatRelativeTime(
+  value: string,
+  t: (key: string, values?: Record<string, string | number>) => string,
+  locale: string,
+) {
   const diffMs = Date.now() - new Date(value).getTime();
   const diffMinutes = Math.max(Math.floor(diffMs / (1000 * 60)), 0);
 
   if (diffMinutes < 1) {
-    return "刚刚";
+    return t("relativeTime.justNow");
   }
 
   if (diffMinutes < 60) {
-    return `${diffMinutes} 分钟前`;
+    return t("relativeTime.minutesAgo", { count: diffMinutes });
   }
 
   const diffHours = Math.floor(diffMinutes / 60);
   if (diffHours < 24) {
-    return `${diffHours} 小时前`;
+    return t("relativeTime.hoursAgo", { count: diffHours });
   }
 
   const diffDays = Math.floor(diffHours / 24);
   if (diffDays < 7) {
-    return `${diffDays} 天前`;
+    return t("relativeTime.daysAgo", { count: diffDays });
   }
 
-  return format(new Date(value), "MM-dd");
+  return new Date(value).toLocaleDateString(locale, {
+    month: "2-digit",
+    day: "2-digit",
+  });
 }
 
 function getViewIcon(view: InboxViewId) {
@@ -106,16 +114,19 @@ function getViewIcon(view: InboxViewId) {
   }
 }
 
-function getViewLabel(view: InboxViewId) {
+function getViewLabel(
+  view: InboxViewId,
+  t: (key: string) => string,
+) {
   switch (view) {
     case "primary":
-      return "主要";
+      return t("views.primary");
     case "other":
-      return "其他";
+      return t("views.other");
     case "later":
-      return "稍后";
+      return t("views.later");
     case "cleared":
-      return "已清理";
+      return t("views.cleared");
   }
 }
 
@@ -136,53 +147,69 @@ function getViewCount(summary: InboxSummary | undefined, view: InboxViewId) {
   }
 }
 
-function getViewSubLabel(summary: InboxSummary | undefined, view: InboxViewId) {
+function getViewSubLabel(
+  summary: InboxSummary | undefined,
+  view: InboxViewId,
+  t: (key: string, values?: Record<string, string | number>) => string,
+) {
   const count = getViewCount(summary, view);
 
   if (view === "later") {
-    return count ? `${count} 条稍后处理` : "没有稍后项";
+    return count
+      ? t("viewSubLabel.laterCount", { count })
+      : t("viewSubLabel.laterEmpty");
   }
 
   if (view === "cleared") {
-    return count ? `${count} 条已清理` : "没有已清理项";
+    return count
+      ? t("viewSubLabel.clearedCount", { count })
+      : t("viewSubLabel.clearedEmpty");
   }
 
-  return count ? `${count} 条待处理` : "暂无事项";
+  return count
+    ? t("viewSubLabel.pendingCount", { count })
+    : t("viewSubLabel.pendingEmpty");
 }
 
-function getEmptyCopy(activeView: InboxViewId) {
+function getEmptyCopy(
+  activeView: InboxViewId,
+  t: (key: string) => string,
+) {
   if (activeView === "primary") {
     return {
-      title: "现在没有等待你处理的事项",
-      description: "新的评审、指派和到期事项会优先出现在这里。",
+      title: t("empty.primary.title"),
+      description: t("empty.primary.description"),
     };
   }
 
   if (activeView === "other") {
     return {
-      title: "没有需要稍后关注的更新",
-      description: "风险、阻塞和关注信号会在需要二次处理时集中到这里。",
+      title: t("empty.other.title"),
+      description: t("empty.other.description"),
     };
   }
 
   if (activeView === "later") {
     return {
-      title: "没有稍后处理的事项",
-      description: "当某个信号已读但不该打断当前节奏时，可以先放到这里。",
+      title: t("empty.later.title"),
+      description: t("empty.later.description"),
     };
   }
 
   return {
-    title: "还没有清理过的事项",
-    description: "你清理掉的信号会离开当前队列，并在这里保留一段简短记录。",
+    title: t("empty.cleared.title"),
+    description: t("empty.cleared.description"),
   };
 }
 
-function getSourceMeta(item: InboxItem) {
+function getSourceMeta(
+  item: InboxItem,
+  t: (key: string) => string,
+) {
   if (item.sourceType === "workflow") {
     return {
       icon: <Workflow className="size-4" />,
-      label: item.projectName || item.issueKey || "工作流",
+      label: item.projectName || item.issueKey || t("source.workflow"),
       tone: "bg-[#ecebff] text-[#6a5cff] dark:bg-[#242424] dark:text-[#c9c4d4]",
     };
   }
@@ -190,43 +217,49 @@ function getSourceMeta(item: InboxItem) {
   if (item.sourceType === "project") {
     return {
       icon: <ShieldAlert className="size-4" />,
-      label: item.projectName || "项目",
+      label: item.projectName || t("source.project"),
       tone: "bg-[#fff4e8] text-[#b76d20] dark:bg-[#242424] dark:text-[#c9c4d4]",
     };
   }
 
   return {
     icon: <Bug className="size-4" />,
-    label: item.projectName || item.issueKey || "任务",
+    label: item.projectName || item.issueKey || t("source.issue"),
     tone: "bg-[#edf5ff] text-[#3b6edc] dark:bg-[#242424] dark:text-[#c9c4d4]",
   };
 }
 
-function getSectionLabel(value: string) {
+function getSectionLabel(
+  value: string,
+  t: (key: string) => string,
+) {
   const date = new Date(value);
   const now = new Date();
   const dayDistance = differenceInCalendarDays(now, date);
 
   if (isToday(date)) {
-    return "今天";
+    return t("groups.today");
   }
 
   if (dayDistance <= 7) {
-    return "最近 7 天";
+    return t("groups.recentWeek");
   }
 
   if (isSameMonth(date, now)) {
-    return "本月更早";
+    return t("groups.earlierThisMonth");
   }
 
   return format(date, "yyyy-MM");
 }
 
-function groupItemsByDate(items: InboxItem[]): GroupedItems[] {
+function groupItemsByDate(
+  items: InboxItem[],
+  t: (key: string) => string,
+): GroupedItems[] {
   const groups = new Map<string, InboxItem[]>();
 
   for (const item of items) {
-    const label = getSectionLabel(item.occurredAt);
+    const label = getSectionLabel(item.occurredAt, t);
     const bucket = groups.get(label) || [];
     bucket.push(item);
     groups.set(label, bucket);
@@ -265,6 +298,7 @@ function ViewTabs({
   summary?: InboxSummary;
   onChange: (view: InboxViewId) => void;
 }) {
+  const tInbox = useTranslations("inbox");
   return (
     <div className="overflow-hidden rounded-[18px] border border-[#e8e7ef] bg-app-content-bg dark:border-white/10">
       <div className="grid min-w-0 grid-cols-2 md:grid-cols-4">
@@ -289,11 +323,11 @@ function ViewTabs({
               <div className="flex items-center gap-3 text-[#3a3646] dark:text-[#efebf7]">
                 {getViewIcon(view)}
                 <span className="text-[1rem] font-semibold">
-                  {getViewLabel(view)}
+                  {getViewLabel(view, tInbox)}
                 </span>
               </div>
               <div className="mt-1 text-sm text-[#7b768b] dark:text-[#9f99ae]">
-                {getViewSubLabel(summary, view)}
+                {getViewSubLabel(summary, view, tInbox)}
               </div>
             </button>
           );
@@ -330,7 +364,8 @@ function FilterButton({
 }
 
 function EmptyState({ activeView }: { activeView: InboxViewId }) {
-  const copy = getEmptyCopy(activeView);
+  const tInbox = useTranslations("inbox");
+  const copy = getEmptyCopy(activeView, tInbox);
 
   return (
     <div className="rounded-[18px] border border-dashed border-[#dfdce7] bg-app-content-bg px-6 py-14 text-center dark:border-white/10">
@@ -363,7 +398,9 @@ function InboxRow({
   onClear: (item: InboxItem) => Promise<void> | void;
   onAccept: (item: InboxItem) => Promise<void> | void;
 }) {
-  const sourceMeta = getSourceMeta(item);
+  const tInbox = useTranslations("inbox");
+  const locale = useLocale();
+  const sourceMeta = getSourceMeta(item, tInbox);
   const isUnread = item.status === "unread";
   const canAccept = hasAction(item, "accept_handoff");
   const shouldRaiseRow = isUnread;
@@ -383,7 +420,7 @@ function InboxRow({
       tabIndex={0}
       onKeyDown={handleRowKeyDown}
       onClick={() => void onOpen(item)}
-      aria-label={`打开 ${item.title}`}
+      aria-label={tInbox("row.openAria", { title: item.title })}
       className="group block w-full px-1 py-1 text-left focus:outline-none"
     >
       <div
@@ -434,11 +471,11 @@ function InboxRow({
           onClick={(event) => event.stopPropagation()}
         >
           <div className="pt-[3px]">
-            <Button
+              <Button
                 type="button"
                 className="text-sm text-[#8a8595] dark:text-[#9c96aa] bg-transparent px-1 hover:bg-transparent"
               >
-                {formatRelativeTime(item.occurredAt)}
+                {formatRelativeTime(item.occurredAt, tInbox, locale)}
               </Button>
           </div>
           <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
@@ -450,7 +487,7 @@ function InboxRow({
                 disabled={isMutating}
                 className={ICON_BUTTON_CLASS}
                 onClick={() => void onToggleRead(item)}
-                title={isUnread ? "标记为已读" : "标记为未读"}
+                title={isUnread ? tInbox("row.markSeen") : tInbox("row.markUnread")}
               >
                 {isUnread ? (
                   <MailOpen className="size-4" />
@@ -469,7 +506,7 @@ function InboxRow({
                 onClick={() => void onAccept(item)}
               >
                 <ArrowUpRight className="size-4" />
-                接受
+                {tInbox("row.accept")}
               </Button>
             ) : null}
 
@@ -481,7 +518,7 @@ function InboxRow({
                 disabled={isMutating}
                 className={ICON_BUTTON_CLASS}
                 onClick={() => void onSnooze(item)}
-                title="稍后处理"
+                title={tInbox("row.snooze")}
               >
                 <Clock3 className="size-4" />
               </Button>
@@ -503,7 +540,7 @@ function InboxRow({
               ) : (
                 <CheckCheck className="size-4" />
               )}
-              {item.status === "done" ? "已清理" : "清理"}
+              {item.status === "done" ? tInbox("row.cleared") : tInbox("row.clear")}
             </Button>
           </div>
         </div>
@@ -513,6 +550,7 @@ function InboxRow({
 }
 
 export default function InboxPageContent() {
+  const tInbox = useTranslations("inbox");
   const isPageVisible = useCachedPageVisibility();
   const hasMountedRef = useRef(false);
   const [activeView, setActiveView] = useState<InboxViewId>("primary");
@@ -592,8 +630,8 @@ export default function InboxPageContent() {
     [activeView, rawItems],
   );
   const groupedItems = useMemo(
-    () => groupItemsByDate(visibleItems),
-    [visibleItems],
+    () => groupItemsByDate(visibleItems, tInbox),
+    [visibleItems, tInbox],
   );
   const summary = feed?.summary;
   const canClearAll =
@@ -625,7 +663,7 @@ export default function InboxPageContent() {
       toast.error(
         mutationError instanceof Error
           ? mutationError.message
-          : "无法打开这条通知",
+          : tInbox("toasts.openFailed"),
       );
     }
   };
@@ -639,7 +677,7 @@ export default function InboxPageContent() {
           workspaceId,
           itemId: item.id,
         });
-        toast.success("已标记为已读");
+        toast.success(tInbox("toasts.markedSeen"));
         return;
       }
 
@@ -647,12 +685,12 @@ export default function InboxPageContent() {
         workspaceId,
         itemId: item.id,
       });
-      toast.success("已标记为未读");
+      toast.success(tInbox("toasts.markedUnread"));
     } catch (mutationError) {
       toast.error(
         mutationError instanceof Error
           ? mutationError.message
-          : "无法更新已读状态",
+          : tInbox("toasts.updateReadFailed"),
       );
     } finally {
       setMutatingItemId(null);
@@ -671,12 +709,12 @@ export default function InboxPageContent() {
         itemId: item.id,
         until: tomorrow,
       });
-      toast.success("已放到稍后处理");
+      toast.success(tInbox("toasts.snoozed"));
     } catch (mutationError) {
       toast.error(
         mutationError instanceof Error
           ? mutationError.message
-          : "无法暂存这条通知",
+          : tInbox("toasts.snoozeFailed"),
       );
     } finally {
       setMutatingItemId(null);
@@ -694,12 +732,12 @@ export default function InboxPageContent() {
         workspaceId,
         itemId: item.id,
       });
-      toast.success("已清理通知");
+      toast.success(tInbox("toasts.cleared"));
     } catch (mutationError) {
       toast.error(
         mutationError instanceof Error
           ? mutationError.message
-          : "无法清理这条通知",
+          : tInbox("toasts.clearFailed"),
       );
     } finally {
       setMutatingItemId(null);
@@ -718,12 +756,12 @@ export default function InboxPageContent() {
         issueId: item.issueId,
         data: {},
       });
-      toast.success("已接受交接");
+      toast.success(tInbox("toasts.handoffAccepted"));
     } catch (mutationError) {
       toast.error(
         mutationError instanceof Error
           ? mutationError.message
-          : "无法接受交接",
+          : tInbox("toasts.acceptFailed"),
       );
     } finally {
       setMutatingItemId(null);
@@ -744,12 +782,12 @@ export default function InboxPageContent() {
         workspaceId,
         itemIds: ids,
       });
-      toast.success("已清空当前视图");
+      toast.success(tInbox("toasts.clearedView"));
     } catch (mutationError) {
       toast.error(
         mutationError instanceof Error
           ? mutationError.message
-          : "无法清空通知",
+          : tInbox("toasts.clearAllFailed"),
       );
     }
   };
@@ -806,18 +844,18 @@ export default function InboxPageContent() {
               {supportsLiveFilters ? (
                 <>
                   <FilterButton
-                    label="未读"
+                    label={tInbox("filters.unread")}
                     active={unreadOnly}
                     onClick={() => setUnreadOnly((value) => !value)}
                   />
                   <FilterButton
-                    label="需处理"
+                    label={tInbox("filters.actionable")}
                     active={onlyActionable}
                     onClick={() => setOnlyActionable((value) => !value)}
                   />
                   {(onlyActionable || unreadOnly) && (
                     <FilterButton
-                      label="清空筛选"
+                      label={tInbox("filters.clear")}
                       active={false}
                       onClick={() => {
                         setOnlyActionable(false);
@@ -828,7 +866,7 @@ export default function InboxPageContent() {
                 </>
               ) : (
                 <div className="text-sm text-[#777182] dark:text-[#9791a5]">
-                  当前视图按状态归档，不支持额外筛选。
+                  {tInbox("filters.archivedHint")}
                 </div>
               )}
             </div>
@@ -846,7 +884,7 @@ export default function InboxPageContent() {
                 ) : (
                   <RefreshCw className="size-4" />
                 )}
-                刷新
+                {tInbox("actions.refresh")}
               </Button>
               <Button
                 type="button"
@@ -862,20 +900,20 @@ export default function InboxPageContent() {
                 ) : (
                   <CheckCheck className="size-4" />
                 )}
-                清空当前视图
+                {tInbox("actions.clearView")}
               </Button>
             </div>
           </div>
 
           <div className="px-1 text-sm text-[#777182] dark:text-[#9791a5]">
-            点击任意一行可打开关联任务或项目；也可以直接标记已读、放到稍后处理、接受交接或清理提醒。
+            {tInbox("hint")}
           </div>
 
           {isLoading ? (
             <div className="flex min-h-[360px] flex-col items-center justify-center gap-3 rounded-[18px] border border-[#e8e5ef] bg-app-content-bg dark:border-white/10">
               <Loader2 className="size-5 animate-spin text-[#8b8596] dark:text-[#9b95aa]" />
               <div className="text-sm text-[#7f798b] dark:text-[#9d97ab]">
-                正在加载收件箱...
+                {tInbox("states.loading")}
               </div>
             </div>
           ) : error ? (
@@ -883,10 +921,10 @@ export default function InboxPageContent() {
               <AlertTriangle className="size-5 text-[#cb5969] dark:text-red-400" />
               <div>
                 <div className="text-sm font-semibold text-[#302d39] dark:text-[#f0ebfa]">
-                  收件箱加载失败
+                  {tInbox("states.errorTitle")}
                 </div>
                 <div className="mt-2 text-sm text-[#7f798b] dark:text-[#9d97ab]">
-                  {error instanceof Error ? error.message : "请稍后再试"}
+                  {error instanceof Error ? error.message : tInbox("states.errorDescription")}
                 </div>
               </div>
               <Button
@@ -896,7 +934,7 @@ export default function InboxPageContent() {
                 onClick={() => void handleRefresh()}
               >
                 <RefreshCw className="size-4" />
-                重试
+                {tInbox("actions.retry")}
               </Button>
             </div>
           ) : groupedItems.length ? (

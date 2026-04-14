@@ -145,6 +145,7 @@
   },
   "tabs": {
     "discussion": {
+      "title": "Discussion",
       "empty": "No comments yet. Be the first to add context here.",
       "placeholder": "Add a comment... Use @ to mention teammates",
       "noMembers": "No matching team members found",
@@ -158,6 +159,231 @@
       "stepLabel": "{name} (Step {step})",
       "unknownMember": "Unknown member",
       "empty": "No outputs have been recorded yet."
+    }
+  },
+  "nodeStatus": {
+    "title": "Node status",
+    "description": "Click the status dots to update progress, then move to the next step when ready.",
+    "owner": "Owner: {name}",
+    "unassigned": "Unassigned",
+    "previous": "Previous",
+    "next": "Next",
+    "cannotEdit": "Only the current owner can update the node status or move the workflow forward.",
+    "completeHint": "Mark this node as Done before moving to the next step.",
+    "ready": "This node is ready to move forward.",
+    "note": "Note",
+    "notePlaceholder": "Add a note...",
+    "add": "Add"
+  },
+  "recordModal": {
+    "title": "Add output",
+    "placeholder": "What was completed in this step?",
+    "cancel": "Cancel",
+    "submit": "Submit"
+  },
+  "workflowDetail": {
+    "loading": "Loading workflow issue...",
+    "notFound": "This workflow issue does not exist or has been deleted.",
+    "back": "Back to list"
+  },
+  "normalDetail": {
+    "memberFallback": "Member {id}",
+    "user": {
+      "anonymous": "Anonymous user",
+      "unknown": "unknown"
+    },
+    "meta": {
+      "notSet": "Not set",
+      "unassigned": "Unassigned"
+    },
+    "editingHint": "{names} are editing this field",
+    "toasts": {
+      "invalidWorkspace": "The current workspace is invalid, so the issue could not be saved.",
+      "saved": "Issue saved.",
+      "updateFailed": "Failed to update the issue. Please try again.",
+      "copyFailed": "Failed to copy the text.",
+      "missingDoneState": "No usable done state is available in the current workspace."
+    },
+    "states": {
+      "loading": "Loading issue...",
+      "notFound": "This issue does not exist or has been deleted.",
+      "back": "Back to list",
+      "saving": "Saving changes..."
+    },
+    "badges": {
+      "state": "State: {value}",
+      "priority": "Priority: {value}",
+      "project": "Project: {value}",
+      "assignee": "Owner: {value}",
+      "dueDate": "Due: {value}",
+      "visibility": "Visibility: {value}",
+      "collaborator": "Collaborator: {value}"
+    },
+    "select": {
+      "statePlaceholder": "State: Not set",
+      "stateOption": "State: {value}",
+      "priorityPlaceholder": "Priority: Not set",
+      "priorityOption": "Priority: {value}",
+      "projectPlaceholder": "Project: Not set",
+      "projectOption": "Project: {value}",
+      "assigneePlaceholder": "Owner: Unassigned",
+      "assigneeOption": "Owner: {value}",
+      "visibilityPlaceholder": "Visibility",
+      "visibilityOption": "Visibility: {value}"
+    },
+    "actions": {
+      "openAi": "Open AI assistant",
+      "markComplete": "Mark as done"
+    },
+    "description": {
+      "title": "Issue description",
+      "referencedDocs": "{count, plural, one {# referenced document.} other {# referenced documents.}}",
+      "insertDoc": "Insert team doc",
+      "save": "Save description",
+      "cancel": "Cancel",
+      "edit": "Edit description",
+      "placeholder": "Use Markdown to explain the background, acceptance criteria, risks, and next steps.\nFor example:\n## Background\n- Why this matters\n- [ ] Pending questions",
+      "empty": "No description yet. Add background, acceptance criteria, risks, and related docs."
+    },
+    "aiHandoff": {
+      "title": "AI coding handoff",
+      "updatedAt": "Last updated {time}",
+      "fallback": "Saved back to this issue and ready to hand off to Claude Code or Codex.",
+      "copySuccess": "The coding handoff prompt has been copied.",
+      "copyAction": "Copy for Claude Code / Codex"
+    },
+    "footer": {
+      "createdAt": "Created: {value}",
+      "updatedAt": "Updated: {value}"
+    },
+    "docReference": {
+      "label": "Doc",
+      "defaultTitle": "Team doc",
+      "projectDoc": "Project doc",
+      "teamDoc": "Team doc",
+      "pickerTitle": "Insert team doc",
+      "pickerDescription": "Choose a document to insert into the issue description. You can click the document tag inside the description to preview it later.",
+      "loading": "Loading team documents...",
+      "empty": "No team documents are available to reference yet.",
+      "close": "Close",
+      "previewDescription": "Preview of the referenced document from the team space.",
+      "previewEmpty": "This document does not have any content yet."
+    }
+  },
+  "workflowFlow": {
+    "runStatus": {
+      "active": "Active",
+      "blocked": "Blocked",
+      "waitingReview": "Waiting for review",
+      "handoffPending": "Waiting for handoff",
+      "done": "Done"
+    },
+    "actionType": {
+      "execution": "Current execution step",
+      "blocked": "Waiting to be unblocked",
+      "review": "Waiting for confirmation",
+      "handoff": "Waiting for takeover",
+      "done": "Workflow completed"
+    },
+    "reviewOutcome": {
+      "approved": "Approved",
+      "changesRequested": "Changes requested"
+    },
+    "memberFallback": "Member {id}",
+    "toasts": {
+      "requestReviewFailed": "Failed to request a review.",
+      "requestHandoffFailed": "Failed to request a handoff.",
+      "blockFailed": "Failed to mark the workflow as blocked.",
+      "unblockFailed": "Failed to unblock the workflow.",
+      "approveReviewFailed": "Failed to approve the review.",
+      "requestChangesFailed": "Failed to request changes.",
+      "acceptHandoffFailed": "Failed to accept the handoff."
+    },
+    "states": {
+      "loadFailed": "Failed to load workflow data."
+    },
+    "meta": {
+      "number": "Number",
+      "workflow": "Workflow",
+      "status": "Status",
+      "currentStep": "Current step",
+      "currentOwner": "Current owner",
+      "priority": "Priority",
+      "stepCount": "Step count",
+      "action": "Action",
+      "owner": "Owner",
+      "step": "Step",
+      "version": "Version",
+      "recentReview": "Latest review",
+      "notStarted": "Not started",
+      "unknownStep": "Unnamed step",
+      "notSet": "Not set",
+      "unassigned": "Unassigned",
+      "specifiedMember": "Assigned member",
+      "stepsValue": "{count} steps"
+    },
+    "header": {
+      "workflow": "Workflow: {name}",
+      "priority": "Priority: {value}",
+      "workflowTask": "Workflow issue"
+    },
+    "actions": {
+      "openAi": "Open AI assistant",
+      "requestReview": "Request review",
+      "requestHandoff": "Request handoff",
+      "markBlocked": "Mark blocked",
+      "approveReview": "Approve review",
+      "requestChanges": "Request changes",
+      "acceptHandoff": "Accept handoff",
+      "unblock": "Unblock"
+    },
+    "tabs": {
+      "overview": "Overview"
+    },
+    "overview": {
+      "title": "Task overview",
+      "empty": "No introduction has been added yet. Add background, acceptance criteria, handoff notes, and related docs."
+    },
+    "collaboration": {
+      "title": "Collaboration status",
+      "blockReason": "Blocked reason: {value}",
+      "pendingTarget": "Waiting on: {value}",
+      "activeTitle": "Currently owned by {name}",
+      "activeDescription": "The current owner can request a review, hand off the step, or mark it blocked when outside help is needed.",
+      "targetLabel": "Review or handoff target",
+      "targetPlaceholder": "Choose who should review or take over",
+      "noteLabel": "Collaboration note",
+      "notePlaceholder": "Add review, handoff, or blocker notes. When marking blocked, explain the cause, who can help, and when progress may resume.",
+      "targetRequired": "Choose a target member before requesting a review or handoff. Marking blocked can be submitted without a target.",
+      "onlyCurrentOwner": "Only the current owner can request a review, start a handoff, or mark this workflow blocked."
+    },
+    "review": {
+      "waitingTitle": "Waiting for {name} to review",
+      "waitingDescription": "Once the review is approved, the workflow will continue. If changes are needed, you can send it back directly.",
+      "placeholder": "Write the review decision or requested changes",
+      "readonlyHint": "This step is waiting for {name}. You can still add context in the discussion tab."
+    },
+    "handoff": {
+      "waitingTitle": "Waiting for {name} to take over",
+      "waitingDescription": "After takeover, ownership of the current step will move to the new assignee.",
+      "placeholder": "Add a handoff note, such as what should happen next",
+      "readonlyHint": "This step is waiting for {name} to take over. You can still add handoff context in the discussion tab."
+    },
+    "blocked": {
+      "title": "This step is blocked",
+      "description": "Owner: {name}. The blocker note should explain the cause, who can help, and the expected recovery time.",
+      "placeholder": "Explain why the blocker is resolved, or add the next step after recovery",
+      "readonlyHint": "Only the current owner can unblock this workflow. Other teammates can still add context in the discussion tab."
+    },
+    "done": {
+      "description": "This workflow is complete. You can revisit the outputs and collaboration history here later."
+    },
+    "focusingNode": "is focusing on the current node",
+    "records": {
+      "title": "Collaboration record",
+      "history": "History",
+      "discussion": "Discussion",
+      "outputs": "Outputs ({count})"
     }
   }
 }

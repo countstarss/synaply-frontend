@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
+import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -75,40 +76,13 @@ interface WorkItemRowProps {
   isMutating: boolean;
 }
 
-const TAB_ORDER: Array<{ id: WorkTabId; label: string }> = [
-  { id: "today", label: "今日" },
-  { id: "waiting", label: "待处理" },
-  { id: "in-progress", label: "进行中" },
-  { id: "blocked", label: "阻塞" },
-  { id: "completed", label: "已完成" },
+const TAB_ORDER: WorkTabId[] = [
+  "today",
+  "waiting",
+  "in-progress",
+  "blocked",
+  "completed",
 ];
-
-const SECTION_META: Record<SectionId, SectionMeta> = {
-  waitingForMe: {
-    title: "待我处理",
-    description: "需要你开始、确认评审或接手的事项。",
-    emptyTitle: "现在没有需要你接球的事项",
-    emptyDescription: "新的交接、评审和待开始工作会优先落在这里。",
-  },
-  inProgress: {
-    title: "进行中",
-    description: "你已经开始推进、当前仍在执行中的工作。",
-    emptyTitle: "当前没有进行中的事项",
-    emptyDescription: "一旦你开始推进任务或工作流，它会出现在这里。",
-  },
-  blocked: {
-    title: "阻塞",
-    description: "和你相关、但目前被阻塞的工作。",
-    emptyTitle: "当前没有与你相关的阻塞项",
-    emptyDescription: "阻塞项会集中显示在这里，避免状态散落在别处。",
-  },
-  completedToday: {
-    title: "今日完成",
-    description: "今天已经推进完成或收尾的事项。",
-    emptyTitle: "今天还没有完成项",
-    emptyDescription: "当你完成任务或工作流节点后，这里会记录今天的推进结果。",
-  },
-};
 
 function getSummaryToneClasses(tone: SummaryMetricCardProps["tone"]) {
   switch (tone) {
@@ -202,12 +176,13 @@ function renderSummaryCards(
   data: MyWorkResponse | undefined,
   activeTab: WorkTabId,
   onSelect: (tabId: WorkTabId) => void,
+  tTasks: (key: string, values?: Record<string, string | number>) => string,
 ) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
       <SummaryMetricCard
         tabId="today"
-        label="今日焦点"
+        label={tTasks("summary.todayFocus")}
         value={data?.counts.todayFocus || 0}
         tone="attention"
         active={getSummaryCardActiveState(activeTab, "today")}
@@ -215,7 +190,7 @@ function renderSummaryCards(
       />
       <SummaryMetricCard
         tabId="waiting"
-        label="待处理"
+        label={tTasks("summary.waiting")}
         value={data?.counts.waitingForMe || 0}
         tone="attention"
         active={getSummaryCardActiveState(activeTab, "waiting")}
@@ -223,7 +198,7 @@ function renderSummaryCards(
       />
       <SummaryMetricCard
         tabId="in-progress"
-        label="进行中"
+        label={tTasks("summary.inProgress")}
         value={data?.counts.inProgress || 0}
         tone="default"
         active={getSummaryCardActiveState(activeTab, "in-progress")}
@@ -231,7 +206,7 @@ function renderSummaryCards(
       />
       <SummaryMetricCard
         tabId="blocked"
-        label="阻塞"
+        label={tTasks("summary.blocked")}
         value={data?.counts.blocked || 0}
         tone="danger"
         active={getSummaryCardActiveState(activeTab, "blocked")}
@@ -239,7 +214,7 @@ function renderSummaryCards(
       />
       <SummaryMetricCard
         tabId="completed"
-        label="今日完成"
+        label={tTasks("summary.completedToday")}
         value={data?.counts.completedToday || 0}
         tone="success"
         active={getSummaryCardActiveState(activeTab, "completed")}
@@ -292,23 +267,29 @@ function getActionTone(item: MyWorkItem) {
   }
 }
 
-function getSourceMeta(item: MyWorkItem) {
+function getSourceMeta(
+  item: MyWorkItem,
+  tTasks: (key: string, values?: Record<string, string | number>) => string,
+) {
   if (item.sourceType === "workflow") {
     return {
-      label: "Workflow",
+      label: tTasks("row.source.workflow"),
       icon: <Workflow className="size-3.5" />,
     };
   }
 
   return {
-    label: "Issue",
+    label: tTasks("row.source.issue"),
     icon: <Bug className="size-3.5" />,
   };
 }
 
-function getQuickActionLabel(item: MyWorkItem) {
+function getQuickActionLabel(
+  item: MyWorkItem,
+  tTasks: (key: string, values?: Record<string, string | number>) => string,
+) {
   if (item.sourceType === "workflow" && item.currentActionType === "handoff") {
-    return "接受";
+    return tTasks("row.quickAction.accept");
   }
 
   if (
@@ -316,30 +297,35 @@ function getQuickActionLabel(item: MyWorkItem) {
     item.currentActionType === "todo" &&
     item.status === IssueStatus.TODO
   ) {
-    return "开始执行";
+    return tTasks("row.quickAction.start");
   }
 
   if (item.currentActionType === "review") {
-    return "处理评审";
+    return tTasks("row.quickAction.review");
   }
 
-  return "打开";
+  return tTasks("row.quickAction.open");
 }
 
-function getQueueMeta(item: MyWorkItem) {
+function getQueueMeta(
+  item: MyWorkItem,
+  tTasks: (key: string, values?: Record<string, string | number>) => string,
+) {
   if (item.currentActionType === "review" && item.targetName) {
-    return `评审 · ${item.targetName}`;
+    return tTasks("row.queue.review", { name: item.targetName });
   }
 
   if (item.currentActionType === "handoff" && item.targetName) {
-    return `交接 · ${item.targetName}`;
+    return tTasks("row.queue.handoff", { name: item.targetName });
   }
 
   if (item.assigneeName) {
-    return `负责人 · ${item.assigneeName}`;
+    return tTasks("row.queue.assignee", { name: item.assigneeName });
   }
 
-  return item.sourceType === "workflow" ? "工作流运行" : "任务";
+  return item.sourceType === "workflow"
+    ? tTasks("row.queue.workflow")
+    : tTasks("row.queue.issue");
 }
 
 function getSignalCopy(item: MyWorkItem) {
@@ -361,7 +347,8 @@ function WorkItemRow({
   onAcceptHandoff,
   isMutating,
 }: WorkItemRowProps) {
-  const sourceMeta = getSourceMeta(item);
+  const tTasks = useTranslations("tasks");
+  const sourceMeta = getSourceMeta(item, tTasks);
   const priorityBadge = getPriorityBadge(item.priority);
   const dueLabel = formatDueLabel(item.dueAt);
   const showAcceptHandoff =
@@ -404,7 +391,7 @@ function WorkItemRow({
       tabIndex={0}
       onKeyDown={handleRowKeyDown}
       onClick={() => onOpenIssue(item)}
-      aria-label={`Open ${item.title}`}
+      aria-label={tTasks("row.openIssueAria", { title: item.title })}
       className="group block w-full px-2 py-2 text-left focus:outline-none"
     >
       <div
@@ -454,9 +441,9 @@ function WorkItemRow({
                 {item.title}
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] text-app-text-muted">
-                <span>{item.projectName || "未归属项目"}</span>
+                <span>{item.projectName || tTasks("row.unassignedProject")}</span>
                 <span>·</span>
-                <span>{getQueueMeta(item)}</span>
+                <span>{getQueueMeta(item, tTasks)}</span>
               </div>
               {item.blockedReason && item.currentActionType !== "blocked" ? (
                 <div className="mt-2 text-[12px] text-red-300">
@@ -469,10 +456,10 @@ function WorkItemRow({
 
         <div className="min-w-0">
           <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-app-text-muted">
-            Context
+            {tTasks("table.context")}
           </div>
           <div className="mt-2 text-sm text-app-text-primary">
-            {item.projectName || "Workspace queue"}
+            {item.projectName || tTasks("row.workspaceQueue")}
           </div>
           <div className="mt-1 text-[12px] text-app-text-muted">
             {item.currentStepName || item.statusLabel}
@@ -481,7 +468,7 @@ function WorkItemRow({
 
         <div className="min-w-0">
           <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-app-text-muted">
-            Signal
+            {tTasks("table.signal")}
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {priorityBadge}
@@ -495,7 +482,7 @@ function WorkItemRow({
                     : "text-app-text-secondary",
                 )}
               >
-                Due {dueLabel}
+                {tTasks("row.due", { value: dueLabel })}
               </Badge>
             ) : null}
           </div>
@@ -525,7 +512,7 @@ function WorkItemRow({
             ) : (
               <ArrowUpRight data-icon="inline-start" />
             )}
-            {getQuickActionLabel(item)}
+            {getQuickActionLabel(item, tTasks)}
           </Button>
         </div>
       </div>
@@ -577,16 +564,16 @@ function WorkSection({
           <>
             <div className="hidden border-b border-app-border bg-app-bg px-4 py-2 md:grid md:grid-cols-[minmax(0,1.6fr)_minmax(190px,0.85fr)_minmax(190px,0.9fr)_auto] md:gap-4">
               <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-app-text-muted">
-                Work
+                <TasksTableLabel labelKey="table.work" />
               </div>
               <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-app-text-muted">
-                Context
+                <TasksTableLabel labelKey="table.context" />
               </div>
               <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-app-text-muted">
-                Signal
+                <TasksTableLabel labelKey="table.signal" />
               </div>
               <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-app-text-muted md:text-right">
-                Action
+                <TasksTableLabel labelKey="table.action" />
               </div>
             </div>
             <div className="divide-y divide-app-border">
@@ -608,39 +595,78 @@ function WorkSection({
   );
 }
 
-function buildTabs(data?: MyWorkResponse) {
-  return TAB_ORDER.map((tab) => {
-    if (tab.id === "waiting") {
+function TasksTableLabel({ labelKey }: { labelKey: string }) {
+  const tTasks = useTranslations("tasks");
+  return <>{tTasks(labelKey)}</>;
+}
+
+function getSectionMeta(
+  tTasks: (key: string, values?: Record<string, string | number>) => string,
+): Record<SectionId, SectionMeta> {
+  return {
+    waitingForMe: {
+      title: tTasks("sections.waiting.title"),
+      description: tTasks("sections.waiting.description"),
+      emptyTitle: tTasks("sections.waiting.emptyTitle"),
+      emptyDescription: tTasks("sections.waiting.emptyDescription"),
+    },
+    inProgress: {
+      title: tTasks("sections.inProgress.title"),
+      description: tTasks("sections.inProgress.description"),
+      emptyTitle: tTasks("sections.inProgress.emptyTitle"),
+      emptyDescription: tTasks("sections.inProgress.emptyDescription"),
+    },
+    blocked: {
+      title: tTasks("sections.blocked.title"),
+      description: tTasks("sections.blocked.description"),
+      emptyTitle: tTasks("sections.blocked.emptyTitle"),
+      emptyDescription: tTasks("sections.blocked.emptyDescription"),
+    },
+    completedToday: {
+      title: tTasks("sections.completed.title"),
+      description: tTasks("sections.completed.description"),
+      emptyTitle: tTasks("sections.completed.emptyTitle"),
+      emptyDescription: tTasks("sections.completed.emptyDescription"),
+    },
+  };
+}
+
+function buildTabs(
+  tTasks: (key: string, values?: Record<string, string | number>) => string,
+  data?: MyWorkResponse,
+) {
+  return TAB_ORDER.map((tabId) => {
+    if (tabId === "waiting") {
       return {
-        id: tab.id,
-        label: `待处理${data?.counts.waitingForMe ? ` (${data.counts.waitingForMe})` : ""}`,
+        id: tabId,
+        label: `${tTasks("tabs.waiting")}${data?.counts.waitingForMe ? ` (${data.counts.waitingForMe})` : ""}`,
       };
     }
 
-    if (tab.id === "in-progress") {
+    if (tabId === "in-progress") {
       return {
-        id: tab.id,
-        label: `进行中${data?.counts.inProgress ? ` (${data.counts.inProgress})` : ""}`,
+        id: tabId,
+        label: `${tTasks("tabs.inProgress")}${data?.counts.inProgress ? ` (${data.counts.inProgress})` : ""}`,
       };
     }
 
-    if (tab.id === "blocked") {
+    if (tabId === "blocked") {
       return {
-        id: tab.id,
-        label: `阻塞${data?.counts.blocked ? ` (${data.counts.blocked})` : ""}`,
+        id: tabId,
+        label: `${tTasks("tabs.blocked")}${data?.counts.blocked ? ` (${data.counts.blocked})` : ""}`,
       };
     }
 
-    if (tab.id === "completed") {
+    if (tabId === "completed") {
       return {
-        id: tab.id,
-        label: `已完成${data?.counts.completedToday ? ` (${data.counts.completedToday})` : ""}`,
+        id: tabId,
+        label: `${tTasks("tabs.completed")}${data?.counts.completedToday ? ` (${data.counts.completedToday})` : ""}`,
       };
     }
 
     return {
-      id: tab.id,
-      label: `今日${data?.counts.todayFocus ? ` (${data.counts.todayFocus})` : ""}`,
+      id: tabId,
+      label: `${tTasks("tabs.today")}${data?.counts.todayFocus ? ` (${data.counts.todayFocus})` : ""}`,
     };
   });
 }
@@ -666,6 +692,7 @@ function getActiveSection(activeTab: WorkTabId): SectionId | null {
 }
 
 export default function TasksPageContent() {
+  const tTasks = useTranslations("tasks");
   const isPageVisible = useCachedPageVisibility();
   const hasMountedRef = useRef(false);
   const [activeTab, setActiveTab] = useState<WorkTabId>("today");
@@ -698,7 +725,8 @@ export default function TasksPageContent() {
     void refetch();
   }, [isPageVisible, refetch]);
 
-  const tabs = useMemo(() => buildTabs(data), [data]);
+  const tabs = useMemo(() => buildTabs(tTasks, data), [data, tTasks]);
+  const sectionMeta = useMemo(() => getSectionMeta(tTasks), [tTasks]);
   const sectionItems = useMemo(
     () => ({
       waitingForMe: data?.waitingForMe || [],
@@ -739,13 +767,13 @@ export default function TasksPageContent() {
           status: IssueStatus.IN_PROGRESS,
         },
       });
-      toast.success("已标记为开始执行");
+      toast.success(tTasks("toasts.markedStarted"));
       await refetch();
     } catch (mutationError) {
       toast.error(
         mutationError instanceof Error
           ? mutationError.message
-          : "更新执行状态失败，请重试",
+          : tTasks("toasts.markStartedFailed"),
       );
     } finally {
       setIsMutatingIssueId(null);
@@ -765,13 +793,13 @@ export default function TasksPageContent() {
         issueId: item.issueId,
         data: {},
       });
-      toast.success("已接受交接");
+      toast.success(tTasks("toasts.handoffAccepted"));
       await refetch();
     } catch (mutationError) {
       toast.error(
         mutationError instanceof Error
           ? mutationError.message
-          : "接受交接失败，请重试",
+          : tTasks("toasts.acceptHandoffFailed"),
       );
     } finally {
       setIsMutatingIssueId(null);
@@ -830,7 +858,7 @@ export default function TasksPageContent() {
                   <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-3 py-12">
                     <Loader2 className="size-5 animate-spin text-app-text-muted" />
                     <div className="text-sm text-app-text-muted">
-                      正在整理你的工作队列...
+                      {tTasks("states.loading")}
                     </div>
                   </CardContent>
                 </Card>
@@ -840,10 +868,10 @@ export default function TasksPageContent() {
                     <AlertTriangle className="size-5 text-red-300" />
                     <div>
                       <div className="text-sm font-medium text-app-text-primary">
-                        个人工作聚合加载失败
+                        {tTasks("states.errorTitle")}
                       </div>
                       <div className="mt-2 text-sm text-app-text-muted">
-                        {error instanceof Error ? error.message : "请稍后再试"}
+                        {error instanceof Error ? error.message : tTasks("states.errorDescription")}
                       </div>
                     </div>
                     <Button
@@ -853,7 +881,7 @@ export default function TasksPageContent() {
                       onClick={() => void refetch()}
                     >
                       <RefreshCw data-icon="inline-start" />
-                      重试
+                      {tTasks("actions.retry")}
                     </Button>
                   </CardContent>
                 </Card>
@@ -863,13 +891,15 @@ export default function TasksPageContent() {
                     <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-app-border bg-app-content-bg px-4 py-3">
                       <div className="min-w-0 pr-2">
                         <h2 className="truncate text-[1.15rem] font-semibold tracking-[-0.03em] text-app-text-primary">
-                          我的工作概览
+                          {tTasks("header.title")}
                         </h2>
                       </div>
 
                       <div className="ml-auto flex flex-wrap gap-2">
                         <div className="rounded-full border border-app-border bg-app-bg px-3 py-1.5 text-xs font-medium text-app-text-secondary">
-                          {data?.counts.total || 0} 个活跃事项
+                          {tTasks("header.activeCount", {
+                            count: data?.counts.total || 0,
+                          })}
                         </div>
                         <div className="inline-flex items-center gap-1.5 rounded-full border border-app-border bg-app-bg px-3 py-1.5 text-xs font-medium text-app-text-secondary">
                           {isRefetching ? (
@@ -878,26 +908,24 @@ export default function TasksPageContent() {
                             <Clock3 className="size-3.5" />
                           )}
                           {isRefetching
-                            ? "同步中"
+                            ? tTasks("header.syncing")
                             : generatedAtLabel
-                              ? `数据更新于 ${generatedAtLabel}`
-                              : "等待首次同步"}
+                              ? tTasks("header.updatedAt", { value: generatedAtLabel })
+                              : tTasks("header.waitingFirstSync")}
                         </div>
                       </div>
                     </div>
 
-                    {renderSummaryCards(data, activeTab, setActiveTab)}
+                    {renderSummaryCards(data, activeTab, setActiveTab, tTasks)}
                   </div>
 
                   {activeTab === "today" ? (
                     <WorkSection
                       meta={{
-                        title: "今日焦点",
-                        description:
-                          "今天先处理这些。它们综合了紧急度、阻塞、评审和你当前的执行状态。",
-                        emptyTitle: "今天的焦点队列还是空的",
-                        emptyDescription:
-                          "当你有待处理、进行中或阻塞的工作时，它们会优先排到这里。",
+                        title: tTasks("sections.today.title"),
+                        description: tTasks("sections.today.description"),
+                        emptyTitle: tTasks("sections.today.emptyTitle"),
+                        emptyDescription: tTasks("sections.today.emptyDescription"),
                       }}
                       items={data?.todayFocus || []}
                       onOpenIssue={handleOpenIssue}
@@ -908,7 +936,7 @@ export default function TasksPageContent() {
                   ) : activeSection ? (
                     <div className="grid gap-6">
                       <WorkSection
-                        meta={SECTION_META[activeSection]}
+                        meta={sectionMeta[activeSection]}
                         items={sectionItems[activeSection]}
                         onOpenIssue={handleOpenIssue}
                         onMarkStarted={handleMarkStarted}

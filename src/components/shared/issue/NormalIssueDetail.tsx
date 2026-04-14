@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   RiArrowLeftLine,
   RiCalendarLine,
@@ -78,77 +79,125 @@ interface MemberOption {
   avatarUrl?: string;
 }
 
-const PRIORITY_OPTIONS = [
-  { value: IssuePriority.LOW, label: "低", color: "bg-gray-100 text-gray-700" },
-  {
-    value: IssuePriority.NORMAL,
-    label: "中",
-    color: "bg-yellow-100 text-yellow-700",
-  },
-  {
-    value: IssuePriority.HIGH,
-    label: "高",
-    color: "bg-orange-100 text-orange-700",
-  },
-  {
-    value: IssuePriority.URGENT,
-    label: "紧急",
-    color: "bg-red-100 text-red-700",
-  },
-] as const;
-
-const VISIBILITY_OPTIONS = [
-  { value: VisibilityType.PRIVATE, label: "仅自己可见" },
-  { value: VisibilityType.TEAM_READONLY, label: "团队只读" },
-  { value: VisibilityType.TEAM_EDITABLE, label: "团队可编辑" },
-  { value: VisibilityType.PUBLIC, label: "公开可见" },
-] as const;
-
 const EMPTY_PRIORITY_VALUE = "__empty_priority__";
 const EMPTY_STATE_VALUE = "__empty_state__";
 const EMPTY_PROJECT_VALUE = "__empty_project__";
 const EMPTY_ASSIGNEE_VALUE = "__empty_assignee__";
 
-const DOC_REFERENCE_PATTERN = /\[文档：([^\]]+)\]\(synaply-doc:\/\/([^)]+)\)/g;
+const DOC_REFERENCE_PATTERN =
+  /\[(?:\u6587\u6863|Doc):([^\]]+)\]\(synaply-doc:\/\/([^)]+)\)/g;
 
-function getTeamMemberName(member: TeamMember) {
+function getPriorityOptions(tIssues: ReturnType<typeof useTranslations>) {
+  return [
+    {
+      value: IssuePriority.LOW,
+      label: tIssues("priority.low"),
+      color: "bg-gray-100 text-gray-700",
+    },
+    {
+      value: IssuePriority.NORMAL,
+      label: tIssues("priority.normal"),
+      color: "bg-yellow-100 text-yellow-700",
+    },
+    {
+      value: IssuePriority.HIGH,
+      label: tIssues("priority.high"),
+      color: "bg-orange-100 text-orange-700",
+    },
+    {
+      value: IssuePriority.URGENT,
+      label: tIssues("priority.urgent"),
+      color: "bg-red-100 text-red-700",
+    },
+  ] as const;
+}
+
+function getVisibilityOptions(tIssues: ReturnType<typeof useTranslations>) {
+  return [
+    {
+      value: VisibilityType.PRIVATE,
+      label: tIssues("visibility.private"),
+    },
+    {
+      value: VisibilityType.TEAM_READONLY,
+      label: tIssues("visibility.teamReadonly"),
+    },
+    {
+      value: VisibilityType.TEAM_EDITABLE,
+      label: tIssues("visibility.teamEditable"),
+    },
+    {
+      value: VisibilityType.PUBLIC,
+      label: tIssues("visibility.public"),
+    },
+  ] as const;
+}
+
+function getTeamMemberName(
+  member: TeamMember,
+  tIssues: ReturnType<typeof useTranslations>,
+) {
   return (
     member.user.name?.trim() ||
     member.user.email?.split("@")[0] ||
-    `成员 ${member.id.slice(0, 6)}`
+    tIssues("normalDetail.memberFallback", { id: member.id.slice(0, 6) })
   );
 }
 
-function getIssueMemberName(member?: IssueAssigneeMember | null) {
+function getIssueMemberName(
+  member: IssueAssigneeMember | null | undefined,
+  tIssues: ReturnType<typeof useTranslations>,
+) {
   return (
     member?.user?.name?.trim() ||
     member?.user?.email?.split("@")[0] ||
-    `成员 ${member?.id?.slice(0, 6) || "未知"}`
+    tIssues("normalDetail.memberFallback", {
+      id: member?.id?.slice(0, 6) || tIssues("normalDetail.user.unknown"),
+    })
   );
 }
 
-function formatDate(dateString?: string | null) {
+function formatDate(
+  dateString: string | null | undefined,
+  locale: string,
+  tIssues: ReturnType<typeof useTranslations>,
+) {
   if (!dateString) {
-    return "未设置";
+    return tIssues("normalDetail.meta.notSet");
   }
 
-  return new Date(dateString).toLocaleString("zh-CN");
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(dateString));
 }
 
-function formatDateOnly(dateString?: string | null) {
+function formatDateOnly(
+  dateString: string | null | undefined,
+  locale: string,
+  tIssues: ReturnType<typeof useTranslations>,
+) {
   if (!dateString) {
-    return "未设置";
+    return tIssues("normalDetail.meta.notSet");
   }
 
-  return new Date(dateString).toLocaleDateString("zh-CN");
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+  }).format(new Date(dateString));
 }
 
-async function copyTextToClipboard(text: string, successMessage: string) {
+async function copyTextToClipboard(
+  text: string,
+  successMessage: string,
+  fallbackErrorMessage: string,
+) {
   try {
     await navigator.clipboard.writeText(text);
     toast.success(successMessage);
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : "复制失败");
+    toast.error(
+      error instanceof Error ? error.message : fallbackErrorMessage,
+    );
   }
 }
 
@@ -158,14 +207,21 @@ function toUtcMidnightIso(date: Date) {
   ).toISOString();
 }
 
-function getPriorityOption(priority?: IssuePriority | null) {
-  return PRIORITY_OPTIONS.find((option) => option.value === priority) || null;
+function getPriorityOption(
+  priority: IssuePriority | null | undefined,
+  options: ReturnType<typeof getPriorityOptions>,
+) {
+  return options.find((option) => option.value === priority) || null;
 }
 
-function getVisibilityLabel(visibility?: VisibilityType | null) {
+function getVisibilityLabel(
+  visibility: VisibilityType | null | undefined,
+  options: ReturnType<typeof getVisibilityOptions>,
+  tIssues: ReturnType<typeof useTranslations>,
+) {
   return (
-    VISIBILITY_OPTIONS.find((option) => option.value === visibility)?.label ||
-    "未设置"
+    options.find((option) => option.value === visibility)?.label ||
+    tIssues("normalDetail.meta.notSet")
   );
 }
 
@@ -201,16 +257,19 @@ function extractBlockNoteText(value: unknown): string {
   return "";
 }
 
-function getDocPreviewContent(doc?: DocRecord | null) {
+function getDocPreviewContent(
+  doc: DocRecord | null | undefined,
+  tIssues: ReturnType<typeof useTranslations>,
+) {
   if (!doc?.content) {
-    return "该文档暂无内容。";
+    return tIssues("normalDetail.docReference.previewEmpty");
   }
 
   try {
     const parsed = JSON.parse(doc.content) as unknown;
     const text = extractBlockNoteText(parsed).replace(/\s+/g, " ").trim();
 
-    return text || "该文档暂无内容。";
+    return text || tIssues("normalDetail.docReference.previewEmpty");
   } catch {
     return doc.content;
   }
@@ -221,9 +280,10 @@ function renderInlineMarkdown(
   docsById: Map<string, DocRecord>,
   onOpenDoc: (doc: DocRecord) => void,
   keyPrefix: string,
+  tIssues: ReturnType<typeof useTranslations>,
 ) {
   const nodes: React.ReactNode[] = [];
-  const matcher = /\[文档：([^\]]+)\]\(synaply-doc:\/\/([^)]+)\)/g;
+  const matcher = DOC_REFERENCE_PATTERN;
   let lastIndex = 0;
 
   for (const match of text.matchAll(matcher)) {
@@ -244,7 +304,7 @@ function renderInlineMarkdown(
         className="inline-flex items-center gap-1 rounded-md border border-app-border bg-app-content-bg px-2 py-0.5 text-xs font-medium text-sky-700 transition hover:bg-app-button-hover disabled:cursor-not-allowed disabled:opacity-60"
       >
         <RiFileTextLine className="h-3 w-3" />
-        {title || doc?.title || "团队文档"}
+        {title || doc?.title || tIssues("normalDetail.docReference.defaultTitle")}
       </button>,
     );
 
@@ -262,15 +322,17 @@ function MarkdownDescriptionPreview({
   content,
   docsById,
   onOpenDoc,
+  tIssues,
 }: {
   content?: string | null;
   docsById: Map<string, DocRecord>;
   onOpenDoc: (doc: DocRecord) => void;
+  tIssues: ReturnType<typeof useTranslations>;
 }) {
   if (!content?.trim()) {
     return (
       <div className="rounded-lg border border-dashed border-app-border px-4 py-8 text-center text-sm text-app-text-muted">
-        暂无描述。可以补充背景、验收标准、风险和相关文档。
+        {tIssues("normalDetail.description.empty")}
       </div>
     );
   }
@@ -284,6 +346,7 @@ function MarkdownDescriptionPreview({
           docsById,
           onOpenDoc,
           `line-${index}`,
+          tIssues,
         );
 
         if (!trimmed) {
@@ -301,6 +364,7 @@ function MarkdownDescriptionPreview({
                 docsById,
                 onOpenDoc,
                 `heading-${index}`,
+                tIssues,
               )}
             </h4>
           );
@@ -317,6 +381,7 @@ function MarkdownDescriptionPreview({
                 docsById,
                 onOpenDoc,
                 `heading-${index}`,
+                tIssues,
               )}
             </h3>
           );
@@ -333,6 +398,7 @@ function MarkdownDescriptionPreview({
                 docsById,
                 onOpenDoc,
                 `heading-${index}`,
+                tIssues,
               )}
             </h2>
           );
@@ -348,6 +414,7 @@ function MarkdownDescriptionPreview({
                   docsById,
                   onOpenDoc,
                   `todo-${index}`,
+                  tIssues,
                 )}
               </span>
             </div>
@@ -364,6 +431,7 @@ function MarkdownDescriptionPreview({
                   docsById,
                   onOpenDoc,
                   `list-${index}`,
+                  tIssues,
                 )}
               </span>
             </div>
@@ -381,6 +449,7 @@ function MarkdownDescriptionPreview({
                 docsById,
                 onOpenDoc,
                 `quote-${index}`,
+                tIssues,
               )}
             </blockquote>
           );
@@ -392,7 +461,7 @@ function MarkdownDescriptionPreview({
   );
 }
 
-// TO AGENTS: 不要破坏这个组件的整体布局和样式, 增减一些内容或者字段是 OK 的。
+// Keep the overall layout and visual hierarchy intact while translating content.
 export default function NormalIssueDetail({
   issueId,
   workspaceId,
@@ -400,6 +469,8 @@ export default function NormalIssueDetail({
   onClose,
   onUpdate,
 }: NormalIssueDetailProps) {
+  const tIssues = useTranslations("issues");
+  const locale = useLocale();
   const { user } = useAuth();
   const { data: issue, isLoading: isLoadingIssue } = useIssue(
     workspaceId,
@@ -411,10 +482,18 @@ export default function NormalIssueDetail({
   const { currentWorkspace } = useWorkspace();
   const workspaceType = currentWorkspace?.type || "PERSONAL";
   const teamId = currentWorkspace?.teamId;
+  const priorityOptions = React.useMemo(
+    () => getPriorityOptions(tIssues),
+    [tIssues],
+  );
+  const visibilityOptions = React.useMemo(
+    () => getVisibilityOptions(tIssues),
+    [tIssues],
+  );
   const currentUserName =
     user?.user_metadata?.name?.trim() ||
     user?.email?.split("@")[0] ||
-    "匿名用户";
+    tIssues("normalDetail.user.anonymous");
   const { getEditorsForField, setEditingField: setRealtimeEditingField } =
     useIssueRealtime(issueId, workspaceId, {
       enabled: isOpen,
@@ -452,7 +531,7 @@ export default function NormalIssueDetail({
   for (const member of teamMembers) {
     memberMap.set(member.id, {
       id: member.id,
-      name: getTeamMemberName(member),
+      name: getTeamMemberName(member, tIssues),
       email: member.user.email,
       avatarUrl: member.user.avatar_url,
     });
@@ -462,7 +541,7 @@ export default function NormalIssueDetail({
     if (!memberMap.has(assignee.memberId)) {
       memberMap.set(assignee.memberId, {
         id: assignee.memberId,
-        name: getIssueMemberName(assignee.member),
+        name: getIssueMemberName(assignee.member, tIssues),
         email: assignee.member?.user?.email || "",
         avatarUrl:
           assignee.member?.user?.avatar_url ||
@@ -473,7 +552,7 @@ export default function NormalIssueDetail({
   }
 
   const memberOptions = Array.from(memberMap.values()).sort((left, right) =>
-    left.name.localeCompare(right.name, "zh-CN"),
+    left.name.localeCompare(right.name, locale),
   );
   const currentWorkspaceMember = teamMembers.find(
     (member) => member.user.id === user?.id,
@@ -535,7 +614,7 @@ export default function NormalIssueDetail({
   const selectedState = issueStates.find(
     (state) => state.id === localIssue?.stateId,
   );
-  const currentPriority = getPriorityOption(localIssue?.priority);
+  const currentPriority = getPriorityOption(localIssue?.priority, priorityOptions);
   const doneState =
     issueStates.find(
       (state) => state.category === IssueStateCategory.DONE && state.isDefault,
@@ -622,7 +701,7 @@ export default function NormalIssueDetail({
     relationOverrides: Partial<Issue> = {},
   ) => {
     if (!workspaceId || !committedIssue) {
-      toast.error("当前工作空间无效，无法保存任务");
+      toast.error(tIssues("normalDetail.toasts.invalidWorkspace"));
       return;
     }
 
@@ -653,11 +732,13 @@ export default function NormalIssueDetail({
       setLocalIssue(mergedIssue);
       setEditingField(null);
       onUpdate(mergedIssue);
-      toast.success("任务已保存");
+      toast.success(tIssues("normalDetail.toasts.saved"));
     } catch (error) {
-      console.error("更新任务失败:", error);
+      console.error("Failed to update issue:", error);
       toast.error(
-        error instanceof Error ? error.message : "更新任务失败，请重试",
+        error instanceof Error
+          ? error.message
+          : tIssues("normalDetail.toasts.updateFailed"),
       );
     }
   };
@@ -679,8 +760,9 @@ export default function NormalIssueDetail({
 
     return (
       <div className="text-xs text-amber-600">
-        {editors.map((participant) => participant.name).join("、")}{" "}
-        正在编辑该字段
+        {tIssues("normalDetail.editingHint", {
+          names: editors.map((participant) => participant.name).join(", "),
+        })}
       </div>
     );
   };
@@ -691,7 +773,7 @@ export default function NormalIssueDetail({
     }
 
     const safeTitle = doc.title.replace(/[\[\]]/g, "");
-    const reference = `[文档：${safeTitle}](synaply-doc://${doc._id})`;
+    const reference = `[${tIssues("normalDetail.docReference.label")}:${safeTitle}](synaply-doc://${doc._id})`;
     const currentDescription = localIssue.description?.trimEnd() || "";
     const nextDescription = currentDescription
       ? `${currentDescription}\n\n${reference}`
@@ -707,7 +789,7 @@ export default function NormalIssueDetail({
 
   const handleQuickComplete = () => {
     if (!doneState) {
-      toast.error("当前工作空间还没有可用的完成状态");
+      toast.error(tIssues("normalDetail.toasts.missingDoneState"));
       return;
     }
 
@@ -721,7 +803,11 @@ export default function NormalIssueDetail({
   if (isLoadingIssue || !localIssue || !committedIssue) {
     return (
       <div className="flex h-full w-full flex-col items-center justify-center gap-4 rounded-lg border border-app-border bg-app-content-bg text-app-text-muted">
-        <div>{isLoadingIssue ? "正在加载任务..." : "任务不存在或已被删除"}</div>
+        <div>
+          {isLoadingIssue
+            ? tIssues("normalDetail.states.loading")
+            : tIssues("normalDetail.states.notFound")}
+        </div>
         {!isLoadingIssue && (
           <Button
             type="button"
@@ -730,7 +816,7 @@ export default function NormalIssueDetail({
             onClick={onClose}
           >
             <RiArrowLeftLine className="h-4 w-4" />
-            返回列表
+            {tIssues("normalDetail.states.back")}
           </Button>
         )}
       </div>
@@ -813,16 +899,20 @@ export default function NormalIssueDetail({
                   }}
                 >
                   <SelectTrigger className="h-8 w-auto min-w-[108px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
-                    <SelectValue placeholder="状态：未设置" />
+                    <SelectValue
+                      placeholder={tIssues("normalDetail.select.statePlaceholder")}
+                    />
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>
                       <SelectItem value={EMPTY_STATE_VALUE}>
-                        状态：未设置
+                        {tIssues("normalDetail.select.statePlaceholder")}
                       </SelectItem>
                       {issueStates.map((state) => (
                         <SelectItem key={state.id} value={state.id}>
-                          状态：{state.name}
+                          {tIssues("normalDetail.select.stateOption", {
+                            value: state.name,
+                          })}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -833,7 +923,10 @@ export default function NormalIssueDetail({
                   variant="secondary"
                   className="bg-app-button-hover text-app-text-primary"
                 >
-                  状态：{selectedState?.name || "未设置"}
+                  {tIssues("normalDetail.badges.state", {
+                    value:
+                      selectedState?.name || tIssues("normalDetail.meta.notSet"),
+                  })}
                 </Badge>
               )}
 
@@ -850,16 +943,22 @@ export default function NormalIssueDetail({
                   }
                 >
                   <SelectTrigger className="h-8 w-auto min-w-[100px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
-                    <SelectValue placeholder="优先级：未设置" />
+                    <SelectValue
+                      placeholder={tIssues(
+                        "normalDetail.select.priorityPlaceholder",
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>
                       <SelectItem value={EMPTY_PRIORITY_VALUE}>
-                        优先级：未设置
+                        {tIssues("normalDetail.select.priorityPlaceholder")}
                       </SelectItem>
-                      {PRIORITY_OPTIONS.map((option) => (
+                      {priorityOptions.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
-                          优先级：{option.label}
+                          {tIssues("normalDetail.select.priorityOption", {
+                            value: option.label,
+                          })}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -870,7 +969,11 @@ export default function NormalIssueDetail({
                   variant="outline"
                   className={cn("border-transparent", currentPriority?.color)}
                 >
-                  优先级：{currentPriority?.label || "未设置"}
+                  {tIssues("normalDetail.badges.priority", {
+                    value:
+                      currentPriority?.label ||
+                      tIssues("normalDetail.meta.notSet"),
+                  })}
                 </Badge>
               )}
 
@@ -891,16 +994,22 @@ export default function NormalIssueDetail({
                   }}
                 >
                   <SelectTrigger className="h-8 w-auto min-w-[120px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
-                    <SelectValue placeholder="项目：未设置" />
+                    <SelectValue
+                      placeholder={tIssues(
+                        "normalDetail.select.projectPlaceholder",
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>
                       <SelectItem value={EMPTY_PROJECT_VALUE}>
-                        项目：未设置
+                        {tIssues("normalDetail.select.projectPlaceholder")}
                       </SelectItem>
                       {projects.map((project) => (
                         <SelectItem key={project.id} value={project.id}>
-                          项目：{project.name}
+                          {tIssues("normalDetail.select.projectOption", {
+                            value: project.name,
+                          })}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -911,10 +1020,12 @@ export default function NormalIssueDetail({
                   variant="outline"
                   className="border-app-border text-app-text-primary"
                 >
-                  项目：
-                  {selectedProject?.name ||
-                    localIssue.project?.name ||
-                    "未设置"}
+                  {tIssues("normalDetail.badges.project", {
+                    value:
+                      selectedProject?.name ||
+                      localIssue.project?.name ||
+                      tIssues("normalDetail.meta.notSet"),
+                  })}
                 </Badge>
               )}
 
@@ -929,16 +1040,22 @@ export default function NormalIssueDetail({
                   }
                 >
                   <SelectTrigger className="h-8 w-auto min-w-[130px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
-                    <SelectValue placeholder="负责人：未分配" />
+                    <SelectValue
+                      placeholder={tIssues(
+                        "normalDetail.select.assigneePlaceholder",
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>
                       <SelectItem value={EMPTY_ASSIGNEE_VALUE}>
-                        负责人：未分配
+                        {tIssues("normalDetail.select.assigneePlaceholder")}
                       </SelectItem>
                       {memberOptions.map((member) => (
                         <SelectItem key={member.id} value={member.id}>
-                          负责人：{member.name}
+                          {tIssues("normalDetail.select.assigneeOption", {
+                            value: member.name,
+                          })}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -949,7 +1066,12 @@ export default function NormalIssueDetail({
                   variant="outline"
                   className="border-app-border text-app-text-primary"
                 >
-                  负责人：{directAssignee?.name || currentUserName || "未分配"}
+                  {tIssues("normalDetail.badges.assignee", {
+                    value:
+                      directAssignee?.name ||
+                      currentUserName ||
+                      tIssues("normalDetail.meta.unassigned"),
+                  })}
                 </Badge>
               )}
 
@@ -963,7 +1085,9 @@ export default function NormalIssueDetail({
                       className="h-8 border-app-border bg-app-content-bg text-app-text-primary"
                     >
                       <RiCalendarLine className="h-3 w-3" />
-                      截止：{formatDateOnly(localIssue.dueDate)}
+                      {tIssues("normalDetail.badges.dueDate", {
+                        value: formatDateOnly(localIssue.dueDate, locale, tIssues),
+                      })}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
@@ -987,7 +1111,9 @@ export default function NormalIssueDetail({
                   variant="outline"
                   className="border-app-border text-app-text-primary"
                 >
-                  截止：{formatDateOnly(localIssue.dueDate)}
+                  {tIssues("normalDetail.badges.dueDate", {
+                    value: formatDateOnly(localIssue.dueDate, locale, tIssues),
+                  })}
                 </Badge>
               )}
 
@@ -1001,13 +1127,19 @@ export default function NormalIssueDetail({
                   }
                 >
                   <SelectTrigger className="h-8 w-auto min-w-[130px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
-                    <SelectValue placeholder="可见性" />
+                    <SelectValue
+                      placeholder={tIssues(
+                        "normalDetail.select.visibilityPlaceholder",
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>
-                      {VISIBILITY_OPTIONS.map((option) => (
+                      {visibilityOptions.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
-                          可见性：{option.label}
+                          {tIssues("normalDetail.select.visibilityOption", {
+                            value: option.label,
+                          })}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -1018,7 +1150,13 @@ export default function NormalIssueDetail({
                   variant="outline"
                   className="border-app-border text-app-text-primary"
                 >
-                  可见性：{getVisibilityLabel(localIssue.visibility)}
+                  {tIssues("normalDetail.badges.visibility", {
+                    value: getVisibilityLabel(
+                      localIssue.visibility,
+                      visibilityOptions,
+                      tIssues,
+                    ),
+                  })}
                 </Badge>
               )}
 
@@ -1028,10 +1166,12 @@ export default function NormalIssueDetail({
                   variant="secondary"
                   className="bg-app-button-hover text-app-text-primary"
                 >
-                  协作：
-                  {memberOptions.find(
-                    (member) => member.id === assignee.memberId,
-                  )?.name || getIssueMemberName(assignee.member)}
+                  {tIssues("normalDetail.badges.collaborator", {
+                    value:
+                      memberOptions.find(
+                        (member) => member.id === assignee.memberId,
+                      )?.name || getIssueMemberName(assignee.member, tIssues),
+                  })}
                 </Badge>
               ))}
               <Button
@@ -1042,7 +1182,7 @@ export default function NormalIssueDetail({
                 onClick={() => setIsAiThreadOpen(true)}
               >
                 <RiSparklingLine className="h-4 w-4 text-sky-600" />
-                打开 AI 助手
+                {tIssues("normalDetail.actions.openAi")}
               </Button>
             </div>
 
@@ -1055,7 +1195,7 @@ export default function NormalIssueDetail({
                 onClick={handleQuickComplete}
               >
                 <RiCheckLine className="h-4 w-4" />
-                标记为完成
+                {tIssues("normalDetail.actions.markComplete")}
               </Button>
             )}
 
@@ -1078,11 +1218,13 @@ export default function NormalIssueDetail({
           <CardHeader className="flex flex-col gap-3 border-b border-app-border p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <CardTitle className="text-lg text-app-text-primary">
-                任务描述
+                {tIssues("normalDetail.description.title")}
               </CardTitle>
               <p className="text-xs text-app-text-muted">
                 {referencedDocCount > 0
-                  ? ` 已引用 ${referencedDocCount} 篇文档。`
+                  ? tIssues("normalDetail.description.referencedDocs", {
+                      count: referencedDocCount,
+                    })
                   : ""}
               </p>
             </div>
@@ -1096,7 +1238,7 @@ export default function NormalIssueDetail({
                   onClick={() => setIsDocPickerOpen(true)}
                 >
                   <RiLinkM className="h-4 w-4" />
-                  引入团队文档
+                  {tIssues("normalDetail.description.insertDoc")}
                 </Button>
                 {editingField === "description" ? (
                   <>
@@ -1110,7 +1252,7 @@ export default function NormalIssueDetail({
                         })
                       }
                     >
-                      保存描述
+                      {tIssues("normalDetail.description.save")}
                     </Button>
                     <Button
                       type="button"
@@ -1119,7 +1261,7 @@ export default function NormalIssueDetail({
                       className="border-app-border bg-transparent text-app-text-primary"
                       onClick={handleCancelEdit}
                     >
-                      取消
+                      {tIssues("normalDetail.description.cancel")}
                     </Button>
                   </>
                 ) : (
@@ -1131,7 +1273,7 @@ export default function NormalIssueDetail({
                     onClick={() => handleFieldEdit("description")}
                   >
                     <RiEditLine className="h-4 w-4" />
-                    编辑描述
+                    {tIssues("normalDetail.description.edit")}
                   </Button>
                 )}
               </div>
@@ -1144,12 +1286,18 @@ export default function NormalIssueDetail({
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-medium text-app-text-primary">
-                        AI 编码交接
+                        {tIssues("normalDetail.aiHandoff.title")}
                       </p>
                       <p className="mt-1 text-xs text-app-text-muted">
                         {localIssue.aiHandoffPromptUpdatedAt
-                          ? `最近更新于 ${formatDate(localIssue.aiHandoffPromptUpdatedAt)}`
-                          : "已写回到当前任务，可直接交给 Claude Code / Codex"}
+                          ? tIssues("normalDetail.aiHandoff.updatedAt", {
+                              time: formatDate(
+                                localIssue.aiHandoffPromptUpdatedAt,
+                                locale,
+                                tIssues,
+                              ),
+                            })
+                          : tIssues("normalDetail.aiHandoff.fallback")}
                       </p>
                     </div>
                     <Button
@@ -1160,11 +1308,12 @@ export default function NormalIssueDetail({
                       onClick={() =>
                         void copyTextToClipboard(
                           aiHandoffPrompt,
-                          "编码交接 Prompt 已复制。",
+                          tIssues("normalDetail.aiHandoff.copySuccess"),
+                          tIssues("normalDetail.toasts.copyFailed"),
                         )
                       }
                     >
-                      复制给 Claude Code / Codex
+                      {tIssues("normalDetail.aiHandoff.copyAction")}
                     </Button>
                   </div>
 
@@ -1185,15 +1334,14 @@ export default function NormalIssueDetail({
                     })
                   }
                   className="min-h-[360px] resize-none border-app-border bg-app-bg text-app-text-primary"
-                  placeholder={
-                    "用 Markdown 写清背景、验收标准、风险和下一步。\n例如：\n## 背景\n- 为什么要做\n- [ ] 待确认事项"
-                  }
+                  placeholder={tIssues("normalDetail.description.placeholder")}
                 />
               ) : (
                 <MarkdownDescriptionPreview
                   content={localIssue.description}
                   docsById={docsById}
                   onOpenDoc={setPreviewDoc}
+                  tIssues={tIssues}
                 />
               )}
             </CardContent>
@@ -1204,7 +1352,7 @@ export default function NormalIssueDetail({
           <CardHeader className="border-b border-app-border p-4">
             <CardTitle className="flex items-center gap-2 text-lg text-app-text-primary">
               <RiFileTextLine className="h-5 w-5" />
-              讨论
+              {tIssues("tabs.discussion.title")}
             </CardTitle>
           </CardHeader>
           <CardContent className="min-h-0 flex-1 p-0">
@@ -1221,34 +1369,42 @@ export default function NormalIssueDetail({
         <div className="flex flex-wrap items-center gap-4">
           <span className="flex items-center gap-1">
             <RiTimeLine className="h-3 w-3" />
-            创建时间：{formatDate(localIssue.createdAt)}
+            {tIssues("normalDetail.footer.createdAt", {
+              value: formatDate(localIssue.createdAt, locale, tIssues),
+            })}
           </span>
           <span className="flex items-center gap-1">
             <RiTimeLine className="h-3 w-3" />
-            更新时间：{formatDate(localIssue.updatedAt)}
+            {tIssues("normalDetail.footer.updatedAt", {
+              value: formatDate(localIssue.updatedAt, locale, tIssues),
+            })}
           </span>
         </div>
         {updateIssueMutation.isPending && (
-          <span className="text-sky-600">正在保存变更...</span>
+          <span className="text-sky-600">
+            {tIssues("normalDetail.states.saving")}
+          </span>
         )}
       </div>
 
       <Dialog open={isDocPickerOpen} onOpenChange={setIsDocPickerOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>引入团队文档</DialogTitle>
+            <DialogTitle>
+              {tIssues("normalDetail.docReference.pickerTitle")}
+            </DialogTitle>
             <DialogDescription>
-              选择一篇文档插入到任务描述中，之后点击描述里的文档标签即可查看内容。
+              {tIssues("normalDetail.docReference.pickerDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[420px] overflow-y-auto rounded-lg border border-app-border">
             {isLoadingDocs ? (
               <div className="p-4 text-sm text-app-text-muted">
-                正在加载团队文档...
+                {tIssues("normalDetail.docReference.loading")}
               </div>
             ) : documentOptions.length === 0 ? (
               <div className="p-4 text-sm text-app-text-muted">
-                暂无可引用的团队文档。
+                {tIssues("normalDetail.docReference.empty")}
               </div>
             ) : (
               documentOptions.map((doc) => (
@@ -1263,7 +1419,9 @@ export default function NormalIssueDetail({
                       {doc.title}
                     </span>
                     <span className="mt-1 block text-xs text-app-text-muted">
-                      {doc.projectId ? "项目文档" : "团队文档"}
+                      {doc.projectId
+                        ? tIssues("normalDetail.docReference.projectDoc")
+                        : tIssues("normalDetail.docReference.teamDoc")}
                     </span>
                   </span>
                   <RiFileTextLine className="h-4 w-4 text-app-text-secondary" />
@@ -1277,7 +1435,7 @@ export default function NormalIssueDetail({
               variant="outline"
               onClick={() => setIsDocPickerOpen(false)}
             >
-              关闭
+              {tIssues("normalDetail.docReference.close")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1291,12 +1449,17 @@ export default function NormalIssueDetail({
       >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{previewDoc?.title || "团队文档"}</DialogTitle>
-            <DialogDescription>来自团队空间的引用文档预览。</DialogDescription>
+            <DialogTitle>
+              {previewDoc?.title ||
+                tIssues("normalDetail.docReference.defaultTitle")}
+            </DialogTitle>
+            <DialogDescription>
+              {tIssues("normalDetail.docReference.previewDescription")}
+            </DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[520px] rounded-lg border border-app-border bg-app-bg">
             <div className="whitespace-pre-wrap p-4 text-sm leading-6 text-app-text-secondary">
-              {getDocPreviewContent(previewDoc)}
+              {getDocPreviewContent(previewDoc, tIssues)}
             </div>
           </ScrollArea>
         </DialogContent>

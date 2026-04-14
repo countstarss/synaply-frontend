@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   RiArrowLeftLine,
   RiArrowRightLine,
@@ -35,15 +36,16 @@ export function NodeStatusUpdate({
   canNext,
   canPrevious,
 }: NodeStatusUpdateProps) {
+  const tIssues = useTranslations("issues");
   const [comment, setComment] = useState("");
   const [showCommentInput, setShowCommentInput] = useState(false);
   const canMoveNext = canEdit && canNext && currentStatus === "DONE";
 
   const statusOptions = [
-    { value: "TODO", label: "待处理" },
-    { value: "IN_PROGRESS", label: "进行中" },
-    { value: "AMOST_DONE", label: "接近完成" },
-    { value: "DONE", label: "已完成" },
+    { value: "TODO", label: tIssues("status.todo") },
+    { value: "IN_PROGRESS", label: tIssues("status.inProgress") },
+    { value: "AMOST_DONE", label: tIssues("status.almostDone") },
+    { value: "DONE", label: tIssues("status.done") },
   ];
   const activeStatusIndex = Math.max(
     statusOptions.findIndex((option) => option.value === currentStatus),
@@ -72,17 +74,19 @@ export function NodeStatusUpdate({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="text-sm font-medium text-app-text-primary">
-              节点状态
+              {tIssues("nodeStatus.title")}
             </div>
             <p className="mt-1 text-xs text-app-text-muted">
-              点击状态圆点更新进度，完成后进入下一步。
+              {tIssues("nodeStatus.description")}
             </p>
           </div>
           <Badge
             variant="outline"
             className="rounded-md border-app-border px-2.5 py-1 text-xs font-normal text-app-text-primary"
           >
-            负责人：{assignee || "未分配"}
+            {tIssues("nodeStatus.owner", {
+              name: assignee || tIssues("nodeStatus.unassigned"),
+            })}
           </Badge>
         </div>
 
@@ -96,7 +100,7 @@ export function NodeStatusUpdate({
             onClick={onPrevious}
           >
             <RiArrowLeftLine className="h-4 w-4" />
-            上一步
+            {tIssues("nodeStatus.previous")}
           </Button>
 
           <div className="relative flex min-w-0 flex-1 items-start justify-between px-2">
@@ -143,7 +147,7 @@ export function NodeStatusUpdate({
             disabled={!canMoveNext}
             onClick={onNext}
           >
-            下一步
+            {tIssues("nodeStatus.next")}
             <RiArrowRightLine className="h-4 w-4" />
           </Button>
         </div>
@@ -151,10 +155,10 @@ export function NodeStatusUpdate({
         <div className="flex items-center justify-between gap-3 border-t border-app-border pt-2">
           <p className="text-xs leading-5 text-app-text-muted">
             {!canEdit
-              ? "只有当前负责人可以更新节点状态或推进流程。"
+              ? tIssues("nodeStatus.cannotEdit")
               : canNext && currentStatus !== "DONE"
-                ? "将当前节点标记为“已完成”后，就可以进入下一步。"
-                : "当前节点已准备推进。"}
+                ? tIssues("nodeStatus.completeHint")
+                : tIssues("nodeStatus.ready")}
           </p>
           <Button
             type="button"
@@ -164,7 +168,7 @@ export function NodeStatusUpdate({
             onClick={() => setShowCommentInput((value) => !value)}
           >
             <RiMessageLine className="h-4 w-4" />
-            备注
+            {tIssues("nodeStatus.note")}
           </Button>
         </div>
 
@@ -173,7 +177,7 @@ export function NodeStatusUpdate({
             <Textarea
               value={comment}
               onChange={(event) => setComment(event.target.value)}
-              placeholder="输入备注..."
+              placeholder={tIssues("nodeStatus.notePlaceholder")}
               rows={2}
               className="min-h-16 border-app-border bg-app-bg text-app-text-primary"
             />
@@ -183,7 +187,7 @@ export function NodeStatusUpdate({
               disabled={!canEdit || !comment.trim()}
               onClick={handleAddComment}
             >
-              添加
+              {tIssues("nodeStatus.add")}
             </Button>
           </div>
         )}

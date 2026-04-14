@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   RiFileTextLine,
   RiFolder3Line,
@@ -39,7 +40,6 @@ interface TreeNodeProps {
   onNewDocCreated?: (docId: string) => void;
 }
 
-// MARK: 文档树节点
 function TreeNode({
   doc,
   level,
@@ -49,6 +49,7 @@ function TreeNode({
   newlyCreatedDocId,
   onNewDocCreated,
 }: TreeNodeProps) {
+  const tDocs = useTranslations("docs");
   const {
     createDoc,
     createFolder,
@@ -68,14 +69,12 @@ function TreeNode({
   const nodeRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // 获取子文档
   const childDocs = documents.filter((child) => child.parentDocument === doc._id);
 
   const hasChildren = childDocs.length > 0;
   const isExpanded = expandedIds.has(doc._id);
   const isActive = activeDocId === doc._id;
 
-  // 如果这是新创建的文档，自动进入编辑状态
   useEffect(() => {
     if (newlyCreatedDocId === doc._id && doc.type === "document") {
       setIsEditing(true);
@@ -155,9 +154,8 @@ function TreeNode({
   const handleCreateChild = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowMenu(false);
-    const createdDoc = await createDoc("新文档", doc._id);
+    const createdDoc = await createDoc(tDocs("creation.newDoc"), doc._id);
     onNewDocCreated?.(createdDoc._id);
-    // 确保文件夹是展开状态
     if (!isExpanded) {
       onToggleExpand(doc._id);
     }
@@ -166,8 +164,7 @@ function TreeNode({
   const handleCreateChildFolder = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowMenu(false);
-    await createFolder("新文件夹", doc._id);
-    // 确保文件夹是展开状态
+    await createFolder(tDocs("creation.newFolder"), doc._id);
     if (!isExpanded) {
       onToggleExpand(doc._id);
     }
@@ -191,7 +188,6 @@ function TreeNode({
     setIsEditing(false);
   };
 
-  // Close menu when entering edit mode
   useEffect(() => {
     if (isEditing) {
       setShowMenu(false);
@@ -272,7 +268,7 @@ function TreeNode({
               <button
                 onClick={handleCreateChild}
                 className="rounded p-0.5 hover:bg-app-button-hover"
-                title="新建子文档"
+                title={tDocs("sidebar.newChildDoc")}
               >
                 <RiAddLine className="w-3.5 h-3.5" />
               </button>
@@ -301,14 +297,14 @@ function TreeNode({
                     className="flex items-center gap-2 px-3 py-1.5 hover:bg-app-button-hover w-full text-left text-sm"
                   >
                     <RiAddLine className="w-3.5 h-3.5" />
-                    新建文档
+                    {tDocs("sidebar.newDoc")}
                   </button>
                   <button
                     onClick={handleCreateChildFolder}
                     className="flex items-center gap-2 px-3 py-1.5 hover:bg-app-button-hover w-full text-left text-sm"
                   >
                     <RiFolderAddLine className="w-3.5 h-3.5" />
-                    新建文件夹
+                    {tDocs("sidebar.newFolder")}
                   </button>
                   <hr className="my-1 border-app-border" />
                   <button
@@ -320,14 +316,14 @@ function TreeNode({
                     className="flex items-center gap-2 px-3 py-1.5 hover:bg-app-button-hover w-full text-left text-sm"
                   >
                     <RiEditLine className="w-3.5 h-3.5" />
-                    重命名
+                    {tDocs("sidebar.rename")}
                   </button>
                   <button
                     onClick={handleDelete}
                     className="flex items-center gap-2 px-3 py-1.5 hover:bg-app-button-hover w-full text-left text-sm text-red-600 dark:text-red-400"
                   >
                     <RiDeleteBinLine className="w-3.5 h-3.5" />
-                    删除
+                    {tDocs("sidebar.delete")}
                   </button>
                 </div>
               )}
@@ -357,11 +353,12 @@ function TreeNode({
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>删除文档？</DialogTitle>
+            <DialogTitle>{tDocs("sidebar.deleteDialog.title")}</DialogTitle>
             <DialogDescription>
-              将删除「{doc.title}」。
-              {hasChildren ? "它下面的子文档也会一起删除。" : ""}
-              删除后不可恢复。
+              {tDocs("sidebar.deleteDialog.description", {
+                title: doc.title,
+                children: hasChildren ? tDocs("sidebar.deleteDialog.children") : "",
+              })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -370,14 +367,14 @@ function TreeNode({
               onClick={() => setIsDeleteDialogOpen(false)}
               className="rounded-md border border-app-border px-3 py-2 text-sm text-app-text-secondary transition-colors hover:bg-app-button-hover hover:text-app-text-primary"
             >
-              取消
+              {tDocs("sidebar.deleteDialog.cancel")}
             </button>
             <button
               type="button"
               onClick={() => void handleConfirmDelete()}
               className="rounded-md bg-red-600 px-3 py-2 text-sm text-white transition-colors hover:bg-red-700"
             >
-              确认删除
+              {tDocs("sidebar.deleteDialog.confirm")}
             </button>
           </DialogFooter>
         </DialogContent>
@@ -389,6 +386,7 @@ function TreeNode({
 export default function DocsSidebar({
   onSelectDoc,
 }: DocsSidebarProps) {
+  const tDocs = useTranslations("docs");
   const { documents, createDoc, createFolder, isLoading } = useDocs();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -407,18 +405,17 @@ export default function DocsSidebar({
   };
 
   const handleCreateRootDoc = async () => {
-    await createDoc("新文档");
+    await createDoc(tDocs("creation.newDoc"));
   };
 
   const handleCreateRootFolder = async () => {
-    await createFolder("新文件夹");
+    await createFolder(tDocs("creation.newFolder"));
   };
 
   const handleNewDocCreated = (docId: string) => {
     setNewlyCreatedDocId(docId);
   };
 
-  // 清除新创建文档的状态
   useEffect(() => {
     if (newlyCreatedDocId) {
       const timer = setTimeout(() => {
@@ -429,7 +426,6 @@ export default function DocsSidebar({
     }
   }, [newlyCreatedDocId]);
 
-  // 搜索过滤
   const filteredDocs = searchQuery
     ? documents.filter((doc) =>
         doc.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -441,10 +437,10 @@ export default function DocsSidebar({
     return (
       <div className="flex h-full w-64 flex-col border-r border-app-border bg-app-content-bg">
         <div className="p-3 border-b border-app-border">
-          <h2 className="font-semibold text-app-text-primary">文档</h2>
+          <h2 className="font-semibold text-app-text-primary">{tDocs("sidebar.title")}</h2>
         </div>
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-app-text-muted">加载中...</p>
+          <p className="text-app-text-muted">{tDocs("states.loadingSidebar")}</p>
         </div>
       </div>
     );
@@ -456,19 +452,19 @@ export default function DocsSidebar({
         {/* Header */}
         <div className="p-3 border-b border-app-border">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold text-app-text-primary">文档</h2>
+            <h2 className="font-semibold text-app-text-primary">{tDocs("sidebar.title")}</h2>
             <div className="flex items-center gap-1">
               <button
                 onClick={handleCreateRootDoc}
                 className="rounded-lg p-1.5 text-app-text-secondary hover:bg-app-button-hover"
-                title="新建文档"
+                title={tDocs("sidebar.newDoc")}
               >
                 <RiFileAddLine className="w-4 h-4" />
               </button>
               <button
                 onClick={handleCreateRootFolder}
                 className="rounded-lg p-1.5 text-app-text-secondary hover:bg-app-button-hover"
-                title="新建文件夹"
+                title={tDocs("sidebar.newFolder")}
               >
                 <RiFolderAddLine className="w-4 h-4" />
               </button>
@@ -480,7 +476,7 @@ export default function DocsSidebar({
             <RiSearchLine className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
             <input
               type="text"
-              placeholder="搜索文档..."
+              placeholder={tDocs("sidebar.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full rounded-2xl border border-app-border bg-app-bg py-2 pl-9 pr-3 text-sm text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-sky-500/20"
@@ -508,7 +504,7 @@ export default function DocsSidebar({
               ))}
               {filteredDocs.length === 0 && (
                 <div className="text-center py-8 text-app-text-muted text-sm">
-                  <p>未找到匹配的文档</p>
+                  <p>{tDocs("sidebar.emptySearch")}</p>
                 </div>
               )}
             </div>
@@ -516,8 +512,8 @@ export default function DocsSidebar({
             <div className="space-y-1">
               {documents.length === 0 ? (
                 <div className="text-center py-8 text-app-text-muted text-sm">
-                  <p>还没有文档</p>
-                  <p className="mt-2">点击上方 + 按钮创建</p>
+                  <p>{tDocs("sidebar.emptyTitle")}</p>
+                  <p className="mt-2">{tDocs("sidebar.emptyDescription")}</p>
                 </div>
               ) : (
                 rootDocs.map((doc) => (

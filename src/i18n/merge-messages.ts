@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, statSync } from "fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "fs";
 import { join, relative, sep } from "path";
 
 type MessageValue = string | number | boolean | null | MessageTree | MessageValue[];
@@ -82,10 +82,12 @@ function setNestedMessage(
 
 async function loadLocaleMessages(locale: string) {
   const messages: MessageTree = {};
+  const localeDir = join(process.cwd(), "src", "i18n", "messages", locale);
 
   for (const file of getJsonFiles(locale)) {
-    const moduleMessages = await import(`./messages/${locale}/${file}`);
-    setNestedMessage(messages, file, moduleMessages.default as MessageTree);
+    const fullPath = join(localeDir, file);
+    const fileContent = readFileSync(fullPath, "utf-8");
+    setNestedMessage(messages, file, JSON.parse(fileContent) as MessageTree);
   }
 
   return messages;

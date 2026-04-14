@@ -307,7 +307,7 @@ export default function DocsProvider({
     const currentDoc = documentMap.get(docId) || openDocs.find((doc) => doc._id === docId);
 
     if (!currentDoc) {
-      throw new Error("文档不存在或尚未加载完成");
+      throw new Error("The document does not exist or has not finished loading yet.");
     }
 
     const metadataSnapshot = JSON.stringify({

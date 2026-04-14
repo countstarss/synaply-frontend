@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import ReactFlow, {
   Background,
   BackgroundVariant,
@@ -62,26 +63,32 @@ const nodeTypes = {
   custom: CustomNode,
 };
 
-const RUN_STATUS_LABELS = {
-  ACTIVE: "执行中",
-  BLOCKED: "已阻塞",
-  WAITING_REVIEW: "等待评审",
-  HANDOFF_PENDING: "等待交接",
-  DONE: "已完成",
-} as const;
+function getRunStatusLabels(tIssues: (key: string) => string) {
+  return {
+    ACTIVE: tIssues("workflowFlow.runStatus.active"),
+    BLOCKED: tIssues("workflowFlow.runStatus.blocked"),
+    WAITING_REVIEW: tIssues("workflowFlow.runStatus.waitingReview"),
+    HANDOFF_PENDING: tIssues("workflowFlow.runStatus.handoffPending"),
+    DONE: tIssues("workflowFlow.runStatus.done"),
+  } as const;
+}
 
-const ACTION_TYPE_LABELS = {
-  execution: "当前在执行步骤",
-  blocked: "等待解阻",
-  review: "等待确认",
-  handoff: "等待接手",
-  done: "流程已完成",
-} as const;
+function getActionTypeLabels(tIssues: (key: string) => string) {
+  return {
+    execution: tIssues("workflowFlow.actionType.execution"),
+    blocked: tIssues("workflowFlow.actionType.blocked"),
+    review: tIssues("workflowFlow.actionType.review"),
+    handoff: tIssues("workflowFlow.actionType.handoff"),
+    done: tIssues("workflowFlow.actionType.done"),
+  } as const;
+}
 
-const REVIEW_OUTCOME_LABELS = {
-  APPROVED: "已确认",
-  CHANGES_REQUESTED: "需修改",
-} as const;
+function getReviewOutcomeLabels(tIssues: (key: string) => string) {
+  return {
+    APPROVED: tIssues("workflowFlow.reviewOutcome.approved"),
+    CHANGES_REQUESTED: tIssues("workflowFlow.reviewOutcome.changesRequested"),
+  } as const;
+}
 
 export interface WorkflowIssueDetailProps {
   issue: Issue;
@@ -95,6 +102,7 @@ export function WorkflowIssueDetailFlow({
   onClose,
   onUpdate,
 }: WorkflowIssueDetailProps) {
+  const tIssues = useTranslations("issues");
   const { team } = useCurrentTeam();
   const { data: teamMembers = [] } = useTeamMembers(team?.id);
   const { user, session } = useAuth();
@@ -162,6 +170,10 @@ export function WorkflowIssueDetailFlow({
     setWorkflowIssue(initialWorkflowIssue);
   }, [initialWorkflowIssue]);
 
+  const runStatusLabels = getRunStatusLabels(tIssues);
+  const actionTypeLabels = getActionTypeLabels(tIssues);
+  const reviewOutcomeLabels = getReviewOutcomeLabels(tIssues);
+
   const currentNode = useMemo(() => {
     if (!workflowIssue || !workflow) return null;
     return workflow.nodes.find(
@@ -176,11 +188,13 @@ export function WorkflowIssueDetailFlow({
         name:
           member.user?.name?.trim() ||
           member.user?.email?.split("@")[0] ||
-          `成员 ${member.id.slice(0, 6)}`,
+          tIssues("workflowFlow.memberFallback", {
+            id: member.id.slice(0, 6),
+          }),
         email: member.user?.email,
         avatarUrl: member.user?.avatar_url || member.user?.avatarUrl,
       })),
-    [teamMembers],
+    [tIssues, teamMembers],
   );
   const workflowRun = issue.workflowRun;
   const selectedCollaborationTarget =
@@ -234,7 +248,11 @@ export function WorkflowIssueDetailFlow({
       resetCollaborationInputs();
       onUpdate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "请求评审失败");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : tIssues("workflowFlow.toasts.requestReviewFailed"),
+      );
     }
   }, [
     collaborationNote,
@@ -246,6 +264,7 @@ export function WorkflowIssueDetailFlow({
     resetCollaborationInputs,
     selectedCollaborationTarget?.name,
     selectedCollaborationTarget?.userId,
+    tIssues,
   ]);
 
   const handleRequestHandoff = React.useCallback(async () => {
@@ -266,7 +285,11 @@ export function WorkflowIssueDetailFlow({
       resetCollaborationInputs();
       onUpdate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "请求交接失败");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : tIssues("workflowFlow.toasts.requestHandoffFailed"),
+      );
     }
   }, [
     collaborationNote,
@@ -278,6 +301,7 @@ export function WorkflowIssueDetailFlow({
     resetCollaborationInputs,
     selectedCollaborationTarget?.name,
     selectedCollaborationTarget?.userId,
+    tIssues,
   ]);
 
   const handleBlockRun = React.useCallback(async () => {
@@ -292,7 +316,11 @@ export function WorkflowIssueDetailFlow({
       setCollaborationNote("");
       onUpdate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "标记阻塞失败");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : tIssues("workflowFlow.toasts.blockFailed"),
+      );
     }
   }, [
     blockWorkflowRunMutation,
@@ -300,6 +328,7 @@ export function WorkflowIssueDetailFlow({
     issue.id,
     issue.workspaceId,
     onUpdate,
+    tIssues,
   ]);
 
   const handleUnblockRun = React.useCallback(async () => {
@@ -314,13 +343,18 @@ export function WorkflowIssueDetailFlow({
       setCollaborationNote("");
       onUpdate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "解除阻塞失败");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : tIssues("workflowFlow.toasts.unblockFailed"),
+      );
     }
   }, [
     collaborationNote,
     issue.id,
     issue.workspaceId,
     onUpdate,
+    tIssues,
     unblockWorkflowRunMutation,
   ]);
 
@@ -341,7 +375,11 @@ export function WorkflowIssueDetailFlow({
       setCollaborationNote("");
       onUpdate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "确认评审失败");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : tIssues("workflowFlow.toasts.approveReviewFailed"),
+      );
     }
   }, [
     collaborationNote,
@@ -349,6 +387,7 @@ export function WorkflowIssueDetailFlow({
     issue.workspaceId,
     onUpdate,
     respondWorkflowReviewMutation,
+    tIssues,
   ]);
 
   const handleRequestChanges = React.useCallback(async () => {
@@ -364,7 +403,11 @@ export function WorkflowIssueDetailFlow({
       setCollaborationNote("");
       onUpdate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "退回修改失败");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : tIssues("workflowFlow.toasts.requestChangesFailed"),
+      );
     }
   }, [
     collaborationNote,
@@ -372,6 +415,7 @@ export function WorkflowIssueDetailFlow({
     issue.workspaceId,
     onUpdate,
     respondWorkflowReviewMutation,
+    tIssues,
   ]);
 
   const handleAcceptHandoff = React.useCallback(async () => {
@@ -386,7 +430,11 @@ export function WorkflowIssueDetailFlow({
       setCollaborationNote("");
       onUpdate();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "接受交接失败");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : tIssues("workflowFlow.toasts.acceptHandoffFailed"),
+      );
     }
   }, [
     acceptWorkflowHandoffMutation,
@@ -394,20 +442,23 @@ export function WorkflowIssueDetailFlow({
     issue.id,
     issue.workspaceId,
     onUpdate,
+    tIssues,
   ]);
 
   if (!workflowIssue || !workflow) {
     return (
       <Card className="border-app-border bg-app-content-bg shadow-none">
         <CardContent className="flex min-h-[240px] flex-col items-center justify-center gap-4 py-8 text-center">
-          <div className="text-app-text-muted">加载工作流数据失败</div>
+          <div className="text-app-text-muted">
+            {tIssues("workflowFlow.states.loadFailed")}
+          </div>
           <Button
             type="button"
             variant="outline"
             className="border-app-border bg-transparent text-app-text-primary"
             onClick={onClose}
           >
-            返回列表
+            {tIssues("workflowDetail.back")}
           </Button>
         </CardContent>
       </Card>
@@ -437,42 +488,61 @@ export function WorkflowIssueDetailFlow({
   const currentOwnerLabel =
     workflowRun?.currentAssigneeName ||
     currentNodeStatus?.assigneeName ||
-    "未分配";
-  const pendingTargetLabel = workflowRun?.targetName || "指定成员";
+    tIssues("workflowFlow.meta.unassigned");
+  const pendingTargetLabel =
+    workflowRun?.targetName || tIssues("workflowFlow.meta.specifiedMember");
   const hasSelectedTarget = Boolean(selectedCollaborationTarget?.userId);
   const canRequestCollaboration =
     Boolean(workflowRun) &&
     workflowRun?.runStatus === "ACTIVE" &&
     isCurrentAssignee;
   const issueMetaItems = [
-    ["编号", issue.key || `#${issue.id.slice(0, 8)}`],
-    ["工作流", workflowIssue.workflowName],
-    ["状态", workflowRun ? RUN_STATUS_LABELS[workflowRun.runStatus] : "未开始"],
+    [tIssues("workflowFlow.meta.number"), issue.key || `#${issue.id.slice(0, 8)}`],
+    [tIssues("workflowFlow.meta.workflow"), workflowIssue.workflowName],
     [
-      "当前步骤",
-      workflowRun?.currentStepName || currentNode?.data?.label || "未命名步骤",
+      tIssues("workflowFlow.meta.status"),
+      workflowRun
+        ? runStatusLabels[workflowRun.runStatus]
+        : tIssues("workflowFlow.meta.notStarted"),
     ],
-    ["当前负责人", currentOwnerLabel],
-    ["优先级", issue.priority || "未设置"],
     [
-      "步骤数",
-      workflowRun?.totalSteps
-        ? `${workflowRun.totalSteps} 步`
-        : `${workflow.nodes.length} 步`,
+      tIssues("workflowFlow.meta.currentStep"),
+      workflowRun?.currentStepName ||
+        currentNode?.data?.label ||
+        tIssues("workflowFlow.meta.unknownStep"),
+    ],
+    [tIssues("workflowFlow.meta.currentOwner"), currentOwnerLabel],
+    [
+      tIssues("workflowFlow.meta.priority"),
+      issue.priority
+        ? tIssues(`priority.${issue.priority.toLowerCase()}`)
+        : tIssues("workflowFlow.meta.notSet"),
+    ],
+    [
+      tIssues("workflowFlow.meta.stepCount"),
+      tIssues("workflowFlow.meta.stepsValue", {
+        count: workflowRun?.totalSteps || workflow.nodes.length,
+      }),
     ],
   ] as const;
   const collaborationTags = workflowRun
     ? [
-        ["动作", ACTION_TYPE_LABELS[workflowRun.currentActionType]],
-        ["负责人", workflowRun.currentAssigneeName || "未分配"],
-        ["步骤", workflowRun.currentStepName || "未命名步骤"],
-        ["版本", workflowRun.templateVersion || "v1"],
+        [tIssues("workflowFlow.meta.action"), actionTypeLabels[workflowRun.currentActionType]],
+        [
+          tIssues("workflowFlow.meta.owner"),
+          workflowRun.currentAssigneeName || tIssues("workflowFlow.meta.unassigned"),
+        ],
+        [
+          tIssues("workflowFlow.meta.step"),
+          workflowRun.currentStepName || tIssues("workflowFlow.meta.unknownStep"),
+        ],
+        [tIssues("workflowFlow.meta.version"), workflowRun.templateVersion || "v1"],
         ...(workflowRun.lastEventType === "workflow.review.approved" ||
         workflowRun.lastEventType === "workflow.review.changes_requested"
           ? [
               [
-                "最近评审",
-                REVIEW_OUTCOME_LABELS[
+                tIssues("workflowFlow.meta.recentReview"),
+                reviewOutcomeLabels[
                   workflowRun.lastEventType === "workflow.review.approved"
                     ? "APPROVED"
                     : "CHANGES_REQUESTED"
@@ -496,21 +566,27 @@ export function WorkflowIssueDetailFlow({
                 variant="secondary"
                 className="bg-app-button-hover text-app-text-primary"
               >
-                工作流: {workflowIssue.workflowName}
+                {tIssues("workflowFlow.header.workflow", {
+                  name: workflowIssue.workflowName,
+                })}
               </Badge>
               {workflowRun && (
                 <Badge
                   variant="outline"
                   className="border-app-border text-app-text-primary"
                 >
-                  {RUN_STATUS_LABELS[workflowRun.runStatus]}
+                  {runStatusLabels[workflowRun.runStatus]}
                 </Badge>
               )}
               <Badge
                 variant="outline"
                 className="border-app-border text-app-text-primary"
               >
-                优先级: {issue.priority}
+                {tIssues("workflowFlow.header.priority", {
+                  value: issue.priority
+                    ? tIssues(`priority.${issue.priority.toLowerCase()}`)
+                    : tIssues("workflowFlow.meta.notSet"),
+                })}
               </Badge>
             </div>
           </div>
@@ -524,7 +600,7 @@ export function WorkflowIssueDetailFlow({
               onClick={() => setIsAiThreadOpen(true)}
             >
               <RiSparklingLine className="h-4 w-4 text-sky-600" />
-              打开 AI 助手
+              {tIssues("workflowFlow.actions.openAi")}
             </Button>
 
             <Button
@@ -551,7 +627,7 @@ export function WorkflowIssueDetailFlow({
           <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border-app-border bg-app-content-bg shadow-none">
             <CardHeader className="flex flex-col gap-3 border-b border-app-border p-4 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="text-lg text-app-text-primary">
-                工作流任务
+                {tIssues("workflowFlow.header.workflowTask")}
               </CardTitle>
               <TabsList
                 variant="line"
@@ -561,7 +637,7 @@ export function WorkflowIssueDetailFlow({
                   value="overview"
                   className="data-[state=active]:bg-sky-500/10 data-[state=active]:text-sky-700"
                 >
-                  介绍
+                  {tIssues("workflowFlow.tabs.overview")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="canvas"
@@ -593,11 +669,11 @@ export function WorkflowIssueDetailFlow({
 
                   <div className="min-h-0 flex-1 rounded-lg border border-app-border bg-app-bg p-4">
                     <div className="text-sm font-medium text-app-text-primary">
-                      任务介绍
+                      {tIssues("workflowFlow.overview.title")}
                     </div>
                     <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-app-text-secondary">
                       {issue.description?.trim() ||
-                        "还没有补充介绍。建议写清背景、验收标准、交接注意事项和相关文档。"}
+                        tIssues("workflowFlow.overview.empty")}
                     </div>
                   </div>
                 </div>
@@ -641,14 +717,14 @@ export function WorkflowIssueDetailFlow({
               <CardHeader className="flex flex-row items-center justify-between gap-3 p-3 pb-2">
                 <div className="space-y-1">
                   <CardTitle className="text-base text-app-text-primary">
-                    协作状态
+                    {tIssues("workflowFlow.collaboration.title")}
                   </CardTitle>
                 </div>
                 <Badge
                   variant="outline"
                   className="border-app-border text-xs text-app-text-primary"
                 >
-                  {RUN_STATUS_LABELS[workflowRun.runStatus]}
+                  {runStatusLabels[workflowRun.runStatus]}
                 </Badge>
               </CardHeader>
               <CardContent className="space-y-3 px-3 pb-3">
@@ -659,7 +735,7 @@ export function WorkflowIssueDetailFlow({
                       variant="secondary"
                       className="rounded-md bg-app-button-hover px-2.5 py-1 text-xs font-normal text-app-text-primary"
                     >
-                      {label}：{value}
+                      {label}: {value}
                     </Badge>
                   ))}
                 </div>
@@ -667,10 +743,18 @@ export function WorkflowIssueDetailFlow({
                 {(workflowRun.blockedReason || workflowRun.targetName) && (
                   <div className="flex flex-wrap gap-2 rounded-lg border border-app-border bg-app-bg px-3 py-2 text-xs text-app-text-secondary">
                     {workflowRun.blockedReason && (
-                      <span>阻塞原因：{workflowRun.blockedReason}</span>
+                      <span>
+                        {tIssues("workflowFlow.collaboration.blockReason", {
+                          value: workflowRun.blockedReason,
+                        })}
+                      </span>
                     )}
                     {workflowRun.targetName && (
-                      <span>待处理人：{workflowRun.targetName}</span>
+                      <span>
+                        {tIssues("workflowFlow.collaboration.pendingTarget", {
+                          value: workflowRun.targetName,
+                        })}
+                      </span>
                     )}
                   </div>
                 )}
@@ -679,10 +763,12 @@ export function WorkflowIssueDetailFlow({
                   <div className="space-y-2 rounded-lg border border-app-border bg-app-bg px-3 py-2.5">
                     <div>
                       <div className="text-sm font-medium text-app-text-primary">
-                        当前由 {currentOwnerLabel} 推进
+                        {tIssues("workflowFlow.collaboration.activeTitle", {
+                          name: currentOwnerLabel,
+                        })}
                       </div>
                       <p className="mt-1 text-xs leading-5 text-app-text-muted">
-                        执行人可以请求评审、发起交接，或在需要外部帮助时标记阻塞。
+                        {tIssues("workflowFlow.collaboration.activeDescription")}
                       </p>
                     </div>
 
@@ -690,14 +776,18 @@ export function WorkflowIssueDetailFlow({
                       <>
                         <div className="space-y-2">
                           <Label className="text-sm text-app-text-primary">
-                            评审 / 交接对象
+                            {tIssues("workflowFlow.collaboration.targetLabel")}
                           </Label>
                           <Select
                             value={collaborationTargetId || undefined}
                             onValueChange={setCollaborationTargetId}
                           >
                             <SelectTrigger className="border-app-border bg-app-content-bg text-app-text-primary">
-                              <SelectValue placeholder="选择需要确认或接手的人" />
+                              <SelectValue
+                                placeholder={tIssues(
+                                  "workflowFlow.collaboration.targetPlaceholder",
+                                )}
+                              />
                             </SelectTrigger>
                             <SelectContent className="border-app-border bg-app-content-bg">
                               {workflowMembers.map((member) => (
@@ -711,7 +801,7 @@ export function WorkflowIssueDetailFlow({
 
                         <div className="space-y-2">
                           <Label className="text-sm text-app-text-primary">
-                            协作说明
+                            {tIssues("workflowFlow.collaboration.noteLabel")}
                           </Label>
                           <Textarea
                             value={collaborationNote}
@@ -719,14 +809,16 @@ export function WorkflowIssueDetailFlow({
                               setCollaborationNote(event.target.value)
                             }
                             rows={2}
-                            placeholder="补充评审、交接或阻塞说明。标记阻塞时建议写清：原因、需要谁帮助、预计何时恢复。"
+                            placeholder={tIssues(
+                              "workflowFlow.collaboration.notePlaceholder",
+                            )}
                             className="border-app-border bg-app-content-bg text-app-text-primary"
                           />
                         </div>
 
                         {!hasSelectedTarget && (
                           <p className="text-xs text-app-text-muted">
-                            选择目标成员后才能请求评审或交接；标记阻塞可以直接提交。
+                            {tIssues("workflowFlow.collaboration.targetRequired")}
                           </p>
                         )}
 
@@ -741,7 +833,7 @@ export function WorkflowIssueDetailFlow({
                             }
                             onClick={handleRequestReview}
                           >
-                            请求评审
+                            {tIssues("workflowFlow.actions.requestReview")}
                           </Button>
                           <Button
                             type="button"
@@ -753,7 +845,7 @@ export function WorkflowIssueDetailFlow({
                             }
                             onClick={handleRequestHandoff}
                           >
-                            请求交接
+                            {tIssues("workflowFlow.actions.requestHandoff")}
                           </Button>
                           <Button
                             type="button"
@@ -762,13 +854,13 @@ export function WorkflowIssueDetailFlow({
                             disabled={blockWorkflowRunMutation.isPending}
                             onClick={handleBlockRun}
                           >
-                            标记阻塞
+                            {tIssues("workflowFlow.actions.markBlocked")}
                           </Button>
                         </div>
                       </>
                     ) : (
                       <div className="rounded-lg border border-dashed border-app-border px-3 py-2 text-sm text-app-text-secondary">
-                        只有当前负责人可以发起评审、交接或阻塞操作。
+                        {tIssues("workflowFlow.collaboration.onlyCurrentOwner")}
                       </div>
                     )}
                   </div>
@@ -778,10 +870,12 @@ export function WorkflowIssueDetailFlow({
                   <div className="space-y-2 rounded-lg border border-sky-500/20 bg-sky-500/10 px-3 py-2.5">
                     <div>
                       <div className="text-sm font-medium text-app-text-primary">
-                        正在等待 {pendingTargetLabel} 评审
+                        {tIssues("workflowFlow.review.waitingTitle", {
+                          name: pendingTargetLabel,
+                        })}
                       </div>
                       <p className="mt-1 text-xs leading-5 text-app-text-muted">
-                        评审通过后流程会继续推进；如果需要补充修改，可以直接退回。
+                        {tIssues("workflowFlow.review.waitingDescription")}
                       </p>
                     </div>
 
@@ -793,7 +887,7 @@ export function WorkflowIssueDetailFlow({
                             setCollaborationNote(event.target.value)
                           }
                           rows={2}
-                          placeholder="写下评审结论或修改建议"
+                          placeholder={tIssues("workflowFlow.review.placeholder")}
                           className="border-app-border bg-app-content-bg text-app-text-primary"
                         />
                         <div className="grid gap-2 sm:grid-cols-2">
@@ -803,7 +897,7 @@ export function WorkflowIssueDetailFlow({
                             disabled={respondWorkflowReviewMutation.isPending}
                             onClick={handleApproveReview}
                           >
-                            通过评审
+                            {tIssues("workflowFlow.actions.approveReview")}
                           </Button>
                           <Button
                             type="button"
@@ -812,14 +906,15 @@ export function WorkflowIssueDetailFlow({
                             disabled={respondWorkflowReviewMutation.isPending}
                             onClick={handleRequestChanges}
                           >
-                            请求修改
+                            {tIssues("workflowFlow.actions.requestChanges")}
                           </Button>
                         </div>
                       </>
                     ) : (
                       <div className="rounded-lg border border-dashed border-sky-500/20 px-3 py-2 text-sm text-app-text-secondary">
-                        这一步需要 {pendingTargetLabel}{" "}
-                        处理，你可以在讨论区补充上下文。
+                        {tIssues("workflowFlow.review.readonlyHint", {
+                          name: pendingTargetLabel,
+                        })}
                       </div>
                     )}
                   </div>
@@ -829,10 +924,12 @@ export function WorkflowIssueDetailFlow({
                   <div className="space-y-2 rounded-lg border border-cyan-500/20 bg-cyan-500/10 px-3 py-2.5">
                     <div>
                       <div className="text-sm font-medium text-app-text-primary">
-                        正在等待 {pendingTargetLabel} 接手
+                        {tIssues("workflowFlow.handoff.waitingTitle", {
+                          name: pendingTargetLabel,
+                        })}
                       </div>
                       <p className="mt-1 text-xs leading-5 text-app-text-muted">
-                        接手后，当前步骤的负责人会转移到新的处理人。
+                        {tIssues("workflowFlow.handoff.waitingDescription")}
                       </p>
                     </div>
 
@@ -844,7 +941,7 @@ export function WorkflowIssueDetailFlow({
                             setCollaborationNote(event.target.value)
                           }
                           rows={2}
-                          placeholder="写下接手说明，例如下一步准备如何推进"
+                          placeholder={tIssues("workflowFlow.handoff.placeholder")}
                           className="border-app-border bg-app-content-bg text-app-text-primary"
                         />
                         <Button
@@ -853,13 +950,14 @@ export function WorkflowIssueDetailFlow({
                           disabled={acceptWorkflowHandoffMutation.isPending}
                           onClick={handleAcceptHandoff}
                         >
-                          接受交接
+                          {tIssues("workflowFlow.actions.acceptHandoff")}
                         </Button>
                       </>
                     ) : (
                       <div className="rounded-lg border border-dashed border-cyan-500/20 px-3 py-2 text-sm text-app-text-secondary">
-                        这一步需要 {pendingTargetLabel}{" "}
-                        接手，你可以在讨论区补充交接上下文。
+                        {tIssues("workflowFlow.handoff.readonlyHint", {
+                          name: pendingTargetLabel,
+                        })}
                       </div>
                     )}
                   </div>
@@ -869,11 +967,12 @@ export function WorkflowIssueDetailFlow({
                   <div className="space-y-2 rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-2.5">
                     <div>
                       <div className="text-sm font-medium text-app-text-primary">
-                        当前步骤处于阻塞中
+                        {tIssues("workflowFlow.blocked.title")}
                       </div>
                       <p className="mt-1 text-xs leading-5 text-app-text-muted">
-                        负责人：{currentOwnerLabel}
-                        。阻塞说明里应包含原因、需要谁帮助、预计恢复时间。
+                        {tIssues("workflowFlow.blocked.description", {
+                          name: currentOwnerLabel,
+                        })}
                       </p>
                     </div>
 
@@ -885,7 +984,7 @@ export function WorkflowIssueDetailFlow({
                             setCollaborationNote(event.target.value)
                           }
                           rows={2}
-                          placeholder="说明阻塞已解除的依据，或补充恢复后的下一步"
+                          placeholder={tIssues("workflowFlow.blocked.placeholder")}
                           className="border-app-border bg-app-content-bg text-app-text-primary"
                         />
                         <Button
@@ -894,12 +993,12 @@ export function WorkflowIssueDetailFlow({
                           disabled={unblockWorkflowRunMutation.isPending}
                           onClick={handleUnblockRun}
                         >
-                          解除阻塞
+                          {tIssues("workflowFlow.actions.unblock")}
                         </Button>
                       </>
                     ) : (
                       <div className="rounded-lg border border-dashed border-rose-500/20 px-3 py-2 text-sm text-app-text-secondary">
-                        只有当前负责人可以解除阻塞；其他成员可以在讨论区补充信息。
+                        {tIssues("workflowFlow.blocked.readonlyHint")}
                       </div>
                     )}
                   </div>
@@ -907,7 +1006,7 @@ export function WorkflowIssueDetailFlow({
 
                 {workflowRun.runStatus === "DONE" && (
                   <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2.5 text-sm text-app-text-secondary">
-                    这个流程已经完成，后续可以在成果和讨论记录中回看交付上下文。
+                    {tIssues("workflowFlow.done.description")}
                   </div>
                 )}
               </CardContent>
@@ -933,8 +1032,8 @@ export function WorkflowIssueDetailFlow({
               <CardContent className="p-3 text-xs text-app-text-muted">
                 {currentNodeFocusUsers
                   .map((participant) => participant.name)
-                  .join("、")}
-                正在关注当前节点
+                  .join(", ")}{" "}
+                {tIssues("workflowFlow.focusingNode")}
               </CardContent>
             </Card>
           )}
@@ -951,7 +1050,7 @@ export function WorkflowIssueDetailFlow({
             <CardHeader className="flex flex-col gap-3 border-b border-app-border p-4 sm:flex-row sm:items-end sm:justify-between">
               <div className="space-y-1">
                 <CardTitle className="text-base text-app-text-primary">
-                  协作记录
+                  {tIssues("workflowFlow.records.title")}
                 </CardTitle>
               </div>
               <TabsList
@@ -963,21 +1062,23 @@ export function WorkflowIssueDetailFlow({
                   className="data-[state=active]:bg-sky-500/10 data-[state=active]:text-sky-700"
                 >
                   <RiHistoryLine className="h-4 w-4" />
-                  操作历史
+                  {tIssues("workflowFlow.records.history")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="discussion"
                   className="data-[state=active]:bg-sky-500/10 data-[state=active]:text-sky-700"
                 >
                   <RiFileTextLine className="h-4 w-4" />
-                  讨论
+                  {tIssues("workflowFlow.records.discussion")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="records"
                   className="data-[state=active]:bg-sky-500/10 data-[state=active]:text-sky-700"
                 >
                   <RiFileTextLine className="h-4 w-4" />
-                  成果 ({stepRecords.length})
+                  {tIssues("workflowFlow.records.outputs", {
+                    count: stepRecords.length,
+                  })}
                 </TabsTrigger>
               </TabsList>
             </CardHeader>

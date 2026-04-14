@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { ReactFlowProvider } from "reactflow";
 import "reactflow/dist/style.css";
 import { RiArrowLeftLine } from "react-icons/ri";
@@ -24,6 +25,7 @@ export default function WorkflowIssueDetail({
   onClose,
   onUpdate,
 }: WorkflowIssueDetailProps) {
+  const tIssues = useTranslations("issues");
   const { data: issue, isLoading } = useIssue(workspaceId, issueId, {
     enabled: isOpen,
   });
@@ -41,7 +43,11 @@ export default function WorkflowIssueDetail({
         />
       ) : (
         <div className="flex h-full min-h-[240px] flex-col items-center justify-center gap-4 text-app-text-muted">
-          <div>{isLoading ? "正在加载 Issue..." : "Issue 不存在或已被删除"}</div>
+          <div>
+            {isLoading
+              ? tIssues("workflowDetail.loading")
+              : tIssues("workflowDetail.notFound")}
+          </div>
           {!isLoading && (
             <Button
               type="button"
@@ -50,7 +56,7 @@ export default function WorkflowIssueDetail({
               onClick={onClose}
             >
               <RiArrowLeftLine className="h-4 w-4" />
-              返回列表
+              {tIssues("workflowDetail.back")}
             </Button>
           )}
         </div>

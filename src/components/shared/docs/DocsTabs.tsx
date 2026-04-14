@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { RiCloseLine, RiFileTextLine, RiFolder3Line } from "react-icons/ri";
 import { useDocs, DocsDocument } from "./DocsContext";
 
@@ -9,6 +10,7 @@ interface DocsTabsProps {
 }
 
 export default function DocsTabs({ onSelectDoc }: DocsTabsProps) {
+  const tDocs = useTranslations("docs");
   const { openDocs, activeDocId, closeDoc } = useDocs();
 
   if (openDocs.length === 0) {
@@ -47,7 +49,7 @@ export default function DocsTabs({ onSelectDoc }: DocsTabsProps) {
                 className={`flex-shrink-0 rounded p-0.5 transition-opacity hover:bg-app-button-hover ${
                   isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                 }`}
-                title="关闭"
+                title={tDocs("tabs.close")}
               >
                 <RiCloseLine className="w-3.5 h-3.5" />
               </button>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { RiFileTextLine, RiFolder3Line, RiAddLine } from "react-icons/ri";
 import DocsProvider, {
   useDocs,
@@ -57,7 +58,7 @@ interface DocsPageProps {
   workspaceId: string;
   workspaceType: "PERSONAL" | "TEAM";
   userId: string;
-  context?: DocumentContext; // 可选，如果不提供则自动检测
+  context?: DocumentContext; // Optional; detected automatically when omitted.
   projectId?: string;
 }
 
@@ -66,10 +67,9 @@ interface DocsSourceOption {
   label: string;
 }
 
-const TEAM_DOC_SOURCE_OPTIONS: DocsSourceOption[] = [
-  { value: "team", label: "团队文档" },
-  { value: "team-personal", label: "我的私有文档" },
-];
+function formatDocDate(value: number, locale: string) {
+  return new Date(value).toLocaleDateString(locale);
+}
 
 function resolveDocumentContext(
   providedContext: DocumentContext | undefined,
@@ -96,20 +96,21 @@ function DocsSourceSwitcher({
   options: DocsSourceOption[];
   onValueChange: (value: DocumentContext) => void;
 }) {
+  const tDocs = useTranslations("docs");
   return (
     <div className="flex items-center gap-3">
       <div className="text-right">
         <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-app-text-muted">
-          文档源
+          {tDocs("sourceSwitcher.label")}
         </p>
         <p className="mt-1 text-xs text-app-text-secondary">
-          切换团队共享文档或你的私有文档
+          {tDocs("sourceSwitcher.description")}
         </p>
       </div>
 
       <Select value={value} onValueChange={(next) => onValueChange(next as DocumentContext)}>
         <SelectTrigger size="sm" className="w-[220px]">
-          <SelectValue placeholder="选择文档源" />
+          <SelectValue placeholder={tDocs("sourceSwitcher.placeholder")} />
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
@@ -125,11 +126,12 @@ function DocsSourceSwitcher({
   );
 }
 
-// MARK: - 文档概览页面组件
 function PersonalDocsOverviewPage() {
+  const tDocs = useTranslations("docs");
+  const locale = useLocale();
   const { documents, createDoc, openDoc } = useDocs();
 
-  // 获取根文档和最近更新的文档
+  // Split the overview into root-level docs and recent updates.
   const rootDocs = documents.filter((doc) => !doc.parentDocument);
   const recentDocs = [...documents]
     .sort((a, b) => b.updatedAt - a.updatedAt)
@@ -140,7 +142,7 @@ function PersonalDocsOverviewPage() {
   };
 
   const handleCreateNewDoc = async () => {
-    await createDoc("新文档");
+    await createDoc(tDocs("creation.newDoc"));
   };
 
   return (
@@ -149,14 +151,10 @@ function PersonalDocsOverviewPage() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="mb-2 text-2xl font-semibold text-app-text-primary">
-            我的文档
+            {tDocs("overview.personal.title")}
           </h1>
           <p className="text-app-text-secondary">
-            共有{" "}
-            <span className="font-semibold text-app-text-primary">
-              {documents.length}
-            </span>{" "}
-            个个人文档
+            {tDocs("overview.personal.subtitle", { count: documents.length })}
           </p>
         </div>
 
@@ -171,7 +169,7 @@ function PersonalDocsOverviewPage() {
                 {documents.filter((doc) => doc.type === "document").length}
               </span>
             </div>
-            <p className="text-sm text-app-text-secondary">文档数</p>
+            <p className="text-sm text-app-text-secondary">{tDocs("overview.shared.documentMetric")}</p>
           </div>
 
           <div className={docsStaticCardClassName}>
@@ -183,7 +181,7 @@ function PersonalDocsOverviewPage() {
                 {documents.filter((doc) => doc.type === "folder").length}
               </span>
             </div>
-            <p className="text-sm text-app-text-secondary">文件夹数</p>
+            <p className="text-sm text-app-text-secondary">{tDocs("overview.shared.folderMetric")}</p>
           </div>
 
           <button
@@ -195,10 +193,10 @@ function PersonalDocsOverviewPage() {
                 <RiAddLine className="w-5 h-5 text-sky-600 dark:text-sky-400" />
               </div>
               <span className="text-lg font-semibold text-app-text-primary">
-                新建文档
+                {tDocs("overview.shared.newDocTitle")}
               </span>
             </div>
-            <p className="text-sm text-app-text-secondary">创建新的个人文档</p>
+            <p className="text-sm text-app-text-secondary">{tDocs("overview.personal.newDocDescription")}</p>
           </button>
         </div>
 
@@ -206,7 +204,7 @@ function PersonalDocsOverviewPage() {
         {rootDocs.length > 0 && (
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-app-text-primary mb-4">
-              文档分类
+              {tDocs("overview.shared.categoryTitle")}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {rootDocs.map((doc) => {
@@ -232,11 +230,11 @@ function PersonalDocsOverviewPage() {
                         <p className="text-sm text-app-text-secondary">
                           {doc.type === "folder"
                             ? childCount > 0
-                              ? `包含 ${childCount} 个项目`
-                              : "空文件夹"
-                            : `更新于 ${new Date(
-                                doc.updatedAt
-                              ).toLocaleDateString("zh-CN")}`}
+                              ? tDocs("overview.shared.folderContains", { count: childCount })
+                              : tDocs("overview.shared.emptyFolder")
+                            : tDocs("overview.shared.updatedAt", {
+                                value: formatDocDate(doc.updatedAt, locale),
+                              })}
                         </p>
                       </div>
                     </div>
@@ -251,7 +249,7 @@ function PersonalDocsOverviewPage() {
         {recentDocs.length > 0 && (
           <div>
             <h2 className="text-xl font-semibold text-app-text-primary mb-4">
-              最近更新
+              {tDocs("overview.shared.recentTitle")}
             </h2>
             <div className="space-y-2">
               {recentDocs.map((doc) => {
@@ -275,8 +273,9 @@ function PersonalDocsOverviewPage() {
                         {doc.title}
                       </h4>
                       <p className="text-xs text-app-text-muted">
-                        更新于{" "}
-                        {new Date(doc.updatedAt).toLocaleDateString("zh-CN")}
+                        {tDocs("overview.shared.updatedAt", {
+                          value: formatDocDate(doc.updatedAt, locale),
+                        })}
                       </p>
                     </div>
                     {parentDoc && (
@@ -310,17 +309,17 @@ function PersonalDocsOverviewPage() {
               </svg>
             </div>
             <h3 className="text-lg font-medium text-app-text-primary mb-2">
-              还没有文档
+              {tDocs("overview.personal.emptyTitle")}
             </h3>
             <p className="text-app-text-muted mb-4">
-              创建你的第一个文档开始记录想法
+              {tDocs("overview.personal.emptyDescription")}
             </p>
             <button
               onClick={handleCreateNewDoc}
               className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-white transition-colors hover:bg-sky-500"
             >
               <RiAddLine className="w-4 h-4" />
-              创建文档
+              {tDocs("overview.personal.emptyAction")}
             </button>
           </div>
         )}
@@ -329,11 +328,12 @@ function PersonalDocsOverviewPage() {
   );
 }
 
-// MARK: - 团队文档概览
 function TeamDocsOverviewPage() {
+  const tDocs = useTranslations("docs");
+  const locale = useLocale();
   const { documents, createDoc, openDoc } = useDocs();
 
-  // 获取根文档和最近更新的文档
+  // Split the overview into root-level docs and recent updates.
   const rootDocs = documents.filter((doc) => !doc.parentDocument);
   const recentDocs = [...documents]
     .sort((a, b) => b.updatedAt - a.updatedAt)
@@ -344,7 +344,7 @@ function TeamDocsOverviewPage() {
   };
 
   const handleCreateNewDoc = async () => {
-    await createDoc("新团队文档");
+    await createDoc(tDocs("creation.newTeamDoc"));
   };
 
   return (
@@ -353,14 +353,10 @@ function TeamDocsOverviewPage() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="mb-2 text-2xl font-semibold text-app-text-primary">
-            团队文档
+            {tDocs("overview.team.title")}
           </h1>
           <p className="text-app-text-secondary">
-            共有{" "}
-            <span className="font-semibold text-app-text-primary">
-              {documents.length}
-            </span>{" "}
-            个团队文档
+            {tDocs("overview.team.subtitle", { count: documents.length })}
           </p>
         </div>
 
@@ -375,7 +371,7 @@ function TeamDocsOverviewPage() {
                 {documents.filter((doc) => doc.type === "document").length}
               </span>
             </div>
-            <p className="text-sm text-app-text-secondary">团队文档数</p>
+            <p className="text-sm text-app-text-secondary">{tDocs("overview.team.documentMetric")}</p>
           </div>
 
           <div className={docsStaticCardClassName}>
@@ -387,7 +383,7 @@ function TeamDocsOverviewPage() {
                 {documents.filter((doc) => doc.type === "folder").length}
               </span>
             </div>
-            <p className="text-sm text-app-text-secondary">文件夹数</p>
+            <p className="text-sm text-app-text-secondary">{tDocs("overview.shared.folderMetric")}</p>
           </div>
 
           <button
@@ -399,10 +395,10 @@ function TeamDocsOverviewPage() {
                 <RiAddLine className="w-5 h-5 text-sky-600 dark:text-sky-400" />
               </div>
               <span className="text-lg font-semibold text-app-text-primary">
-                新建文档
+                {tDocs("overview.shared.newDocTitle")}
               </span>
             </div>
-            <p className="text-sm text-app-text-secondary">创建新的团队文档</p>
+            <p className="text-sm text-app-text-secondary">{tDocs("overview.team.newDocDescription")}</p>
           </button>
         </div>
 
@@ -410,7 +406,7 @@ function TeamDocsOverviewPage() {
         {rootDocs.length > 0 && (
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-app-text-primary mb-4">
-              文档分类
+              {tDocs("overview.shared.categoryTitle")}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {rootDocs.map((doc) => {
@@ -436,11 +432,11 @@ function TeamDocsOverviewPage() {
                         <p className="text-sm text-app-text-secondary">
                           {doc.type === "folder"
                             ? childCount > 0
-                              ? `包含 ${childCount} 个项目`
-                              : "空文件夹"
-                            : `更新于 ${new Date(
-                                doc.updatedAt
-                              ).toLocaleDateString("zh-CN")}`}
+                              ? tDocs("overview.shared.folderContains", { count: childCount })
+                              : tDocs("overview.shared.emptyFolder")
+                            : tDocs("overview.shared.updatedAt", {
+                                value: formatDocDate(doc.updatedAt, locale),
+                              })}
                         </p>
                       </div>
                     </div>
@@ -455,7 +451,7 @@ function TeamDocsOverviewPage() {
         {recentDocs.length > 0 && (
           <div>
             <h2 className="text-xl font-semibold text-app-text-primary mb-4">
-              最近更新
+              {tDocs("overview.shared.recentTitle")}
             </h2>
             <div className="space-y-2">
               {recentDocs.map((doc) => {
@@ -479,8 +475,9 @@ function TeamDocsOverviewPage() {
                         {doc.title}
                       </h4>
                       <p className="text-xs text-app-text-muted">
-                        更新于{" "}
-                        {new Date(doc.updatedAt).toLocaleDateString("zh-CN")}
+                        {tDocs("overview.shared.updatedAt", {
+                          value: formatDocDate(doc.updatedAt, locale),
+                        })}
                       </p>
                     </div>
                     {parentDoc && (
@@ -514,17 +511,17 @@ function TeamDocsOverviewPage() {
               </svg>
             </div>
             <h3 className="text-lg font-medium text-app-text-primary mb-2">
-              还没有团队文档
+              {tDocs("overview.team.emptyTitle")}
             </h3>
             <p className="text-app-text-muted mb-4">
-              创建第一个团队文档，与团队成员协作
+              {tDocs("overview.team.emptyDescription")}
             </p>
             <button
               onClick={handleCreateNewDoc}
               className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-white transition-colors hover:bg-sky-500"
             >
               <RiAddLine className="w-4 h-4" />
-              创建团队文档
+              {tDocs("overview.team.emptyAction")}
             </button>
           </div>
         )}
@@ -533,11 +530,12 @@ function TeamDocsOverviewPage() {
   );
 }
 
-// MARK: - 团队个人文档概览
 function TeamPersonalDocsOverviewPage() {
+  const tDocs = useTranslations("docs");
+  const locale = useLocale();
   const { documents, createDoc, openDoc } = useDocs();
 
-  // 获取根文档和最近更新的文档
+  // Split the overview into root-level docs and recent updates.
   const rootDocs = documents.filter((doc) => !doc.parentDocument);
   const recentDocs = [...documents]
     .sort((a, b) => b.updatedAt - a.updatedAt)
@@ -548,7 +546,7 @@ function TeamPersonalDocsOverviewPage() {
   };
 
   const handleCreateNewDoc = async () => {
-    await createDoc("新个人文档");
+    await createDoc(tDocs("creation.newPersonalDoc"));
   };
 
   return (
@@ -557,14 +555,10 @@ function TeamPersonalDocsOverviewPage() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="mb-2 text-2xl font-semibold text-app-text-primary">
-            我的工作文档
+            {tDocs("overview.teamPersonal.title")}
           </h1>
           <p className="text-app-text-secondary">
-            共有{" "}
-            <span className="font-semibold text-app-text-primary">
-              {documents.length}
-            </span>{" "}
-            个个人工作文档
+            {tDocs("overview.teamPersonal.subtitle", { count: documents.length })}
           </p>
         </div>
 
@@ -579,7 +573,7 @@ function TeamPersonalDocsOverviewPage() {
                 {documents.filter((doc) => doc.type === "document").length}
               </span>
             </div>
-            <p className="text-sm text-app-text-secondary">工作文档数</p>
+            <p className="text-sm text-app-text-secondary">{tDocs("overview.teamPersonal.documentMetric")}</p>
           </div>
 
           <div className={docsStaticCardClassName}>
@@ -591,7 +585,7 @@ function TeamPersonalDocsOverviewPage() {
                 {documents.filter((doc) => doc.type === "folder").length}
               </span>
             </div>
-            <p className="text-sm text-app-text-secondary">文件夹数</p>
+            <p className="text-sm text-app-text-secondary">{tDocs("overview.shared.folderMetric")}</p>
           </div>
 
           <button
@@ -603,11 +597,11 @@ function TeamPersonalDocsOverviewPage() {
                 <RiAddLine className="w-5 h-5 text-sky-600 dark:text-sky-400" />
               </div>
               <span className="text-lg font-semibold text-app-text-primary">
-                新建文档
+                {tDocs("overview.shared.newDocTitle")}
               </span>
             </div>
             <p className="text-sm text-app-text-secondary">
-              创建新的个人工作文档
+              {tDocs("overview.teamPersonal.newDocDescription")}
             </p>
           </button>
         </div>
@@ -616,7 +610,7 @@ function TeamPersonalDocsOverviewPage() {
         {rootDocs.length > 0 && (
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-app-text-primary mb-4">
-              文档分类
+              {tDocs("overview.shared.categoryTitle")}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {rootDocs.map((doc) => {
@@ -642,11 +636,11 @@ function TeamPersonalDocsOverviewPage() {
                         <p className="text-sm text-app-text-secondary">
                           {doc.type === "folder"
                             ? childCount > 0
-                              ? `包含 ${childCount} 个项目`
-                              : "空文件夹"
-                            : `更新于 ${new Date(
-                                doc.updatedAt
-                              ).toLocaleDateString("zh-CN")}`}
+                              ? tDocs("overview.shared.folderContains", { count: childCount })
+                              : tDocs("overview.shared.emptyFolder")
+                            : tDocs("overview.shared.updatedAt", {
+                                value: formatDocDate(doc.updatedAt, locale),
+                              })}
                         </p>
                       </div>
                     </div>
@@ -661,7 +655,7 @@ function TeamPersonalDocsOverviewPage() {
         {recentDocs.length > 0 && (
           <div>
             <h2 className="text-xl font-semibold text-app-text-primary mb-4">
-              最近更新
+              {tDocs("overview.shared.recentTitle")}
             </h2>
             <div className="space-y-2">
               {recentDocs.map((doc) => {
@@ -685,8 +679,9 @@ function TeamPersonalDocsOverviewPage() {
                         {doc.title}
                       </h4>
                       <p className="text-xs text-app-text-muted">
-                        更新于{" "}
-                        {new Date(doc.updatedAt).toLocaleDateString("zh-CN")}
+                        {tDocs("overview.shared.updatedAt", {
+                          value: formatDocDate(doc.updatedAt, locale),
+                        })}
                       </p>
                     </div>
                     {parentDoc && (
@@ -720,17 +715,17 @@ function TeamPersonalDocsOverviewPage() {
               </svg>
             </div>
             <h3 className="text-lg font-medium text-app-text-primary mb-2">
-              还没有个人工作文档
+              {tDocs("overview.teamPersonal.emptyTitle")}
             </h3>
             <p className="text-app-text-muted mb-4">
-              在团队工作空间中创建个人文档，只有你可以访问
+              {tDocs("overview.teamPersonal.emptyDescription")}
             </p>
             <button
               onClick={handleCreateNewDoc}
               className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-white transition-colors hover:bg-sky-500"
             >
               <RiAddLine className="w-4 h-4" />
-              创建个人文档
+              {tDocs("overview.teamPersonal.emptyAction")}
             </button>
           </div>
         )}
@@ -739,7 +734,6 @@ function TeamPersonalDocsOverviewPage() {
   );
 }
 
-// MARK: - 根据context渲染
 function DocsOverviewPage({ context }: { context: DocumentContext }) {
   switch (context) {
     case "personal":
@@ -753,8 +747,8 @@ function DocsOverviewPage({ context }: { context: DocumentContext }) {
   }
 }
 
-// MARK: - 内部文档页面组件
 function DocsPageContent({ sourceSwitcher }: { sourceSwitcher?: React.ReactNode }) {
+  const tDocs = useTranslations("docs");
   const { documents, openDocs, activeDocId, openDoc, isLoading, context } =
     useDocs();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -782,14 +776,13 @@ function DocsPageContent({ sourceSwitcher }: { sourceSwitcher?: React.ReactNode 
           <AmbientGlow />
           <div className="relative z-10 text-center">
             <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-sky-600"></div>
-            <p className="text-app-text-muted">加载文档...</p>
+            <p className="text-app-text-muted">{tDocs("states.loadingPage")}</p>
           </div>
         </div>
       </div>
     );
   }
 
-  // 如果没有激活文档且没有打开的文档，显示概览页面
   if (!activeDocId && openDocs.length === 0) {
     return (
       <div className="flex h-full min-h-0 flex-col">
@@ -845,12 +838,12 @@ function DocsPageContent({ sourceSwitcher }: { sourceSwitcher?: React.ReactNode 
                     </svg>
                   </div>
                   <h3 className="text-lg font-medium text-app-text-primary mb-2">
-                    欢迎使用文档系统
+                    {tDocs("welcome.title")}
                   </h3>
                   <p className="text-app-text-muted max-w-sm">
                     {documents.length === 0
-                      ? "还没有文档，点击侧边栏的 + 按钮开始创建"
-                      : "从左侧选择一个文档开始编辑"}
+                      ? tDocs("welcome.emptyDescription")
+                      : tDocs("welcome.selectDescription")}
                   </p>
                 </div>
               </div>
@@ -869,6 +862,7 @@ export default function DocsPage({
   context,
   projectId,
 }: DocsPageProps) {
+  const tDocs = useTranslations("docs");
   const { currentWorkspace } = useWorkspace();
   const setActiveDocId = useDocStore((state) => state.setActiveDocId);
   const defaultDocumentContext = useMemo(
@@ -890,10 +884,14 @@ export default function DocsPage({
 
   const activeContext = canSwitchSource ? selectedContext : defaultDocumentContext;
   const providerKey = `${workspaceId}-${workspaceType}-${activeContext}-${projectId ?? "root"}`;
+  const teamDocSourceOptions: DocsSourceOption[] = [
+    { value: "team", label: tDocs("source.team") },
+    { value: "team-personal", label: tDocs("source.teamPersonal") },
+  ];
   const sourceSwitcher = canSwitchSource ? (
     <DocsSourceSwitcher
       value={activeContext}
-      options={TEAM_DOC_SOURCE_OPTIONS}
+      options={teamDocSourceOptions}
       onValueChange={setSelectedContext}
     />
   ) : null;

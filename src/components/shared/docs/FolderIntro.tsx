@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { RiFolder3Line, RiEditLine, RiSaveLine } from "react-icons/ri";
 import { useDocs, DocsDocument } from "./DocsContext";
 
@@ -9,6 +10,8 @@ interface FolderIntroProps {
 }
 
 export default function FolderIntro({ folder }: FolderIntroProps) {
+  const tDocs = useTranslations("docs");
+  const locale = useLocale();
   const { updateFolderDescription } = useDocs();
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [description, setDescription] = useState(folder.description || "");
@@ -22,7 +25,7 @@ export default function FolderIntro({ folder }: FolderIntroProps) {
       await updateFolderDescription(folder._id, description);
       setIsEditingDescription(false);
     } catch (error) {
-      console.error("保存文件夹描述失败:", error);
+      console.error(tDocs("folderIntro.saveFailed"), error);
     } finally {
       setIsSaving(false);
     }
@@ -33,7 +36,6 @@ export default function FolderIntro({ folder }: FolderIntroProps) {
     setIsEditingDescription(false);
   };
 
-  // 只有文件夹类型才显示此组件
   if (folder.type !== "folder") {
     return null;
   }
@@ -51,8 +53,9 @@ export default function FolderIntro({ folder }: FolderIntroProps) {
 
         <div className="flex items-center justify-between">
           <div className="text-sm text-app-text-secondary">
-            文件夹 • 创建于{" "}
-            {new Date(folder.createdAt).toLocaleDateString("zh-CN")}
+            {tDocs("folderIntro.folderMeta", {
+              value: new Date(folder.createdAt).toLocaleDateString(locale),
+            })}
           </div>
 
           {!isEditingDescription && (
@@ -62,7 +65,7 @@ export default function FolderIntro({ folder }: FolderIntroProps) {
               disabled={!folder.canEdit}
             >
               <RiEditLine className="w-3 h-3" />
-              编辑描述
+              {tDocs("folderIntro.editDescription")}
             </button>
           )}
         </div>
@@ -72,7 +75,7 @@ export default function FolderIntro({ folder }: FolderIntroProps) {
       <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
         <div className="max-w-4xl">
           <h2 className="text-xl font-semibold text-app-text-primary mb-4">
-            文件夹描述
+            {tDocs("folderIntro.title")}
           </h2>
 
           {isEditingDescription ? (
@@ -80,7 +83,7 @@ export default function FolderIntro({ folder }: FolderIntroProps) {
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="输入文件夹描述..."
+                placeholder={tDocs("folderIntro.placeholder")}
                 className="w-full h-32 px-4 py-3 border border-app-border rounded-lg bg-app-content-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 autoFocus
                 disabled={isSaving}
@@ -92,14 +95,14 @@ export default function FolderIntro({ folder }: FolderIntroProps) {
                   className="flex items-center gap-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors"
                 >
                   <RiSaveLine className="w-4 h-4" />
-                  {isSaving ? "保存中..." : "保存"}
+                  {isSaving ? tDocs("folderIntro.saving") : tDocs("folderIntro.save")}
                 </button>
                 <button
                   onClick={handleCancelEdit}
                   disabled={isSaving}
                   className="px-4 py-2 text-app-text-secondary hover:text-app-text-primary disabled:text-app-text-muted border border-app-border rounded-lg transition-colors"
                 >
-                  取消
+                  {tDocs("folderIntro.cancel")}
                 </button>
               </div>
             </div>
@@ -114,7 +117,9 @@ export default function FolderIntro({ folder }: FolderIntroProps) {
             >
               {description || (
                 <span className="text-app-text-muted italic">
-                  {folder.canEdit ? "点击添加文件夹描述..." : "暂无文件夹描述"}
+                  {folder.canEdit
+                    ? tDocs("folderIntro.emptyEditable")
+                    : tDocs("folderIntro.emptyReadonly")}
                 </span>
               )}
             </div>
@@ -123,21 +128,24 @@ export default function FolderIntro({ folder }: FolderIntroProps) {
           {/* Tips */}
           <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <h3 className="text-sm font-medium text-blue-800 dark:text-blue-400 mb-2">
-              💡 使用提示
+              {tDocs("folderIntro.tipsTitle")}
             </h3>
             <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-              <li>• 这是一个文件夹，用于组织和分类文档</li>
-              <li>• 右键点击文件夹可以创建子文档或子文件夹</li>
-              <li>• 可以在这里添加文件夹的详细说明和使用规范</li>
+              <li>• {tDocs("folderIntro.tip1")}</li>
+              <li>• {tDocs("folderIntro.tip2")}</li>
+              <li>• {tDocs("folderIntro.tip3")}</li>
               <li>
-                • 文件夹权限：
-                {folder.visibility === "PRIVATE"
-                  ? "私有"
-                  : folder.visibility === "TEAM_READONLY"
-                  ? "团队只读"
-                  : folder.visibility === "TEAM_EDITABLE"
-                  ? "团队可编辑"
-                  : "公开"}
+                •{" "}
+                {tDocs("folderIntro.visibility", {
+                  value:
+                    folder.visibility === "PRIVATE"
+                      ? tDocs("editor.meta.private")
+                      : folder.visibility === "TEAM_READONLY"
+                        ? tDocs("editor.meta.teamReadonly")
+                        : folder.visibility === "TEAM_EDITABLE"
+                          ? tDocs("editor.meta.teamEditable")
+                          : tDocs("editor.meta.public"),
+                })}
               </li>
             </ul>
           </div>

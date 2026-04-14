@@ -2,16 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { useLocale, useTranslations } from "next-intl";
 import { useDocs, DocsDocument } from "./DocsContext";
 import DocsToolbar from "./DocsToolbar";
 import FolderIntro from "./FolderIntro";
 
-// 动态导入 BlockNote 编辑器以避免 SSR 问题
 const DocsBlockNoteEditor = dynamic(() => import("./BlockNoteEditor"), {
   ssr: false,
   loading: () => (
     <div className="h-full flex items-center justify-center">
-      <p className="text-app-text-muted">加载编辑器...</p>
+      <p className="text-app-text-muted">Loading editor...</p>
     </div>
   ),
 });
@@ -27,12 +27,13 @@ export default function DocsEditor({
   isExpanded = false,
   onToggleExpand,
 }: DocsEditorProps) {
+  const tDocs = useTranslations("docs");
+  const locale = useLocale();
   const { updateDocTitle } = useDocs();
   const [title, setTitle] = useState(doc.title);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isSavingTitle, setIsSavingTitle] = useState(false);
 
-  // 当doc改变时更新title状态
   useEffect(() => {
     setTitle(doc.title);
     setIsEditingTitle(false);
@@ -55,7 +56,7 @@ export default function DocsEditor({
       await updateDocTitle(doc._id, title.trim());
       setIsEditingTitle(false);
     } catch (error) {
-      console.error("更新标题失败:", error);
+      console.error("Failed to update the document title:", error);
       setTitle(doc.title);
       setIsEditingTitle(false);
     } finally {
@@ -98,14 +99,14 @@ export default function DocsEditor({
                 disabled={isSavingTitle}
                 className="rounded bg-sky-600 px-3 py-1 text-xs text-white transition-colors hover:bg-sky-500 disabled:bg-sky-400"
               >
-                {isSavingTitle ? "保存中..." : "保存"}
+                {isSavingTitle ? tDocs("editor.saving") : tDocs("editor.save")}
               </button>
               <button
                 onClick={handleCancelEdit}
                 disabled={isSavingTitle}
                 className="px-3 py-1 text-xs text-app-text-secondary hover:text-app-text-primary border border-app-border rounded transition-colors"
               >
-                取消
+                {tDocs("editor.cancel")}
               </button>
             </div>
           </div>
@@ -123,24 +124,26 @@ export default function DocsEditor({
                 }
               }}
             >
-              {title || "无标题文档"}
+              {title || tDocs("editor.untitled")}
             </h1>
             <div className="flex items-center justify-between mt-1">
               <p className="text-sm text-app-text-muted">
                 {doc.canEdit
-                  ? "点击标题可编辑"
-                  : `${doc.type === "folder" ? "文件夹" : "文档"} • ${
+                  ? tDocs("editor.clickToEdit")
+                  : `${doc.type === "folder" ? tDocs("editor.meta.folder") : tDocs("editor.meta.document")} • ${
                       doc.visibility === "PRIVATE"
-                        ? "私有"
+                        ? tDocs("editor.meta.private")
                         : doc.visibility === "TEAM_READONLY"
-                        ? "团队只读"
+                        ? tDocs("editor.meta.teamReadonly")
                         : doc.visibility === "TEAM_EDITABLE"
-                        ? "团队可编辑"
-                        : "公开"
+                        ? tDocs("editor.meta.teamEditable")
+                        : tDocs("editor.meta.public")
                     }`}
               </p>
               <p className="text-xs text-app-text-muted">
-                更新于 {new Date(doc.updatedAt).toLocaleString("zh-CN")}
+                {tDocs("editor.updatedAt", {
+                  value: new Date(doc.updatedAt).toLocaleString(locale),
+                })}
               </p>
             </div>
           </div>

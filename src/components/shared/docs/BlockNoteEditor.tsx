@@ -7,6 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { BlockNoteEditor } from "@blocknote/core";
 import "@blocknote/core/fonts/inter.css";
 import { useCreateBlockNote } from "@blocknote/react";
@@ -33,6 +34,8 @@ function getEmptyContent() {
 export default function DocsBlockNoteEditor({
   doc,
 }: BlockNoteEditorProps) {
+  const tDocs = useTranslations("docs");
+  const locale = useLocale();
   const { updateDocContent } = useDocs();
   const draftSaveTimeoutRef = useRef<number | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">(
@@ -190,12 +193,12 @@ export default function DocsBlockNoteEditor({
           docId: doc._id,
           lastSyncedRevisionId: doc.latestRevisionId ?? null,
           syncStatus: "conflict",
-          lastError: "远端版本已更新，本地草稿已保留",
+          lastError: tDocs("blocknote.conflict"),
           updatedAt: Date.now(),
         });
 
         setSyncStatus("conflict");
-        setLastError("远端版本已更新，本地草稿已保留");
+        setLastError(tDocs("blocknote.conflict"));
         return;
       }
 
@@ -220,8 +223,8 @@ export default function DocsBlockNoteEditor({
       setIsDraftRecovered(false);
       setSyncStatus("saved");
     } catch (error) {
-      console.error("保存失败:", error);
-      const message = error instanceof Error ? error.message : "保存失败";
+      console.error("Failed to save the document:", error);
+      const message = error instanceof Error ? error.message : tDocs("blocknote.saveFailed");
       setSyncStatus("error");
       setLastError(message);
 
@@ -242,6 +245,7 @@ export default function DocsBlockNoteEditor({
     doc.type,
     editor,
     isSaving,
+    tDocs,
     updateDocContent,
   ]);
 
@@ -299,31 +303,37 @@ export default function DocsBlockNoteEditor({
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             {isSaving ? (
-              <span>保存中...</span>
+              <span>{tDocs("blocknote.saving")}</span>
             ) : syncStatus === "conflict" ? (
-              <span>检测到冲突，本地草稿已保留</span>
+              <span>{tDocs("blocknote.conflictStatus")}</span>
             ) : syncStatus === "error" ? (
-              <span>保存失败，草稿已保留在本地</span>
+              <span>{tDocs("blocknote.errorStatus")}</span>
             ) : syncStatus === "draft" ? (
-              <span>{isDraftRecovered ? "已恢复本地草稿" : "本地草稿待同步"}</span>
+              <span>
+                {isDraftRecovered
+                  ? tDocs("blocknote.recoveredDraft")
+                  : tDocs("blocknote.draftPending")}
+              </span>
             ) : lastSaved ? (
               <span>
-                已保存 •{" "}
-                {lastSaved.toLocaleTimeString("zh-CN", {
-                  hour: "2-digit",
-                  minute: "2-digit",
+                {tDocs("blocknote.savedAt", {
+                  value: lastSaved.toLocaleTimeString(locale, {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }),
                 })}
               </span>
             ) : (
-              <span>准备就绪</span>
+              <span>{tDocs("blocknote.ready")}</span>
             )}
           </div>
         </div>
 
         <div className="text-right text-xs text-app-text-muted">
           <div>
-            按 {navigator.platform.includes("Mac") ? "Cmd" : "Ctrl"} + S 保存 •
-            30秒自动保存
+            {tDocs("blocknote.shortcut", {
+              key: navigator.platform.includes("Mac") ? "Cmd" : "Ctrl",
+            })}
           </div>
           {lastError && <div className="mt-0.5 text-amber-500">{lastError}</div>}
         </div>
