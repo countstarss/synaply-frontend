@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -22,9 +23,11 @@ interface SettingsScrollPageProps {
 
 export default function SettingsScrollPage({
   title,
+  description,
   sections,
   sectionGroupLabel,
 }: SettingsScrollPageProps) {
+  const tSettings = useTranslations("settings");
   const pathname = usePathname();
   const contentRef = React.useRef<HTMLDivElement | null>(null);
   const sectionRefs = React.useRef<Record<string, HTMLElement | null>>({});
@@ -244,6 +247,11 @@ export default function SettingsScrollPage({
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
               {title}
             </h1>
+            {description ? (
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {description}
+              </p>
+            ) : null}
           </div>
 
           <div className="flex items-center gap-2 self-start lg:self-auto">
@@ -265,7 +273,7 @@ export default function SettingsScrollPage({
               disabled={activeSectionIndex <= 0}
             >
               <ChevronUp className="size-4" />
-              上一个
+              {tSettings("navigation.previous")}
             </Button>
             <Button
               type="button"
@@ -278,7 +286,7 @@ export default function SettingsScrollPage({
               }
             >
               <ChevronDown className="size-4" />
-              下一个
+              {tSettings("navigation.next")}
             </Button>
           </div>
         </div>

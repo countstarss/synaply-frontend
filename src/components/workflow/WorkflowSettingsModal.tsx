@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { RiCloseLine, RiSaveLine, RiLoader4Line } from "react-icons/ri";
 import { useUpdateWorkflow, usePublishWorkflow } from "@/hooks/useWorkflowApi";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -26,6 +27,8 @@ export default function WorkflowSettingsModal({
   workflow,
   onUpdate,
 }: WorkflowSettingsModalProps) {
+  const tCommon = useTranslations("common");
+  const tWorkflows = useTranslations("workflows");
   const [name, setName] = useState(workflow.name);
   const [visibility, setVisibility] = useState<
     "PRIVATE" | "TEAM_READONLY" | "TEAM_EDITABLE" | "PUBLIC"
@@ -44,7 +47,7 @@ export default function WorkflowSettingsModal({
 
   const handleSave = async () => {
     if (!currentWorkspace?.id) {
-      toast.error("工作空间信息不完整");
+      toast.error(tWorkflows("toasts.workspaceIncomplete"));
       return;
     }
 
@@ -62,21 +65,25 @@ export default function WorkflowSettingsModal({
 
       onUpdate(updatedWorkflow);
       onClose();
-      toast.success("工作流设置已保存");
+      toast.success(tWorkflows("settingsModal.toasts.saved"));
     } catch (error) {
-      console.error("保存工作流设置失败:", error);
-      toast.error(error instanceof Error ? error.message : "保存设置失败");
+      console.error("Failed to save workflow settings:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : tWorkflows("settingsModal.toasts.saveFailed"),
+      );
     }
   };
 
   const handlePublish = async () => {
     if (!currentWorkspace?.id) {
-      toast.error("工作空间信息不完整");
+      toast.error(tWorkflows("toasts.workspaceIncomplete"));
       return;
     }
 
     if (workflow.totalSteps === 0) {
-      toast.error("请先添加工作流步骤再发布");
+      toast.error(tWorkflows("settingsModal.toasts.publishNeedSteps"));
       return;
     }
 
@@ -108,10 +115,14 @@ export default function WorkflowSettingsModal({
 
       onUpdate(publishedWorkflow);
       onClose();
-      toast.success("工作流已发布");
+      toast.success(tWorkflows("settingsModal.toasts.published"));
     } catch (error) {
-      console.error("发布工作流失败:", error);
-      toast.error(error instanceof Error ? error.message : "发布失败");
+      console.error("Failed to publish workflow:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : tWorkflows("settingsModal.toasts.publishFailed"),
+      );
     }
   };
 
@@ -122,7 +133,7 @@ export default function WorkflowSettingsModal({
       <div className="bg-app-content-bg rounded-lg shadow-xl w-full max-w-md mx-4">
         <div className="flex items-center justify-between p-4 border-b border-app-border">
           <h2 className="text-lg font-semibold text-app-text-primary">
-            工作流设置
+            {tWorkflows("settingsModal.title")}
           </h2>
           <button
             onClick={onClose}
@@ -136,34 +147,34 @@ export default function WorkflowSettingsModal({
           {/* 基本信息 */}
           <div>
             <label className="block text-sm font-medium text-app-text-primary mb-1">
-              工作流名称
+              {tWorkflows("settingsModal.nameLabel")}
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="输入工作流名称"
+              placeholder={tWorkflows("settingsModal.namePlaceholder")}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-app-text-primary mb-1">
-              描述
+              {tWorkflows("settingsModal.descriptionLabel")}
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="工作流描述（可选）"
+              placeholder={tWorkflows("settingsModal.descriptionPlaceholder")}
             />
           </div>
 
           {/* 可见性设置 */}
           <div>
             <label className="block text-sm font-medium text-app-text-primary mb-1">
-              可见性
+              {tWorkflows("settingsModal.visibilityLabel")}
             </label>
             <select
               value={visibility}
@@ -178,17 +189,27 @@ export default function WorkflowSettingsModal({
               }
               className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="PRIVATE">私有</option>
-              <option value="PUBLIC">公开</option>
-              <option value="TEAM_READONLY">团队只读</option>
-              <option value="TEAM_EDITABLE">团队可编辑</option>
+              <option value="PRIVATE">
+                {tWorkflows("settingsModal.visibility.private")}
+              </option>
+              <option value="PUBLIC">
+                {tWorkflows("settingsModal.visibility.public")}
+              </option>
+              <option value="TEAM_READONLY">
+                {tWorkflows("settingsModal.visibility.teamReadonly")}
+              </option>
+              <option value="TEAM_EDITABLE">
+                {tWorkflows("settingsModal.visibility.teamEditable")}
+              </option>
             </select>
           </div>
 
           {/* 状态信息 */}
           <div className="bg-app-bg p-3 rounded-lg">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-app-text-secondary">状态:</span>
+              <span className="text-app-text-secondary">
+                {tWorkflows("settingsModal.statusLabel")}:
+              </span>
               <span
                 className={`px-2 py-1 rounded text-xs ${
                   workflow.status === "PUBLISHED"
@@ -196,18 +217,26 @@ export default function WorkflowSettingsModal({
                     : "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400"
                 }`}
               >
-                {workflow.status === "PUBLISHED" ? "已发布" : "草稿"}
+                {workflow.status === "PUBLISHED"
+                  ? tWorkflows("settingsModal.statuses.published")
+                  : tWorkflows("settingsModal.statuses.draft")}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm mt-2">
-              <span className="text-app-text-secondary">步骤数:</span>
+              <span className="text-app-text-secondary">
+                {tWorkflows("settingsModal.stepsLabel")}:
+              </span>
               <span className="text-app-text-primary">
                 {workflow.totalSteps}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm mt-2">
-              <span className="text-app-text-secondary">版本:</span>
-              <span className="text-app-text-primary">{workflow.version || "v1"}</span>
+              <span className="text-app-text-secondary">
+                {tWorkflows("settingsModal.versionLabel")}:
+              </span>
+              <span className="text-app-text-primary">
+                {workflow.version || "v1"}
+              </span>
             </div>
           </div>
         </div>
@@ -229,7 +258,7 @@ export default function WorkflowSettingsModal({
                 ) : (
                   <RiSaveLine className="w-4 h-4" />
                 )}
-                发布工作流
+                {tWorkflows("settingsModal.actions.publish")}
               </button>
             )}
           </div>
@@ -238,7 +267,7 @@ export default function WorkflowSettingsModal({
               onClick={onClose}
               className="px-3 py-1.5 text-app-text-secondary hover:text-app-text-primary text-sm rounded-lg transition-colors"
             >
-              取消
+              {tCommon("actions.cancel")}
             </button>
             <button
               onClick={handleSave}
@@ -250,7 +279,7 @@ export default function WorkflowSettingsModal({
               ) : (
                 <RiSaveLine className="w-4 h-4" />
               )}
-              保存
+              {tWorkflows("settingsModal.actions.save")}
             </button>
           </div>
         </div>

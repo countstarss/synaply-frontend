@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   RiCloseLine,
   RiUserLine,
@@ -22,6 +23,8 @@ export default function NodeDetailsModal({
   node,
   onSave,
 }: NodeDetailsModalProps) {
+  const tCommon = useTranslations("common");
+  const tWorkflows = useTranslations("workflows");
   const [nodeData, setNodeData] = useState<Partial<CustomNodeData>>({});
   const [formData, setFormData] = useState({
     description: "",
@@ -81,7 +84,7 @@ export default function NodeDetailsModal({
       <div className="bg-app-content-bg rounded-lg shadow-xl w-full max-w-md mx-4">
         <div className="flex items-center justify-between p-6 border-b border-app-border">
           <h2 className="text-xl font-semibold text-app-text-primary">
-            节点详细配置
+            {tWorkflows("nodeDetails.title")}
           </h2>
           <button
             onClick={onClose}
@@ -99,10 +102,10 @@ export default function NodeDetailsModal({
             </div>
             <div>
               <h3 className="font-medium text-app-text-primary">
-                {nodeData.label || "节点"}
+                {nodeData.label || tWorkflows("nodeDetails.nodeFallback")}
               </h3>
               <p className="text-sm text-app-text-secondary">
-                {nodeData.role || "无角色"}
+                {nodeData.role || tWorkflows("shared.noRole")}
               </p>
             </div>
           </div>
@@ -111,12 +114,12 @@ export default function NodeDetailsModal({
           <div>
             <label className="flex items-center gap-1.5 text-sm font-medium text-app-text-primary mb-2">
               <RiUserLine className="w-4 h-4" />
-              负责人
+              {tWorkflows("nodeDetails.assigneeLabel")}
             </label>
             <MentionInput
               value={formData.assignee}
               onChange={handleAssigneeChange}
-              placeholder="输入@提及负责人"
+              placeholder={tWorkflows("nodeDetails.assigneePlaceholder")}
               className="w-full"
             />
           </div>
@@ -125,13 +128,13 @@ export default function NodeDetailsModal({
           <div>
             <label className="flex items-center gap-1.5 text-sm font-medium text-app-text-primary mb-2">
               <RiFileTextLine className="w-4 h-4" />
-              描述
+              {tWorkflows("nodeDetails.descriptionLabel")}
             </label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="输入节点描述..."
+              placeholder={tWorkflows("nodeDetails.descriptionPlaceholder")}
               className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]"
               rows={3}
             />
@@ -141,14 +144,14 @@ export default function NodeDetailsModal({
           <div>
             <label className="flex items-center gap-1.5 text-sm font-medium text-app-text-primary mb-2">
               <RiTimeLine className="w-4 h-4" />
-              预计工时 (小时)
+              {tWorkflows("nodeDetails.estimatedHoursLabel")}
             </label>
             <input
               type="number"
               name="estimatedHours"
               value={formData.estimatedHours}
               onChange={handleChange}
-              placeholder="例如: 8"
+              placeholder={tWorkflows("nodeDetails.estimatedHoursPlaceholder")}
               className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
               min="0"
               step="0.5"
@@ -161,13 +164,13 @@ export default function NodeDetailsModal({
               onClick={onClose}
               className="px-4 py-2 text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors"
             >
-              取消
+              {tCommon("actions.cancel")}
             </button>
             <button
               type="submit"
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
-              保存
+              {tWorkflows("settingsModal.actions.save")}
             </button>
           </div>
         </form>

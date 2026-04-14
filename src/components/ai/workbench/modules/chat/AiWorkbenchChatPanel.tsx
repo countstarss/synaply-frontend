@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import type { AiMessageRecord } from "@/lib/ai/types";
@@ -46,6 +47,7 @@ export function AiWorkbenchChatPanel({
   isSubmitting = false,
   error = null,
 }: AiWorkbenchChatPanelProps) {
+  const tAi = useTranslations("ai");
   const containerRef = useRef<HTMLDivElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const previousMessagesCountRef = useRef(0);
@@ -254,14 +256,14 @@ export function AiWorkbenchChatPanel({
         >
           {isLoading && !hasMessages ? (
             <div className="flex min-h-[360px] flex-1 items-center justify-center text-sm text-slate-500 dark:text-white/52">
-              正在同步线程和消息历史...
+              {tAi("workbench.chat.loading")}
             </div>
           ) : !hasMessages ? (
             <div className="flex flex-1 items-center justify-center">
               <div className="w-full max-w-3xl pb-48">
                 <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
                   <h3 className="max-w-3xl text-[32px] font-semibold tracking-tight text-slate-950 dark:text-white sm:text-[40px]">
-                    先把你现在想推进的事说出来。
+                    {tAi("workbench.chat.heroTitle")}
                   </h3>
 
                   <motion.div

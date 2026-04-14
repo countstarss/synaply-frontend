@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { AnimatePresence, motion } from "framer-motion";
 import { Combine, Layers, ToggleLeft, ToggleRight, X } from "lucide-react";
 import { toast } from "sonner";
@@ -10,6 +11,7 @@ import { getAiMessageSelectionText } from "@/components/ai/workbench/modules/cha
 import { useAiWorkbenchSelectionStore } from "@/components/ai/workbench/modules/chat/AiWorkbenchSelectionStore";
 
 export function AiWorkbenchSelectionToolbar() {
+  const tAi = useTranslations("ai");
   const isSelectionMode = useAiWorkbenchSelectionStore(
     (state) => state.isSelectionMode,
   );
@@ -49,13 +51,13 @@ export function AiWorkbenchSelectionToolbar() {
           (left, right) =>
             new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime(),
         )
-        .map((message) => getAiMessageSelectionText(message))
+        .map((message) => getAiMessageSelectionText(message, tAi))
         .join("\n\n---\n\n");
 
       await navigator.clipboard.writeText(content);
-      toast.success("已复制选中的消息内容。");
+      toast.success(tAi("workbench.chat.copySuccess"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "复制失败");
+      toast.error(error instanceof Error ? error.message : tAi("shared.copyFailed"));
     } finally {
       setIsCopying(false);
     }
@@ -75,7 +77,7 @@ export function AiWorkbenchSelectionToolbar() {
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex items-center rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-2 text-sm text-sky-700 dark:border-sky-400/20 dark:bg-sky-400/10 dark:text-sky-100">
               <Layers className="mr-2 h-4 w-4" />
-              已选择 {selectionCount} 条消息
+              {tAi("workbench.chat.selected", { count: selectionCount })}
             </div>
 
             <Button
@@ -88,12 +90,12 @@ export function AiWorkbenchSelectionToolbar() {
               {autoSelectEnabled ? (
                 <>
                   <ToggleRight className="h-4 w-4" />
-                  自动选择
+                  {tAi("workbench.chat.autoSelect")}
                 </>
               ) : (
                 <>
                   <ToggleLeft className="h-4 w-4" />
-                  自动选择
+                  {tAi("workbench.chat.autoSelect")}
                 </>
               )}
             </Button>
@@ -111,7 +113,9 @@ export function AiWorkbenchSelectionToolbar() {
               )}
             >
               <Combine className="h-4 w-4" />
-              {isCopying ? "复制中..." : "合并复制"}
+              {isCopying
+                ? tAi("workbench.chat.copying")
+                : tAi("workbench.chat.mergeCopy")}
             </Button>
 
             <Button
@@ -122,7 +126,7 @@ export function AiWorkbenchSelectionToolbar() {
               onClick={clearSelection}
               className="gap-1.5 rounded-full border border-black/[0.06] bg-black/[0.03] text-slate-600 hover:bg-black/[0.05] hover:text-slate-900 dark:border-white/8 dark:bg-white/[0.03] dark:text-white/72 dark:hover:bg-white/[0.06] dark:hover:text-white"
             >
-              清空选择
+              {tAi("workbench.chat.clearSelection")}
             </Button>
 
             <Button
@@ -133,12 +137,12 @@ export function AiWorkbenchSelectionToolbar() {
               className="gap-1.5 rounded-full border border-rose-500/18 bg-rose-500/8 text-rose-700 hover:bg-rose-500/12 hover:text-rose-800 dark:text-rose-200 dark:hover:text-rose-100"
             >
               <X className="h-4 w-4" />
-              退出
+              {tAi("workbench.chat.exit")}
             </Button>
           </div>
 
           <div className="mt-3 text-xs leading-6 text-slate-500 dark:text-white/34">
-            右键消息即可继续多选，后续也可以自然扩展到摘录、摘要和收藏等批量操作。
+            {tAi("workbench.chat.selectionHint")}
           </div>
         </div>
       </motion.div>

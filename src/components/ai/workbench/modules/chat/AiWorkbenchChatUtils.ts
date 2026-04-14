@@ -7,6 +7,11 @@ import type {
   AiToolResultPart,
 } from "@/lib/ai/types";
 
+type AiTranslate = (
+  key: string,
+  values?: Record<string, string | number>,
+) => string;
+
 function getPrettyJson(value: unknown) {
   try {
     return JSON.stringify(value, null, 2);
@@ -15,7 +20,7 @@ function getPrettyJson(value: unknown) {
   }
 }
 
-function getToolSummary(part: AiToolResultPart) {
+function getToolSummary(part: AiToolResultPart, tAi: AiTranslate) {
   if (
     part.output &&
     typeof part.output === "object" &&
@@ -28,9 +33,15 @@ function getToolSummary(part: AiToolResultPart) {
     };
 
     const lines = [
-      typeof output.status === "string" ? `状态：${output.status}` : null,
-      typeof output.summary === "string" ? `摘要：${output.summary}` : null,
-      typeof output.message === "string" ? `消息：${output.message}` : null,
+      typeof output.status === "string"
+        ? tAi("workbench.plainText.status", { value: output.status })
+        : null,
+      typeof output.summary === "string"
+        ? tAi("workbench.plainText.summary", { value: output.summary })
+        : null,
+      typeof output.message === "string"
+        ? tAi("workbench.plainText.message", { value: output.message })
+        : null,
     ].filter(Boolean);
 
     if (lines.length > 0) {
@@ -38,39 +49,39 @@ function getToolSummary(part: AiToolResultPart) {
     }
   }
 
-  return part.isError ? "工具执行失败。" : "工具执行完成。";
+  return part.isError
+    ? tAi("workbench.plainText.toolFailed")
+    : tAi("workbench.plainText.toolCompleted");
 }
 
-function getApprovalSummary(part: AiApprovalRequestPart) {
+function getApprovalSummary(part: AiApprovalRequestPart, tAi: AiTranslate) {
   const lines = [
-    part.summary ? `摘要：${part.summary}` : null,
-    `动作：${part.actionKey}`,
+    part.summary ? tAi("workbench.plainText.summary", { value: part.summary }) : null,
+    tAi("workbench.plainText.action", { value: part.actionKey }),
     Array.isArray(part.items) && part.items.length > 0
-      ? `批量动作：${part.items.length} 项`
+      ? tAi("workbench.plainText.batchActions", { count: part.items.length })
       : null,
   ].filter(Boolean);
 
   return lines.join("\n");
 }
 
-function getPartText(part: AiMessagePart) {
+function getPartText(part: AiMessagePart, tAi: AiTranslate) {
   switch (part.type) {
     case "text":
       return part.text;
     case "error":
-      return `错误：${part.message}`;
+      return tAi("workbench.plainText.error", { value: part.message });
     case "context-chip":
-      return `上下文：${part.label}`;
+      return tAi("workbench.plainText.context", { value: part.label });
     case "tool-result":
-      return `工具 ${part.toolName}\n${getToolSummary(part)}\n${getPrettyJson(
-        part.output,
-      )}`;
+      return `${tAi("workbench.plainText.tool", { name: part.toolName })}\n${getToolSummary(part, tAi)}\n${getPrettyJson(part.output)}`;
     case "approval-request":
-      return `审批请求\n${getApprovalSummary(part)}`;
+      return `${tAi("workbench.plainText.approval")}\n${getApprovalSummary(part, tAi)}`;
     case "coding-prompt":
-      return `编码 Prompt\n${part.prompt}`;
+      return `${tAi("workbench.plainText.codingPrompt")}\n${part.prompt}`;
     case "clarification-options":
-      return `候选项\n${part.options
+      return `${tAi("workbench.plainText.options")}\n${part.options
         .map((option) =>
           option.description
             ? `- ${option.label} (${option.description})`
@@ -84,40 +95,45 @@ function getPartText(part: AiMessagePart) {
   }
 }
 
-export function getAiMessagePlainText(message: AiMessageRecord) {
+export function getAiMessagePlainText(message: AiMessageRecord, tAi: AiTranslate) {
   const body = message.parts
-    .map((part) => getPartText(part))
+    .map((part) => getPartText(part, tAi))
     .filter(Boolean)
     .join("\n\n")
     .trim();
 
-  return body || "暂无内容";
+  return body || tAi("workbench.plainText.noContent");
 }
 
-export function getAiMessageRoleLabel(message: AiMessageRecord) {
+export function getAiMessageRoleLabel(message: AiMessageRecord, tAi: AiTranslate) {
   switch (message.role) {
     case "USER":
-      return "用户";
+      return tAi("workbench.roles.user");
     case "ASSISTANT":
-      return "AI 助手";
+      return tAi("workbench.roles.assistant");
     case "SYSTEM":
-      return "系统";
+      return tAi("workbench.roles.system");
     case "TOOL":
-      return "工具";
+      return tAi("workbench.roles.tool");
     default:
-      return "消息";
+      return tAi("workbench.roles.message");
   }
 }
 
-export function getAiMessageSelectionText(message: AiMessageRecord) {
-  return `${getAiMessageRoleLabel(message)}:\n${getAiMessagePlainText(message)}`;
+export function getAiMessageSelectionText(
+  message: AiMessageRecord,
+  tAi: AiTranslate,
+) {
+  return `${getAiMessageRoleLabel(message, tAi)}:\n${getAiMessagePlainText(message, tAi)}`;
 }
 
-export function getAiMessagePreviewTitle(message: AiMessageRecord) {
-  const text = getAiMessagePlainText(message).replace(/\s+/g, " ").trim();
+export function getAiMessagePreviewTitle(message: AiMessageRecord, tAi: AiTranslate) {
+  const text = getAiMessagePlainText(message, tAi)
+    .replace(/\s+/g, " ")
+    .trim();
 
   if (!text) {
-    return getAiMessageRoleLabel(message);
+    return getAiMessageRoleLabel(message, tAi);
   }
 
   return text.length > 56 ? `${text.slice(0, 56)}...` : text;

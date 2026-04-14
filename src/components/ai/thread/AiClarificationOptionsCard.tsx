@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ArrowRightCircle, LoaderCircle } from "lucide-react";
 import type { AiClarificationOptionPart } from "@/lib/ai/types";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ export function AiClarificationOptionsCard({
   disabled = false,
   className,
 }: AiClarificationOptionsCardProps) {
+  const tAi = useTranslations("ai");
   const [pendingValue, setPendingValue] = useState<string | null>(null);
 
   return (
@@ -29,7 +31,7 @@ export function AiClarificationOptionsCard({
       )}
     >
       <p className="px-1 text-xs font-medium uppercase tracking-[0.18em] text-slate-400 dark:text-white/34">
-        {part.title || "候选项"}
+        {part.title || tAi("thread.clarification.fallbackTitle")}
       </p>
 
       <div className="mt-3 flex flex-col gap-2">

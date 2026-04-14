@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Loader2, Save, Shield, Trash2, Upload } from "lucide-react";
@@ -85,23 +86,27 @@ const getStoragePathFromUrl = (avatarUrl: string | null) => {
   return decodeURIComponent(cleanUrl.slice(markerIndex + bucketMarker.length));
 };
 
-const resolveTeamErrorMessage = (error: unknown) => {
+const resolveTeamErrorMessage = (
+  error: unknown,
+  tSettings: (key: string) => string,
+) => {
   if (!(error instanceof Error)) {
-    return "更新团队资料失败";
+    return tSettings("teamPage.errors.updateFailed");
   }
 
   if (error.message.includes("Bucket not found")) {
-    return "头像存储桶不存在，请先在 Supabase Storage 中创建 avatars bucket。";
+    return tSettings("teamPage.errors.bucketMissing");
   }
 
   if (error.message.includes("row-level security policy")) {
-    return "团队头像上传被 Storage 权限策略拦截了。我已经把上传路径改成兼容当前策略的格式，刷新页面后再试一次。";
+    return tSettings("teamPage.errors.storageBlocked");
   }
 
   return error.message;
 };
 
 export default function TeamSettingsPage() {
+  const tSettings = useTranslations("settings");
   const params = useParams<{ teamId: string }>();
   const teamId = Array.isArray(params.teamId) ? params.teamId[0] : params.teamId;
   const { session, loading: authLoading } = useAuth();
@@ -140,12 +145,14 @@ export default function TeamSettingsPage() {
 
   const uploadAvatarMutation = useMutation({
     onMutate: (file: File) => {
-      const toastId = toast.loading(`正在上传 ${file.name}...`);
+      const toastId = toast.loading(
+        tSettings("teamPage.toasts.uploading", { fileName: file.name }),
+      );
       return { toastId };
     },
     mutationFn: async (file: File) => {
       if (!session?.user?.id || !teamId) {
-        throw new Error("登录状态已失效，请重新登录");
+        throw new Error(tSettings("teamPage.errors.sessionExpired"));
       }
 
       if (pendingUploadedAvatar?.path) {
@@ -154,7 +161,7 @@ export default function TeamSettingsPage() {
           .remove([pendingUploadedAvatar.path]);
 
         if (cleanupError) {
-          console.warn("清理未保存团队头像失败:", cleanupError);
+          console.warn("Failed to clean up the pending team avatar:", cleanupError);
         }
       }
 
@@ -167,7 +174,9 @@ export default function TeamSettingsPage() {
         });
 
       if (uploadError) {
-        throw new Error(uploadError.message || "团队头像上传失败");
+        throw new Error(
+          uploadError.message || tSettings("teamPage.errors.uploadFailed"),
+        );
       }
 
       const { data: publicUrlData } = supabase.storage
@@ -183,12 +192,14 @@ export default function TeamSettingsPage() {
     onSuccess: (uploadedAvatar, _file, context) => {
       setPendingUploadedAvatar(uploadedAvatar);
       setAvatarMarkedForRemoval(false);
-      toast.success("团队头像上传成功，点击“保存更改”后生效", {
+      toast.success(tSettings("teamPage.toasts.uploadSuccess"), {
         id: context?.toastId,
       });
     },
     onError: (error, _file, context) => {
-      toast.error(resolveTeamErrorMessage(error), { id: context?.toastId });
+      toast.error(resolveTeamErrorMessage(error, tSettings), {
+        id: context?.toastId,
+      });
     },
   });
 
@@ -202,18 +213,18 @@ export default function TeamSettingsPage() {
       }
 
       if (!ACCEPTED_AVATAR_TYPES.has(file.type)) {
-        toast.error("团队头像仅支持 JPG、PNG 或 WebP 格式");
+        toast.error(tSettings("teamPage.validation.invalidType"));
         return;
       }
 
       if (file.size > MAX_AVATAR_SIZE_BYTES) {
-        toast.error("团队头像大小不能超过 3MB");
+        toast.error(tSettings("teamPage.validation.fileTooLarge"));
         return;
       }
 
       uploadAvatarMutation.mutate(file);
     },
-    [uploadAvatarMutation],
+    [tSettings, uploadAvatarMutation],
   );
 
   const handleRemoveAvatar = React.useCallback(() => {
@@ -227,19 +238,19 @@ export default function TeamSettingsPage() {
         .remove([pendingUploadedAvatar.path])
         .then(({ error }) => {
           if (error) {
-            console.warn("清理未保存团队头像失败:", error);
+            console.warn("Failed to clean up the pending team avatar:", error);
           }
         });
 
       setPendingUploadedAvatar(null);
       setAvatarMarkedForRemoval(false);
-      toast.success("已取消新头像");
+      toast.success(tSettings("teamPage.toasts.cancelNewAvatar"));
       return;
     }
 
     if (avatarMarkedForRemoval) {
       setAvatarMarkedForRemoval(false);
-      toast.success("已撤销移除头像");
+      toast.success(tSettings("teamPage.toasts.undoRemoveAvatar"));
       return;
     }
 
@@ -248,12 +259,13 @@ export default function TeamSettingsPage() {
     }
 
     setAvatarMarkedForRemoval(true);
-    toast.success("已标记移除头像，点击“保存更改”后生效");
+    toast.success(tSettings("teamPage.toasts.markRemoveAvatar"));
   }, [
     avatarMarkedForRemoval,
     pendingUploadedAvatar,
     storedAvatarUrl,
     supabase.storage,
+    tSettings,
     updateTeamMutation.isPending,
     uploadAvatarMutation.isPending,
   ]);
@@ -262,10 +274,14 @@ export default function TeamSettingsPage() {
   const currentMember = currentTeam?.members.find(
     (member) => member.user.id === session?.user?.id,
   );
+  const currentRoleLabel = tSettings(
+    `members.roles.${currentMember?.role ?? "MEMBER"}`,
+  );
   const canManageTeam =
     currentMember?.role === "OWNER" || currentMember?.role === "ADMIN";
   const normalizedTeamName = teamName.trim();
-  const teamPageTitle = normalizedTeamName || currentTeam?.name || "未命名团队";
+  const teamPageTitle =
+    normalizedTeamName || currentTeam?.name || tSettings("teamPage.info.untitled");
   const hasAvatarChange = avatarMarkedForRemoval || !!pendingUploadedAvatar;
   const isDirty =
     normalizedTeamName !== savedTeamName.trim() || hasAvatarChange;
@@ -277,30 +293,26 @@ export default function TeamSettingsPage() {
     event.preventDefault();
 
     if (!canManageTeam) {
-      toast.error("只有 team owner 或 admin 可以修改团队资料");
+      toast.error(tSettings("teamPage.validation.permissionDenied"));
       return;
     }
 
     if (!normalizedTeamName) {
-      toast.error("请输入团队名称");
+      toast.error(tSettings("teamPage.validation.nameRequired"));
       return;
     }
 
     if (!session?.access_token || !teamId) {
-      toast.error("登录状态已失效，请重新登录");
+      toast.error(tSettings("teamPage.errors.sessionExpired"));
       return;
     }
 
     if (uploadAvatarMutation.isPending) {
-      toast.error("头像仍在上传中，请稍候再保存");
+      toast.error(tSettings("teamPage.validation.uploadPending"));
       return;
     }
 
-    const toastId = toast.loading(
-      avatarMarkedForRemoval
-        ? "正在移除团队头像并保存资料..."
-        : "正在保存团队资料...",
-    );
+    const toastId = toast.loading(tSettings("teamPage.toasts.saving"));
 
     try {
       const nextAvatarUrl = avatarMarkedForRemoval
@@ -332,14 +344,14 @@ export default function TeamSettingsPage() {
           .remove([previousStoredAvatarPath])
           .then(({ error }) => {
             if (error) {
-              console.warn("清理旧团队头像失败:", error);
+              console.warn("Failed to clean up the previous team avatar:", error);
             }
           });
       }
 
-      toast.success("团队资料已更新", { id: toastId });
+      toast.success(tSettings("teamPage.toasts.saveSuccess"), { id: toastId });
     } catch (error) {
-      toast.error(resolveTeamErrorMessage(error), { id: toastId });
+      toast.error(resolveTeamErrorMessage(error, tSettings), { id: toastId });
     }
   };
 
@@ -348,8 +360,10 @@ export default function TeamSettingsPage() {
       <div className="p-0">
         <Card className="border-none">
           <CardHeader>
-            <CardTitle>团队不存在</CardTitle>
-            <CardDescription>缺少 teamId，无法加载团队资料。</CardDescription>
+            <CardTitle>{tSettings("teamPage.states.missingTeamTitle")}</CardTitle>
+            <CardDescription>
+              {tSettings("teamPage.states.missingTeamDescription")}
+            </CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -361,9 +375,9 @@ export default function TeamSettingsPage() {
       <div className="p-0">
         <Card className="border-none">
           <CardHeader>
-            <CardTitle>需要先登录</CardTitle>
+            <CardTitle>{tSettings("teamPage.states.authRequiredTitle")}</CardTitle>
             <CardDescription>
-              登录后才能查看并管理团队资料。
+              {tSettings("teamPage.states.authRequiredDescription")}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -377,7 +391,7 @@ export default function TeamSettingsPage() {
         <Card className="border-none">
           <CardContent className="flex items-center gap-3 py-8 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
-            正在加载团队资料...
+            {tSettings("teamPage.states.loading")}
           </CardContent>
         </Card>
       </div>
@@ -389,9 +403,10 @@ export default function TeamSettingsPage() {
       <div className="p-0">
         <Card className="border-none">
           <CardHeader>
-            <CardTitle>加载失败</CardTitle>
+            <CardTitle>{tSettings("teamPage.states.loadFailedTitle")}</CardTitle>
             <CardDescription>
-              {(teamQuery.error as Error)?.message || "暂时无法读取团队资料"}
+              {(teamQuery.error as Error)?.message ||
+                tSettings("teamPage.states.loadFailedDescription")}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -402,12 +417,14 @@ export default function TeamSettingsPage() {
   const isAvatarOperationPending =
     uploadAvatarMutation.isPending || (updateTeamMutation.isPending && hasAvatarChange);
   const avatarStatusMessage = uploadAvatarMutation.isPending
-    ? "团队头像上传中，请稍候..."
+    ? tSettings("teamPage.avatar.statusUploading")
     : pendingUploadedAvatar
-      ? `团队头像 ${pendingUploadedAvatar.fileName} 已上传，点击“保存更改”后生效。`
+      ? tSettings("teamPage.avatar.statusUploaded", {
+          fileName: pendingUploadedAvatar.fileName,
+        })
     : avatarMarkedForRemoval
-      ? "已标记移除头像，保存后生效。"
-      : "选择图片后会立即上传；上传成功后，再点击“保存更改”应用到团队资料。";
+      ? tSettings("teamPage.avatar.statusMarked")
+      : tSettings("teamPage.avatar.statusHint");
 
   return (
     <div className="space-y-6 p-4">
@@ -417,7 +434,7 @@ export default function TeamSettingsPage() {
             {teamPageTitle}
           </CardTitle>
           <CardDescription className="max-w-2xl text-emerald-50/80">
-            当前团队的资料与身份信息会显示在这里。只有 team owner 和 admin 可以修改团队名称和头像。
+            {tSettings("teamPage.hero.description")}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -427,8 +444,9 @@ export default function TeamSettingsPage() {
           <CardContent className="flex items-start gap-3 py-5 text-sm text-muted-foreground">
             <Shield className="mt-0.5 size-4 shrink-0" />
             <div>
-              你当前是 <span className="font-medium text-foreground">{currentMember?.role ?? "MEMBER"}</span>
-              ，可以查看团队资料，但只有 owner/admin 才能保存更改。
+              {tSettings("teamPage.permissionBanner.message", {
+                role: currentRoleLabel,
+              })}
             </div>
           </CardContent>
         </Card>
@@ -437,9 +455,9 @@ export default function TeamSettingsPage() {
       <form className="space-y-6" onSubmit={handleSubmit}>
         <Card className="border-none">
           <CardHeader>
-            <CardTitle>团队头像</CardTitle>
+            <CardTitle>{tSettings("teamPage.avatar.title")}</CardTitle>
             <CardDescription>
-              团队头像会用于工作空间切换、设置页和团队相关的协作视图展示。
+              {tSettings("teamPage.avatar.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6 pb-6 md:grid-cols-[auto,1fr] md:items-center">
@@ -460,7 +478,7 @@ export default function TeamSettingsPage() {
             <div className="space-y-4">
               <div className="space-y-1">
                 <div className="text-sm font-medium text-foreground">
-                  建议使用清晰的品牌或团队标识
+                  {tSettings("teamPage.avatar.recommendation")}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {avatarStatusMessage}
@@ -490,7 +508,9 @@ export default function TeamSettingsPage() {
                   ) : (
                     <Upload className="size-4" />
                   )}
-                  {uploadAvatarMutation.isPending ? "上传中..." : "上传头像"}
+                  {uploadAvatarMutation.isPending
+                    ? tSettings("teamPage.avatar.uploading")
+                    : tSettings("teamPage.avatar.upload")}
                 </Button>
                 <Button
                   type="button"
@@ -507,10 +527,10 @@ export default function TeamSettingsPage() {
                 >
                   <Trash2 className="size-4" />
                   {pendingUploadedAvatar
-                    ? "取消新头像"
+                    ? tSettings("teamPage.avatar.cancelNew")
                     : avatarMarkedForRemoval
-                      ? "撤销移除"
-                      : "移除头像"}
+                      ? tSettings("teamPage.avatar.undoRemove")
+                      : tSettings("teamPage.avatar.remove")}
                 </Button>
               </div>
             </div>
@@ -519,20 +539,20 @@ export default function TeamSettingsPage() {
 
         <Card className="border-none">
           <CardHeader>
-            <CardTitle>基础信息</CardTitle>
+            <CardTitle>{tSettings("teamPage.info.title")}</CardTitle>
             <CardDescription>
-              团队名称可以随时调整，创建时间和成员数量用于只读展示。
+              {tSettings("teamPage.info.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="team-name">团队名称</Label>
+              <Label htmlFor="team-name">{tSettings("teamPage.info.nameLabel")}</Label>
               <Input
                 id="team-name"
                 value={teamName}
                 onChange={(event) => setTeamName(event.target.value)}
                 maxLength={100}
-                placeholder="输入团队名称"
+                placeholder={tSettings("teamPage.info.namePlaceholder")}
                 disabled={updateTeamMutation.isPending || !canManageTeam}
               />
             </div>
@@ -541,7 +561,9 @@ export default function TeamSettingsPage() {
 
             <div className="grid gap-5 md:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor="team-created-at">创建时间</Label>
+                <Label htmlFor="team-created-at">
+                  {tSettings("teamPage.info.createdAtLabel")}
+                </Label>
                 <Input
                   id="team-created-at"
                   value={format(new Date(currentTeam.createdAt), "yyyy-MM-dd HH:mm")}
@@ -550,7 +572,9 @@ export default function TeamSettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="team-members-count">成员数量</Label>
+                <Label htmlFor="team-members-count">
+                  {tSettings("teamPage.info.membersCountLabel")}
+                </Label>
                 <Input
                   id="team-members-count"
                   value={`${currentTeam.members.length}`}
@@ -559,10 +583,12 @@ export default function TeamSettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="team-role">你的角色</Label>
+                <Label htmlFor="team-role">
+                  {tSettings("teamPage.info.roleLabel")}
+                </Label>
                 <Input
                   id="team-role"
-                  value={currentMember?.role || "MEMBER"}
+                  value={currentRoleLabel}
                   readOnly
                   disabled
                 />
@@ -572,10 +598,10 @@ export default function TeamSettingsPage() {
           <CardFooter className="flex flex-col items-start gap-3 p-6 md:flex-row md:items-center md:justify-between">
             <div className="text-sm text-muted-foreground">
               {!canManageTeam
-                ? "当前账号只有查看权限。"
+                ? tSettings("teamPage.info.readOnly")
                 : isDirty
-                  ? "你有尚未保存的团队资料更改。"
-                  : "团队资料已是最新状态。"}
+                  ? tSettings("teamPage.info.dirty")
+                  : tSettings("teamPage.info.clean")}
             </div>
 
             <Button
@@ -592,7 +618,7 @@ export default function TeamSettingsPage() {
               ) : (
                 <Save className="size-4" />
               )}
-              保存更改
+              {tSettings("teamPage.info.save")}
             </Button>
           </CardFooter>
         </Card>

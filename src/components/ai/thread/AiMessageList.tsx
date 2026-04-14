@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { RiLoader4Line } from "react-icons/ri";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { AiMessageRecord } from "@/lib/ai/types";
@@ -19,6 +20,7 @@ export function AiMessageList({
   isStreaming = false,
   streamingText = "",
 }: AiMessageListProps) {
+  const tAi = useTranslations("ai");
   const endRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -31,11 +33,11 @@ export function AiMessageList({
         {isLoading ? (
           <div className="flex h-full min-h-[220px] items-center justify-center text-sm text-app-text-secondary">
             <RiLoader4Line className="mr-2 size-4 animate-spin" />
-            正在同步线程和消息历史...
+            {tAi("thread.messages.loading")}
           </div>
         ) : messages.length === 0 && !isStreaming ? (
           <div className="flex h-full min-h-[220px] items-center justify-center text-sm text-app-text-secondary">
-            先告诉 AI 你想推进什么，它会基于当前任务上下文给出回应。
+            {tAi("thread.messages.empty")}
           </div>
         ) : (
           <>
@@ -53,7 +55,7 @@ export function AiMessageList({
                   ) : (
                     <div className="flex items-center gap-2 text-app-text-secondary">
                       <RiLoader4Line className="size-4 animate-spin" />
-                      正在生成回复...
+                      {tAi("thread.messages.streaming")}
                     </div>
                   )}
                 </div>

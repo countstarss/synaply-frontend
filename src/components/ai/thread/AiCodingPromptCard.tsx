@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { AiCodingPromptPart } from "@/lib/ai/types";
@@ -9,12 +10,13 @@ interface AiCodingPromptCardProps {
 }
 
 export function AiCodingPromptCard({ part }: AiCodingPromptCardProps) {
+  const tAi = useTranslations("ai");
   const copyPrompt = async () => {
     try {
       await navigator.clipboard.writeText(part.prompt);
-      toast.success("编码交接 Prompt 已复制。");
+      toast.success(tAi("thread.codingPrompt.copied"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "复制失败");
+      toast.error(error instanceof Error ? error.message : tAi("shared.copyFailed"));
     }
   };
 
@@ -22,9 +24,11 @@ export function AiCodingPromptCard({ part }: AiCodingPromptCardProps) {
     <div className="rounded-2xl border border-app-border bg-app-content-bg p-4 text-sm text-app-text-primary shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-medium">编码交接 Prompt</p>
+          <p className="text-sm font-medium">{tAi("thread.codingPrompt.title")}</p>
           <p className="mt-1 text-xs text-app-text-secondary">
-            {part.issueId ? `Issue ${part.issueId}` : "未绑定具体 Issue"}
+            {part.issueId
+              ? tAi("thread.codingPrompt.issueLabel", { id: part.issueId })
+              : tAi("thread.codingPrompt.unbound")}
           </p>
         </div>
         <Button
@@ -34,7 +38,7 @@ export function AiCodingPromptCard({ part }: AiCodingPromptCardProps) {
           className="border-app-border bg-transparent text-app-text-primary"
           onClick={() => void copyPrompt()}
         >
-          复制给 Claude Code / Codex
+          {tAi("thread.codingPrompt.copy")}
         </Button>
       </div>
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   RiCloseLine,
   RiEditLine,
@@ -43,6 +44,8 @@ export default function NodeSettingsModal({
   onClose,
   onSave,
 }: NodeSettingsModalProps) {
+  const tCommon = useTranslations("common");
+  const tWorkflows = useTranslations("workflows");
   const [customNodes, setCustomNodes] = useState<NodeType[]>([]);
   const [editingNode, setEditingNode] = useState<NodeType | null>(null);
   const [pendingDeleteNode, setPendingDeleteNode] = useState<NodeType | null>(
@@ -95,7 +98,7 @@ export default function NodeSettingsModal({
       !newNodeForm.assigneeId ||
       !newNodeForm.assigneeName
     ) {
-      toast.error("请填写所有必填字段");
+      toast.error(tWorkflows("nodeSettings.toasts.requiredFields"));
       return;
     }
 
@@ -162,17 +165,17 @@ export default function NodeSettingsModal({
   };
 
   const handleSyncToBackend = () => {
-    toast.info("同步到后端功能待实现");
+    toast.info(tWorkflows("nodeSettings.toasts.syncTodo"));
     // TODO: 实现与后端同步的逻辑
   };
 
   const handleImportNodes = () => {
-    toast.info("导入节点功能待实现");
+    toast.info(tWorkflows("nodeSettings.toasts.importTodo"));
     // TODO: 实现导入节点逻辑
   };
 
   const handleExportNodes = () => {
-    toast.info("导出节点功能待实现");
+    toast.info(tWorkflows("nodeSettings.toasts.exportTodo"));
     // TODO: 实现导出节点逻辑
   };
 
@@ -183,7 +186,7 @@ export default function NodeSettingsModal({
       <div className="bg-app-content-bg rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-app-border">
           <h2 className="text-xl font-semibold text-app-text-primary">
-            管理节点类型
+            {tWorkflows("nodeSettings.title")}
           </h2>
           <button
             onClick={onClose}
@@ -197,11 +200,13 @@ export default function NodeSettingsModal({
           {/* Node List */}
           <div>
             <h3 className="text-lg font-semibold text-app-text-primary mb-4">
-              现有节点
+              {tWorkflows("nodeSettings.existingNodes")}
             </h3>
             <div className="space-y-3 h-[85%] overflow-y-auto pr-2">
               {customNodes.length === 0 ? (
-                <p className="text-app-text-muted">暂无自定义节点</p>
+                <p className="text-app-text-muted">
+                  {tWorkflows("nodeSettings.noCustomNodes")}
+                </p>
               ) : (
                 customNodes.map((node) => (
                   <div
@@ -231,14 +236,14 @@ export default function NodeSettingsModal({
                       <button
                         onClick={() => handleEditClick(node)}
                         className="p-1.5 text-app-text-secondary hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                        title="编辑"
+                        title={tCommon("actions.edit")}
                       >
                         <RiEditLine className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteNode(node)}
                         className="p-1.5 text-app-text-secondary hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                        title="删除"
+                        title={tCommon("actions.delete")}
                       >
                         <RiDeleteBinLine className="w-4 h-4" />
                       </button>
@@ -253,21 +258,21 @@ export default function NodeSettingsModal({
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors"
               >
                 <RiDownloadCloudLine className="w-4 h-4" />
-                导入
+                {tWorkflows("nodeSettings.actions.import")}
               </button>
               <button
                 onClick={handleExportNodes}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors"
               >
                 <RiUploadCloudLine className="w-4 h-4" />
-                导出
+                {tWorkflows("nodeSettings.actions.export")}
               </button>
               <button
                 onClick={handleSyncToBackend}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
               >
                 <RiSaveLine className="w-4 h-4" />
-                同步到后端
+                {tWorkflows("nodeSettings.actions.sync")}
               </button>
             </div>
           </div>
@@ -275,12 +280,14 @@ export default function NodeSettingsModal({
           {/* Node Form */}
           <div>
             <h3 className="text-lg font-semibold text-app-text-primary mb-4">
-              {editingNode ? "编辑节点" : "新建节点"}
+              {editingNode
+                ? tWorkflows("nodeSettings.form.editTitle")
+                : tWorkflows("nodeSettings.form.createTitle")}
             </h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-app-text-primary mb-2">
-                  名称 *
+                  {tWorkflows("nodeSettings.form.nameLabel")}
                 </label>
                 <input
                   type="text"
@@ -288,12 +295,12 @@ export default function NodeSettingsModal({
                   value={newNodeForm.label || ""}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="例如：产品经理"
+                  placeholder={tWorkflows("nodeSettings.form.namePlaceholder")}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-app-text-primary mb-2">
-                  角色 *
+                  {tWorkflows("nodeSettings.form.roleLabel")}
                 </label>
                 <input
                   type="text"
@@ -301,12 +308,12 @@ export default function NodeSettingsModal({
                   value={newNodeForm.role || ""}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="例如：product"
+                  placeholder={tWorkflows("nodeSettings.form.rolePlaceholder")}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-app-text-primary mb-2">
-                  图标 * (Emoji 或图片URL)
+                  {tWorkflows("nodeSettings.form.iconLabel")}
                 </label>
                 <input
                   type="text"
@@ -314,12 +321,12 @@ export default function NodeSettingsModal({
                   value={newNodeForm.icon || ""}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="例如：📋 或 https://example.com/icon.png"
+                  placeholder={tWorkflows("nodeSettings.form.iconPlaceholder")}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-app-text-primary mb-2">
-                  颜色 *
+                  {tWorkflows("nodeSettings.form.colorLabel")}
                 </label>
                 <SimpleColorPicker
                   value={newNodeForm.color || "blue"}
@@ -330,11 +337,11 @@ export default function NodeSettingsModal({
               </div>
               <div>
                 <label className="block text-sm font-medium text-app-text-primary mb-2">
-                  负责人 *
+                  {tWorkflows("nodeSettings.form.ownerLabel")}
                 </label>
                 {isLoadingMembers ? (
                   <div className="text-sm text-app-text-muted">
-                    加载团队成员中...
+                    {tWorkflows("nodeSettings.form.ownerLoading")}
                   </div>
                 ) : (
                   <Select
@@ -342,7 +349,9 @@ export default function NodeSettingsModal({
                     onValueChange={handleAssigneeChange}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="选择负责人" />
+                      <SelectValue
+                        placeholder={tWorkflows("nodeSettings.form.ownerPlaceholder")}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {teamMembers.length > 0 ? (
@@ -368,8 +377,8 @@ export default function NodeSettingsModal({
                           </SelectItem>
                         ))
                       ) : (
-                        <SelectItem value="未找到团队成员" disabled>
-                          未找到团队成员
+                        <SelectItem value="no-team-members" disabled>
+                          {tWorkflows("nodeSettings.form.ownerMissing")}
                         </SelectItem>
                       )}
                     </SelectContent>
@@ -378,7 +387,7 @@ export default function NodeSettingsModal({
               </div>
               <div>
                 <label className="block text-sm font-medium text-app-text-primary mb-2">
-                  标签 (逗号分隔)
+                  {tWorkflows("nodeSettings.form.tagsLabel")}
                 </label>
                 <input
                   type="text"
@@ -394,7 +403,7 @@ export default function NodeSettingsModal({
                     }))
                   }
                   className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="例如：前端,开发"
+                  placeholder={tWorkflows("nodeSettings.form.tagsPlaceholder")}
                 />
               </div>
               <div className="flex justify-end gap-3">
@@ -404,7 +413,7 @@ export default function NodeSettingsModal({
                     onClick={handleCancelEdit}
                     className="px-4 py-2 text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors"
                   >
-                    取消编辑
+                    {tWorkflows("nodeSettings.actions.cancelEdit")}
                   </button>
                 )}
                 <button
@@ -412,7 +421,9 @@ export default function NodeSettingsModal({
                   onClick={handleSaveNode}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                 >
-                  {editingNode ? "保存修改" : "添加节点"}
+                  {editingNode
+                    ? tWorkflows("nodeSettings.actions.saveEdit")
+                    : tWorkflows("nodeSettings.actions.add")}
                 </button>
               </div>
             </div>
@@ -426,10 +437,13 @@ export default function NodeSettingsModal({
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>删除节点类型？</DialogTitle>
+              <DialogTitle>{tWorkflows("nodeSettings.deleteDialog.title")}</DialogTitle>
               <DialogDescription>
-                将删除「{pendingDeleteNode?.label || "该节点"}」。已经创建的本地
-                工作流模板可能需要重新检查节点配置。
+                {tWorkflows("nodeSettings.deleteDialog.description", {
+                  name:
+                    pendingDeleteNode?.label ||
+                    tWorkflows("nodeSettings.deleteDialog.fallbackName"),
+                })}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
@@ -438,14 +452,14 @@ export default function NodeSettingsModal({
                 onClick={() => setPendingDeleteNode(null)}
                 className="rounded-md border border-app-border px-3 py-2 text-sm text-app-text-secondary transition-colors hover:bg-app-button-hover hover:text-app-text-primary"
               >
-                取消
+                {tCommon("actions.cancel")}
               </button>
               <button
                 type="button"
                 onClick={handleConfirmDeleteNode}
                 className="rounded-md bg-red-600 px-3 py-2 text-sm text-white transition-colors hover:bg-red-700"
               >
-                确认删除
+                {tWorkflows("nodeSettings.deleteDialog.confirm")}
               </button>
             </DialogFooter>
           </DialogContent>

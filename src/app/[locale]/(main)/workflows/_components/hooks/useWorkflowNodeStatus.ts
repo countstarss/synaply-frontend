@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Edge, Node } from "reactflow";
 import { toast } from "sonner";
 import {
@@ -46,6 +47,7 @@ export const useWorkflowNodeStatus = ({
   user,
   onUpdate,
 }: UseWorkflowNodeStatusProps) => {
+  const tWorkflows = useTranslations("workflows");
   const updateWorkflowRunStatusMutation = useUpdateWorkflowRunStatus();
   const advanceWorkflowRunMutation = useAdvanceWorkflowRun();
   const revertWorkflowRunMutation = useRevertWorkflowRun();
@@ -74,12 +76,12 @@ export const useWorkflowNodeStatus = ({
       | undefined;
 
     if (nodeStatus?.assigneeId && nodeStatus.assigneeId !== user?.id) {
-      toast.error("只有当前节点负责人才能执行此操作");
+      toast.error(tWorkflows("runtime.onlyCurrentOwner"));
       return false;
     }
 
     return true;
-  }, [currentNode, user?.id, workflowIssue]);
+  }, [currentNode, tWorkflows, user?.id, workflowIssue]);
 
   const handleStatusUpdate = useCallback(
     async (nodeId: string, status: string, comment?: string) => {
@@ -104,7 +106,11 @@ export const useWorkflowNodeStatus = ({
         syncWorkflowIssue(updatedIssue);
       } catch (error) {
         console.error(error);
-        toast.error(error instanceof Error ? error.message : "节点状态同步失败");
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : tWorkflows("runtime.statusSyncFailed"),
+        );
       }
     },
     [
@@ -113,6 +119,7 @@ export const useWorkflowNodeStatus = ({
       issue.id,
       issue.workspaceId,
       syncWorkflowIssue,
+      tWorkflows,
       updateWorkflowRunStatusMutation,
       workflowIssue,
     ],
@@ -155,8 +162,10 @@ export const useWorkflowNodeStatus = ({
         setIsRecordModalOpen(false);
         syncWorkflowIssue(updatedIssue);
       } catch (error) {
-        console.error("推进 workflow run 失败", error);
-        toast.error(error instanceof Error ? error.message : "推进 workflow run 失败");
+        console.error("Failed to advance workflow run", error);
+        toast.error(
+          error instanceof Error ? error.message : tWorkflows("runtime.advanceFailed"),
+        );
       }
     },
     [
@@ -166,6 +175,7 @@ export const useWorkflowNodeStatus = ({
       issue.workspaceId,
       pendingNextEdge,
       syncWorkflowIssue,
+      tWorkflows,
     ],
   );
 
@@ -187,8 +197,10 @@ export const useWorkflowNodeStatus = ({
 
       syncWorkflowIssue(updatedIssue);
     } catch (error) {
-      console.error("回退 workflow run 失败", error);
-      toast.error(error instanceof Error ? error.message : "回退 workflow run 失败");
+      console.error("Failed to revert workflow run", error);
+      toast.error(
+        error instanceof Error ? error.message : tWorkflows("runtime.revertFailed"),
+      );
     }
   }, [
     currentNode,
@@ -197,6 +209,7 @@ export const useWorkflowNodeStatus = ({
     issue.workspaceId,
     revertWorkflowRunMutation,
     syncWorkflowIssue,
+    tWorkflows,
     workflow,
     workflowIssue,
   ]);

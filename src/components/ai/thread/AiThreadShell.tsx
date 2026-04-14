@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { RiRobot2Line } from "react-icons/ri";
 import {
   Sheet,
@@ -34,6 +35,7 @@ export function AiThreadShell({
   originSurfaceId,
   originTitle,
 }: AiThreadShellProps) {
+  const tAi = useTranslations("ai");
   const { isStreaming, streamingText, error, setError } = useAiThreadStore();
   const { thread, threadId, messages, isLoading } = useAiThread({
     workspaceId,
@@ -62,10 +64,10 @@ export function AiThreadShell({
         <SheetHeader className="border-b border-app-border bg-app-content-bg pr-12">
           <SheetTitle className="flex items-center gap-2 text-app-text-primary">
             <RiRobot2Line className="size-5 text-sky-600" />
-            AI 助手
+            {tAi("thread.shell.title")}
           </SheetTitle>
           <SheetDescription className="text-app-text-secondary">
-            基于当前任务上下文，先帮你梳理、推进和形成下一步。
+            {tAi("thread.shell.description")}
           </SheetDescription>
           <AiThreadList
             thread={thread}

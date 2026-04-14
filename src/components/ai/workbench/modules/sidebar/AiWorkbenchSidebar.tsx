@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Bot,
   ChevronDown,
@@ -11,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getAiThreadDisplayTitle } from "@/components/ai/workbench/aiWorkbenchUtils";
+import { getAiThreadDisplayTitleWithLabels } from "@/components/ai/workbench/aiWorkbenchUtils";
 import type { AiThreadRecord } from "@/lib/ai/types";
 import type { Issue } from "@/lib/fetchers/issue";
 import { cn } from "@/lib/utils";
@@ -68,35 +69,44 @@ interface SidebarProjectGroup {
   projectThreadCount: number;
 }
 
+type AiTranslate = (
+  key: string,
+  values?: Record<string, string | number>,
+) => string;
+
 function getIssueLabel(issue: Issue) {
   return issue.key ? `${issue.key} · ${issue.title}` : issue.title;
 }
 
-function formatRelativeThreadTime(value?: string | null) {
+function formatRelativeThreadTime(
+  value: string | null | undefined,
+  locale: string,
+  tAi: AiTranslate,
+) {
   if (!value) {
-    return "刚刚";
+    return tAi("workbench.sidebar.justNow");
   }
 
   const diffMs = Date.now() - new Date(value).getTime();
   const diffMinutes = Math.max(1, Math.floor(diffMs / 60000));
 
   if (diffMinutes < 60) {
-    return `${diffMinutes} 分钟前`;
+    return tAi("workbench.sidebar.minutesAgo", { count: diffMinutes });
   }
 
   const diffHours = Math.floor(diffMinutes / 60);
 
   if (diffHours < 24) {
-    return `${diffHours} 小时前`;
+    return tAi("workbench.sidebar.hoursAgo", { count: diffHours });
   }
 
   const diffDays = Math.floor(diffHours / 24);
 
   if (diffDays < 7) {
-    return `${diffDays} 天前`;
+    return tAi("workbench.sidebar.daysAgo", { count: diffDays });
   }
 
-  return new Date(value).toLocaleDateString("zh-CN", {
+  return new Date(value).toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
   });
@@ -119,6 +129,7 @@ function getThreadContextLabel(
   issueMap: Map<string, Issue>,
   projectNameMap: Map<string, string>,
   workspaceName: string,
+  tAi: AiTranslate,
 ) {
   if (
     thread.originSurfaceType === "ISSUE" &&
@@ -133,13 +144,15 @@ function getThreadContextLabel(
     thread.originSurfaceId &&
     projectNameMap.has(thread.originSurfaceId)
   ) {
-    return `${projectNameMap.get(thread.originSurfaceId)!} · 项目对话`;
+    return `${projectNameMap.get(thread.originSurfaceId)!} · ${tAi(
+      "workbench.sidebar.projectConversation",
+    )}`;
   }
 
-  return `${workspaceName} · 自由对话`;
+  return `${workspaceName} · ${tAi("workbench.sidebar.freeConversation")}`;
 }
 
-function getToneMeta(item: SidebarThreadItem) {
+function getToneMeta(item: SidebarThreadItem, tAi: AiTranslate) {
   const neutralClassName =
     "border-black/[0.06] bg-black/[0.03] text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-white/72";
 
@@ -153,13 +166,13 @@ function getToneMeta(item: SidebarThreadItem) {
     case "project":
       return {
         icon: FolderOpen,
-        label: "项目对话",
+        label: tAi("workbench.sidebar.projectConversation"),
         className: neutralClassName,
       };
     default:
       return {
         icon: Bot,
-        label: "自由对话",
+        label: tAi("workbench.sidebar.freeConversation"),
         className: neutralClassName,
       };
   }
@@ -168,13 +181,15 @@ function getToneMeta(item: SidebarThreadItem) {
 function SidebarThreadRow({
   item,
   active,
+  tAi,
   onSelectThread,
 }: {
   item: SidebarThreadItem;
   active: boolean;
+  tAi: AiTranslate;
   onSelectThread: (thread: AiThreadRecord) => void;
 }) {
-  const meta = getToneMeta(item);
+  const meta = getToneMeta(item, tAi);
   const Icon = meta.icon;
 
   return (
@@ -229,6 +244,8 @@ export function AiWorkbenchSidebar({
   onStartNewThread,
   onSelectThread,
 }: AiWorkbenchSidebarProps) {
+  const locale = useLocale();
+  const tAi = useTranslations("ai");
   const threadItems = useMemo<SidebarThreadItem[]>(
     () =>
       threads.map((thread) => {
@@ -243,15 +260,23 @@ export function AiWorkbenchSidebar({
 
         return {
           thread,
-          title: getAiThreadDisplayTitle(thread.title),
+          title: getAiThreadDisplayTitleWithLabels(
+            thread.title,
+            tAi("shared.conversation"),
+            tAi("shared.conversationLegacy"),
+            tAi("shared.surfaceLabel"),
+          ),
           contextLabel: getThreadContextLabel(
             thread,
             issueMap,
             projectNameMap,
             workspaceName,
+            tAi,
           ),
           timestampLabel: formatRelativeThreadTime(
             thread.lastMessageAt || thread.updatedAt,
+            locale,
+            tAi,
           ),
           tone: getThreadTone(thread),
           projectId,
@@ -259,7 +284,7 @@ export function AiWorkbenchSidebar({
             thread.originSurfaceType === "ISSUE" ? thread.originSurfaceId : null,
         };
       }),
-    [issueMap, projectNameMap, threads, workspaceName],
+    [issueMap, locale, projectNameMap, tAi, threads, workspaceName],
   );
 
   const sortedThreadItems = useMemo(
@@ -369,7 +394,7 @@ export function AiWorkbenchSidebar({
 
             <div className="min-w-0">
               <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400 dark:text-white/24">
-                Intelligence
+                {tAi("shared.surfaceLabel")}
               </p>
               <h2 className="truncate text-[15px] font-semibold text-slate-950 dark:text-white">
                 {workspaceName}
@@ -385,7 +410,7 @@ export function AiWorkbenchSidebar({
             onClick={() => void onStartNewThread()}
           >
             <Plus className="mr-1 size-4" />
-            新建
+            {tAi("workbench.sidebar.new")}
           </Button>
         </div>
       </div>
@@ -394,7 +419,7 @@ export function AiWorkbenchSidebar({
         <div className="space-y-5 px-3 py-4">
           <div>
             <p className="px-2 text-[10px] font-medium uppercase tracking-[0.22em] text-slate-400 dark:text-white/24">
-              Workspace
+              {tAi("workbench.sidebar.workspaceSection")}
             </p>
 
             <div className="mt-2 space-y-1.5">
@@ -406,13 +431,14 @@ export function AiWorkbenchSidebar({
                       key={item.thread.id}
                       item={item}
                       active={item.thread.id === resolvedThreadId}
+                      tAi={tAi}
                       onSelectThread={onSelectThread}
                     />
                   ))}
                 </div>
               ) : (
                 <div className="rounded-lg border border-dashed border-black/[0.08] px-4 py-3 text-sm leading-6 text-slate-500 dark:border-white/8 dark:text-white/34">
-                  还没有自由对话历史。保持当前状态就可以直接开始。
+                  {tAi("workbench.sidebar.freeEmpty")}
                 </div>
               )}
             </div>
@@ -420,7 +446,7 @@ export function AiWorkbenchSidebar({
 
           <div>
             <p className="px-2 text-[10px] font-medium uppercase tracking-[0.22em] text-slate-400 dark:text-white/24">
-              Projects
+              {tAi("workbench.sidebar.projectsSection")}
             </p>
 
             <div className="mt-2 space-y-1.5">
@@ -446,8 +472,12 @@ export function AiWorkbenchSidebar({
                         className="mt-1 flex size-7 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-black/[0.04] hover:text-slate-900 dark:text-white/42 dark:hover:bg-white/[0.06] dark:hover:text-white"
                         aria-label={
                           expanded
-                            ? `收起 ${group.project.name}`
-                            : `展开 ${group.project.name}`
+                            ? tAi("workbench.sidebar.collapseProject", {
+                                name: group.project.name,
+                              })
+                            : tAi("workbench.sidebar.expandProject", {
+                                name: group.project.name,
+                              })
                         }
                       >
                         {expanded ? (
@@ -484,12 +514,13 @@ export function AiWorkbenchSidebar({
                               key={item.thread.id}
                               item={item}
                               active={item.thread.id === resolvedThreadId}
+                              tAi={tAi}
                               onSelectThread={onSelectThread}
                             />
                           ))
                         ) : (
                           <div className="rounded-lg border border-dashed border-black/[0.08] px-4 py-3 text-sm leading-6 text-slate-500 dark:border-white/8 dark:text-white/34">
-                            当前还没有这个项目的 issue 聊天记录。点击项目本身即可进入项目主对话。
+                            {tAi("workbench.sidebar.projectEmpty")}
                           </div>
                         )}
                       </div>

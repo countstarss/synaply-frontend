@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { RiCloseLine } from "react-icons/ri";
 import { toast } from "sonner";
 
@@ -15,16 +16,18 @@ export default function WorkflowSetupModal({
   onContinue,
   initialValues,
 }: WorkflowSetupModalProps) {
+  const tCommon = useTranslations("common");
+  const tWorkflows = useTranslations("workflows");
   const [workflowName, setWorkflowName] = useState(initialValues?.name || "");
   const [workflowDescription, setWorkflowDescription] = useState(
-    initialValues?.description || ""
+    initialValues?.description || "",
   );
 
   // MARK: handleSubmit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!workflowName.trim()) {
-      toast.error("请输入工作流名称");
+      toast.error(tWorkflows("setup.nameRequired"));
       return;
     }
     onContinue({
@@ -40,7 +43,7 @@ export default function WorkflowSetupModal({
       <div className="bg-app-content-bg rounded-lg shadow-xl w-full max-w-md mx-4">
         <div className="flex items-center justify-between p-6 border-b border-app-border">
           <h2 className="text-xl font-semibold text-app-text-primary">
-            新建工作流
+            {tWorkflows("setup.title")}
           </h2>
           <button
             onClick={onClose}
@@ -53,13 +56,13 @@ export default function WorkflowSetupModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-app-text-primary mb-2">
-              工作流名称 *
+              {tWorkflows("setup.nameLabel")}
             </label>
             <input
               type="text"
               value={workflowName}
               onChange={(e) => setWorkflowName(e.target.value)}
-              placeholder="输入工作流名称..."
+              placeholder={tWorkflows("setup.namePlaceholder")}
               className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
               autoFocus
@@ -68,12 +71,12 @@ export default function WorkflowSetupModal({
 
           <div>
             <label className="block text-sm font-medium text-app-text-primary mb-2">
-              描述
+              {tWorkflows("setup.descriptionLabel")}
             </label>
             <textarea
               value={workflowDescription}
               onChange={(e) => setWorkflowDescription(e.target.value)}
-              placeholder="输入工作流描述..."
+              placeholder={tWorkflows("setup.descriptionPlaceholder")}
               className="w-full px-3 py-2 border border-app-border rounded-md bg-app-bg text-app-text-primary placeholder-app-text-muted focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]"
               rows={3}
             />
@@ -85,13 +88,13 @@ export default function WorkflowSetupModal({
               onClick={onClose}
               className="px-4 py-2 text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors"
             >
-              取消
+              {tCommon("actions.cancel")}
             </button>
             <button
               type="submit"
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
-              继续编辑
+              {tWorkflows("setup.continue")}
             </button>
           </div>
         </form>

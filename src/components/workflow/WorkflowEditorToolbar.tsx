@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslations } from "next-intl";
 import {
   RiSaveLine,
   RiDraftLine,
@@ -33,8 +34,13 @@ export default function WorkflowEditorToolbar({
   onViewJSON,
   disabled = false,
 }: WorkflowEditorToolbarProps) {
-  const primaryActionLabel = isDraft ? "发布工作流" : "保存并发布";
-  const primaryActionTitle = isDraft ? "发布工作流" : "保存并发布";
+  const tWorkflows = useTranslations("workflows");
+  const primaryActionLabel = isDraft
+    ? tWorkflows("toolbar.publish")
+    : tWorkflows("toolbar.saveAndPublish");
+  const primaryActionTitle = isDraft
+    ? tWorkflows("toolbar.publishTitle")
+    : tWorkflows("toolbar.saveAndPublishTitle");
 
   return (
     <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
@@ -42,10 +48,10 @@ export default function WorkflowEditorToolbar({
         <div className="flex items-center gap-2">
           {/* 工作流名称 */}
           <div className="px-3 py-1 text-sm font-medium text-app-text-primary">
-            {workflowName || "未命名工作流"}
+            {workflowName || tWorkflows("shared.untitled")}
             {isDraft && (
               <span className="ml-2 text-xs bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2 py-0.5 rounded">
-                草稿
+                {tWorkflows("toolbar.draftBadge")}
               </span>
             )}
           </div>
@@ -61,10 +67,10 @@ export default function WorkflowEditorToolbar({
                 onClick={onViewJSON}
                 disabled={disabled}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="查看JSON数据"
+                title={tWorkflows("toolbar.viewJsonTitle")}
               >
                 <RiCodeBoxLine className="w-4 h-4" />
-                查看JSON
+                {tWorkflows("toolbar.viewJson")}
               </button>
             )}
 
@@ -74,10 +80,10 @@ export default function WorkflowEditorToolbar({
                 onClick={onExportJSON}
                 disabled={disabled}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="导出工作流"
+                title={tWorkflows("toolbar.exportTitle")}
               >
                 <RiDownload2Line className="w-4 h-4" />
-                导出
+                {tWorkflows("toolbar.export")}
               </button>
             )}
 
@@ -87,10 +93,10 @@ export default function WorkflowEditorToolbar({
                 onClick={onImportJSON}
                 disabled={disabled || isSaving}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="导入工作流"
+                title={tWorkflows("toolbar.importTitle")}
               >
                 <RiUpload2Line className="w-4 h-4" />
-                导入
+                {tWorkflows("toolbar.import")}
               </button>
             )}
 
@@ -100,10 +106,10 @@ export default function WorkflowEditorToolbar({
                 onClick={onSaveAsDraft}
                 disabled={isSaving || disabled}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="存为草稿"
+                title={tWorkflows("toolbar.saveDraftTitle")}
               >
                 <RiDraftLine className="w-4 h-4" />
-                存为草稿
+                {tWorkflows("toolbar.saveDraft")}
               </button>
             )}
 
@@ -115,7 +121,7 @@ export default function WorkflowEditorToolbar({
               title={primaryActionTitle}
             >
               <RiSaveLine className="w-4 h-4" />
-              {isSaving ? "处理中..." : primaryActionLabel}
+              {isSaving ? tWorkflows("toolbar.saving") : primaryActionLabel}
             </button>
 
             {/* 返回按钮 */}
@@ -123,10 +129,10 @@ export default function WorkflowEditorToolbar({
               onClick={onGoBack}
               disabled={isSaving}
               className="flex items-center gap-1.5 px-3 py-1.5 text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="返回列表"
+              title={tWorkflows("toolbar.backTitle")}
             >
               <RiArrowGoBackLine className="w-4 h-4" />
-              返回
+              {tWorkflows("toolbar.back")}
             </button>
           </div>
         </div>

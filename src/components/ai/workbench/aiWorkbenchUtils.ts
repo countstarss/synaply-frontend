@@ -8,10 +8,18 @@ export function getIssueLabel(issue: Issue) {
 }
 
 export function buildDraftThreadTitle(text: string, maxLength = 80) {
+  return buildDraftThreadTitleWithFallback(text, "New conversation", maxLength);
+}
+
+export function buildDraftThreadTitleWithFallback(
+  text: string,
+  fallbackTitle: string,
+  maxLength = 80,
+) {
   const normalizedText = text.replace(/\s+/g, " ").trim();
 
   if (!normalizedText) {
-    return "新对话";
+    return fallbackTitle;
   }
 
   if (normalizedText.length <= maxLength) {
@@ -45,13 +53,36 @@ export function getAiComposePath(
 }
 
 export function getAiThreadDisplayTitle(title?: string | null) {
+  return getAiThreadDisplayTitleWithLabels(
+    title,
+    "Intelligence conversation",
+    "AI collaboration thread",
+    "Intelligence",
+  );
+}
+
+export function getAiThreadDisplayTitleWithLabels(
+  title: string | null | undefined,
+  fallbackTitle: string,
+  legacyTitle: string,
+  surfaceLabel = "Intelligence",
+) {
   const normalizedTitle = title?.trim();
 
-  if (!normalizedTitle || normalizedTitle === "AI 协作线程") {
-    return "Intelligence 对话";
+  if (!normalizedTitle) {
+    return fallbackTitle;
   }
 
-  return normalizedTitle.replace(/ · AI 助手$/u, " · Intelligence");
+  const normalizedSurfaceTitle = normalizedTitle.replace(
+    / · AI(?: 助手| assistant)$/iu,
+    ` · ${surfaceLabel}`,
+  );
+
+  if (normalizedSurfaceTitle === legacyTitle) {
+    return fallbackTitle;
+  }
+
+  return normalizedSurfaceTitle;
 }
 
 export function getSelectionFromThread(

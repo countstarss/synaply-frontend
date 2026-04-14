@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { RiSendPlane2Line } from "react-icons/ri";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ interface AiComposerProps {
 }
 
 export function AiComposer({ disabled = false, onSend }: AiComposerProps) {
+  const tAi = useTranslations("ai");
   const [text, setText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,7 +46,7 @@ export function AiComposer({ disabled = false, onSend }: AiComposerProps) {
             }
           }}
           disabled={disabled || isSubmitting}
-          placeholder="例如：帮我梳理这条任务的下一步，并指出还缺什么上下文"
+          placeholder={tAi("thread.composer.placeholder")}
           className="border-app-border bg-app-bg text-app-text-primary"
         />
         <Button
@@ -54,7 +56,7 @@ export function AiComposer({ disabled = false, onSend }: AiComposerProps) {
           onClick={() => void handleSubmit()}
         >
           <RiSendPlane2Line className="h-4 w-4" />
-          发送
+          {tAi("thread.composer.send")}
         </Button>
       </div>
     </div>

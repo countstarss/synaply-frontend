@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   RiAddLine,
   RiDeleteBinLine,
@@ -36,6 +37,9 @@ import { toast } from "sonner";
 import { WorkflowResponse } from "@/lib/fetchers/workflow";
 
 export default function WorkflowsPageContent() {
+  const locale = useLocale();
+  const tCommon = useTranslations("common");
+  const tWorkflows = useTranslations("workflows");
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "editor">("list");
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
@@ -69,7 +73,7 @@ export default function WorkflowsPageContent() {
     description: string;
   }) => {
     if (!currentWorkspace?.id) {
-      toast.error("工作空间信息不完整");
+      toast.error(tWorkflows("toasts.workspaceIncomplete"));
       return;
     }
 
@@ -97,7 +101,8 @@ export default function WorkflowsPageContent() {
         edges: [],
         createdAt: newWorkflow.createdAt,
         updatedAt: newWorkflow.updatedAt,
-        createdBy: newWorkflow.creator?.user?.name || "当前用户",
+        createdBy:
+          newWorkflow.creator?.user?.name || tWorkflows("shared.currentUser"),
         isDraft: newWorkflow.status === "DRAFT",
         version: newWorkflow.version,
         assigneeMap: newWorkflow.assigneeMap || {},
@@ -107,15 +112,17 @@ export default function WorkflowsPageContent() {
       setEditingWorkflow(editingData);
       setIsSetupModalOpen(false);
       setViewMode("editor");
-      toast.success("工作流创建成功");
+      toast.success(tWorkflows("toasts.createSuccess"));
     } catch (error) {
-      console.error("创建工作流失败:", error);
-      toast.error(error instanceof Error ? error.message : "创建工作流失败");
+      console.error("Failed to create workflow:", error);
+      toast.error(
+        error instanceof Error ? error.message : tWorkflows("toasts.createFailed"),
+      );
     }
   };
 
   const handleEditWorkflow = (workflowResponse: WorkflowResponse) => {
-      const workflow: Workflow = {
+    const workflow: Workflow = {
       id: workflowResponse.id,
       name: workflowResponse.name,
       description: workflowResponse.description || "",
@@ -123,7 +130,8 @@ export default function WorkflowsPageContent() {
       edges: [],
       createdAt: workflowResponse.createdAt,
       updatedAt: workflowResponse.updatedAt,
-      createdBy: workflowResponse.creator?.user?.name || "未知用户",
+      createdBy:
+        workflowResponse.creator?.user?.name || tWorkflows("shared.unknownUser"),
       isDraft: workflowResponse.status === "DRAFT",
       version: workflowResponse.version,
       assigneeMap: workflowResponse.assigneeMap || {},
@@ -141,7 +149,7 @@ export default function WorkflowsPageContent() {
         workflow.description =
           workflowResponse.description || parsedData.description || "";
       } catch (error) {
-        console.error("解析工作流JSON失败:", error);
+        console.error("Failed to parse workflow JSON:", error);
       }
     }
 
@@ -151,7 +159,7 @@ export default function WorkflowsPageContent() {
 
   const handleSaveWorkflow = async (workflow: Workflow) => {
     if (!currentWorkspace?.id) {
-      toast.error("工作空间信息不完整");
+      toast.error(tWorkflows("toasts.workspaceIncomplete"));
       return;
     }
 
@@ -178,9 +186,13 @@ export default function WorkflowsPageContent() {
 
       setEditingWorkflow(null);
       setViewMode("list");
-      toast.success(workflow.isDraft ? "草稿已保存" : "工作流已发布");
+      toast.success(
+        workflow.isDraft
+          ? tWorkflows("toasts.saveDraftSuccess")
+          : tWorkflows("toasts.publishSuccess"),
+      );
     } catch (error) {
-      console.error("保存工作流失败:", error);
+      console.error("Failed to save workflow:", error);
       throw error;
     }
   };
@@ -191,7 +203,7 @@ export default function WorkflowsPageContent() {
 
   const handleConfirmDeleteWorkflow = async () => {
     if (!currentWorkspace?.id) {
-      toast.error("工作空间信息不完整");
+      toast.error(tWorkflows("toasts.workspaceIncomplete"));
       return;
     }
 
@@ -204,11 +216,13 @@ export default function WorkflowsPageContent() {
         workspaceId: currentWorkspace.id,
         workflowId: pendingDeleteWorkflow.id,
       });
-      toast.success("工作流已删除");
+      toast.success(tWorkflows("toasts.deleteSuccess"));
       setPendingDeleteWorkflow(null);
     } catch (error) {
-      console.error("删除工作流失败:", error);
-      toast.error(error instanceof Error ? error.message : "删除工作流失败");
+      console.error("Failed to delete workflow:", error);
+      toast.error(
+        error instanceof Error ? error.message : tWorkflows("toasts.deleteFailed"),
+      );
     }
   };
 
@@ -273,7 +287,7 @@ export default function WorkflowsPageContent() {
       <div className="h-full w-full flex items-center justify-center">
         <div className="flex items-center gap-2 text-app-text-secondary">
           <RiLoader4Line className="w-5 h-5 animate-spin" />
-          加载中...
+          {tWorkflows("page.states.loading")}
         </div>
       </div>
     );
@@ -285,10 +299,10 @@ export default function WorkflowsPageContent() {
         <div className="text-center">
           <RiFlowChart className="w-12 h-12 text-app-text-muted mx-auto mb-3" />
           <h3 className="text-base font-medium text-app-text-primary mb-1">
-            加载失败
+            {tWorkflows("page.states.loadFailedTitle")}
           </h3>
           <p className="text-app-text-secondary text-sm">
-            {error.message || "获取工作流列表失败"}
+            {error.message || tWorkflows("page.states.loadFailedDescription")}
           </p>
         </div>
       </div>
@@ -315,10 +329,10 @@ export default function WorkflowsPageContent() {
           <div className="mb-6 flex items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-semibold text-app-text-primary">
-                工作流管理
+                {tWorkflows("page.header.title")}
               </h1>
               <p className="mt-1 text-sm text-app-text-secondary">
-                管理团队工作流模板，创建标准化流程
+                {tWorkflows("page.header.description")}
               </p>
             </div>
             <button
@@ -326,31 +340,39 @@ export default function WorkflowsPageContent() {
               className="inline-flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-500"
             >
               <RiAddLine className="w-4 h-4" />
-              新建工作流
+              {tWorkflows("page.header.create")}
             </button>
           </div>
 
           <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
             <div className="rounded-2xl border border-app-border bg-app-content-bg p-4">
-              <p className="mb-1 text-xs text-app-text-secondary">总工作流</p>
+              <p className="mb-1 text-xs text-app-text-secondary">
+                {tWorkflows("page.stats.total")}
+              </p>
               <p className="text-2xl font-semibold text-app-text-primary">
                 {stats.total}
               </p>
             </div>
             <div className="rounded-2xl border border-app-border bg-app-content-bg p-4">
-              <p className="mb-1 text-xs text-app-text-secondary">草稿</p>
+              <p className="mb-1 text-xs text-app-text-secondary">
+                {tWorkflows("page.stats.draft")}
+              </p>
               <p className="text-2xl font-semibold text-app-text-primary">
                 {stats.draft}
               </p>
             </div>
             <div className="rounded-2xl border border-app-border bg-app-content-bg p-4">
-              <p className="mb-1 text-xs text-app-text-secondary">已发布</p>
+              <p className="mb-1 text-xs text-app-text-secondary">
+                {tWorkflows("page.stats.published")}
+              </p>
               <p className="text-2xl font-semibold text-app-text-primary">
                 {stats.published}
               </p>
             </div>
             <div className="rounded-2xl border border-app-border bg-app-content-bg p-4">
-              <p className="mb-1 text-xs text-app-text-secondary">使用中</p>
+              <p className="mb-1 text-xs text-app-text-secondary">
+                {tWorkflows("page.stats.active")}
+              </p>
               <p className="text-2xl font-semibold text-app-text-primary">
                 {stats.active}
               </p>
@@ -360,7 +382,7 @@ export default function WorkflowsPageContent() {
           <div className="overflow-hidden rounded-2xl border border-app-border bg-app-content-bg cursor-pointer">
             <div className="flex items-center justify-between border-b border-app-border p-3">
               <h2 className="text-base font-semibold text-app-text-primary">
-                工作流列表
+                {tWorkflows("page.list.title")}
               </h2>
               <div className="flex items-center gap-2">
                 <button
@@ -371,7 +393,9 @@ export default function WorkflowsPageContent() {
                       : "text-app-text-secondary hover:bg-app-button-hover/60 hover:text-app-text-primary"
                   }`}
                 >
-                  {showDraftsOnly ? "显示所有" : "仅显示草稿"}
+                  {showDraftsOnly
+                    ? tWorkflows("page.list.showAll")
+                    : tWorkflows("page.list.draftOnly")}
                 </button>
               </div>
             </div>
@@ -380,17 +404,17 @@ export default function WorkflowsPageContent() {
               <div className="p-8 text-center">
                 <RiFlowChart className="w-12 h-12 text-app-text-muted mx-auto mb-3" />
                 <h3 className="text-base font-medium text-app-text-primary mb-1">
-                  还没有工作流
+                  {tWorkflows("page.list.emptyTitle")}
                 </h3>
                 <p className="text-app-text-secondary text-sm mb-4">
-                  创建第一个工作流模板来标准化团队流程
+                  {tWorkflows("page.list.emptyDescription")}
                 </p>
                 <button
                   onClick={handleCreateNew}
                   className="mx-auto flex items-center gap-1.5 rounded-xl bg-sky-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-500"
                 >
                   <RiAddLine className="w-4 h-4" />
-                  创建工作流
+                  {tWorkflows("page.list.emptyAction")}
                 </button>
               </div>
             ) : (
@@ -411,32 +435,49 @@ export default function WorkflowsPageContent() {
                             {workflow.name}
                             {workflow.status === "DRAFT" && (
                               <span className="rounded-full border border-yellow-200 bg-yellow-50 px-2 py-0.5 text-xs text-yellow-700 dark:border-yellow-500/30 dark:bg-yellow-900/20 dark:text-yellow-400">
-                                草稿
+                                {tWorkflows("page.badges.draft")}
                               </span>
                             )}
                             {workflow.status === "PUBLISHED" && (
                               <span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-xs text-green-700 dark:border-green-500/30 dark:bg-green-900/20 dark:text-green-400">
-                                已发布
+                                {tWorkflows("page.badges.published")}
                               </span>
                             )}
                           </h3>
                           <div className="flex items-center gap-3 text-xs text-app-text-muted">
-                            <span>节点: {workflow.totalSteps}</span>
-                            <span>版本: {workflow.version}</span>
                             <span>
-                              运行中: {workflow.usage?.activeRunCount || 0}
+                              {tWorkflows("page.meta.nodes", {
+                                count: workflow.totalSteps,
+                              })}
                             </span>
                             <span>
-                              总运行: {workflow.usage?.totalRunCount || 0}
+                              {tWorkflows("page.meta.version", {
+                                value: workflow.version,
+                              })}
                             </span>
                             <span>
-                              创建者: {workflow.creator?.user?.name || "未知"}
+                              {tWorkflows("page.meta.activeRuns", {
+                                count: workflow.usage?.activeRunCount || 0,
+                              })}
                             </span>
                             <span>
-                              创建时间:{" "}
-                              {new Date(
-                                workflow.createdAt,
-                              ).toLocaleDateString()}
+                              {tWorkflows("page.meta.totalRuns", {
+                                count: workflow.usage?.totalRunCount || 0,
+                              })}
+                            </span>
+                            <span>
+                              {tWorkflows("page.meta.creator", {
+                                value:
+                                  workflow.creator?.user?.name ||
+                                  tWorkflows("shared.unknownUser"),
+                              })}
+                            </span>
+                            <span>
+                              {tWorkflows("page.meta.createdAt", {
+                                value: new Date(workflow.createdAt).toLocaleDateString(
+                                  locale,
+                                ),
+                              })}
                             </span>
                           </div>
                         </div>
@@ -444,28 +485,28 @@ export default function WorkflowsPageContent() {
                           <button
                             onClick={() => handleEditWorkflow(workflow)}
                             className="rounded p-1.5 text-app-text-secondary transition-colors hover:bg-sky-50 hover:text-sky-600 dark:hover:bg-sky-900/20"
-                            title="查看/编辑"
+                            title={tWorkflows("page.actions.viewEdit")}
                           >
                             <RiEyeLine className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleOpenSettings(workflow)}
                             className="rounded p-1.5 text-app-text-secondary transition-colors hover:bg-sky-50 hover:text-sky-600 dark:hover:bg-sky-900/20"
-                            title="设置"
+                            title={tWorkflows("page.actions.settings")}
                           >
                             <RiSettings3Line className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleEditWorkflow(workflow)}
                             className="rounded p-1.5 text-app-text-secondary transition-colors hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-900/20"
-                            title="编辑"
+                            title={tCommon("actions.edit")}
                           >
                             <RiEditLine className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDeleteWorkflow(workflow)}
                             className="rounded p-1.5 text-app-text-secondary transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                            title="删除"
+                            title={tCommon("actions.delete")}
                             disabled={deleteWorkflowMutation.isPending}
                           >
                             {deleteWorkflowMutation.isPending ? (
@@ -509,11 +550,13 @@ export default function WorkflowsPageContent() {
       >
         <DialogContent className="border-app-border bg-app-content-bg text-app-text-primary">
           <DialogHeader>
-            <DialogTitle>删除工作流？</DialogTitle>
+            <DialogTitle>{tWorkflows("page.deleteDialog.title")}</DialogTitle>
             <DialogDescription className="text-app-text-secondary">
               {pendingDeleteWorkflow
-                ? `“${pendingDeleteWorkflow.name}” 删除后不可恢复。已经运行中的任务可能也会受到影响。`
-                : "删除后不可恢复。"}
+                ? tWorkflows("page.deleteDialog.description", {
+                    name: pendingDeleteWorkflow.name,
+                  })
+                : tWorkflows("page.deleteDialog.fallbackDescription")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -523,7 +566,7 @@ export default function WorkflowsPageContent() {
               disabled={deleteWorkflowMutation.isPending}
               onClick={() => setPendingDeleteWorkflow(null)}
             >
-              取消
+              {tCommon("actions.cancel")}
             </button>
             <button
               type="button"
@@ -531,7 +574,9 @@ export default function WorkflowsPageContent() {
               disabled={deleteWorkflowMutation.isPending}
               onClick={() => void handleConfirmDeleteWorkflow()}
             >
-              {deleteWorkflowMutation.isPending ? "删除中..." : "确认删除"}
+              {deleteWorkflowMutation.isPending
+                ? tWorkflows("page.deleteDialog.deleting")
+                : tWorkflows("page.deleteDialog.confirm")}
             </button>
           </DialogFooter>
         </DialogContent>

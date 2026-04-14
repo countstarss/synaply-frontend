@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { formatDistanceToNow } from "date-fns";
-import { zhCN } from "date-fns/locale";
 import {
   CheckCheck,
   Clock3,
@@ -29,23 +29,13 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { useAiExecutionCapabilities, useAiExecutionHistory, useExecuteAiAction } from "@/hooks/useAiExecution";
+import {
+  useAiExecutionCapabilities,
+  useAiExecutionHistory,
+  useExecuteAiAction,
+} from "@/hooks/useAiExecution";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import type { ExecuteAiActionResult } from "@/lib/fetchers/ai-execution";
-
-const APPROVAL_BADGE: Record<"AUTO" | "CONFIRM", string> = {
-  AUTO: "自动执行",
-  CONFIRM: "需确认",
-};
-
-const AVAILABILITY_BADGE: Record<
-  "available" | "requires_target_check" | "unavailable",
-  string
-> = {
-  available: "可直接使用",
-  requires_target_check: "需目标校验",
-  unavailable: "当前角色不可用",
-};
 
 const STATUS_BADGE: Record<
   "preview" | "succeeded" | "failed" | "blocked",
@@ -57,26 +47,53 @@ const STATUS_BADGE: Record<
   blocked: "secondary",
 };
 
-const HISTORY_STATUS_LABEL: Record<
-  "PREVIEW" | "SUCCEEDED" | "FAILED" | "BLOCKED",
-  string
-> = {
-  PREVIEW: "预演",
-  SUCCEEDED: "成功",
-  FAILED: "失败",
-  BLOCKED: "拦截",
-};
-
 function formatPayload(payload: Record<string, unknown>) {
   return JSON.stringify(payload, null, 2);
 }
 
 export default function AiExecutionSettingsSection() {
+  const tCommon = useTranslations("common");
+  const tSettings = useTranslations("settings");
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id ?? null;
   const capabilitiesQuery = useAiExecutionCapabilities(workspaceId);
   const historyQuery = useAiExecutionHistory(workspaceId, 12);
   const executeMutation = useExecuteAiAction();
+  const approvalBadge = {
+    AUTO: tSettings("aiExecution.badges.approval.AUTO"),
+    CONFIRM: tSettings("aiExecution.badges.approval.CONFIRM"),
+  } as const;
+  const availabilityBadge = {
+    available: tSettings("aiExecution.badges.availability.available"),
+    requires_target_check: tSettings(
+      "aiExecution.badges.availability.requires_target_check",
+    ),
+    unavailable: tSettings("aiExecution.badges.availability.unavailable"),
+  } as const;
+  const historyStatusLabel = {
+    PREVIEW: tSettings("aiExecution.badges.historyStatus.PREVIEW"),
+    SUCCEEDED: tSettings("aiExecution.badges.historyStatus.SUCCEEDED"),
+    FAILED: tSettings("aiExecution.badges.historyStatus.FAILED"),
+    BLOCKED: tSettings("aiExecution.badges.historyStatus.BLOCKED"),
+  } as const;
+  const liveStatusLabel = {
+    preview: tSettings("aiExecution.badges.liveStatus.preview"),
+    succeeded: tSettings("aiExecution.badges.liveStatus.succeeded"),
+    failed: tSettings("aiExecution.badges.liveStatus.failed"),
+    blocked: tSettings("aiExecution.badges.liveStatus.blocked"),
+  } as const;
+  const roleLabel = {
+    OWNER: tSettings("members.roles.OWNER"),
+    ADMIN: tSettings("members.roles.ADMIN"),
+    MEMBER: tSettings("members.roles.MEMBER"),
+  } as const;
+  const targetTypeLabel = {
+    WORKSPACE: tSettings("aiExecution.targetTypes.WORKSPACE"),
+    PROJECT: tSettings("aiExecution.targetTypes.PROJECT"),
+    ISSUE: tSettings("aiExecution.targetTypes.ISSUE"),
+    WORKFLOW: tSettings("aiExecution.targetTypes.WORKFLOW"),
+    DOC: tSettings("aiExecution.targetTypes.DOC"),
+  } as const;
 
   const actions = React.useMemo(
     () => capabilitiesQuery.data?.actions ?? [],
@@ -141,13 +158,15 @@ export default function AiExecutionSettingsSection() {
     try {
       const parsed = JSON.parse(payloadText) as unknown;
       if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-        throw new Error("输入必须是 JSON object。");
+        throw new Error(tSettings("aiExecution.workbench.invalidPayload"));
       }
       setPayloadError(null);
       return parsed as Record<string, unknown>;
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "JSON 解析失败";
+        error instanceof Error
+          ? error.message
+          : tSettings("aiExecution.workbench.parseFailed");
       setPayloadError(message);
       throw error;
     }
@@ -183,8 +202,8 @@ export default function AiExecutionSettingsSection() {
     return (
       <Card className="border-none">
         <CardHeader>
-          <CardTitle>AI 执行层</CardTitle>
-          <CardDescription>请先进入一个工作空间后再配置。</CardDescription>
+          <CardTitle>{tSettings("aiExecution.title")}</CardTitle>
+          <CardDescription>{tSettings("aiExecution.description")}</CardDescription>
         </CardHeader>
       </Card>
     );
@@ -195,25 +214,29 @@ export default function AiExecutionSettingsSection() {
       <div className="grid gap-3 md:grid-cols-4">
         <Card className="border-none">
           <CardHeader className="pb-3">
-            <CardDescription>已接入动作</CardDescription>
+            <CardDescription>{tSettings("aiExecution.stats.total")}</CardDescription>
             <CardTitle className="text-2xl">{stats.total}</CardTitle>
           </CardHeader>
         </Card>
         <Card className="border-none">
           <CardHeader className="pb-3">
-            <CardDescription>自动执行</CardDescription>
+            <CardDescription>{tSettings("aiExecution.stats.auto")}</CardDescription>
             <CardTitle className="text-2xl">{stats.autoCount}</CardTitle>
           </CardHeader>
         </Card>
         <Card className="border-none">
           <CardHeader className="pb-3">
-            <CardDescription>需要确认</CardDescription>
+            <CardDescription>
+              {tSettings("aiExecution.stats.confirm")}
+            </CardDescription>
             <CardTitle className="text-2xl">{stats.confirmCount}</CardTitle>
           </CardHeader>
         </Card>
         <Card className="border-none">
           <CardHeader className="pb-3">
-            <CardDescription>当前角色不可用</CardDescription>
+            <CardDescription>
+              {tSettings("aiExecution.stats.unavailable")}
+            </CardDescription>
             <CardTitle className="text-2xl">{stats.unavailableCount}</CardTitle>
           </CardHeader>
         </Card>
@@ -227,30 +250,38 @@ export default function AiExecutionSettingsSection() {
                 <div className="border border-app-border bg-app-bg/40 p-2 text-muted-foreground">
                   <ShieldCheck className="size-4" />
                 </div>
-                <CardTitle>能力与权限</CardTitle>
+                <CardTitle>{tSettings("aiExecution.capabilities.title")}</CardTitle>
               </div>
               <CardDescription className="max-w-3xl">
-                这层不是聊天模块，而是 AI 调用真实系统动作前的统一能力面。
-                每个动作都声明了审批模式、目标对象和当前角色可用性，后面无论接哪种模型，都走同一套 contract。
+                {tSettings("aiExecution.capabilities.description")}
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <Badge variant="outline">
-                工作空间: {currentWorkspace.type === "TEAM" ? "团队" : "个人"}
+                {tSettings("aiExecution.capabilities.workspaceLabel")}:{" "}
+                {currentWorkspace.type === "TEAM"
+                  ? tSettings("aiExecution.capabilities.workspaceType.TEAM")
+                  : tSettings("aiExecution.capabilities.workspaceType.PERSONAL")}
               </Badge>
               <Badge variant="outline">
-                当前角色: {capabilitiesQuery.data?.actorRole ?? "加载中"}
+                {tSettings("aiExecution.capabilities.roleLabel")}:{" "}
+                {capabilitiesQuery.data?.actorRole
+                  ? roleLabel[capabilitiesQuery.data.actorRole]
+                  : tCommon("feedback.loading")}
               </Badge>
             </div>
           </div>
         </CardHeader>
         <CardContent className="grid gap-3 lg:grid-cols-2">
           {capabilitiesQuery.isLoading && (
-            <div className="text-sm text-muted-foreground">能力清单加载中...</div>
+            <div className="text-sm text-muted-foreground">
+              {tSettings("aiExecution.capabilities.loading")}
+            </div>
           )}
           {capabilitiesQuery.error && (
             <div className="text-sm text-destructive">
-              {(capabilitiesQuery.error as Error).message || "能力清单加载失败"}
+              {(capabilitiesQuery.error as Error).message ||
+                tSettings("aiExecution.capabilities.loadFailed")}
             </div>
           )}
           {actions.map((action) => (
@@ -269,10 +300,10 @@ export default function AiExecutionSettingsSection() {
                   {action.label}
                 </div>
                 <Badge variant="outline">
-                  {APPROVAL_BADGE[action.approvalMode]}
+                  {approvalBadge[action.approvalMode]}
                 </Badge>
                 <Badge variant="outline">
-                  {AVAILABILITY_BADGE[action.availability.status]}
+                  {availabilityBadge[action.availability.status]}
                 </Badge>
               </div>
               <div className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -293,26 +324,28 @@ export default function AiExecutionSettingsSection() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <div className="border border-app-border bg-app-bg/40 p-2 text-muted-foreground">
-                <Sparkles className="size-4"/>
+                <Sparkles className="size-4" />
               </div>
               <div>
-                <CardTitle>动作调试台</CardTitle>
+                <CardTitle>{tSettings("aiExecution.workbench.title")}</CardTitle>
                 <CardDescription>
-                  用同一套 AI action API 做预演、确认和执行，先把链路跑通。
+                  {tSettings("aiExecution.workbench.description")}
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>动作</Label>
+              <Label>{tSettings("aiExecution.workbench.actionLabel")}</Label>
               <Select
                 value={selectedActionKey}
                 onValueChange={setSelectedActionKey}
                 disabled={!actions.length}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="选择一个动作" />
+                  <SelectValue
+                    placeholder={tSettings("aiExecution.workbench.actionPlaceholder")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {actions.map((action) => (
@@ -332,10 +365,10 @@ export default function AiExecutionSettingsSection() {
                       {selectedAction.label}
                     </div>
                     <Badge variant="outline">
-                      {APPROVAL_BADGE[selectedAction.approvalMode]}
+                      {approvalBadge[selectedAction.approvalMode]}
                     </Badge>
                     <Badge variant="outline">
-                      {selectedAction.targetType}
+                      {targetTypeLabel[selectedAction.targetType]}
                     </Badge>
                   </div>
                   <div className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -344,7 +377,7 @@ export default function AiExecutionSettingsSection() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>输入 JSON</Label>
+                  <Label>{tSettings("aiExecution.workbench.inputJsonLabel")}</Label>
                   <Textarea
                     value={payloadText}
                     onChange={(event) => setPayloadText(event.target.value)}
@@ -358,7 +391,7 @@ export default function AiExecutionSettingsSection() {
 
                 <div className="rounded-md border border-app-border bg-app-bg/20 p-4">
                   <div className="text-sm font-medium text-foreground">
-                    输入字段
+                    {tSettings("aiExecution.workbench.inputFieldsTitle")}
                   </div>
                   <div className="mt-3 grid gap-3 md:grid-cols-2">
                     {selectedAction.fields.map((field) => (
@@ -369,7 +402,9 @@ export default function AiExecutionSettingsSection() {
                         <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                           {field.label}
                           {field.required && (
-                            <Badge variant="outline">必填</Badge>
+                            <Badge variant="outline">
+                              {tSettings("aiExecution.workbench.required")}
+                            </Badge>
                           )}
                         </div>
                         <div className="mt-1 text-xs uppercase tracking-[0.16em] text-muted-foreground">
@@ -394,7 +429,7 @@ export default function AiExecutionSettingsSection() {
                     }
                   >
                     <Play className="mr-2 size-4" />
-                    预演
+                    {tSettings("aiExecution.workbench.preview")}
                   </Button>
                   <Button
                     type="button"
@@ -406,7 +441,7 @@ export default function AiExecutionSettingsSection() {
                     }
                   >
                     <Sparkles className="mr-2 size-4" />
-                    直接执行
+                    {tSettings("aiExecution.workbench.execute")}
                   </Button>
                   <Button
                     type="button"
@@ -419,13 +454,14 @@ export default function AiExecutionSettingsSection() {
                     }
                   >
                     <CheckCheck className="mr-2 size-4" />
-                    确认执行
+                    {tSettings("aiExecution.workbench.confirm")}
                   </Button>
                 </div>
 
                 {executeMutation.error && (
                   <div className="text-sm text-destructive">
-                    {(executeMutation.error as Error).message || "执行失败"}
+                    {(executeMutation.error as Error).message ||
+                      tSettings("aiExecution.workbench.executionFailed")}
                   </div>
                 )}
 
@@ -433,13 +469,15 @@ export default function AiExecutionSettingsSection() {
                   <div className="space-y-3 rounded-md border border-app-border bg-app-bg/20 p-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <div className="text-sm font-medium text-foreground">
-                        最近一次结果
+                        {tSettings("aiExecution.workbench.lastResult")}
                       </div>
                       <Badge variant={STATUS_BADGE[lastResult.status]}>
-                        {lastResult.status}
+                        {liveStatusLabel[lastResult.status]}
                       </Badge>
                       {lastResult.needsConfirmation && (
-                        <Badge variant="outline">等待确认</Badge>
+                        <Badge variant="outline">
+                          {tSettings("aiExecution.workbench.waitingConfirmation")}
+                        </Badge>
                       )}
                     </div>
                     <div className="text-sm leading-6 text-muted-foreground">
@@ -463,20 +501,23 @@ export default function AiExecutionSettingsSection() {
                 <Clock3 className="size-4" />
               </div>
               <div>
-                <CardTitle>最近执行</CardTitle>
+                <CardTitle>{tSettings("aiExecution.history.title")}</CardTitle>
                 <CardDescription>
-                  所有预演、成功、失败和拦截都会落审计记录。
+                  {tSettings("aiExecution.history.description")}
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {historyQuery.isLoading && (
-              <div className="text-sm text-muted-foreground">执行记录加载中...</div>
+              <div className="text-sm text-muted-foreground">
+                {tSettings("aiExecution.history.loading")}
+              </div>
             )}
             {historyQuery.error && (
               <div className="text-sm text-destructive">
-                {(historyQuery.error as Error).message || "执行记录加载失败"}
+                {(historyQuery.error as Error).message ||
+                  tSettings("aiExecution.history.loadFailed")}
               </div>
             )}
             {historyQuery.data?.map((record) => (
@@ -489,19 +530,20 @@ export default function AiExecutionSettingsSection() {
                     {record.actionLabel}
                   </div>
                   <Badge variant="outline">
-                    {HISTORY_STATUS_LABEL[record.status]}
+                    {historyStatusLabel[record.status]}
                   </Badge>
                   <Badge variant="outline">
-                    {record.approvalMode === "AUTO" ? "自动" : "确认"}
+                    {record.approvalMode === "AUTO"
+                      ? tSettings("aiExecution.badges.historyApproval.AUTO")
+                      : tSettings("aiExecution.badges.historyApproval.CONFIRM")}
                   </Badge>
                 </div>
                 <div className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {record.summary || "无摘要"}
+                  {record.summary || tSettings("aiExecution.history.noSummary")}
                 </div>
                 <div className="mt-2 text-xs text-muted-foreground">
                   {formatDistanceToNow(new Date(record.createdAt), {
                     addSuffix: true,
-                    locale: zhCN,
                   })}
                 </div>
                 {record.error?.message && (
@@ -515,7 +557,7 @@ export default function AiExecutionSettingsSection() {
               !historyQuery.error &&
               historyQuery.data?.length === 0 && (
                 <div className="text-sm text-muted-foreground">
-                  还没有执行记录，可以先从左侧调试台做一次预演。
+                  {tSettings("aiExecution.history.empty")}
                 </div>
               )}
           </CardContent>

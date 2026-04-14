@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { useTeamMembers } from "@/hooks/useTeam";
 import { useCurrentTeam } from "@/hooks/useTeam";
 import { RiUserLine } from "react-icons/ri";
@@ -16,11 +17,13 @@ interface MentionInputProps {
 export default function MentionInput({
   value,
   onChange,
-  placeholder = "输入@选择负责人...",
+  placeholder,
   className = "",
   inputClassName = "",
   small = false,
 }: MentionInputProps) {
+  const tWorkflows = useTranslations("workflows");
+  const resolvedPlaceholder = placeholder ?? tWorkflows("mention.placeholder");
   const [focused, setFocused] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
   const [mentionList, setMentionList] = useState<boolean>(false);
@@ -133,7 +136,7 @@ export default function MentionInput({
           onKeyUp={(e) =>
             setCursorPosition(e.currentTarget.selectionStart || 0)
           }
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           className={`${
             small
               ? "w-12 text-xs py-1 px-1.5 border border-transparent focus:border-app-border bg-transparent focus:bg-app-bg rounded focus:outline-none transition-colors"
@@ -152,7 +155,7 @@ export default function MentionInput({
         >
           {isLoading ? (
             <div className="p-2 text-center text-sm text-app-text-muted">
-              加载中...
+              {tWorkflows("mention.loading")}
             </div>
           ) : filteredMembers.length > 0 ? (
             filteredMembers.map((member) => (
@@ -190,7 +193,9 @@ export default function MentionInput({
             ))
           ) : (
             <div className="p-3 text-center text-sm text-app-text-muted">
-              {mentionFilter ? "没有找到匹配的成员" : "没有团队成员"}
+              {mentionFilter
+                ? tWorkflows("mention.noMatching")
+                : tWorkflows("mention.noMembers")}
             </div>
           )}
 
@@ -201,8 +206,7 @@ export default function MentionInput({
               onClick={() => handleSelectMember(mentionFilter)}
             >
               <div className="text-sm text-app-text-primary">
-                创建自定义负责人:{" "}
-                <span className="font-medium">{mentionFilter}</span>
+                {tWorkflows("mention.createCustom", { value: mentionFilter })}
               </div>
             </div>
           )}

@@ -120,7 +120,7 @@ export const createInitialWorkflowIssue = (
     title: issue.title,
     description: issue.description || "",
     workflowId: issue.workflowId || "",
-    workflowName: (snapshot as { name?: string }).name || "工作流",
+    workflowName: (snapshot as { name?: string }).name || "Workflow",
     priority: issue.priority || "NORMAL",
     project: undefined,
     createdAt: issue.createdAt,

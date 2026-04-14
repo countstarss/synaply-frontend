@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { RiSendPlane2Line } from "react-icons/ri";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ export function AiWorkbenchChatComposer({
   error = null,
   variant = "docked",
 }: AiWorkbenchChatComposerProps) {
+  const tAi = useTranslations("ai");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const isHero = variant === "hero";
   const minComposerHeight = isHero ? 92 : MIN_COMPOSER_HEIGHT;
@@ -81,7 +83,7 @@ export function AiWorkbenchChatComposer({
             }
           }}
           disabled={disabled || isSubmitting}
-          placeholder="继续输入你的想法、blocker 或下一步动作..."
+          placeholder={tAi("workbench.composer.placeholder")}
           rows={1}
           className={cn(
             "scrollbar-hidden max-h-[200px] min-w-0 w-full resize-none border-none outline-none",
@@ -105,7 +107,9 @@ export function AiWorkbenchChatComposer({
             )}
           >
             <RiSendPlane2Line className="size-4" />
-            {isSubmitting ? "发送中..." : "发送"}
+            {isSubmitting
+              ? tAi("workbench.composer.sending")
+              : tAi("workbench.composer.send")}
           </Button>
         </div>
       </form>

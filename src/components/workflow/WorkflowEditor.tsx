@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useRef, useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -43,6 +44,7 @@ interface WorkflowEditorProps {
 }
 
 function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
+  const tWorkflows = useTranslations("workflows");
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState(workflow?.nodes || []);
   const [edges, setEdges, onEdgesChange] = useEdgesState(workflow?.edges || []);
@@ -210,35 +212,35 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
   const validateWorkflow = (): string[] => {
     const errors: string[] = [];
 
-    // 1. 验证是否有节点
     if (nodes.length === 0) {
-      errors.push("工作流至少需要一个节点");
+      errors.push(tWorkflows("editor.validation.atLeastOneNode"));
     }
 
-    // 2. 验证所有节点是否都有负责人
     const nodesWithoutAssignee = nodes.filter((node) => !node.data.assignee);
     if (nodesWithoutAssignee.length > 0) {
-      errors.push(`存在 ${nodesWithoutAssignee.length} 个节点没有分配负责人`);
+      errors.push(
+        tWorkflows("editor.validation.missingAssignees", {
+          count: nodesWithoutAssignee.length,
+        }),
+      );
     }
 
-    // 3. 验证边界条件 - 确保至少有一个起点和一个终点
     if (nodes.length > 1) {
       const startNodes = nodes.filter(
         (node) => !edges.some((edge) => edge.target === node.id)
       );
       if (startNodes.length === 0) {
-        errors.push("工作流需要至少一个起始节点");
+        errors.push(tWorkflows("editor.validation.missingStart"));
       }
 
       const endNodes = nodes.filter(
         (node) => !edges.some((edge) => edge.source === node.id)
       );
       if (endNodes.length === 0) {
-        errors.push("工作流需要至少一个结束节点");
+        errors.push(tWorkflows("editor.validation.missingEnd"));
       }
     }
 
-    // 4. 验证是否存在孤立节点 (除非只有一个节点)
     if (nodes.length > 1) {
       const connectedNodeIds = new Set<string>();
       edges.forEach((edge) => {
@@ -251,7 +253,9 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
       );
       if (isolatedNodes.length > 0) {
         errors.push(
-          `存在 ${isolatedNodes.length} 个孤立节点，请连接它们或删除`
+          tWorkflows("editor.validation.isolatedNodes", {
+            count: isolatedNodes.length,
+          }),
         );
       }
     }
@@ -265,18 +269,21 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
     setIsSaving(true);
 
     try {
-      // 如果是正式发布（非草稿），则进行验证
       if (!saveAsDraft) {
         const errors = validateWorkflow();
         if (errors.length > 0) {
-          toast.error(`工作流验证失败：${errors.join("；")}`);
+          toast.error(
+            tWorkflows("editor.validation.summary", {
+              errors: errors.join("; "),
+            }),
+          );
           return;
         }
       } else {
         setValidationErrors([]);
       }
 
-      const finalName = workflowName.trim() || "未命名工作流";
+      const finalName = workflowName.trim() || tWorkflows("shared.untitled");
 
       const workflowData: Workflow = {
         id: workflow?.id || generateId(),
@@ -286,7 +293,7 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
         edges: edges as WorkflowEdge[],
         createdAt: workflow?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        createdBy: workflow?.createdBy || "当前用户",
+        createdBy: workflow?.createdBy || tWorkflows("shared.currentUser"),
         tags: workflow?.tags || [],
         isDraft: saveAsDraft,
         version: workflow?.version,
@@ -299,8 +306,10 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
       await onSave?.(workflowData);
       setIsDraft(saveAsDraft);
     } catch (error) {
-      console.error("保存工作流失败:", error);
-      toast.error(error instanceof Error ? error.message : "保存工作流失败");
+      console.error("Failed to save workflow:", error);
+      toast.error(
+        error instanceof Error ? error.message : tWorkflows("toasts.saveFailed"),
+      );
     } finally {
       setIsSaving(false);
     }
@@ -315,7 +324,7 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
     <div className="w-full h-full relative">
       {/* Workflow Editor Toolbar */}
       <WorkflowEditorToolbar
-        workflowName={workflowName || "未命名工作流"}
+        workflowName={workflowName || tWorkflows("shared.untitled")}
         isDraft={isDraft}
         isSaving={isSaving}
         onSave={handleSaveWorkflow}
@@ -379,7 +388,9 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
       {/* 验证错误提示 */}
       {validationErrors.length > 0 && (
         <div className="absolute bottom-4 right-4 bg-red-50 border border-red-300 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 p-3 rounded-lg shadow-lg max-w-md">
-          <h4 className="font-medium mb-1">工作流验证失败</h4>
+          <h4 className="font-medium mb-1">
+            {tWorkflows("editor.validation.title")}
+          </h4>
           <ul className="text-sm list-disc pl-5">
             {validationErrors.map((error, index) => (
               <li key={index}>{error}</li>
@@ -389,7 +400,7 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
             className="text-xs text-red-600 dark:text-red-400 hover:underline mt-2"
             onClick={() => setValidationErrors([])}
           >
-            关闭
+            {tWorkflows("editor.validation.close")}
           </button>
         </div>
       )}
@@ -400,7 +411,7 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
           <div className="bg-app-content-bg rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-app-border">
               <h2 className="text-lg font-semibold text-app-text-primary">
-                工作流JSON数据
+                {tWorkflows("editor.jsonModal.title")}
               </h2>
               <button
                 onClick={() => setIsJsonModalOpen(false)}
@@ -432,7 +443,7 @@ function Flow({ workflow, onSave, onCancel }: WorkflowEditorProps) {
                 onClick={() => setIsJsonModalOpen(false)}
                 className="px-4 py-2 text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors"
               >
-                关闭
+                {tWorkflows("editor.jsonModal.close")}
               </button>
             </div>
           </div>

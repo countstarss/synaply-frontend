@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { ArrowRight, Loader2, Plus, Users } from "lucide-react";
 import {
   Avatar,
@@ -27,6 +28,7 @@ const getInitials = (teamName: string) => {
 };
 
 export default function TeamsSettingsSection() {
+  const tSettings = useTranslations("settings");
   const router = useRouter();
   const { setCurrentWorkspaceId } = useWorkspaceStore();
   const { teams = [], isLoadingTeams, teamsError } = useTeam();
@@ -48,11 +50,11 @@ export default function TeamsSettingsSection() {
     <div className="space-y-5 py-1">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="max-w-2xl text-sm leading-6 text-muted-foreground">
-          这里展示你当前所属的全部团队。点击任意团队可进入对应的 team settings，owner/admin 可以继续编辑资料与成员权限。
+          {tSettings("teams.description")}
         </div>
         <Button type="button" onClick={() => setIsCreateTeamDialogOpen(true)}>
           <Plus className="size-4" />
-          Create new team
+          {tSettings("teams.create")}
         </Button>
       </div>
 
@@ -60,15 +62,16 @@ export default function TeamsSettingsSection() {
         <Card className="border-none">
           <CardContent className="flex items-center gap-3 py-8 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
-            正在加载团队列表...
+            {tSettings("teams.loading")}
           </CardContent>
         </Card>
       ) : teamsError ? (
         <Card className="border-none">
           <CardHeader>
-            <CardTitle>加载失败</CardTitle>
+            <CardTitle>{tSettings("teams.loadFailedTitle")}</CardTitle>
             <CardDescription>
-              {(teamsError as Error).message || "暂时无法读取团队列表"}
+              {(teamsError as Error).message ||
+                tSettings("teams.loadFailedDescription")}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -79,14 +82,16 @@ export default function TeamsSettingsSection() {
               <Users className="size-6" />
             </div>
             <div className="space-y-1">
-              <div className="text-lg font-semibold">你还没有团队</div>
+              <div className="text-lg font-semibold">
+                {tSettings("teams.emptyTitle")}
+              </div>
               <div className="text-sm text-muted-foreground">
-                从这里创建你的第一个团队，系统会自动生成对应的 team workspace。
+                {tSettings("teams.emptyDescription")}
               </div>
             </div>
             <Button type="button" onClick={() => setIsCreateTeamDialogOpen(true)}>
               <Plus className="size-4" />
-              Create new team
+              {tSettings("teams.create")}
             </Button>
           </CardContent>
         </Card>
@@ -108,7 +113,9 @@ export default function TeamsSettingsSection() {
                       {team.name}
                     </div>
                     <div className="mt-1 text-sm text-muted-foreground">
-                      {team.members.length} 位成员
+                      {tSettings("teams.membersCount", {
+                        count: team.members.length,
+                      })}
                     </div>
                   </div>
                 </div>
@@ -119,7 +126,7 @@ export default function TeamsSettingsSection() {
                   className="mt-auto justify-between"
                   onClick={() => router.push(`/settings/team/${team.id}`)}
                 >
-                  打开团队设置
+                  {tSettings("teams.open")}
                   <ArrowRight className="size-4" />
                 </Button>
               </CardContent>

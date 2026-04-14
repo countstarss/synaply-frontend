@@ -1,4 +1,5 @@
 import React, { memo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Handle, Position, NodeProps } from "reactflow";
 import { RiEditLine, RiInformationLine } from "react-icons/ri";
 import MentionInput from "@/app/[locale]/(main)/workflows/_components/MentionInput";
@@ -60,6 +61,7 @@ const roleIcons: Record<string, string> = {
 };
 
 function CustomNode({ data, isConnectable }: NodeProps<CustomNodeData>) {
+  const tWorkflows = useTranslations("workflows");
   const [isEditingAssignee, setIsEditingAssignee] = useState(false);
   const [tempAssignee, setTempAssignee] = useState(data.assignee || "");
 
@@ -131,7 +133,7 @@ function CustomNode({ data, isConnectable }: NodeProps<CustomNodeData>) {
           className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white dark:border-app-content-bg ${
             statusColors[data.status.toLowerCase() as keyof typeof statusColors]
           }`}
-          title={`状态: ${data.status}`}
+          title={tWorkflows("node.status", { status: data.status })}
         />
       )}
 
@@ -139,7 +141,7 @@ function CustomNode({ data, isConnectable }: NodeProps<CustomNodeData>) {
       {hasDetails && (
         <div
           className="absolute -top-1 -left-1 w-4 h-4 text-blue-600 dark:text-blue-400"
-          title="含有详细信息"
+          title={tWorkflows("node.hasDetails")}
         >
           <RiInformationLine className="w-4 h-4" />
         </div>
@@ -161,7 +163,7 @@ function CustomNode({ data, isConnectable }: NodeProps<CustomNodeData>) {
             <MentionInput
               value={tempAssignee}
               onChange={handleAssigneeChange}
-              placeholder="输入@提及负责人"
+              placeholder={tWorkflows("nodeDetails.assigneePlaceholder")}
               small
             />
             {/* <div className="flex justify-end mt-1">
@@ -175,7 +177,9 @@ function CustomNode({ data, isConnectable }: NodeProps<CustomNodeData>) {
           </div>
         ) : (
           <div className="flex items-center gap-1 flex-1">
-            <span className="opacity-70">{data.assignee || "未分配"}</span>
+            <span className="opacity-70">
+              {data.assignee || tWorkflows("shared.unassigned")}
+            </span>
             <button
               onClick={handleAssigneeEdit}
               className="opacity-0 group-hover:opacity-100 hover:opacity-100 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-opacity"
@@ -189,7 +193,9 @@ function CustomNode({ data, isConnectable }: NodeProps<CustomNodeData>) {
       {/* 预计工时显示 */}
       {data.estimatedHours && (
         <div className="text-xs text-app-text-muted mt-1">
-          预计: {data.estimatedHours}小时
+          {tWorkflows("nodeDetails.estimatedHoursUnit", {
+            value: data.estimatedHours,
+          })}
         </div>
       )}
 

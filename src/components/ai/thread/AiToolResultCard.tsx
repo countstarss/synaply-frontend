@@ -1,12 +1,16 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { AiToolResultPart } from "@/lib/ai/types";
 
 interface AiToolResultCardProps {
   part: AiToolResultPart;
 }
 
-function getToolSummary(part: AiToolResultPart) {
+function getToolSummary(
+  part: AiToolResultPart,
+  tAi: (key: string, values?: Record<string, string | number>) => string,
+) {
   if (
     part.output &&
     typeof part.output === "object" &&
@@ -19,9 +23,15 @@ function getToolSummary(part: AiToolResultPart) {
     };
 
     const lines = [
-      typeof output.status === "string" ? `状态：${output.status}` : null,
-      typeof output.summary === "string" ? `摘要：${output.summary}` : null,
-      typeof output.message === "string" ? `消息：${output.message}` : null,
+      typeof output.status === "string"
+        ? tAi("thread.toolResult.status", { value: output.status })
+        : null,
+      typeof output.summary === "string"
+        ? tAi("thread.toolResult.summary", { value: output.summary })
+        : null,
+      typeof output.message === "string"
+        ? tAi("thread.toolResult.message", { value: output.message })
+        : null,
     ];
 
     const text = lines.filter(Boolean).join("\n");
@@ -31,7 +41,9 @@ function getToolSummary(part: AiToolResultPart) {
     }
   }
 
-  return part.isError ? "工具执行失败。" : "工具执行完成。";
+  return part.isError
+    ? tAi("thread.toolResult.toolFailed")
+    : tAi("thread.toolResult.toolCompleted");
 }
 
 function getPrettyJson(value: unknown) {
@@ -43,6 +55,7 @@ function getPrettyJson(value: unknown) {
 }
 
 export function AiToolResultCard({ part }: AiToolResultCardProps) {
+  const tAi = useTranslations("ai");
   return (
     <div
       className={
@@ -59,12 +72,12 @@ export function AiToolResultCard({ part }: AiToolResultCardProps) {
       </div>
 
       <pre className="mt-3 whitespace-pre-wrap break-words font-sans text-sm leading-6">
-        {getToolSummary(part)}
+        {getToolSummary(part, tAi)}
       </pre>
 
       <details className="mt-3">
         <summary className="cursor-pointer text-xs text-app-text-secondary">
-          查看结构化结果
+          {tAi("thread.toolResult.details")}
         </summary>
         <pre className="mt-2 overflow-auto rounded-xl border border-app-border bg-app-bg p-3 text-xs leading-5 text-app-text-secondary">
           {getPrettyJson(part.output)}

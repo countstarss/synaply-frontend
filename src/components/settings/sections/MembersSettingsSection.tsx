@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -38,12 +39,6 @@ import {
   type TeamMember,
 } from "@/lib/fetchers/team";
 
-const ROLE_LABELS: Record<string, string> = {
-  OWNER: "Owner",
-  ADMIN: "Admin",
-  MEMBER: "Member",
-};
-
 const ROLE_BADGE: Record<string, "default" | "secondary" | "outline"> = {
   OWNER: "default",
   ADMIN: "secondary",
@@ -54,6 +49,8 @@ const resolveMemberUserId = (member: TeamMember) =>
   member.user?.id ?? member.userId;
 
 export default function MembersSettingsSection() {
+  const tCommon = useTranslations("common");
+  const tSettings = useTranslations("settings");
   const { session } = useAuth();
   const { currentWorkspace } = useWorkspace();
   const teamId = currentWorkspace?.teamId;
@@ -67,6 +64,11 @@ export default function MembersSettingsSection() {
     return memberUserId === session?.user?.id;
   });
   const isOwner = currentMember?.role === "OWNER";
+  const roleLabels = {
+    OWNER: tSettings("members.roles.OWNER"),
+    ADMIN: tSettings("members.roles.ADMIN"),
+    MEMBER: tSettings("members.roles.MEMBER"),
+  } as const;
 
   const updateRoleMutation = useMutation({
     mutationFn: (payload: {
@@ -105,11 +107,13 @@ export default function MembersSettingsSection() {
       <div className="p-6">
         <Card>
           <CardHeader>
-            <CardTitle>团队成员管理</CardTitle>
-            <CardDescription>该功能仅在团队工作区可用。</CardDescription>
+            <CardTitle>{tSettings("members.noTeam.title")}</CardTitle>
+            <CardDescription>
+              {tSettings("members.noTeam.description")}
+            </CardDescription>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            请切换到团队工作区后管理成员权限。
+            {tSettings("members.noTeam.body")}
           </CardContent>
         </Card>
       </div>
@@ -122,29 +126,33 @@ export default function MembersSettingsSection() {
       {!isOwner && (
         <Card className="border-none">
           <CardHeader>
-            <CardTitle>权限不足</CardTitle>
-            <CardDescription>只有 OWNER 可以管理团队成员。</CardDescription>
+            <CardTitle>{tSettings("members.notOwner.title")}</CardTitle>
+            <CardDescription>
+              {tSettings("members.notOwner.description")}
+            </CardDescription>
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
-            如需调整成员角色，请联系团队拥有者。
+            {tSettings("members.notOwner.body")}
           </CardContent>
         </Card>
       )}
 
       <Card className="border-none">
         <CardHeader>
-          <CardTitle>成员列表</CardTitle>
+          <CardTitle>{tSettings("members.list.title")}</CardTitle>
           <CardDescription>
-            管理团队成员角色与权限, 仅 OWNER 可更新角色或移除成员。
+            {tSettings("members.list.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 pb-6">
           {isLoading && (
-            <div className="text-sm text-muted-foreground">加载中...</div>
+            <div className="text-sm text-muted-foreground">
+              {tSettings("members.list.loading")}
+            </div>
           )}
           {error && (
             <div className="text-sm text-destructive">
-              {(error as Error).message || "加载成员失败"}
+              {(error as Error).message || tSettings("members.list.loadFailed")}
             </div>
           )}
           {members?.map((member) => {
@@ -158,18 +166,20 @@ export default function MembersSettingsSection() {
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="font-medium">
-                      {member.user?.name || member.user?.email || "未知成员"}
+                      {member.user?.name ||
+                        member.user?.email ||
+                        tSettings("members.list.unknownMember")}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       {member.user?.email}
                     </div>
                   </div>
-                  <Badge variant={ROLE_BADGE[member.role]}>
-                    {ROLE_LABELS[member.role]}
-                  </Badge>
+                  <Badge variant={ROLE_BADGE[member.role]}>{roleLabels[member.role]}</Badge>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  加入时间：{format(new Date(member.createdAt), "PPpp")}
+                  {tSettings("members.list.joinedAt", {
+                    value: format(new Date(member.createdAt), "PPpp"),
+                  })}
                 </div>
                 <Separator />
                 <div className="flex flex-wrap items-center gap-3">
@@ -190,12 +200,14 @@ export default function MembersSettingsSection() {
                     }
                   >
                     <SelectTrigger size="sm" className="w-[160px]">
-                      <SelectValue placeholder="选择角色" />
+                      <SelectValue
+                        placeholder={tSettings("members.list.rolePlaceholder")}
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="OWNER">Owner</SelectItem>
-                      <SelectItem value="ADMIN">Admin</SelectItem>
-                      <SelectItem value="MEMBER">Member</SelectItem>
+                      <SelectItem value="OWNER">{roleLabels.OWNER}</SelectItem>
+                      <SelectItem value="ADMIN">{roleLabels.ADMIN}</SelectItem>
+                      <SelectItem value="MEMBER">{roleLabels.MEMBER}</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button
@@ -209,11 +221,11 @@ export default function MembersSettingsSection() {
                     }
                     onClick={() => setPendingRemoveMember(member)}
                   >
-                    移除成员
+                    {tSettings("members.list.remove")}
                   </Button>
                   {isSelf && (
                     <span className="text-xs text-muted-foreground">
-                      当前账号不能修改自身角色或移除。
+                      {tSettings("members.list.selfRestriction")}
                     </span>
                   )}
                 </div>
@@ -226,7 +238,7 @@ export default function MembersSettingsSection() {
             <div className="text-sm text-destructive">
               {(updateRoleMutation.error as Error)?.message ||
                 (removeMemberMutation.error as Error)?.message ||
-                "操作失败"}
+                tSettings("members.list.actionFailed")}
             </div>
           )}
         </CardFooter>
@@ -241,13 +253,14 @@ export default function MembersSettingsSection() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>移除团队成员？</DialogTitle>
+            <DialogTitle>{tSettings("members.removeDialog.title")}</DialogTitle>
             <DialogDescription>
-              将把「
-              {pendingRemoveMember?.user?.email ||
-                pendingRemoveMember?.user?.name ||
-                "该成员"}
-              」从当前团队移除。对方将不再看到这个团队工作区中的项目、任务和文档。
+              {tSettings("members.removeDialog.description", {
+                name:
+                  pendingRemoveMember?.user?.email ||
+                  pendingRemoveMember?.user?.name ||
+                  tSettings("members.removeDialog.fallbackName"),
+              })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -256,14 +269,14 @@ export default function MembersSettingsSection() {
               variant="outline"
               onClick={() => setPendingRemoveMember(null)}
             >
-              取消
+              {tCommon("actions.cancel")}
             </Button>
             <Button
               type="button"
               variant="destructive"
               onClick={handleConfirmRemoveMember}
             >
-              确认移除
+              {tSettings("members.removeDialog.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

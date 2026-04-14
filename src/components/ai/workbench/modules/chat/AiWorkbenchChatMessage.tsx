@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import {
   CheckCheck,
   CheckCircle2,
@@ -126,6 +127,7 @@ export function AiWorkbenchChatMessage({
   onQuickReply,
   disableQuickReply = false,
 }: AiWorkbenchChatMessageProps) {
+  const tAi = useTranslations("ai");
   const messageRef = useRef<HTMLDivElement | null>(null);
   const isSelectionMode = useAiWorkbenchSelectionStore(
     (state) => state.isSelectionMode,
@@ -196,7 +198,7 @@ export function AiWorkbenchChatMessage({
             ) : (
               <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-white/56">
                 <LoaderCircle className="size-4 animate-spin" />
-                AI 正在整理回复
+                {tAi("workbench.chat.streaming")}
                 <AiWorkbenchLoadingDots className="ml-0.5" />
               </div>
             )}
@@ -212,10 +214,10 @@ export function AiWorkbenchChatMessage({
     }
 
     try {
-      await navigator.clipboard.writeText(getAiMessageSelectionText(message));
-      toast.success("已复制这条消息。");
+      await navigator.clipboard.writeText(getAiMessageSelectionText(message, tAi));
+      toast.success(tAi("workbench.chat.copySuccess"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "复制失败");
+      toast.error(error instanceof Error ? error.message : tAi("shared.copyFailed"));
     }
   };
 
@@ -277,7 +279,7 @@ export function AiWorkbenchChatMessage({
                 ))
               ) : (
                 <p className="text-sm leading-7 text-slate-500 dark:text-white/60">
-                  暂无可展示的消息内容。
+                  {tAi("workbench.chat.noContent")}
                 </p>
               )}
             </div>
@@ -295,7 +297,7 @@ export function AiWorkbenchChatMessage({
               )
             ) : (
               <div className="rounded-[24px] border border-black/[0.06] bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.98))] px-4 py-3.5 text-sm leading-7 text-slate-500 dark:border-white/10 dark:bg-[linear-gradient(180deg,rgba(26,26,29,0.96),rgba(14,14,16,0.98))] dark:text-white/60">
-                暂无可展示的消息内容。
+                {tAi("workbench.chat.noContent")}
               </div>
             )}
           </div>
@@ -310,7 +312,7 @@ export function AiWorkbenchChatMessage({
       <ContextMenuContent className="w-52">
         <ContextMenuItem onSelect={() => void handleCopyMessage()}>
           <Copy className="size-4" />
-          复制
+          {tAi("workbench.chat.copy")}
         </ContextMenuItem>
         <ContextMenuSeparator />
         {isSelectionMode ? (
@@ -327,12 +329,14 @@ export function AiWorkbenchChatMessage({
               ) : (
                 <CheckCheck className="size-4" />
               )}
-              {isSelected ? "取消选中" : "选中"}
+              {isSelected
+                ? tAi("workbench.chat.deselect")
+                : tAi("workbench.chat.select")}
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem onSelect={exitSelectionMode}>
               <X className="size-4" />
-              退出多选模式
+              {tAi("workbench.chat.exitMultiSelect")}
             </ContextMenuItem>
           </>
         ) : (
@@ -347,7 +351,7 @@ export function AiWorkbenchChatMessage({
             }}
           >
             <Layers3 className="size-4" />
-            多选
+            {tAi("workbench.chat.multiSelect")}
           </ContextMenuItem>
         )}
       </ContextMenuContent>

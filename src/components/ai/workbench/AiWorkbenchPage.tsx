@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FolderOpen, MessageSquareText, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -20,7 +21,7 @@ import { IssueStateCategory } from "@/types/prisma";
 import AmbientGlow from "@/components/global/AmbientGlow";
 import { useRouter } from "@/i18n/navigation";
 import {
-  buildDraftThreadTitle,
+  buildDraftThreadTitleWithFallback,
   getAiThreadPath,
   getIssueLabel,
   getSelectionFromThread,
@@ -28,6 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export function AiWorkbenchPage() {
+  const tAi = useTranslations("ai");
   const isPageVisible = useCachedPageVisibility();
   const params = useParams<{ threadId?: string }>();
   const searchParams = useSearchParams();
@@ -174,8 +176,12 @@ export function AiWorkbenchPage() {
     localSelectedIssue?.title ||
     localSelectedProject?.name ||
     (currentWorkspace
-      ? `${currentWorkspace.name} · Intelligence 工作台`
-      : "Intelligence 工作台");
+      ? tAi("workbench.page.defaultOriginTitle", {
+          name: currentWorkspace.name,
+        })
+      : tAi("workbench.page.defaultOriginTitle", {
+          name: tAi("workbench.page.fallbackWorkspace"),
+        }));
 
   const {
     thread,
@@ -230,7 +236,7 @@ export function AiWorkbenchPage() {
   const currentContextBadges = [
     {
       key: "workspace",
-      label: currentWorkspace?.name || "未命名 workspace",
+      label: currentWorkspace?.name || tAi("workbench.page.fallbackWorkspace"),
       tone: "workspace",
     },
     displaySelectedProject
@@ -286,11 +292,14 @@ export function AiWorkbenchPage() {
 
       if (!targetThreadId) {
         if (!session?.access_token) {
-          throw new Error("未授权");
+          throw new Error(tAi("workbench.page.unauthorized"));
         }
 
         const createdThread = await createAiThread(workspaceId, session.access_token, {
-          title: buildDraftThreadTitle(trimmedText),
+          title: buildDraftThreadTitleWithFallback(
+            trimmedText,
+            tAi("shared.newConversation"),
+          ),
           originSurfaceType,
           originSurfaceId,
         });
@@ -317,7 +326,9 @@ export function AiWorkbenchPage() {
       });
     } catch (sendError) {
       setError(
-        sendError instanceof Error ? sendError.message : "发送 AI 消息失败",
+        sendError instanceof Error
+          ? sendError.message
+          : tAi("workbench.page.sendFailed"),
       );
     } finally {
       setPendingViewportAnchorId(null);
@@ -329,7 +340,7 @@ export function AiWorkbenchPage() {
   if (isWorkspaceLoading) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-app-text-secondary">
-        正在准备 Intelligence 工作台...
+        {tAi("workbench.page.loading")}
       </div>
     );
   }
@@ -337,7 +348,7 @@ export function AiWorkbenchPage() {
   if (!currentWorkspace) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-app-text-secondary">
-        还没有可用的 workspace，暂时无法启动 Intelligence。
+        {tAi("workbench.page.emptyWorkspace")}
       </div>
     );
   }

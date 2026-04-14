@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Loader2, Save, Trash2, Upload } from "lucide-react";
@@ -87,23 +88,27 @@ const getStoragePathFromUrl = (avatarUrl: string | null) => {
   return decodeURIComponent(cleanUrl.slice(markerIndex + bucketMarker.length));
 };
 
-const resolveProfileErrorMessage = (error: unknown) => {
+const resolveProfileErrorMessage = (
+  error: unknown,
+  tSettings: (key: string) => string,
+) => {
   if (!(error instanceof Error)) {
-    return "更新资料失败";
+    return tSettings("profile.errors.updateFailed");
   }
 
   if (error.message.includes("Bucket not found")) {
-    return "头像存储桶不存在，请先执行 Supabase migration，或在 Storage 中创建 avatars bucket。";
+    return tSettings("profile.errors.bucketMissing");
   }
 
   if (error.message.includes("row-level security policy")) {
-    return "头像上传被 Storage 的权限策略拦截了。请确认当前用户已登录，并使用最新代码重新上传。";
+    return tSettings("profile.errors.storageBlocked");
   }
 
   return error.message;
 };
 
 export default function ProfileSettingsSection() {
+  const tSettings = useTranslations("settings");
   const { session, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -124,7 +129,7 @@ export default function ProfileSettingsSection() {
     queryKey: [...CURRENT_USER_QUERY_KEY, session?.user?.id],
     queryFn: async () => {
       if (!session?.access_token) {
-        throw new Error("登录状态已过期，请重新登录后再试");
+        throw new Error(tSettings("profile.errors.sessionExpired"));
       }
 
       return fetchCurrentUser(session.access_token);
@@ -150,12 +155,14 @@ export default function ProfileSettingsSection() {
 
   const uploadAvatarMutation = useMutation({
     onMutate: (file: File) => {
-      const toastId = toast.loading(`正在上传 ${file.name}...`);
+      const toastId = toast.loading(
+        tSettings("profile.toasts.uploading", { fileName: file.name }),
+      );
       return { toastId };
     },
     mutationFn: async (file: File) => {
       if (!session?.user?.id) {
-        throw new Error("登录状态已失效，请重新登录");
+        throw new Error(tSettings("profile.errors.sessionExpired"));
       }
 
       if (pendingUploadedAvatar?.path) {
@@ -164,7 +171,7 @@ export default function ProfileSettingsSection() {
           .remove([pendingUploadedAvatar.path]);
 
         if (cleanupError) {
-          console.warn("清理未保存头像失败:", cleanupError);
+          console.warn("Failed to clean up the pending avatar:", cleanupError);
         }
       }
 
@@ -177,7 +184,9 @@ export default function ProfileSettingsSection() {
         });
 
       if (uploadError) {
-        throw new Error(uploadError.message || "头像上传失败");
+        throw new Error(
+          uploadError.message || tSettings("profile.errors.updateFailed"),
+        );
       }
 
       const { data: publicUrlData } = supabase.storage
@@ -193,12 +202,12 @@ export default function ProfileSettingsSection() {
     onSuccess: (uploadedAvatar, _file, context) => {
       setPendingUploadedAvatar(uploadedAvatar);
       setAvatarMarkedForRemoval(false);
-      toast.success("头像上传成功，点击“保存更改”以应用到个人资料", {
+      toast.success(tSettings("profile.toasts.uploadSuccess"), {
         id: context?.toastId,
       });
     },
     onError: (error, _file, context) => {
-      toast.error(resolveProfileErrorMessage(error), {
+      toast.error(resolveProfileErrorMessage(error, tSettings), {
         id: context?.toastId,
       });
     },
@@ -214,18 +223,18 @@ export default function ProfileSettingsSection() {
       }
 
       if (!ACCEPTED_AVATAR_TYPES.has(file.type)) {
-        toast.error("头像仅支持 JPG、PNG 或 WebP 格式");
+        toast.error(tSettings("profile.validation.invalidType"));
         return;
       }
 
       if (file.size > MAX_AVATAR_SIZE_BYTES) {
-        toast.error("头像大小不能超过 3MB");
+        toast.error(tSettings("profile.validation.fileTooLarge"));
         return;
       }
 
       uploadAvatarMutation.mutate(file);
     },
-    [uploadAvatarMutation],
+    [tSettings, uploadAvatarMutation],
   );
 
   const currentProfile = profileQuery.data;
@@ -239,17 +248,13 @@ export default function ProfileSettingsSection() {
 
   const updateProfileMutation = useMutation({
     onMutate: () => {
-      const toastId = toast.loading(
-        avatarMarkedForRemoval
-          ? "正在移除头像并保存资料..."
-          : "正在保存资料...",
-      );
+      const toastId = toast.loading(tSettings("profile.toasts.saving"));
 
       return { toastId };
     },
     mutationFn: async () => {
       if (!session?.access_token || !session.user?.id) {
-        throw new Error("登录状态已失效，请重新登录");
+        throw new Error(tSettings("profile.errors.sessionExpired"));
       }
 
       const normalizedName = normalizedDisplayName || null;
@@ -266,7 +271,9 @@ export default function ProfileSettingsSection() {
       });
 
       if (authUpdateError) {
-        throw new Error(authUpdateError.message || "同步登录资料失败");
+        throw new Error(
+          authUpdateError.message || tSettings("profile.errors.syncAuthFailed"),
+        );
       }
 
       return updateCurrentUser(session.access_token, {
@@ -302,15 +309,19 @@ export default function ProfileSettingsSection() {
           .remove([previousStoredAvatarPath])
           .then(({ error }) => {
             if (error) {
-              console.warn("清理旧头像失败:", error);
+              console.warn("Failed to clean up the previous avatar:", error);
             }
           });
       }
 
-      toast.success("资料保存成功", { id: context?.toastId });
+      toast.success(tSettings("profile.toasts.saveSuccess"), {
+        id: context?.toastId,
+      });
     },
     onError: (error, _variables, context) => {
-      toast.error(resolveProfileErrorMessage(error), { id: context?.toastId });
+      toast.error(resolveProfileErrorMessage(error, tSettings), {
+        id: context?.toastId,
+      });
     },
   });
 
@@ -325,19 +336,19 @@ export default function ProfileSettingsSection() {
         .remove([pendingUploadedAvatar.path])
         .then(({ error }) => {
           if (error) {
-            console.warn("清理未保存头像失败:", error);
+            console.warn("Failed to clean up the pending avatar:", error);
           }
         });
 
       setPendingUploadedAvatar(null);
       setAvatarMarkedForRemoval(false);
-      toast.success("已取消新头像");
+      toast.success(tSettings("profile.toasts.cancelNewAvatar"));
       return;
     }
 
     if (avatarMarkedForRemoval) {
       setAvatarMarkedForRemoval(false);
-      toast.success("已撤销移除头像");
+      toast.success(tSettings("profile.toasts.undoRemoveAvatar"));
       return;
     }
 
@@ -346,12 +357,13 @@ export default function ProfileSettingsSection() {
     }
 
     setAvatarMarkedForRemoval(true);
-    toast.success("已标记移除头像，点击“保存更改”后生效");
+    toast.success(tSettings("profile.toasts.markRemoveAvatar"));
   }, [
     avatarMarkedForRemoval,
     pendingUploadedAvatar,
     storedAvatarUrl,
     supabase.storage,
+    tSettings,
     updateProfileMutation.isPending,
     uploadAvatarMutation.isPending,
   ]);
@@ -359,21 +371,23 @@ export default function ProfileSettingsSection() {
   const isAvatarOperationPending =
     uploadAvatarMutation.isPending || (updateProfileMutation.isPending && hasAvatarChange);
   const avatarStatusMessage = uploadAvatarMutation.isPending
-    ? "头像上传中，请稍候..."
+    ? tSettings("profile.avatar.statusUploading")
     : pendingUploadedAvatar
-      ? `头像 ${pendingUploadedAvatar.fileName} 已上传，点击“保存更改”后生效。`
+      ? tSettings("profile.avatar.statusUploaded", {
+          fileName: pendingUploadedAvatar.fileName,
+        })
     : avatarMarkedForRemoval
-      ? "已标记移除头像，保存后生效。"
-      : "选择图片后会立即上传；上传成功后，再点击“保存更改”应用到个人资料。";
+      ? tSettings("profile.avatar.statusMarked")
+      : tSettings("profile.avatar.statusHint");
 
   if (!session && !authLoading) {
     return (
       <div className="p-0">
         <Card className="border-none">
           <CardHeader>
-            <CardTitle>需要先登录</CardTitle>
+            <CardTitle>{tSettings("profile.states.authRequiredTitle")}</CardTitle>
             <CardDescription>
-              登录后才能上传头像并修改你的个人资料。
+              {tSettings("profile.states.authRequiredDescription")}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -387,7 +401,7 @@ export default function ProfileSettingsSection() {
         <Card className="border-none">
           <CardContent className="flex items-center gap-3 py-8 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
-            正在加载个人资料...
+            {tSettings("profile.states.loading")}
           </CardContent>
         </Card>
       </div>
@@ -399,9 +413,10 @@ export default function ProfileSettingsSection() {
       <div className="p-0">
         <Card className="border-none">
           <CardHeader>
-            <CardTitle>加载失败</CardTitle>
+            <CardTitle>{tSettings("profile.states.loadFailedTitle")}</CardTitle>
             <CardDescription>
-              {(profileQuery.error as Error).message || "暂时无法读取个人资料"}
+              {(profileQuery.error as Error).message ||
+                tSettings("profile.states.loadFailedDescription")}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -429,15 +444,18 @@ export default function ProfileSettingsSection() {
       >
         <Card className="border-none">
           <CardHeader>
-            <CardTitle>头像</CardTitle>
+            <CardTitle>{tSettings("profile.avatar.title")}</CardTitle>
             <CardDescription>
-              上传一张清晰的头像，团队成员会在评论、聊天和协作视图里看到它。
+              {tSettings("profile.avatar.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6 md:grid-cols-[auto,1fr] md:items-center pb-6">
             <div className="relative">
               <Avatar className="size-24 border border-border/70 shadow-sm">
-                <AvatarImage src={resolvedAvatarUrl ?? undefined} alt="个人头像" />
+                <AvatarImage
+                  src={resolvedAvatarUrl ?? undefined}
+                  alt={tSettings("profile.avatar.alt")}
+                />
                 <AvatarFallback className="text-lg font-semibold">
                   {getInitials(currentProfile)}
                 </AvatarFallback>
@@ -452,7 +470,7 @@ export default function ProfileSettingsSection() {
             <div className="space-y-4">
               <div className="space-y-1">
                 <div className="text-sm font-medium text-foreground">
-                  建议使用正方形图片
+                  {tSettings("profile.avatar.recommendation")}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {avatarStatusMessage}
@@ -478,7 +496,9 @@ export default function ProfileSettingsSection() {
                   ) : (
                     <Upload className="size-4" />
                   )}
-                  {uploadAvatarMutation.isPending ? "上传中..." : "上传头像"}
+                  {uploadAvatarMutation.isPending
+                    ? tSettings("profile.avatar.uploading")
+                    : tSettings("profile.avatar.upload")}
                 </Button>
                 <Button
                   type="button"
@@ -494,10 +514,10 @@ export default function ProfileSettingsSection() {
                 >
                   <Trash2 className="size-4" />
                   {pendingUploadedAvatar
-                    ? "取消新头像"
+                    ? tSettings("profile.avatar.cancelNew")
                     : avatarMarkedForRemoval
-                      ? "撤销移除"
-                      : "移除头像"}
+                      ? tSettings("profile.avatar.undoRemove")
+                      : tSettings("profile.avatar.remove")}
                 </Button>
               </div>
             </div>
@@ -506,20 +526,22 @@ export default function ProfileSettingsSection() {
 
         <Card className="border-none">
           <CardHeader>
-            <CardTitle>基础信息</CardTitle>
+            <CardTitle>{tSettings("profile.info.title")}</CardTitle>
             <CardDescription>
-              目前可修改展示名称，邮箱作为登录标识暂时保持只读。
+              {tSettings("profile.info.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="display-name">显示名称</Label>
+              <Label htmlFor="display-name">
+                {tSettings("profile.info.displayNameLabel")}
+              </Label>
               <Input
                 id="display-name"
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
                 maxLength={80}
-                placeholder="给自己起个在团队里更容易识别的名字"
+                placeholder={tSettings("profile.info.displayNamePlaceholder")}
                 disabled={updateProfileMutation.isPending}
               />
             </div>
@@ -528,7 +550,7 @@ export default function ProfileSettingsSection() {
 
             <div className="grid gap-5 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="email">登录邮箱</Label>
+                <Label htmlFor="email">{tSettings("profile.info.emailLabel")}</Label>
                 <Input
                   id="email"
                   value={currentProfile?.email ?? session?.user?.email ?? ""}
@@ -537,7 +559,9 @@ export default function ProfileSettingsSection() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="created-at">注册时间</Label>
+                <Label htmlFor="created-at">
+                  {tSettings("profile.info.createdAtLabel")}
+                </Label>
                 <Input
                   id="created-at"
                   value={
@@ -557,8 +581,8 @@ export default function ProfileSettingsSection() {
           <CardFooter className="flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between p-6">
             <div className="text-sm text-muted-foreground">
               {isDirty
-                ? "你有尚未保存的更改。"
-                : "资料已是最新状态。"}
+                ? tSettings("profile.info.dirty")
+                : tSettings("profile.info.clean")}
             </div>
 
             <Button
@@ -574,7 +598,7 @@ export default function ProfileSettingsSection() {
               ) : (
                 <Save className="size-4" />
               )}
-              保存更改
+              {tSettings("profile.info.save")}
             </Button>
           </CardFooter>
         </Card>

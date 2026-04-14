@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import {
   type AiMessagePart,
@@ -67,6 +68,7 @@ export function AiMessageBubble({
   message,
   onQuickReply,
 }: AiMessageBubbleProps) {
+  const tAi = useTranslations("ai");
   const isUser = message.role === "USER";
   const isSystem = message.role === "SYSTEM";
   const visibleParts = message.parts.filter((part) => part.type !== "tool-call");
@@ -106,7 +108,7 @@ export function AiMessageBubble({
             ))
           ) : (
             <p className="leading-6 text-app-text-secondary">
-              暂无可展示的消息内容。
+              {tAi("thread.messageBubble.empty")}
             </p>
           )}
         </div>

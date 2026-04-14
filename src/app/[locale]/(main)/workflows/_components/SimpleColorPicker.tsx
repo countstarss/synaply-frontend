@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslations } from "next-intl";
 import { RiCheckLine } from "react-icons/ri";
 
 interface SimpleColorPickerProps {
@@ -9,7 +10,6 @@ interface SimpleColorPickerProps {
 
 const predefinedColors = [
   {
-    name: "蓝色",
     value: "blue",
     bg: "bg-blue-500",
     border: "border-blue-500",
@@ -17,7 +17,6 @@ const predefinedColors = [
       "border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400",
   },
   {
-    name: "紫色",
     value: "purple",
     bg: "bg-purple-500",
     border: "border-purple-500",
@@ -25,7 +24,6 @@ const predefinedColors = [
       "border-purple-300 dark:border-purple-600 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400",
   },
   {
-    name: "绿色",
     value: "green",
     bg: "bg-green-500",
     border: "border-green-500",
@@ -33,7 +31,6 @@ const predefinedColors = [
       "border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400",
   },
   {
-    name: "橙色",
     value: "orange",
     bg: "bg-orange-500",
     border: "border-orange-500",
@@ -41,7 +38,6 @@ const predefinedColors = [
       "border-orange-300 dark:border-orange-600 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400",
   },
   {
-    name: "红色",
     value: "red",
     bg: "bg-red-500",
     border: "border-red-500",
@@ -49,7 +45,6 @@ const predefinedColors = [
       "border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400",
   },
   {
-    name: "灰色",
     value: "gray",
     bg: "bg-gray-500",
     border: "border-gray-500",
@@ -57,7 +52,6 @@ const predefinedColors = [
       "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/20 text-gray-700 dark:text-gray-400",
   },
   {
-    name: "青色",
     value: "cyan",
     bg: "bg-cyan-500",
     border: "border-cyan-500",
@@ -65,7 +59,6 @@ const predefinedColors = [
       "border-cyan-300 dark:border-cyan-600 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-400",
   },
   {
-    name: "粉色",
     value: "pink",
     bg: "bg-pink-500",
     border: "border-pink-500",
@@ -73,7 +66,6 @@ const predefinedColors = [
       "border-pink-300 dark:border-pink-600 bg-pink-50 dark:bg-pink-900/20 text-pink-700 dark:text-pink-400",
   },
   {
-    name: "黄色",
     value: "yellow",
     bg: "bg-yellow-500",
     border: "border-yellow-500",
@@ -87,9 +79,11 @@ export default function SimpleColorPicker({
   onChange,
   className,
 }: SimpleColorPickerProps) {
+  const tWorkflows = useTranslations("workflows");
   const selectedColor =
     predefinedColors.find((color) => color.value === value) ||
     predefinedColors[0];
+  const selectedColorName = tWorkflows(`colors.${selectedColor.value}`);
 
   return (
     <div className={`space-y-2 ${className}`}>
@@ -108,7 +102,7 @@ export default function SimpleColorPicker({
               }
               transition-all duration-200 flex items-center justify-center
             `}
-            title={color.name}
+            title={tWorkflows(`colors.${color.value}`)}
           >
             {selectedColor.value === color.value && (
               <RiCheckLine className="w-4 h-4 text-white" />
@@ -118,7 +112,7 @@ export default function SimpleColorPicker({
       </div>
 
       <div className="text-sm text-app-text-secondary">
-        已选择：{selectedColor.name}
+        {tWorkflows("colors.selected", { value: selectedColorName })}
       </div>
     </div>
   );

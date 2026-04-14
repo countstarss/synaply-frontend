@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslations } from "next-intl";
 import {
   RiArrowLeftSLine,
   RiArrowRightSLine,
@@ -23,57 +24,6 @@ export interface NodeType {
   tags?: string[];
 }
 
-const defaultNodeTypes: NodeType[] = [
-  {
-    id: "product",
-    role: "product",
-    label: "产品经理",
-    color:
-      "border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400",
-    icon: "📋",
-  },
-  {
-    id: "ui",
-    role: "ui",
-    label: "UI设计师",
-    color:
-      "border-purple-300 dark:border-purple-600 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400",
-    icon: "🎨",
-  },
-  {
-    id: "frontend",
-    role: "frontend",
-    label: "前端开发",
-    color:
-      "border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400",
-    icon: "💻",
-  },
-  {
-    id: "backend",
-    role: "backend",
-    label: "后端开发",
-    color:
-      "border-orange-300 dark:border-orange-600 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400",
-    icon: "⚙️",
-  },
-  {
-    id: "test",
-    role: "test",
-    label: "测试工程师",
-    color:
-      "border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400",
-    icon: "🧪",
-  },
-  {
-    id: "devops",
-    role: "devops",
-    label: "DevOps",
-    color:
-      "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/20 text-gray-700 dark:text-gray-400",
-    icon: "🔧",
-  },
-];
-
 interface NodePanelProps {
   // onAddNode?: (nodeType: NodeType) => void; // Removed as it's not directly used here
   isCollapsed: boolean; // New prop for controlled collapse
@@ -89,6 +39,7 @@ export default function NodePanel({
   onManageNodes,
   customNodeTypes,
 }: NodePanelProps) {
+  const tWorkflows = useTranslations("workflows");
   const onDragStart = (event: React.DragEvent, nodeType: NodeType) => {
     event.dataTransfer.setData(
       "application/reactflow",
@@ -96,6 +47,57 @@ export default function NodePanel({
     );
     event.dataTransfer.effectAllowed = "move";
   };
+
+  const defaultNodeTypes: NodeType[] = [
+    {
+      id: "product",
+      role: "product",
+      label: tWorkflows("nodePanel.defaults.product"),
+      color:
+        "border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400",
+      icon: "📋",
+    },
+    {
+      id: "ui",
+      role: "ui",
+      label: tWorkflows("nodePanel.defaults.ui"),
+      color:
+        "border-purple-300 dark:border-purple-600 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400",
+      icon: "🎨",
+    },
+    {
+      id: "frontend",
+      role: "frontend",
+      label: tWorkflows("nodePanel.defaults.frontend"),
+      color:
+        "border-green-300 dark:border-green-600 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400",
+      icon: "💻",
+    },
+    {
+      id: "backend",
+      role: "backend",
+      label: tWorkflows("nodePanel.defaults.backend"),
+      color:
+        "border-orange-300 dark:border-orange-600 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400",
+      icon: "⚙️",
+    },
+    {
+      id: "test",
+      role: "test",
+      label: tWorkflows("nodePanel.defaults.test"),
+      color:
+        "border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400",
+      icon: "🧪",
+    },
+    {
+      id: "devops",
+      role: "devops",
+      label: tWorkflows("nodePanel.defaults.devops"),
+      color:
+        "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/20 text-gray-700 dark:text-gray-400",
+      icon: "🔧",
+    },
+  ];
 
   const nodesToDisplay =
     customNodeTypes.length > 0 ? customNodeTypes : defaultNodeTypes;
@@ -108,7 +110,11 @@ export default function NodePanel({
       <button
         onClick={onToggleCollapse}
         className="absolute top-2 right-2 p-1 rounded-full hover:bg-app-button-hover transition-colors text-app-text-secondary"
-        title={isCollapsed ? "展开节点面板" : "折叠节点面板"}
+        title={
+          isCollapsed
+            ? tWorkflows("nodePanel.expand")
+            : tWorkflows("nodePanel.collapse")
+        }
       >
         {isCollapsed ? (
           <RiArrowRightSLine className="w-5 h-5" />
@@ -120,7 +126,7 @@ export default function NodePanel({
       {!isCollapsed && ( // Only show content when not collapsed
         <>
           <h3 className="text-sm font-semibold mb-3 text-app-text-primary">
-            节点类型
+            {tWorkflows("nodePanel.title")}
           </h3>
           <div className="space-y-2">
             {nodesToDisplay.map((nodeType) => {
@@ -159,7 +165,7 @@ export default function NodePanel({
             className="mt-4 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm text-app-text-secondary hover:text-app-text-primary border border-app-border rounded-lg transition-colors"
           >
             <RiSettings3Line className="w-4 h-4" />
-            管理节点类型
+            {tWorkflows("nodePanel.manage")}
           </button>
         </>
       )}

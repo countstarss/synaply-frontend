@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import type { AiThreadRecord } from "@/lib/ai/types";
 
@@ -14,6 +15,7 @@ export function AiThreadList({
   fallbackTitle,
   isLoading = false,
 }: AiThreadListProps) {
+  const tAi = useTranslations("ai");
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -27,10 +29,10 @@ export function AiThreadList({
     <div className="space-y-3">
       <div>
         <p className="text-sm font-semibold text-app-text-primary">
-          {thread?.title || fallbackTitle || "AI 协作线程"}
+          {thread?.title || fallbackTitle || tAi("thread.list.fallbackTitle")}
         </p>
         <p className="mt-1 text-xs text-app-text-secondary">
-          这条线程会记住当前任务上下文和你们的协作记录。
+          {tAi("thread.list.description")}
         </p>
       </div>
 
@@ -50,7 +52,7 @@ export function AiThreadList({
             variant="secondary"
             className="bg-app-button-hover text-app-text-secondary"
           >
-            暂无上下文 pin
+            {tAi("thread.list.noPins")}
           </Badge>
         )}
       </div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Node, Edge } from "reactflow";
 import { toast } from "sonner";
 import { Workflow, WorkflowNode, WorkflowEdge } from "@/types/team";
@@ -43,19 +44,20 @@ export function useWorkflowJson({
   setWorkflowName,
   setWorkflowDescription,
 }: UseWorkflowJsonOptions) {
+  const tWorkflows = useTranslations("workflows");
   const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
 
   // MARK: 构建工作流JSON
   const buildWorkflowJsonData = (): WorkflowJsonData => {
     return {
       id: workflow?.id || generateId(),
-      name: workflowName.trim() || "未命名工作流",
+      name: workflowName.trim() || tWorkflows("shared.untitled"),
       description: workflowDescription.trim(),
       nodes,
       edges,
       createdAt: workflow?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      createdBy: workflow?.createdBy || "当前用户",
+      createdBy: workflow?.createdBy || tWorkflows("shared.currentUser"),
       tags: workflow?.tags || [],
       isDraft,
       version: "v1",
@@ -87,13 +89,13 @@ export function useWorkflowJson({
       URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      toast.success("导出成功", {
-        description: `工作流已导出为JSON文件`,
+      toast.success(tWorkflows("json.exportSuccessTitle"), {
+        description: tWorkflows("json.exportSuccessDescription"),
       });
     } catch (error) {
-      console.error("导出工作流失败:", error);
-      toast.error("导出失败", {
-        description: "导出工作流时发生错误",
+      console.error("Failed to export workflow:", error);
+      toast.error(tWorkflows("json.exportFailedTitle"), {
+        description: tWorkflows("json.exportFailedDescription"),
       });
     }
   };
@@ -121,16 +123,18 @@ export function useWorkflowJson({
               if (jsonData.description)
                 setWorkflowDescription(jsonData.description);
 
-              toast.success("导入成功", {
-                description: `工作流"${jsonData.name || "未命名"}"已导入`,
+              toast.success(tWorkflows("json.importSuccessTitle"), {
+                description: tWorkflows("json.importSuccessDescription", {
+                  name: jsonData.name || tWorkflows("shared.untitled"),
+                }),
               });
             } else {
-              throw new Error("无效的工作流JSON格式");
+              throw new Error(tWorkflows("json.invalidFormat"));
             }
           } catch (error) {
-            console.error("导入工作流失败:", error);
-            toast.error("导入失败", {
-              description: "无效的工作流JSON格式",
+            console.error("Failed to import workflow:", error);
+            toast.error(tWorkflows("json.importFailedTitle"), {
+              description: tWorkflows("json.importFailedDescription"),
             });
           }
         };
@@ -149,7 +153,7 @@ export function useWorkflowJson({
     const workflowData = buildWorkflowJsonData();
 
     // 在控制台输出格式化的JSON
-    console.log("工作流JSON数据:", workflowData);
+    console.log("Workflow JSON data:", workflowData);
 
     // 打开JSON查看模态框
     setIsJsonModalOpen(true);
@@ -157,7 +161,7 @@ export function useWorkflowJson({
 
   // 记录保存的工作流数据
   const logSavedWorkflow = (workflowData: Workflow) => {
-    console.log("保存的工作流数据:", workflowData);
+    console.log("Saved workflow data:", workflowData);
   };
 
   return {

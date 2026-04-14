@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RiCheckboxCircleLine, RiCloseCircleLine } from "react-icons/ri";
 import { toast } from "sonner";
@@ -41,6 +42,7 @@ export function AiApprovalRequestCard({
   threadId,
   part,
 }: AiApprovalRequestCardProps) {
+  const tAi = useTranslations("ai");
   const { session } = useAuth();
   const { currentWorkspace } = useWorkspace();
   const queryClient = useQueryClient();
@@ -53,7 +55,7 @@ export function AiApprovalRequestCard({
     queryKey: ["ai-approval", workspaceId, threadId, part.approvalId],
     queryFn: async () => {
       if (!workspaceId || !session?.access_token) {
-        throw new Error("当前无法读取审批状态");
+        throw new Error(tAi("thread.approval.readStatusFailed"));
       }
 
       return getAiApproval(
@@ -104,7 +106,7 @@ export function AiApprovalRequestCard({
   const confirmMutation = useMutation({
     mutationFn: async () => {
       if (!workspaceId || !session?.access_token) {
-        throw new Error("当前无法确认这个动作");
+        throw new Error(tAi("thread.approval.confirmUnavailable"));
       }
 
       return confirmAiApproval(
@@ -120,23 +122,23 @@ export function AiApprovalRequestCard({
       const message = getExecutionMessage(data.execution);
 
       if (status === "failed" || status === "blocked") {
-        toast.error(message ?? "动作执行未完成");
+        toast.error(message ?? tAi("thread.approval.actionIncomplete"));
       } else {
-        toast.success("已确认，AI 正在继续执行。");
+        toast.success(tAi("thread.approval.confirmSuccess"));
       }
 
       await refreshThread();
       await approvalQuery.refetch();
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "确认失败");
+      toast.error(error instanceof Error ? error.message : tAi("thread.approval.confirmFailed"));
     },
   });
 
   const rejectMutation = useMutation({
     mutationFn: async () => {
       if (!workspaceId || !session?.access_token) {
-        throw new Error("当前无法拒绝这个动作");
+        throw new Error(tAi("thread.approval.rejectUnavailable"));
       }
 
       return rejectAiApproval(
@@ -148,12 +150,12 @@ export function AiApprovalRequestCard({
     },
     onSuccess: async () => {
       setResolvedStatus("REJECTED");
-      toast.success("已拒绝这个动作。");
+      toast.success(tAi("thread.approval.rejectSuccess"));
       await refreshThread();
       await approvalQuery.refetch();
     },
     onError: (error) => {
-      toast.error(error instanceof Error ? error.message : "拒绝失败");
+      toast.error(error instanceof Error ? error.message : tAi("thread.approval.rejectFailed"));
     },
   });
 
@@ -165,25 +167,27 @@ export function AiApprovalRequestCard({
         </span>
         <span className="text-xs text-amber-800/80">
           {resolvedStatus === "CONFIRMED"
-            ? "已确认"
+            ? tAi("thread.approval.statuses.confirmed")
             : currentStatus === "CONFIRMED"
-              ? "已确认"
+              ? tAi("thread.approval.statuses.confirmed")
               : currentStatus === "REJECTED"
-                ? "已拒绝"
+                ? tAi("thread.approval.statuses.rejected")
                 : currentStatus === "EXPIRED"
-                  ? "已过期"
-                  : "等待确认"}
+                  ? tAi("thread.approval.statuses.expired")
+                  : tAi("thread.approval.statuses.pending")}
         </span>
       </div>
 
       <p className="mt-3 text-sm font-medium leading-6">{part.summary}</p>
       <p className="mt-2 text-xs leading-5 text-amber-900/75">
-        动作: <span className="font-mono">{part.actionKey}</span>
+        {tAi("thread.approval.action", { value: part.actionKey })}
       </p>
       {isBatchApproval ? (
         <div className="mt-3 rounded-xl border border-amber-200/80 bg-white/70 p-3">
           <p className="text-xs font-medium leading-5 text-amber-900/80">
-            这次会一起执行 {previewItems.length} 个动作
+            {tAi("thread.approval.batchSummary", {
+              count: previewItems.length,
+            })}
           </p>
           <div className="mt-3 flex flex-col gap-2">
             {previewItems.map((item, index) => {
@@ -202,8 +206,12 @@ export function AiApprovalRequestCard({
                     {index + 1}. {title}
                   </p>
                   <p className="mt-1 text-xs leading-5 text-amber-900/75">
-                    动作: <span className="font-mono">{item.actionKey}</span>
-                    {item.status ? ` · 预演状态: ${item.status}` : ""}
+                    {tAi("thread.approval.action", { value: item.actionKey })}
+                    {item.status
+                      ? ` · ${tAi("thread.approval.previewStatus", {
+                          value: item.status,
+                        })}`
+                      : ""}
                   </p>
                   {item.message ? (
                     <p className="mt-1 text-xs leading-5 text-amber-900/70">
@@ -234,7 +242,7 @@ export function AiApprovalRequestCard({
           onClick={() => void confirmMutation.mutateAsync()}
         >
           <RiCheckboxCircleLine className="mr-2 h-4 w-4" />
-          确认执行
+          {tAi("thread.approval.confirm")}
         </Button>
         <Button
           type="button"
@@ -247,7 +255,7 @@ export function AiApprovalRequestCard({
           onClick={() => void rejectMutation.mutateAsync()}
         >
           <RiCloseCircleLine className="mr-2 h-4 w-4" />
-          拒绝
+          {tAi("thread.approval.reject")}
         </Button>
       </div>
     </div>

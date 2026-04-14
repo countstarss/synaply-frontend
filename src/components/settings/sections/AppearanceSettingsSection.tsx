@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Check, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -199,6 +200,7 @@ function ToggleRow({
 }
 
 export default function AppearanceSettingsSection() {
+  const tSettings = useTranslations("settings");
   const enabled = useAppearanceStore((s) => s.enabled);
   const animated = useAppearanceStore((s) => s.animated);
   const presetId = useAppearanceStore((s) => s.presetId);
@@ -220,10 +222,10 @@ export default function AppearanceSettingsSection() {
         </div>
         <div className="space-y-1">
           <div className="text-lg font-semibold text-foreground">
-            背景光晕
+            {tSettings("appearance.title")}
           </div>
           <div className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            控制全局氛围光的颜色和动态效果。偏好按账号和工作区分别保存在本地。
+            {tSettings("appearance.description")}
           </div>
         </div>
       </div>
@@ -232,14 +234,14 @@ export default function AppearanceSettingsSection() {
         <AmbientGlow />
         <div className="relative z-10 flex h-full items-end p-4">
           <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-            实时预览
+            {tSettings("appearance.preview")}
           </div>
         </div>
       </div>
 
       <div className="flex flex-col gap-3">
         <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-          光效模式
+          {tSettings("appearance.modeLabel")}
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {GLOW_MODES.map((modeOption) => (
@@ -256,7 +258,7 @@ export default function AppearanceSettingsSection() {
 
       <div className="space-y-3">
         <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-          颜色预设
+          {tSettings("appearance.presetLabel")}
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {GLOW_PRESETS.map((preset) => (
@@ -272,14 +274,14 @@ export default function AppearanceSettingsSection() {
 
       <div className="flex flex-row gap-3">
         <ToggleRow
-          label="启用背景光晕"
-          description="关闭后将不再渲染氛围光，页面背景保持纯色。"
+          label={tSettings("appearance.enabledLabel")}
+          description={tSettings("appearance.enabledDescription")}
           checked={enabled}
           onChange={setEnabled}
         />
         <ToggleRow
-          label="动态效果"
-          description="开启后当前光效会缓慢流动；关闭后保留静态状态。尊重系统的 reduced-motion 设置。"
+          label={tSettings("appearance.animatedLabel")}
+          description={tSettings("appearance.animatedDescription")}
           checked={animated}
           onChange={setAnimated}
         />
@@ -287,7 +289,9 @@ export default function AppearanceSettingsSection() {
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <div className="text-sm font-medium text-foreground">光晕强度</div>
+          <div className="text-sm font-medium text-foreground">
+            {tSettings("appearance.intensity")}
+          </div>
           <div className="text-xs text-muted-foreground">
             {Math.round(intensity * 100)}%
           </div>
