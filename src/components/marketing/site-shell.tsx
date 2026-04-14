@@ -1,12 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 
 import logo from "@/assets/icons/logo.png";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { MarketingBackground } from "@/components/marketing/marketing-background";
-import { getSiteCopy } from "@/components/marketing/site-copy";
+import { useSiteCopy } from "@/components/marketing/site-copy";
 import { ConicButton } from "@/components/ui/conic-button";
 import { useAuth } from "@/context/AuthContext";
 import { Link } from "@/i18n/navigation";
@@ -28,8 +28,7 @@ export function MarketingShell({
   current,
   children,
 }: MarketingShellProps) {
-  const locale = useLocale();
-  const copy = getSiteCopy(locale);
+  const copy = useSiteCopy();
   const t = useTranslations();
   const { user } = useAuth();
 

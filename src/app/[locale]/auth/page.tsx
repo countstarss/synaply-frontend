@@ -12,10 +12,10 @@ import {
   Lock,
   Mail,
 } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 
 import { AuthCard, AuthMessage, AuthShell } from "@/components/auth/auth-shell";
-import { getSiteCopy } from "@/components/marketing/site-copy";
+import { useSiteCopy } from "@/components/marketing/site-copy";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,8 +55,7 @@ export default function AuthPage() {
     clearError,
     loading,
   } = useAuth();
-  const locale = useLocale();
-  const copy = getSiteCopy(locale);
+  const copy = useSiteCopy();
   const t = useTranslations();
   const searchParams = useSearchParams();
 

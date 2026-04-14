@@ -8,6 +8,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+import { useMarketingCopy } from "@/components/marketing/site-copy";
 import { MarketingShell } from "@/components/marketing/site-shell";
 import { SectionHeading } from "@/components/marketing/section-heading";
 import { Button } from "@/components/ui/button";
@@ -46,125 +47,14 @@ function PlanGlyph() {
   );
 }
 
-interface PricingPageClientProps {
-  locale: string;
-}
+const summaryIcons = {
+  workspace: Layers3,
+  followUp: MessageSquareMore,
+  coordination: ShieldCheck,
+} as const;
 
-export default function PricingPageClient({
-  locale,
-}: PricingPageClientProps) {
-  const isZh = locale === "zh";
-
-  const plans = isZh
-    ? [
-        {
-          name: "Launch",
-          featured: false,
-          price: "$9",
-          priceHint: "每成员 / 月起",
-          summary: "适合刚开始建立协作秩序",
-          label: "适合刚建立协作秩序的团队",
-          description: "从项目、Issue、Workflow 与 Docs 的统一语境开始，不必一开始就背上复杂流程。",
-          badge: "内测中",
-          features: [
-            "Projects / Issues / Workflows / Docs 一体化",
-            "为 3-8 人远程团队优化",
-            "快速上手，低摩擦切入",
-          ],
-        },
-        {
-          name: "Team",
-          featured: true,
-          price: "$19",
-          priceHint: "每成员 / 月起",
-          summary: "适合稳定推进的多角色团队",
-          label: "适合多角色稳定协作的主力方案",
-          description: "让产品、设计、研发、运营在同一套节奏中推进，交接、状态与文档都保持清晰。",
-          badge: "主力方案",
-          features: [
-            "更完整的 workflow 管理方式",
-            "更适合 5-15 人混合角色团队",
-            "让推进过程更稳定、更可追踪",
-          ],
-        },
-        {
-          name: "Custom",
-          featured: false,
-          price: "Custom",
-          priceHint: "按团队规模定制报价",
-          summary: "适合长期协作结构定制",
-          label: "适合更长期的团队协作规划",
-          description: "如果你希望围绕团队节奏、流程设计与协作规范一起打磨，我们可以提供更定制的接入方式。",
-          badge: "联系咨询",
-          features: [
-            "定制接入与流程梳理",
-            "适配更复杂的协作结构",
-            "一起定义更长期的协作中枢",
-          ],
-        },
-      ]
-    : [
-        {
-          name: "Launch",
-          featured: false,
-          price: "$9",
-          priceHint: "per member / mo",
-          summary: "For teams setting up a calmer operating rhythm",
-          label: "For teams establishing a calmer operating rhythm",
-          description:
-            "Start with projects, issues, workflows, and docs in one system without inheriting process weight on day one.",
-          badge: "Private beta",
-          features: [
-            "Unified projects, issues, workflows, and docs",
-            "Designed for remote teams with 3-8 people",
-            "Fast adoption with low coordination overhead",
-          ],
-        },
-        {
-          name: "Team",
-          featured: true,
-          price: "$19",
-          priceHint: "per member / mo",
-          summary: "For multi-role teams running steady execution",
-          label: "For mixed-discipline teams running steady execution",
-          description:
-            "Keep product, design, engineering, and operations moving in one rhythm with visible handoffs and attached context.",
-          badge: "Most aligned",
-          features: [
-            "More complete workflow control",
-            "Optimized for 5-15 person cross-functional teams",
-            "More reliable status, ownership, and follow-through",
-          ],
-        },
-        {
-          name: "Custom",
-          featured: false,
-          price: "Custom",
-          priceHint: "tailored quote",
-          summary: "For longer-term workflow design and rollout",
-          label: "For long-term operating design and tailored rollout",
-          description:
-            "If the team wants to shape process, structure, and collaboration norms deliberately, Synaply can be introduced more intentionally.",
-          badge: "Contact",
-          features: [
-            "Tailored rollout and operating consultation",
-            "Support for more complex collaboration structures",
-            "Built around the team’s long-term rhythm",
-          ],
-        },
-      ];
-
-  const included = isZh
-    ? [
-        "没有碎片化模块堆叠，只有统一协作语境",
-        "重点不是增加功能数量，而是减少推进摩擦",
-        "方案划分围绕团队协作状态，而不是功能锁定",
-      ]
-    : [
-        "No fragmented module sprawl, just one operating context",
-        "The goal is less coordination drag, not more feature volume",
-        "Packaging maps to team maturity, not arbitrary feature locks",
-      ];
+export default function PricingPageClient() {
+  const { pricing } = useMarketingCopy();
 
   return (
     <MarketingShell current="pricing">
@@ -172,25 +62,21 @@ export default function PricingPageClient({
         <div className="grid gap-12 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-center">
           <motion.div className="space-y-8" {...revealUp}>
             <SectionHeading
-              eyebrow={isZh ? "定价与方案" : "Pricing"}
+              eyebrow={pricing.hero.eyebrow}
               title={
                 <span>
-                  {isZh ? "协作软件的定价，也应该保持" : "Pricing should feel as"}{" "}
+                  {pricing.hero.titlePrefix}{" "}
                   <Cover className="text-white">
-                    <span>{isZh ? "清晰" : "clear"}</span>
+                    <span>{pricing.hero.titleFocus}</span>
                   </Cover>
-                  {isZh ? "。": "."}
+                  {pricing.hero.titleSuffix}
                 </span>
               }
-              description={
-                isZh
-                  ? "Synaply 的方案不是为了制造复杂度，而是为了让不同阶段的小团队都能以合适的方式进入同一套协作系统。"
-                  : "Synaply packaging is meant to preserve clarity. Different team stages should be able to enter the same operating system without unnecessary complexity."
-              }
+              description={pricing.hero.description}
             />
 
             <div className="grid gap-3 sm:grid-cols-3">
-              {included.map((item) => (
+              {pricing.included.map((item) => (
                 <div
                   key={item}
                   className="border border-white/10 bg-white/[0.03] px-4 py-4 text-sm leading-7 text-white/62"
@@ -206,7 +92,7 @@ export default function PricingPageClient({
               className="h-12 border border-white/12 bg-white/[0.05] px-6 text-sm font-medium text-white hover:bg-white/[0.08]"
             >
               <Link href={AUTH_ROUTE}>
-                {isZh ? "开始使用 Synaply" : "Start with Synaply"}
+                {pricing.hero.cta}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -217,13 +103,9 @@ export default function PricingPageClient({
               <div className="flex items-center justify-between border-b border-white/8 pb-4">
                 <div>
                   <p className="text-[11px] uppercase tracking-[0.24em] text-white/34">
-                    {isZh ? "方案信号" : "Plan signal"}
+                    {pricing.planSignal.label}
                   </p>
-                  <p className="mt-2 text-sm text-white/62">
-                    {isZh
-                      ? "不是堆更多功能，而是让团队更稳地进入同一套推进节奏。"
-                      : "The aim is not more surface area. It is a steadier way into the same operating rhythm."}
-                  </p>
+                  <p className="mt-2 text-sm text-white/62">{pricing.planSignal.description}</p>
                 </div>
                 <div className="h-32 w-32">
                   <EvervaultCard text="SYNC" />
@@ -231,28 +113,21 @@ export default function PricingPageClient({
               </div>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                {[
-                  {
-                    icon: <Layers3 className="h-4 w-4" />,
-                    text: isZh ? "统一工作空间" : "Unified workspace",
-                  },
-                  {
-                    icon: <MessageSquareMore className="h-4 w-4" />,
-                    text: isZh ? "更少重复确认" : "Less follow-up noise",
-                  },
-                  {
-                    icon: <ShieldCheck className="h-4 w-4" />,
-                    text: isZh ? "更稳定的协作秩序" : "More reliable coordination",
-                  },
-                ].map((item) => (
+                {pricing.summaryCards.map((item) => {
+                  const Icon = summaryIcons[item.kind];
+
+                  return (
                   <div
-                    key={item.text}
+                    key={item.kind}
                     className="border border-white/10 bg-[#090b10] px-4 py-4 text-sm text-white/66"
                   >
-                    <div className="mb-3 text-white/74">{item.icon}</div>
+                    <div className="mb-3 text-white/74">
+                      <Icon className="h-4 w-4" />
+                    </div>
                     {item.text}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </motion.div>
@@ -261,7 +136,7 @@ export default function PricingPageClient({
 
       <section className="mx-auto w-full max-w-7xl px-4 pb-24 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-3">
-          {plans.map((plan) => (
+          {pricing.plans.map((plan) => (
             <motion.div
               key={plan.name}
               {...revealUp}
@@ -304,17 +179,7 @@ export default function PricingPageClient({
                     </p>
                     <div className="mx-auto h-px w-16 bg-white/10" />
                     <p className="text-[11px] uppercase tracking-[0.22em] text-white/30">
-                      {plan.featured
-                        ? isZh
-                          ? "适合 5-15 人团队"
-                          : "Best for 5-15 seats"
-                        : plan.name === "Launch"
-                          ? isZh
-                            ? "适合 3-8 人团队"
-                            : "Best for 3-8 seats"
-                          : isZh
-                            ? "按团队规模定制"
-                            : "Tailored to team size"}
+                      {plan.fitLabel}
                     </p>
                     <Link
                       href={AUTH_ROUTE}
@@ -326,9 +191,7 @@ export default function PricingPageClient({
                       )}
                     >
                       <span className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-80" />
-                      <span className="relative">
-                        {isZh ? "申请体验" : "Request access"}
-                      </span>
+                      <span className="relative">{pricing.planCta}</span>
                     </Link>
                   </div>
                 </GlareCard>

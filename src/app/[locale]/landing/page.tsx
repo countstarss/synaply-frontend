@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 
 import LandingPageClient from "@/components/marketing/pages/landing-page-client";
 import { JsonLd } from "@/components/seo/json-ld";
-import {
-  MARKETING_PAGE_PATHS,
-  getMarketingSeoContent,
-} from "@/lib/marketing-seo";
+import { MARKETING_PAGE_PATHS } from "@/lib/marketing-seo";
+import { getMarketingContent } from "@/lib/marketing-server";
 import {
   buildOrganizationStructuredData,
   buildPageMetadata,
@@ -23,7 +21,7 @@ export async function generateMetadata({
 }: LandingPageProps): Promise<Metadata> {
   const { locale: rawLocale } = await params;
   const locale = normalizeSiteLocale(rawLocale);
-  const seo = getMarketingSeoContent("landing", locale);
+  const seo = (await getMarketingContent(locale)).seo.pages.landing;
 
   return buildPageMetadata({
     locale,
@@ -37,7 +35,7 @@ export async function generateMetadata({
 export default async function LandingPage({ params }: LandingPageProps) {
   const { locale: rawLocale } = await params;
   const locale = normalizeSiteLocale(rawLocale);
-  const seo = getMarketingSeoContent("landing", locale);
+  const seo = (await getMarketingContent(locale)).seo.pages.landing;
 
   return (
     <>
@@ -55,7 +53,7 @@ export default async function LandingPage({ params }: LandingPageProps) {
           }),
         ]}
       />
-      <LandingPageClient locale={locale} />
+      <LandingPageClient />
     </>
   );
 }

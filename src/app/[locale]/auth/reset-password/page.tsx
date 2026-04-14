@@ -10,7 +10,7 @@ import {
   Loader2,
   Lock,
 } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 
 import {
   AuthCard,
@@ -18,7 +18,7 @@ import {
   AuthShell,
   AuthStatusCard,
 } from "@/components/auth/auth-shell";
-import { getSiteCopy } from "@/components/marketing/site-copy";
+import { useSiteCopy } from "@/components/marketing/site-copy";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,8 +39,7 @@ export default function ResetPasswordPage() {
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
   const [supabase] = useState(() => createClientComponentClient());
   const router = useRouter();
-  const locale = useLocale();
-  const copy = getSiteCopy(locale);
+  const copy = useSiteCopy();
   const t = useTranslations();
 
   useEffect(() => {

@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 
 import AboutPageClient from "@/components/marketing/pages/about-page-client";
 import { JsonLd } from "@/components/seo/json-ld";
-import {
-  MARKETING_PAGE_PATHS,
-  getMarketingSeoContent,
-} from "@/lib/marketing-seo";
+import { MARKETING_PAGE_PATHS } from "@/lib/marketing-seo";
+import { getMarketingContent } from "@/lib/marketing-server";
 import {
   buildAboutPageStructuredData,
   buildBreadcrumbStructuredData,
@@ -24,7 +22,7 @@ export async function generateMetadata({
 }: AboutPageProps): Promise<Metadata> {
   const { locale: rawLocale } = await params;
   const locale = normalizeSiteLocale(rawLocale);
-  const seo = getMarketingSeoContent("about", locale);
+  const seo = (await getMarketingContent(locale)).seo.pages.about;
 
   return buildPageMetadata({
     locale,
@@ -38,8 +36,9 @@ export async function generateMetadata({
 export default async function AboutPage({ params }: AboutPageProps) {
   const { locale: rawLocale } = await params;
   const locale = normalizeSiteLocale(rawLocale);
-  const seo = getMarketingSeoContent("about", locale);
-  const homeLabel = locale === "zh" ? "首页" : "Home";
+  const marketing = await getMarketingContent(locale);
+  const seo = marketing.seo.pages.about;
+  const homeLabel = marketing.seo.shared.homeLabel;
 
   return (
     <>
@@ -63,7 +62,7 @@ export default async function AboutPage({ params }: AboutPageProps) {
           }),
         ]}
       />
-      <AboutPageClient locale={locale} />
+      <AboutPageClient />
     </>
   );
 }

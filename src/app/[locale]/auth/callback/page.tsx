@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 
 import {
   AuthShell,
   AuthStatusCard,
 } from "@/components/auth/auth-shell";
-import { getSiteCopy } from "@/components/marketing/site-copy";
+import { useSiteCopy } from "@/components/marketing/site-copy";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
 import {
@@ -25,8 +25,7 @@ export default function AuthCallbackPage() {
   const [message, setMessage] = useState("");
   const [supabase] = useState(() => createClientComponentClient());
   const router = useRouter();
-  const locale = useLocale();
-  const copy = getSiteCopy(locale);
+  const copy = useSiteCopy();
   const t = useTranslations();
 
   useEffect(() => {

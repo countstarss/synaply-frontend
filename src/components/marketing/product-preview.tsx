@@ -7,6 +7,7 @@ import {
   MessageSquareText,
 } from "lucide-react";
 
+import { useMarketingCopy } from "@/components/marketing/site-copy";
 import { EncryptedText } from "@/components/ui/encrypted-text";
 import { cn } from "@/lib/utils";
 
@@ -15,37 +16,13 @@ interface ProductPreviewProps {
   compact?: boolean;
 }
 
-const issueRows = [
-  {
-    name: "Remote onboarding release",
-    owner: "ENG",
-    state: "In review",
-    doc: "Launch checklist",
-  },
-  {
-    name: "Workflow handoff update",
-    owner: "PM",
-    state: "Spec aligned",
-    doc: "Decision notes",
-  },
-  {
-    name: "Docs linked to execution",
-    owner: "OPS",
-    state: "Ready",
-    doc: "Operating guide",
-  },
-];
-
-const workflowSteps = [
-  "Product defines milestone and sequence",
-  "Design delivers reviewed handoff packet",
-  "Engineering ships with linked docs",
-];
-
 export function ProductPreview({
   className,
   compact = false,
 }: ProductPreviewProps) {
+  const { landing } = useMarketingCopy();
+  const preview = landing.productPreview;
+
   return (
     <div
       className={cn(
@@ -64,16 +41,18 @@ export function ProductPreview({
               <Layers3 className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-white">Synaply Workspace</p>
+              <p className="text-sm font-semibold text-white">
+                {preview.workspaceTitle}
+              </p>
               <p className="text-xs text-white/48">
-                Projects, issues, workflows, and docs in one operating context
+                {preview.workspaceSubtitle}
               </p>
             </div>
           </div>
 
           <div className="text-[11px] uppercase tracking-[0.22em] text-white/34">
             <EncryptedText
-              text="remote execution synced"
+              text={preview.syncStatus}
               encryptedClassName="text-white/18"
               revealedClassName="text-white/54"
               revealDelayMs={22}
@@ -92,27 +71,27 @@ export function ProductPreview({
             <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.24em] text-white/34">
-                  Current execution
+                  {preview.execution.eyebrow}
                 </p>
                 <h3 className="mt-1 text-sm font-semibold text-white">
-                  Cross-role release coordination
+                  {preview.execution.title}
                 </h3>
               </div>
               <div className="inline-flex items-center gap-2 border border-white/10 bg-white/[0.03] px-3 py-1 text-xs text-white/72">
                 <CircleDot className="h-3.5 w-3.5 text-emerald-200/70" />
-                Synced now
+                {preview.execution.status}
               </div>
             </div>
 
             <div className="grid grid-cols-[minmax(0,1.6fr)_76px_120px_132px] border-b border-white/8 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-white/28">
-              <span>Issue</span>
-              <span>Owner</span>
-              <span>State</span>
-              <span>Linked doc</span>
+              <span>{preview.execution.columns.issue}</span>
+              <span>{preview.execution.columns.owner}</span>
+              <span>{preview.execution.columns.state}</span>
+              <span>{preview.execution.columns.doc}</span>
             </div>
 
             <div className="divide-y divide-white/8">
-              {issueRows.map((row, index) => (
+              {preview.execution.rows.map((row, index) => (
                 <div
                   key={row.name}
                   className={cn(
@@ -123,7 +102,7 @@ export function ProductPreview({
                   <div className="pr-4">
                     <p className="font-medium text-white">{row.name}</p>
                     <p className="mt-1 text-xs text-white/42">
-                      Context stays attached as work moves.
+                      {preview.execution.rowHint}
                     </p>
                   </div>
                   <span className="text-xs font-medium tracking-[0.18em] text-white/60">
@@ -150,17 +129,17 @@ export function ProductPreview({
               <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
                 <div>
                   <p className="text-[11px] uppercase tracking-[0.24em] text-white/34">
-                    Workflow
+                    {preview.workflow.eyebrow}
                   </p>
                   <h4 className="mt-1 text-sm font-semibold text-white">
-                    Clear handoff path
+                    {preview.workflow.title}
                   </h4>
                 </div>
                 <GitBranch className="h-4 w-4 text-white/56" />
               </div>
 
               <div className="space-y-3 px-4 py-4">
-                {workflowSteps.map((item, index) => (
+                {preview.workflow.steps.map((item, index) => (
                   <div key={item} className="flex gap-3">
                     <div className="flex w-6 flex-col items-center">
                       <div className="flex h-6 w-6 items-center justify-center border border-white/10 bg-white/[0.04] text-[11px] text-white/72">
@@ -180,10 +159,10 @@ export function ProductPreview({
               <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
                 <div>
                   <p className="text-[11px] uppercase tracking-[0.24em] text-white/34">
-                    Context
+                    {preview.context.eyebrow}
                   </p>
                   <h4 className="mt-1 text-sm font-semibold text-white">
-                    Docs and updates stay attached
+                    {preview.context.title}
                   </h4>
                 </div>
                 <FileText className="h-4 w-4 text-white/56" />
@@ -192,10 +171,10 @@ export function ProductPreview({
               <div className="space-y-4 px-4 py-4">
                 <div className="border border-white/8 bg-[#0b0e14] p-4">
                   <p className="text-[11px] uppercase tracking-[0.2em] text-white/32">
-                    Doc snippet
+                    {preview.context.snippetEyebrow}
                   </p>
                   <p className="mt-2 text-sm leading-7 text-white/70">
-                    Launch checklist, reviewer notes, and release decisions stay visible beside the work instead of falling into chat history.
+                    {preview.context.snippetBody}
                   </p>
                 </div>
 
@@ -212,7 +191,7 @@ export function ProductPreview({
                   </div>
                   <div className="flex items-center gap-2">
                     <MessageSquareText className="h-4 w-4" />
-                    Shared by every role
+                    {preview.context.sharedBy}
                     <ArrowUpRight className="h-3.5 w-3.5" />
                   </div>
                 </div>

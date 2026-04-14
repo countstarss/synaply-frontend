@@ -19,7 +19,7 @@ import {
 } from "@/components/marketing/site-footer";
 import { ProductPreview } from "@/components/marketing/product-preview";
 import { SectionHeading } from "@/components/marketing/section-heading";
-import { getSiteCopy } from "@/components/marketing/site-copy";
+import { useMarketingCopy } from "@/components/marketing/site-copy";
 import {
   CardBody,
   CardContainer,
@@ -54,112 +54,27 @@ const revealUp = {
   transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const },
 };
 
-interface LandingPageClientProps {
-  locale: string;
-}
-
-export default function LandingPageClient({
-  locale,
-}: LandingPageClientProps) {
+export default function LandingPageClient() {
   const { user } = useAuth();
   const router = useRouter();
-  const copy = getSiteCopy(locale);
-  const isZh = locale === "zh";
-  const proofSignals = isZh
-    ? [
-        "远程团队协作结构",
-        "每一次交接都可见",
-        "文档始终贴着执行",
-        "团队共享同一节奏",
-      ]
-    : [
-        "Remote-first structure",
-        "Visible handoffs",
-        "Docs inside execution",
-        "One operating rhythm",
-      ];
+  const marketing = useMarketingCopy();
+  const copy = marketing.site;
+  const landing = marketing.landing;
+  const proofSignals = landing.proofSignals;
 
   const primaryHref = user ? DEFAULT_POST_LOGIN_ROUTE : AUTH_ROUTE;
   const primaryLabel = user ? copy.hero.returningCta : copy.hero.primaryCta;
-  const canvasWord = isZh ? "清晰推进" : "clarity in motion";
-  const coverWord = isZh ? "清晰" : "clarity";
-  const footerSections: FooterSection[] = isZh
-    ? [
-        {
-          title: "Pages",
-          items: [
-            { label: "首页", href: "/landing" },
-            { label: "能力概览", href: "#capabilities" },
-            { label: "协作流程", href: "#workflow" },
-            { label: "方案", href: "/pricing" },
-          ],
-        },
-        {
-          title: "Product",
-          items: [
-            { label: "Projects", href: AUTH_ROUTE },
-            { label: "Issues", href: AUTH_ROUTE },
-            { label: "Workflows", href: AUTH_ROUTE },
-            { label: "Docs", href: AUTH_ROUTE },
-          ],
-        },
-        {
-          title: "Company",
-          items: [
-            { label: "关于 Synaply", href: "/about" },
-            { label: "Remote-first" },
-            { label: "Structured execution" },
-            { label: "Clarity over noise" },
-          ],
-        },
-        {
-          title: "Access",
-          items: [
-            { label: user ? "进入工作区" : "开始体验", href: primaryHref },
-            { label: "登录", href: AUTH_ROUTE },
-            { label: "查看方案", href: "/pricing" },
-            { label: "了解我们", href: "/about" },
-          ],
-        },
-      ]
-    : [
-        {
-          title: "Pages",
-          items: [
-            { label: "Home", href: "/landing" },
-            { label: "Capabilities", href: "#capabilities" },
-            { label: "Workflow", href: "#workflow" },
-            { label: "Pricing", href: "/pricing" },
-          ],
-        },
-        {
-          title: "Product",
-          items: [
-            { label: "Projects", href: AUTH_ROUTE },
-            { label: "Issues", href: AUTH_ROUTE },
-            { label: "Workflows", href: AUTH_ROUTE },
-            { label: "Docs", href: AUTH_ROUTE },
-          ],
-        },
-        {
-          title: "Company",
-          items: [
-            { label: "About Synaply", href: "/about" },
-            { label: "Remote-first" },
-            { label: "Structured execution" },
-            { label: "Clarity over noise" },
-          ],
-        },
-        {
-          title: "Access",
-          items: [
-            { label: user ? "Enter workspace" : "Start with clarity", href: primaryHref },
-            { label: "Login", href: AUTH_ROUTE },
-            { label: "Explore pricing", href: "/pricing" },
-            { label: "About", href: "/about" },
-          ],
-        },
-      ];
+  const canvasWord = landing.canvasWord;
+  const footerSections: FooterSection[] = landing.footer.sections.map((section) =>
+    section.title === "Access"
+      ? {
+          ...section,
+          items: section.items.map((item, index) =>
+            index === 0 ? { ...item, label: primaryLabel, href: primaryHref } : item,
+          ),
+        }
+      : section,
+  );
 
   useEffect(() => {
     const hasAuthParams = Boolean(
@@ -238,11 +153,13 @@ export default function LandingPageClient({
             </div>
 
             <div className="inline-flex flex-wrap items-center gap-2 border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/62">
-              <span>{isZh ? "从" : "Start with"}</span>
+              <span>{landing.coverPrefix}</span>
               <Cover className="text-white">
-                <span className="font-medium tracking-[-0.03em]">{coverWord}</span>
+                <span className="font-medium tracking-[-0.03em]">
+                  {landing.coverWord}
+                </span>
               </Cover>
-              <span>{isZh ? "，再让流程自然流动。" : "and let the workflow carry the rest."}</span>
+              <span>{landing.coverSuffix}</span>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
@@ -272,9 +189,7 @@ export default function LandingPageClient({
                   translateZ={56}
                   className="absolute right-6 top-6 hidden border border-white/10 bg-[#090b10]/92 px-3 py-2 text-[11px] uppercase tracking-[0.22em] text-white/54 xl:block"
                 >
-                  {isZh
-                    ? "Projects / Issues / Workflows / Docs"
-                    : "Projects / Issues / Workflows / Docs"}
+                  {landing.preview.moduleStrip}
                 </CardItem>
                 <CardItem
                   translateX={-16}
@@ -283,9 +198,7 @@ export default function LandingPageClient({
                   className="absolute bottom-6 left-6 hidden border border-white/10 bg-[#090b10]/94 px-3 py-2 text-xs text-white/72 xl:flex xl:items-center xl:gap-2"
                 >
                   <span className="h-2 w-2 bg-emerald-200/70" />
-                  {isZh
-                    ? "远程协作始终保持同频"
-                    : "Remote execution stays aligned"}
+                  {landing.preview.status}
                 </CardItem>
               </CardBody>
             </CardContainer>
@@ -382,13 +295,9 @@ export default function LandingPageClient({
             />
             <div className="border border-white/10 bg-white/[0.03] p-5 text-sm leading-8 text-white/58">
               <p className="text-[11px] uppercase tracking-[0.24em] text-white/34">
-                {isZh ? "协作原则" : "Operating principle"}
+                {landing.workflowPrinciple.label}
               </p>
-              <p className="mt-3">
-                {isZh
-                  ? "当团队共享同一份上下文，推进就不再依赖提醒，而是依赖系统本身的秩序。"
-                  : "When the team shares one context, progress stops depending on reminders and starts depending on system design."}
-              </p>
+              <p className="mt-3">{landing.workflowPrinciple.text}</p>
             </div>
           </motion.div>
 
@@ -401,7 +310,7 @@ export default function LandingPageClient({
                       {step.step}
                     </div>
                     <div className="text-[11px] uppercase tracking-[0.24em] text-white/28">
-                      Structured flow
+                      {landing.structuredFlowLabel}
                     </div>
                   </div>
                   <div className="space-y-3">
@@ -424,12 +333,12 @@ export default function LandingPageClient({
         <motion.div {...revealUp}>
           <div className="border border-white/10 bg-white/[0.03] p-6 sm:p-8">
             <SectionHeading
-              eyebrow={copy.finalCta.title}
+              eyebrow={copy.finalCta.eyebrow}
               title={
                 <span>
-                  {isZh ? "用更清晰的方式推进每一个项目。" : "Build each project with"}{" "}
+                  {landing.final.titlePrefix}{" "}
                   <Cover className="text-white">
-                    <span>{isZh ? "秩序感" : "order"}</span>
+                    <span>{landing.final.titleFocus}</span>
                   </Cover>
                 </span>
               }
@@ -454,7 +363,7 @@ export default function LandingPageClient({
                 className="h-12 border border-white/10 px-6 text-sm font-medium text-white/74 hover:bg-white/[0.04] hover:text-white"
               >
                 <Link href="/pricing">
-                  {isZh ? "查看协作方案与定价" : "Explore pricing"}
+                  {landing.final.secondaryCta}
                 </Link>
               </Button>
             </div>
@@ -464,11 +373,7 @@ export default function LandingPageClient({
 
       <MarketingFooter
         description={copy.tagline}
-        copyright={
-          isZh
-            ? `© ${new Date().getFullYear()} Synaply. 保留所有权利。`
-            : `© ${new Date().getFullYear()} Synaply. All rights reserved.`
-        }
+        copyright={`© ${new Date().getFullYear()} Synaply. ${landing.footer.copyrightSuffix}`}
         sections={footerSections}
         watermark="Synaply"
       />

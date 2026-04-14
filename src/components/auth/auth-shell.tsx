@@ -4,10 +4,10 @@ import { ArrowLeft } from "lucide-react";
 import logo from "@/assets/icons/logo.png";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { MarketingBackground } from "@/components/marketing/marketing-background";
-import { type SiteCopy } from "@/components/marketing/site-copy";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
+import { type SiteCopy } from "@/lib/marketing-content";
 import { cn } from "@/lib/utils";
 
 interface AuthShellProps {
