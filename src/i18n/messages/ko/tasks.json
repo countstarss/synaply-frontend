@@ -70,13 +70,13 @@
       "open": "열려 있는"
     },
     "queue": {
-      "review": "검토 · {이름}",
+      "review": "검토 · {name}",
       "handoff": "핸드오프 · {name}",
-      "assignee": "소유자 · {이름}",
+      "assignee": "소유자 · {name}",
       "workflow": "워크플로 실행",
       "issue": "문제"
     },
-    "openIssueAria": "{제목} 열기",
+    "openIssueAria": "{title} 열기",
     "unassignedProject": "프로젝트 없음",
     "workspaceQueue": "작업공간 대기열",
     "due": "마감 {value}"

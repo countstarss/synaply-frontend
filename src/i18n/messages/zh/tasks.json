@@ -70,16 +70,16 @@
       "open": "打开"
     },
     "queue": {
-      "review": "审核· {名称}",
-      "handoff": "交接 · {名称}",
-      "assignee": "所有者 · {名称}",
+      "review": "审核 · {name}",
+      "handoff": "交接 · {name}",
+      "assignee": "所有者 · {name}",
       "workflow": "工作流程运行",
       "issue": "问题"
     },
-    "openIssueAria": "打开{标题}",
+    "openIssueAria": "打开{title}",
     "unassignedProject": "否项目",
     "workspaceQueue": "工作空间队列",
-    "due": "到期{值}"
+    "due": "到期{value}"
   },
   "actions": {
     "retry": "重试"

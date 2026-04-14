@@ -15,7 +15,7 @@
   },
   "header": {
     "title": "仕事の概要",
-    "activeCount": "アクティブなアイテム数",
+    "activeCount": "{count} 件のアクティブアイテム",
     "syncing": "同期中",
     "updatedAt": "更新日: {value}",
     "waitingFirstSync": "待機中最初の同期"
@@ -79,7 +79,7 @@
     "openIssueAria": "Open {title}",
     "unassignedProject": "プロジェクトなし",
     "workspaceQueue": "ワークスペースキュー",
-    "due": "期限{値}"
+    "due": "期限 {value}"
   },
   "actions": {
     "retry": "Retry"
