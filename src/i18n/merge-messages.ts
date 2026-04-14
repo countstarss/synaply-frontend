@@ -1,8 +1,12 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "fs";
 import { join, relative, sep } from "path";
 
-type MessageValue = string | number | boolean | null | MessageTree | MessageValue[];
-type MessageTree = Record<string, MessageValue>;
+type MessagePrimitive = string | number | boolean | null;
+type MessageValue = MessagePrimitive | MessageTree | MessageValue[];
+
+interface MessageTree {
+  [key: string]: MessageValue;
+}
 
 function isPlainObject(value: unknown): value is MessageTree {
   return typeof value === "object" && value !== null && !Array.isArray(value);

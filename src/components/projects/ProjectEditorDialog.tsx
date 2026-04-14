@@ -32,7 +32,11 @@ import {
   getProjectStatusMeta,
   getProjectVisibilityMeta,
 } from "@/components/projects/project-view-utils";
-import { ProjectRiskLevel, ProjectStatus } from "@/types/prisma";
+import {
+  ProjectRiskLevel,
+  ProjectStatus,
+  VisibilityType,
+} from "@/types/prisma";
 
 export interface ProjectEditorValues {
   name: string;
@@ -100,10 +104,10 @@ export function ProjectEditorDialog({
     ProjectRiskLevel.CRITICAL,
   ];
   const projectVisibilityOptions = [
-    "PRIVATE",
-    "TEAM_READONLY",
-    "TEAM_EDITABLE",
-    "PUBLIC",
+    VisibilityType.PRIVATE,
+    VisibilityType.TEAM_READONLY,
+    VisibilityType.TEAM_EDITABLE,
+    VisibilityType.PUBLIC,
   ] as const satisfies ProjectVisibility[];
 
   useEffect(() => {
