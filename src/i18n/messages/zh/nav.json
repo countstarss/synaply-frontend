@@ -1,11 +1,11 @@
 {
   "home": "首页",
-  "pricing": "方案",
+  "pricing": "定价",
   "about": "关于",
-  "dashboard": "仪表盘",
-  "login": "登录",
+  "dashboard": "仪表板",
+  "login": "Logi n",
   "register": "注册",
-  "logout": "退出",
-  "profile": "个人资料",
+  "logout": "注销",
+  "profile": "配置文件",
   "settings": "设置"
-} 
+}

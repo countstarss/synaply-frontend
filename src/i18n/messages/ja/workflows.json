@@ -1,0 +1,280 @@
+{
+  "shared": {
+    "untitled": "無題のワークフロー",
+    "currentUser": "現在のユーザー",
+    "unknownUser": "不明なユーザー",
+    "unassigned": "未割り当て",
+    "noRole": "役割なし",
+    "workflow": "ワークフロー"
+  },
+  "toasts": {
+    "workspaceIncomplete": "ワークスペース情報は次のとおりです不完全。",
+    "createSuccess": "ワークフローが作成されました。",
+    "createFailed": "ワークフローの作成に失敗しました。",
+    "saveDraftSuccess": "下書きが保存されました。",
+    "publishSuccess": "ワークフローが公開されました。",
+    "saveFailed": "ワークフローを保存できませんでした。",
+    "deleteSuccess": "ワークフロー削除されました。",
+    "deleteFailed": "ワークフローの削除に失敗しました。"
+  },
+  "page": {
+    "states": {
+      "loading": "ワークフローをロードしています...",
+      "loadFailedTitle": "ワークフローのロードに失敗しました",
+      "loadFailedDescription": "ワークフロー リストをロードできませんでした。"
+    },
+    "header": {
+      "title": "ワークフロー管理",
+      "description": "管理ワークフロー テンプレートを使用して、反復可能なコラボレーション フローを作成します。",
+      "create": "ワークフローの作成"
+    },
+    "stats": {
+      "total": "合計ワークフロー",
+      "draft": "ドラフト",
+      "published": "公開",
+      "active": "使用中"
+    },
+    "list": {
+      "title": "ワークフローリスト",
+      "showAll": "すべて表示",
+      "draftOnly": "ドラフトのみ",
+      "emptyTitle": "いいえワークフローはまだ",
+      "emptyDescription": "最初のワークフロー テンプレートを作成して、チームのコラボレーションを標準化します。",
+      "emptyAction": "ワークフローの作成"
+    },
+    "badges": {
+      "draft": "Draft",
+      "published": "Published"
+    },
+    "meta": {
+      "nodes": "Nodes: {count}",
+      "version": "Version: {value}",
+      "activeRuns": "アクティブな実行: {count}",
+      "totalRuns": "合計実行: {count}",
+      "creator": "作成者: {value}",
+      "createdAt": "作成者: {value}"
+    },
+    "actions": {
+      "viewEdit": "",
+      "settings": "設定の表示または編集",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "deleteDialog": {
+      "title": "ワークフローを削除しますか?",
+      "description": "「{name}」は削除後に復元できません。既存のワークフローの実行も影響を受ける可能性があります。",
+      "fallbackDescription": "この操作は元に戻すことができません。",
+      "confirm": "ワークフローを削除",
+      "deleting": "削除中..."
+    }
+  },
+  "setup": {
+    "title": "ワークフローを作成",
+    "nameLabel": "ワークフロー名 *",
+    "namePlaceholder": "ワークフローを入力してください名前...",
+    "descriptionLabel": "説明",
+    "descriptionPlaceholder": "ワークフローの説明を入力してください...",
+    "continue": "編集を続行",
+    "nameRequired": "ワークフロー名を入力してください。"
+  },
+  "toolbar": {
+    "draftBadge": "ドラフト",
+    "viewJson": "JSONの表示",
+    "viewJsonTitle": "ワークフローの表示JSON",
+    "export": "Export",
+    "exportTitle": "Export ワークフロー",
+    "import": "Import",
+    "importTitle": "ワークフローのインポート",
+    "saveDraft": "ドラフトの保存",
+    "saveDraftTitle": "ドラフトとして保存",
+    "publish": "ワークフローの公開",
+    "publishTitle": "ワークフローの公開",
+    "saveAndPublish": "保存して公開",
+    "saveAndPublishTitle": "保存してpublic",
+    "saving": "処理中...",
+    "back": "Back",
+    "backTitle": "リストに戻る"
+  },
+  "editor": {
+    "validation": {
+      "title": "ワークフロー検証に失敗しました",
+      "close": "Close",
+      "summary": "ワークフロー検証に失敗しました: {errors}",
+      "atLeastOneNode": "Aワークフローには少なくとも 1 つのノードが必要です。",
+      "missingAssignees": "{count} 個のノードにまだ所有者が割り当てられていません。",
+      "missingStart": "ワークフローには少なくとも 1 つの開始ノードが必要です。",
+      "missingEnd": "ワークフローには少なくとも 1 つの終了ノードが必要です。",
+      "isolatedNodes": "{count} 個の分離されたノードをまだ接続する必要があります。削除されました。"
+    },
+    "jsonModal": {
+      "title": "ワークフロー JSON",
+      "close": "閉じる"
+    }
+  },
+  "json": {
+    "exportSuccessTitle": "エクスポート完了",
+    "exportSuccessDescription": "ワークフローは JSON ファイルとしてエクスポートされました。",
+    "exportFailedTitle": "エクスポートに失敗しました",
+    "exportFailedDescription": "ワークフローのエクスポート中にエラーが発生しました。",
+    "importSuccessTitle": "インポート完了",
+    "importSuccessDescription": "ワークフロー「{name}」はインポートされました。",
+    "importFailedTitle": "インポートに失敗しました",
+    "importFailedDescription": "ファイルに有効なワークフロー JSON が含まれていません。",
+    "invalidFormat": "無効なワークフロー JSON 形式です。"
+  },
+  "settingsModal": {
+    "title": "ワークフロー設定",
+    "nameLabel": "ワークフロー名",
+    "namePlaceholder": "ワークフローを入力してくださいname",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "ワークフローの説明(オプション)",
+    "visibilityLabel": "Visibility",
+    "statusLabel": "Status",
+    "stepsLabel": "Steps",
+    "versionLabel": "Version",
+    "statuses": {
+      "draft": "Draft",
+      "published": "Published"
+    },
+    "visibility": {
+      "private": "プライベート",
+      "public": "パブリック",
+      "teamReadonly": "チーム読み取り専用",
+      "teamEditable": "チーム編集可能"
+    },
+    "actions": {
+      "publish": "ワークフローの公開",
+      "save": "保存"
+    },
+    "toasts": {
+      "saved": "ワークフロー設定保存されました。",
+      "saveFailed": "ワークフロー設定の保存に失敗しました。",
+      "publishNeedSteps": "公開前にワークフロー ステップを追加してください。",
+      "published": "ワークフローが公開されました。",
+      "publishFailed": "ワークフローの公開に失敗しました。"
+    }
+  },
+  "nodeDetails": {
+    "title": "Node詳細",
+    "nodeFallback": "Node",
+    "assigneeLabel": "Owner",
+    "assigneePlaceholder": "所有者を言及するには @ を入力",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "このノードについて説明します...",
+    "estimatedHoursLabel": "推定時間",
+    "estimatedHoursPlaceholder": "例: 8",
+    "estimatedHoursUnit": "推定: {値}h"
+  },
+  "node": {
+    "status": "ステータス: {ステータス}",
+    "hasDetails": "詳細あり"
+  },
+  "nodePanel": {
+    "expand": "ノード パネルを展開",
+    "collapse": "ノード パネルを折りたたむ",
+    "title": "ノード タイプ",
+    "manage": "ノード タイプを管理",
+    "defaults": {
+      "product": "製品マネージャー",
+      "ui": "UI デザイナー",
+      "frontend": "フロントエンド エンジニア",
+      "backend": "バックエンド エンジニア",
+      "test": "QA エンジニア",
+      "devops": "DevOps"
+    }
+  },
+  "nodeSettings": {
+    "title": "ノード タイプの管理",
+    "existingNodes": "既存ノード",
+    "noCustomNodes": "カスタム ノードはまだありません。",
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "import": "Import",
+      "export": "Export",
+      "sync": "バックエンドに同期",
+      "cancelEdit": "編集をキャンセル",
+      "saveEdit": "変更を保存",
+      "add": "ノードを追加"
+    },
+    "form": {
+      "createTitle": "ノードを作成",
+      "editTitle": "ノードを編集",
+      "nameLabel": "Name *",
+      "namePlaceholder": "例: プロダクト マネージャー",
+      "roleLabel": "Role *",
+      "rolePlaceholder": "例: product",
+      "iconLabel": "Icon * (絵文字または画像 URL)",
+      "iconPlaceholder": "例: 📋 または https://example.com/icon.png",
+      "colorLabel": "Color *",
+      "ownerLabel": "Owner *",
+      "ownerLoading": "チーム メンバーを読み込み中...",
+      "ownerPlaceholder": "所有者を選択",
+      "ownerMissing": "チーム メンバーが見つかりません",
+      "tagsLabel": "タグ (カンマ区切り)",
+      "tagsPlaceholder": "例:frontend,development"
+    },
+    "deleteDialog": {
+      "title": "ノードの削除type?",
+      "description": "「{name}」は削除されます。既存のローカル ワークフロー テンプレートは、後で確認する必要がある場合があります。",
+      "fallbackName": "このノード",
+      "confirm": "ノードを削除します"
+    },
+    "toasts": {
+      "requiredFields": "すべての必須フィールドに入力してください。",
+      "syncTodo": "バックエンドへの同期はまだ実装されていません。",
+      "importTodo": "ノードのインポートはまだ実装されていません。",
+      "exportTodo": "ノードのエクスポートはまだ実装されていません。"
+    }
+  },
+  "mention": {
+    "placeholder": "@ を入力してください所有者を選択してください...",
+    "loading": "読み込み中...",
+    "noMatching": "一致するメンバーが見つかりません",
+    "noMembers": "利用可能なチーム メンバーがありません",
+    "createCustom": "カスタム所有者を作成します: {value}"
+  },
+  "teamMemberSelect": {
+    "placeholder": "所有者を選択してください...",
+    "searchPlaceholder": "検索メンバー...",
+    "noMatching": "一致するメンバーが見つかりません",
+    "customLabel": "追加: {値}",
+    "customHint": "カスタム所有者"
+  },
+  "colors": {
+    "blue": "Blue",
+    "purple": "Purple",
+    "green": "Green",
+    "orange": "Orange",
+    "red": "Red",
+    "gray": "Gray",
+    "cyan": "Cyan",
+    "pink": "Pink",
+    "yellow": "Yellow",
+    "selected": "選択: {value}"
+  },
+  "runtime": {
+    "onlyCurrentOwner": "現在のノード所有者のみが実行できますthis.",
+    "statusSyncFailed": "ノード ステータスの同期に失敗しました。",
+    "advanceFailed": "ワークフローの実行を進めることができませんでした。",
+    "revertFailed": "ワークフローの実行を元に戻すことができませんでした。"
+  },
+  "instance": {
+    "title": "ワークフロー インスタンスの作成",
+    "steps": "{count} ステップ含まれている",
+    "fields": {
+      "title": "問題のタイトル *",
+      "titlePlaceholder": "問題のタイトルを入力してください...",
+      "description": "説明",
+      "descriptionPlaceholder": "詳細な説明を入力してください...",
+      "dueDate": "期限"
+    },
+    "validation": {
+      "titleRequired": "を入力してくださいtitle."
+    },
+    "actions": {
+      "creating": "作成中...",
+      "submit": "ワークフロー インスタンスの作成"
+    }
+  }
+}

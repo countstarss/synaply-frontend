@@ -1,0 +1,277 @@
+{
+  "status": {
+    "planning": "计划",
+    "active": "活动",
+    "blocked": "阻止",
+    "shipping": "运输",
+    "done": "完成",
+    "archived": "已存档"
+  },
+  "risk": {
+    "low": "低风险",
+    "medium": "中风险",
+    "high": "高风险",
+    "critical": "严重风险"
+  },
+  "visibility": {
+    "private": {
+      "label": "私人",
+      "description": "最适合个人工作空间。资源级权限尚未通过可见性严格执行。"
+    },
+    "teamReadonly": {
+      "label": "团队只读",
+      "description": "团队成员可以查看此项目。写访问权限仍然由所有者和管理员角色控制。"
+    },
+    "teamEditable": {
+      "label": "团队可编辑",
+      "description": "最适合协作项目。后端写入权限仍由工作区成员角色确定。"
+    },
+    "public": {
+      "label": "公共",
+      "description": "用于共享上下文和状态的面向公众的项目视图。"
+    }
+  },
+  "overview": {
+    "title": {
+      "personal": "我的项目",
+      "team": "团队项目"
+    },
+    "summary": "{total}个项目总数，{链接}有活跃问题， {empty} 没有活跃问题，{unassigned} 没有项目的活跃问题",
+    "create": "创建项目",
+    "searchPlaceholder": "按项目名称、简介、阶段、所有者或可见性搜索...",
+    "results": "{count} 个结果",
+    "recentlyUpdated": "最近先更新",
+    "emptyTitle": "没有匹配项目",
+    "emptyDescription": "尝试不同的关键字，或创建一个新项目。",
+    "missingBrief": "该项目还没有协作简介。",
+    "activeIssues": "{count} 个活跃问题"
+  },
+  "detail": {
+    "relativeTime": {
+      "justNow": "现在",
+      "minutesAgo": "{count} 分钟前",
+      "hoursAgo": "{count}小时前",
+      "daysAgo": "{count}天前"
+    },
+    "issueState": {
+      "blocked": "已阻止",
+      "done": "完成",
+      "inProgress": "进行中",
+      "uncategorized": "未分类"
+    },
+    "assignee": {
+      "assigned": "已分配",
+      "pending": "需要受让人"
+    },
+    "attention": {
+      "blockedTitle": "已屏蔽的问题需要注意",
+      "blockedDescription": "目前已屏蔽{count}个问题。",
+      "overdueTitle": "部分工作正在处理过期",
+      "overdueDescription": "{count} 个问题已超过截止日期。",
+      "staleSyncTitle": "同步节奏变得陈旧",
+      "staleSyncDescription": "自上次同步更新以来已经 {count} 天了。",
+      "healthyTitle": "项目状态看起来稳定",
+      "healthyDescription": "没有强烈的延迟或阻塞信号现在."
+    },
+    "summary": {
+      "missingIssue": "问题详细信息仍在同步中。请稍后重试。",
+      "docCreateAuthRequired": "当前用户信息不可用，因此尚无法创建项目文档。",
+      "docCreated": "项目文档已创建。",
+      "docCreateFailed": "无法创建项目文档。",
+      "missingBrief": "该项目尚无单行摘要。添加目标、交付方向和成功标准。",
+      "phase": "阶段",
+      "owner": "所有者",
+      "activeIssues": "{count} 个活跃问题",
+      "workflowCount": "{count} 个工作流程",
+      "docsCount": "{count} 文档",
+      "updatedAt": "已更新{value}",
+      "edit": "编辑",
+      "delete": "删除",
+      "completion": "交付进度",
+      "completionHint": "{completed}完成 · {total} active",
+      "riskAndDelay": "阻止者和延迟",
+      "riskAndDelayHint": "{blocked} 阻止 · {overdue} 过期",
+      "executionSurface": "执行表面",
+      "executionSurfaceHint": "{workflowCount} 链接的工作流程 · {highPriority} 高优先级",
+      "recentSync": "最近同步",
+      "notRecorded": "未记录",
+      "recentSyncHint": "在审核或异步同步后更新此内容检查点.",
+      "workspaceTitle": "项目工作区",
+      "createIssue": "创建问题",
+      "createDoc": "创建文档",
+      "workspaceCards": {
+        "issues": "活跃问题",
+        "docs": "文档",
+        "workflow": "工作流程",
+        "sync": "同步"
+      },
+      "risksTitle": "风险",
+      "blockedIssuesTitle": "阻止问题",
+      "blockedIssuesEmpty": "当前未检测到被阻止的问题。"
+    }
+  },
+  "subviews": {
+    "relativeTime": {
+      "justNow": "刚刚",
+      "minutesAgo": "{count} 分钟前",
+      "hoursAgo": "{count} 小时前",
+      "daysAgo": "{count}天前"
+    },
+    "issues": {
+      "title": "问题",
+      "subtitle": "保持项目执行层分离，同时具有列表和面板视图。",
+      "openIssue": "打开问题",
+      "cancelIssue": "取消问题",
+      "summary": "{active}活动项目issues{suffix}",
+      "hiddenSuffix": " · {count} 已完成或取消{hidden}",
+      "hiddenLabel": "hidden",
+      "onlyCreatorCanCancel": "只有创建者可以取消此问题。",
+      "cancelled": "问题已取消。现在默认隐藏在列表视图中。",
+      "cancelFailed": "无法取消该问题。请重试。",
+      "saveBoardOrder": "保存主板订单",
+      "boardOrderSaved": "已保存主板订单",
+      "loading": "正在加载项目问题...",
+      "emptyTitle": "该项目尚无任何活跃问题",
+      "emptyDescription": "列表视图默认隐藏已完成和已取消的问题。切换到面板视图以查看每个状态。",
+      "createIssue": "创建项目问题",
+      "cancelDialog": {
+        "title": "取消此问题？",
+        "description": "默认情况下该问题将移至已取消并隐藏在列表视图中。该记录保持不变，相关受让人仍会看到它。",
+        "keep": "保留它",
+        "confirm": "确认取消",
+        "pending": "取消..."
+      }
+    },
+    "docs": {
+      "missingUser": "当前用户信息不可用，因此尚无法加载项目文档。"
+    },
+    "workflow": {
+      "title": "工作流",
+      "subtitle": "聚合实际连接到该项目的工作流。",
+      "openCenter": "打开工作流中心",
+      "empty": "尚无工作流问题链接到该项目。将工作流程问题添加到此项目后，它将自动显示在此处。",
+      "linkedIssues": "{count} 个链接问题 · {status}",
+      "steps": "{count}步骤",
+      "version": "版本",
+      "visibility": "可见性",
+      "notAvailable": "不适用"
+    },
+    "sync": {
+      "title": "项目同步",
+      "subtitle": "在专用表面中保留异步同步跟踪和最近的更改。",
+      "updateSync": "更新同步时间",
+      "recentSync": "最近同步",
+      "activityCount": "活动计数",
+      "updatedAt": "项目已更新",
+      "notRecorded": "未记录",
+      "empty": "项目活动尚未建立。问题更新和活动记录将自动累积在此处。",
+      "teamMember": "团队成员"
+    }
+  },
+  "kanban": {
+    "issueCount": "{count} 个问题",
+    "reorderColumn": "对 {label} 列重新排序",
+    "dragColumn": "拖动以重新排序列",
+    "dropIssue": "将问题拖入此列",
+    "workflow": "工作流程",
+    "dragIssue": "拖动{标题}",
+    "dragIssueCategory": "拖动以更改问题类别",
+    "openIssue": "打开问题",
+    "cancelIssue": "取消问题"
+  },
+  "page": {
+    "selectWorkspaceTitle": "无工作区selected",
+    "selectWorkspaceDescription": "选择一个工作区，项目模块将自动将数据范围扩展到该工作区。",
+    "loading": "正在加载项目...",
+    "loadFailedTitle": "无法加载项目",
+    "loadFailedDescription": "我们无法获取项目列表。",
+    "emptyState": {
+      "title": "没有项目Yet",
+      "description": "项目模块现已连接到实时后端。先创建一个项目容器，然后将相关工作附加到其中。",
+      "createAction": "创建第一个项目",
+      "readOnlyHint": "只有 OWNER 和 ADMIN 成员可以在当前团队工作空间中创建、编辑或删除项目。"
+    }
+  },
+  "owner": {
+    "missing": "未分配所有者",
+    "unnamedMember": "未命名成员"
+  },
+  "editor": {
+    "title": {
+      "create": "创建项目",
+      "edit": "编辑项目"
+    },
+    "subtitle": {
+      "create": "将项目转变为协作上下文，而不仅仅是一个问题容器.",
+      "edit": "在此处维护概要、阶段、风险级别、所有者和其他协作语义。"
+    },
+    "fields": {
+      "name": "项目名称",
+      "namePlaceholder": "例如：Q2 Launch，AI Search Revamp",
+      "brief": "单行概要",
+      "briefPlaceholder": "解释此项目存在的原因以及该项目的用途团队正在向交付迈进。",
+      "description": "项目背景/目标",
+      "descriptionPlaceholder": "添加范围、成功标准和关键背景，以便团队能够了解项目背景。",
+      "status": "当前状态",
+      "statusPlaceholder": "选择项目状态",
+      "phase": "当前阶段",
+      "phasePlaceholder": "例如：启动、设计审查、构建、启动",
+      "risk": "风险级别",
+      "riskPlaceholder": "选择风险级别",
+      "owner": "项目所有者",
+      "ownerPlaceholder": "选择一个所有者",
+      "visibility": "可见性",
+      "visibilityPlaceholder": "选择项目可见性"
+    },
+    "actions": {
+      "cancel": "取消",
+      "creating": "创建...",
+      "saving": "保存...",
+      "create": "创建项目",
+      "save": "保存更改"
+    },
+    "statusDescriptions": {
+      "planning": "目标和范围仍在收敛。现在是添加摘要并定义成功标准的好时机。",
+      "active": "该项目已经有了执行节奏，可以作为主要协作表面。",
+      "blocked": "有一个关键的阻止者，团队应该确定谁将尽快解除阻止。",
+      "shipping": "该工作正在发布、接受或启动总结.",
+      "done": "目标已经达到，可以作为历史上下文。",
+      "archived": "项目已经离开日常协作流程，但上下文仍应保留。"
+    },
+    "riskDescriptions": {
+      "low": "节奏看起来稳定，尚未出现明显的交接或交付风险。",
+      "medium": "项目页面上已经存在值得跟踪的等待或不确定因素。",
+      "high": "交付、审核或协调存在明显风险，需要注意。",
+      "critical": "该项目已受到重大影响，需要立即干预。"
+    }
+  },
+  "deleteDialog": {
+    "title": "删除项目",
+    "description": "删除此项目将永久删除其中的所有问题。该操作不可撤消。",
+    "aboutToDelete": "即将删除",
+    "missingProject": "未选择项目",
+    "missingProjectDescription": "该项目尚无描述。",
+    "countingIssues": "将级联删除的问题数...",
+    "issueCount": "{count}个相关问题将与此一起删除项目.",
+    "confirmLabel": "输入项目名称确认删除",
+    "confirmPlaceholder": "输入项目名称",
+    "confirmHint": "仅当输入与项目名称完全匹配时才启用删除.",
+    "deleting": "正在删除...",
+    "confirmDelete": "确认删除"
+  },
+  "toasts": {
+    "workspaceRequired": "请先选择一个工作区.",
+    "created": "项目已创建.",
+    "updated": "项目已更新.",
+    "saveFailed": "无法保存项目.",
+    "deleted": "与{count}个相关问题一起删除的项目.",
+    "deleteFailed": "删除失败项目.",
+    "invalidIssueRoute": "当前项目路径无效，因此无法打开此问题。",
+    "syncUpdated": "项目同步时间已更新。",
+    "syncFailed": "项目同步时间更新失败。",
+    "boardOrderMissingWorkspace": "当前工作空间无效，因此无法保存板卡顺序。",
+    "boardOrderUnchanged": "板卡顺序未更改。",
+    "boardOrderSaveFailed": "无法保存板顺序。请重试。",
+    "boardOrderSaved": "董事会订单已更新。"
+  }
+}

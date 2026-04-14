@@ -1,0 +1,101 @@
+{
+  "nav": {
+    "docs": "문서",
+    "inbox": "받은편지함",
+    "intelligence": "지능",
+    "issues": "문제",
+    "myWork": "내 작업",
+    "projects": "프로젝트",
+    "workflows": "워크플로우"
+  },
+  "sidebar": {
+    "backToMain": "뒤쪽에",
+    "createTeam": "새 팀 만들기",
+    "sections": {
+      "administration": "관리",
+      "general": "일반적인",
+      "team": "팀"
+    },
+    "brand": {
+      "fallbackWorkspaceName": "내 작업 공간",
+      "loadFailed": "작업공간을 로드하지 못했습니다.",
+      "personal": "개인 작업 공간",
+      "team": "팀 작업 공간",
+      "loadFailedDescription": "작업공간 데이터를 로드할 수 없습니다. 프런트엔드 백엔드 URL 구성을 확인하거나 잠시 후 다시 시도하세요.",
+      "retry": "다시 해 보다",
+      "memberCount": "{count}명의 회원",
+      "inviteMember": "새 회원 초대",
+      "emailFallback": "사용자 이메일",
+      "workspaceListFailed": "작업공간 목록을 로드하지 못했습니다.",
+      "workspaceEmpty": "아직 이 계정에 사용 가능한 작업공간이 없습니다.",
+      "createWorkspace": "새 작업공간 만들기",
+      "settings": "설정",
+      "logout": "로그아웃"
+    },
+    "footer": {
+      "title": "인사이트랩",
+      "description": "통찰력이 행동을 촉발하는 곳."
+    },
+    "utils": {
+      "title": "유틸리티",
+      "actions": {
+        "edit": "편집하다",
+        "delete": "삭제",
+        "addShortcut": "바로가기 추가"
+      },
+      "dialog": {
+        "editTitle": "바로가기 수정",
+        "editDescription": "표시된 라벨과 인앱 경로를 업데이트합니다.",
+        "createTitle": "바로가기 추가",
+        "createDescription": "사이드바에서 빠르게 이동할 수 있도록 레이블과 인앱 경로를 입력하세요.",
+        "save": "구하다",
+        "add": "추가하다"
+      },
+      "fields": {
+        "label": "디스플레이 라벨",
+        "labelPlaceholder": "예: 차단된 문제",
+        "route": "노선",
+        "routePlaceholder": "예: /projects 또는 /issues?state=blocked"
+      },
+      "validation": {
+        "routeRequired": "고정하려면 인앱 경로를 입력하세요.",
+        "routeInternalOnly": "여기서는 인앱 경로만 허용됩니다(예: /projects).",
+        "duplicateRoute": "이 경로는 이미 바로가기 목록에 있습니다.",
+        "maxReached": "바로가기는 최대 5개까지 추가할 수 있습니다."
+      }
+    }
+  },
+  "settingsNav": {
+    "aiExecution": "AI 실행",
+    "appearance": "모습",
+    "application": "애플리케이션",
+    "billing": "청구",
+    "members": "회원",
+    "notifications": "알림",
+    "profile": "윤곽",
+    "security": "보안",
+    "teams": "팀",
+    "workspace": "작업공간"
+  },
+  "infobar": {
+    "menu": "메뉴",
+    "showSidebar": "사이드바 표시",
+    "hideSidebar": "사이드바 숨기기"
+  },
+  "search": {
+    "placeholder": "명령을 입력하거나 검색하세요...",
+    "empty": "검색된 결과가 없습니다.",
+    "groups": {
+      "suggestions": "제안",
+      "settings": "설정"
+    },
+    "items": {
+      "calendar": "달력",
+      "searchEmoji": "이모티콘 검색",
+      "calculator": "계산자",
+      "profile": "윤곽",
+      "billing": "청구",
+      "settings": "설정"
+    }
+  }
+}

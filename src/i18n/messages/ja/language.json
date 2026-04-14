@@ -1,8 +1,9 @@
 {
-  "switch": "言語を切り替え",
+  "label": "Lang",
+  "switch": "言語を切り替える",
   "current": "現在の言語",
   "english": "English",
   "chinese": "中文",
   "korean": "한국어",
   "japanese": "日本語"
-} 
+}

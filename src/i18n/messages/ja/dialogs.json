@@ -1,0 +1,38 @@
+{
+  "createTeam": {
+    "title": "チームの作成",
+    "description": "チームメイトと共同作業するための新しいチームを作成します。専用のワークスペースが自動的に作成されます。",
+    "nameLabel": "チーム名",
+    "namePlaceholder": "チーム名を入力してください",
+    "validation": {
+      "nameRequired": "チーム名を入力してください。"
+    },
+    "toasts": {
+      "created": "チームが作成されました。",
+      "createFailed": "チームの作成に失敗しました。もう一度お試しください。"
+    },
+    "actions": {
+      "creating": "作成中...",
+      "submit": "チームを作成"
+    }
+  },
+  "inviteMember": {
+    "title": "新しいメンバーを招待",
+    "description": "新しいメンバーを「{teamName}」に招待します。",
+    "emailLabel": "メール アドレス",
+    "emailPlaceholder": "メールを入力してください招待するには",
+    "emailHint": "このアドレスに招待リンクを送信します。",
+    "validation": {
+      "emailRequired": "メール アドレスを入力してください。",
+      "emailInvalid": "有効なメール アドレスを入力してください。"
+    },
+    "toasts": {
+      "sent": "{email} を {teamName} に招待しました。",
+      "sendFailed": "メンバーの招待中に問題が発生しました。もう一度お試しください。"
+    },
+    "actions": {
+      "sending": "招待状を送信中...",
+      "submit": "招待状を送信"
+    }
+  }
+}

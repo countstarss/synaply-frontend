@@ -1,11 +1,11 @@
 {
   "home": "ホーム",
-  "pricing": "料金",
+  "pricing": "価格",
   "about": "概要",
   "dashboard": "ダッシュボード",
-  "login": "ログイン",
-  "register": "登録",
-  "logout": "ログアウト",
-  "profile": "プロフィール",
-  "settings": "設定"
-} 
+  "login": "ロジn",
+  "register": "Register",
+  "logout": "Logout",
+  "profile": "Profile",
+  "settings": "Settings"
+}

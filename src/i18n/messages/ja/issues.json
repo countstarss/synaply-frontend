@@ -1,0 +1,402 @@
+{
+  "priority": {
+    "default": "デフォルトの優先順位を使用します (通常)",
+    "low": "低い",
+    "normal": "普通",
+    "high": "高い",
+    "urgent": "緊急"
+  },
+  "status": {
+    "todo": "やること",
+    "inProgress": "進行中",
+    "almostDone": "Almost完了",
+    "blocked": "ブロック済み",
+    "done": "完了"
+  },
+  "stateCategory": {
+    "backlog": "バックログ",
+    "todo": "やること",
+    "inProgress": "In進行状況",
+    "done": "完了",
+    "canceled": "キャンセル"
+  },
+  "visibility": {
+    "private": "私のみ",
+    "teamReadonly": "チーム読み取り専用",
+    "teamEditable": "チーム編集可能",
+    "public": "公開"
+  },
+  "createModal": {
+    "title": "作成問題",
+    "workspace": {
+      "personal": "個人ワークスペース",
+      "team": "チームワークスペース"
+    },
+    "currentProject": "現在のプロジェクト: {name}",
+    "type": {
+      "label": "問題タイプ",
+      "normal": "標準問題",
+      "workflow": "ワークフローissue"
+    },
+    "workflow": {
+      "label": "ワークフロー",
+      "placeholder": "ワークフローを選択",
+      "missingDescription": "説明なし"
+    },
+    "project": {
+      "label": "プロジェクト",
+      "placeholder": "プロジェクトを選択",
+      "none": "いいえプロジェクト"
+    },
+    "fields": {
+      "title": "タイトル",
+      "titlePlaceholder": "作品を明確に説明してください",
+      "description": "説明",
+      "descriptionPlaceholder": "コンテキスト、承認基準、またはフォローアップメモを追加",
+      "dueDatePlaceholder": "期日を選択",
+      "clearDate": "日付をクリア",
+      "priorityPlaceholder": "デフォルトの優先度を使用",
+      "statePlaceholder": "状態を選択",
+      "visibilityPlaceholder": "可視性を選択",
+      "directAssignee": "直接assignee",
+      "directAssigneePlaceholder": "担当者を選択してください",
+      "additionalAssignees": "追加の担当者"
+    },
+    "assignee": {
+      "none": "直接担当者なし",
+      "currentUser": "私に割り当ててください"
+    },
+    "actions": {
+      "creating": "作成中...",
+      "submit": "問題を作成"
+    }
+  },
+  "toasts": {
+    "titleRequired": "お願いします問題のタイトルを入力してください。",
+    "workflowRequired": "ワークフロー テンプレートを選択してください。",
+    "authRequired": "認証を検証できませんでした。もう一度サインインしてください。",
+    "memberSyncPending": "メンバー ID をまだ同期しています。しばらく待ってから再試行してください。",
+    "createFailed": "問題の作成に失敗しました。もう一度お試しください。",
+    "boardOrderMissingWorkspace": "現在のワークスペースが無効であるため、ボードの順序を保存できません。",
+    "boardOrderUnchanged": "ボードの順序は変更されていません。",
+    "boardOrderSaveFailed": "ボードの順序を保存できませんでした。もう一度お試しください。",
+    "boardOrderSaved": "ボードの順序が更新されました。",
+    "updateFailed": "問題の状態を更新できませんでした。もう一度お試しください。"
+  },
+  "page": {
+    "type": {
+      "normal": "標準",
+      "workflow": "ワークフロー"
+    },
+    "summary": {
+      "withState": "現在、「{state}」で {count} 件の問題を表示しています。",
+      "activeOnly": "現在、アクティブな問題が {count} 件あります。",
+      "mixed": "現在、アクティブな {active} 件を含む、{total} 件の問題を表示しています。のもの。",
+      "mySuffix": " あなたが所有、参加、または作成した問題のみが含まれます。",
+      "closedSuffix": " あと {count} 件が完了またはキャンセルされました。",
+      "listViewHint": " リスト ビューでは、デフォルトで完了およびキャンセルされた問題が非表示になります。すべての状態を表示するには、ボード ビューに切り替えます。"
+    },
+    "filters": {
+      "searchPlaceholder": "タイトル、プロジェクト、担当者、または課題キーで検索します...",
+      "projectAria": "プロジェクトでフィルター",
+      "stateAria": "状態でフィルター",
+      "priorityAria": "優先度でフィルター",
+      "typeAria": "タイプでフィルターする",
+      "allProjects": "すべてのプロジェクト",
+      "unassignedProject": "プロジェクトなし",
+      "allStates": "すべての状態",
+      "allPriorities": "すべての優先度",
+      "allTypes": "すべてのタイプ",
+      "clear": "フィルターをクリア"
+    },
+    "tabs": {
+      "all": "すべて{count}",
+      "my": "私のもの {count}"
+    },
+    "actions": {
+      "create": "銘柄の作成",
+      "saveBoardOrder": "板の注文を保存",
+      "savedOrder": "板の注文を保存",
+      "openIssue": "問題を開く",
+      "cancelIssue": "問題をキャンセル",
+      "viewOrEdit": "表示またはedit"
+    },
+    "viewMode": {
+      "list": "リスト",
+      "board": "ボード"
+    },
+    "states": {
+      "unassigned": "未割り当て",
+      "assignee": "譲受人",
+      "workflow": "ワークフロー"
+    },
+    "onlyCreatorCanCancel": "作成者のみがこの問題をキャンセルできます。",
+    "cancelled": "問題はキャンセルされました。デフォルトではリスト ビューで非表示になりました。",
+    "cancelFailed": "問題をキャンセルできませんでした。もう一度お試しください。",
+    "loading": "問題を読み込み中...",
+    "empty": {
+      "none": "まだ問題はありません",
+      "filtered": "一致する問題が見つかりません",
+      "createFirst": "最初の問題を作成"
+    },
+    "cancelDialog": {
+      "title": "この問題をキャンセルしますか?",
+      "description": "問題はキャンセル済みに移動され、非表示になりますデフォルトではリストビュー。レコードはそのまま残り、関連する担当者には引き続き表示されます。",
+      "keep": "保持",
+      "confirm": "キャンセルの確認",
+      "pending": "キャンセル中..."
+    }
+  },
+  "tabs": {
+    "discussion": {
+      "title": "議論",
+      "empty": "コメントはまだありません。最初にここにコンテキストを追加してください。",
+      "placeholder": "コメントを追加... チームメイトに言及するには @ を使用してください",
+      "noMembers": "一致するチーム メンバーが見つかりません",
+      "mentionHint": "チームメイトに言及するには @ を使用してください",
+      "send": "送信"
+    },
+    "history": {
+      "empty": "アクティビティはまだ記録されていません。"
+    },
+    "records": {
+      "stepLabel": "{name} (ステップ {step})",
+      "unknownMember": "不明なメンバー",
+      "empty": "出力は記録されていませんまだです。"
+    }
+  },
+  "nodeStatus": {
+    "title": "ノード ステータス",
+    "description": "ステータス ドットをクリックして進行状況を更新し、準備ができたら次のステップに進みます。",
+    "owner": "所有者: {name}",
+    "unassigned": "未割り当て",
+    "previous": "前の",
+    "next": "次",
+    "cannotEdit": "現在の所有者のみがノードのステータスを更新したり、ワークフローを進めたりできます。",
+    "completeHint": "次のステップに進む前に、このノードを完了としてマークしてください。",
+    "ready": "このノード",
+    "note": "注記",
+    "notePlaceholder": "メモを追加...",
+    "add": "Add"
+  },
+  "recordModal": {
+    "title": "出力を追加",
+    "placeholder": "これで完了した内容ステップ?",
+    "cancel": "Cancel",
+    "submit": "Submit"
+  },
+  "workflowDetail": {
+    "loading": "ワークフローの問題を読み込み中...",
+    "notFound": "このワークフローの問題は存在しないか、削除されました。",
+    "back": "リストに戻る"
+  },
+  "detailPage": {
+    "backToList": "戻るlist",
+    "missingWorkspaceTitle": "ワークスペースが選択されていません",
+    "missingWorkspaceDescription": "この問題を開く前にワークスペースを選択してください。",
+    "loadingTitle": "問題を読み込んでいます",
+    "loadingDescription": "問題の詳細とコラボレーション コンテキストを同期しています。",
+    "notFoundTitle": "問題が見つかりません",
+    "notFoundDescription": "この問題は削除された可能性があります。現在のアカウントにはアクセスできません。"
+  },
+  "normalDetail": {
+    "memberFallback": "メンバー {id}",
+    "user": {
+      "anonymous": "匿名ユーザー",
+      "unknown": "不明"
+    },
+    "meta": {
+      "notSet": "未設定",
+      "unassigned": "未割り当て"
+    },
+    "editingHint": "{names} がこのフィールドを編集中",
+    "toasts": {
+      "invalidWorkspace": "現在のワークスペースが無効であるため、問題を保存できませんでした。",
+      "saved": "問題は保存されました。",
+      "updateFailed": "失敗しました問題を更新します。もう一度お試しください。",
+      "copyFailed": "テキストのコピーに失敗しました。",
+      "missingDoneState": "現在のワークスペースには使用可能な完了状態がありません。"
+    },
+    "states": {
+      "loading": "読み込み中の問題...",
+      "notFound": "この問題は存在しないか、削除されました。",
+      "back": "戻るlist",
+      "saving": "変更を保存しています..."
+    },
+    "badges": {
+      "state": "状態: {value}",
+      "priority": "優先度: {value}",
+      "project": "プロジェクト: {value}",
+      "assignee": "所有者: {value}",
+      "dueDate": "期限: {値}",
+      "visibility": "可視性: {値}",
+      "collaborator": "コラボレータ: {値}"
+    },
+    "select": {
+      "statePlaceholder": "状態: 未設定",
+      "stateOption": "状態: {値}",
+      "priorityPlaceholder": "優先度: 未設定set",
+      "priorityOption": "優先度: {value}",
+      "projectPlaceholder": "プロジェクト: 未設定",
+      "projectOption": "プロジェクト: {value}",
+      "assigneePlaceholder": "所有者: 未割り当て",
+      "assigneeOption": "所有者: {value}",
+      "visibilityPlaceholder": "Visibility",
+      "visibilityOption": "Visibility: {value}"
+    },
+    "actions": {
+      "openAi": "AI アシスタントを開く",
+      "markComplete": "完了としてマーク"
+    },
+    "description": {
+      "title": "問題の説明",
+      "referencedDocs": "{数、複数、1 つの {# 参照ドキュメント。} other {# 参照ドキュメント。}}",
+      "insertDoc": "チーム ドキュメントを挿入",
+      "save": "説明を保存",
+      "cancel": "キャンセル",
+      "edit": "説明を編集",
+      "placeholder": "マークダウンを使用して、背景、許容基準、リスク、および次のステップを説明します。たとえば:## 背景- なぜこれが重要なのか- [ ] 保留中の質問",
+      "empty": "まだ説明がありません。背景、受け入れ基準、リスク、および関連ドキュメントを追加します。"
+    },
+    "aiHandoff": {
+      "title": "AI コーディングのハンドオフ",
+      "updatedAt": "最終更新 {time}",
+      "fallback": "この問題に保存され、Claude Code または Codex に引き継ぐ準備ができました。",
+      "copySuccess": "コーディングのハンドオフ プロンプトは次のとおりです。コピーしました。",
+      "copyAction": "クロード コード / Codex のコピー"
+    },
+    "footer": {
+      "createdAt": "作成: {value}",
+      "updatedAt": "更新: {value}"
+    },
+    "docReference": {
+      "label": "Doc",
+      "defaultTitle": "チーム doc",
+      "projectDoc": "Project doc",
+      "teamDoc": "チーム doc",
+      "pickerTitle": "チームの挿入 doc",
+      "pickerDescription": "問題の説明に挿入するドキュメントを選択してください。説明内のドキュメント タグをクリックすると、後でプレビューできます。",
+      "loading": "チーム ドキュメントを読み込んでいます...",
+      "empty": "参照できるチーム ドキュメントはまだありません。",
+      "close": "閉じる",
+      "previewDescription": "チーム スペースからの参照ドキュメントのプレビューです。",
+      "previewEmpty": "このドキュメントにはコンテンツがありませんまだ。"
+    }
+  },
+  "workflowFlow": {
+    "runStatus": {
+      "active": "Active",
+      "blocked": "Blocked",
+      "waitingReview": "レビュー待ち",
+      "handoffPending": "ハンドオフ待ち",
+      "done": "Done"
+    },
+    "actionType": {
+      "execution": "現在の実行ステップ",
+      "blocked": "待機中ブロック解除",
+      "review": "確認待ち",
+      "handoff": "引き継ぎ待ち",
+      "done": "ワークフロー完了"
+    },
+    "reviewOutcome": {
+      "approved": "承認",
+      "changesRequested": "変更要求"
+    },
+    "memberFallback": "メンバー {id}",
+    "toasts": {
+      "requestReviewFailed": "レビューのリクエストに失敗しました。",
+      "requestHandoffFailed": "ハンドオフのリクエストに失敗しました。",
+      "blockFailed": "ワークフローをブロック済みとしてマークできませんでした。",
+      "unblockFailed": "ワークフローのブロックを解除できませんでした。",
+      "approveReviewFailed": "レビュー。",
+      "requestChangesFailed": "変更のリクエストに失敗しました。",
+      "acceptHandoffFailed": "ハンドオフの受け入れに失敗しました。"
+    },
+    "states": {
+      "loadFailed": "ワークフローのロードに失敗しましたdata."
+    },
+    "meta": {
+      "number": "Number ",
+      "workflow": "ワークフロー",
+      "status": "ステータス",
+      "currentStep": "現在のステップ",
+      "currentOwner": "現在の所有者",
+      "priority": "優先度",
+      "stepCount": "ステップcount",
+      "action": "Action",
+      "owner": "Owner",
+      "step": "Step",
+      "version": "Version",
+      "recentReview": "最新レビュー",
+      "notStarted": "未開始",
+      "unknownStep": "名前のないステップ",
+      "notSet": "未設定",
+      "unassigned": "未割り当て",
+      "specifiedMember": "割り当てられたメンバー",
+      "stepsValue": "{count} ステップ"
+    },
+    "header": {
+      "workflow": "ワークフロー: {name}",
+      "priority": "優先度: {value}",
+      "workflowTask": "ワークフローの問題"
+    },
+    "actions": {
+      "openAi": "AI アシスタントを開く",
+      "requestReview": "レビューのリクエスト",
+      "requestHandoff": "ハンドオフのリクエスト",
+      "markBlocked": "ブロック済みとしてマーク",
+      "approveReview": "レビューを承認",
+      "requestChanges": "変更のリクエスト",
+      "acceptHandoff": "ハンドオフの承認",
+      "unblock": "Unblock"
+    },
+    "tabs": {
+      "overview": "概要"
+    },
+    "overview": {
+      "title": "タスクの概要",
+      "empty": "導入はまだ追加されていません。背景、承認基準、引き継ぎメモ、および関連ドキュメントを追加します。"
+    },
+    "collaboration": {
+      "title": "コラボレーション ステータス",
+      "blockReason": "ブロックされた理由: {value}",
+      "pendingTarget": "待機中: {value}",
+      "activeTitle": "現在所有者: {name}",
+      "activeDescription": "現在の所有者はレビュー、引き継ぎをリクエストできます。 ",
+      "targetLabel": "レビューまたは引き継ぎ対象",
+      "targetPlaceholder": "誰をレビューまたは引き継ぐかを選択してください",
+      "noteLabel": "共同作業メモ",
+      "notePlaceholder": "レビュー、引き継ぎ、またはブロッカーメモを追加します。ブロックされているとマークする場合は、原因、誰が助けてくれるか、いつ進捗が再開されるのかを説明してください。",
+      "targetRequired": "レビューまたはハンドオフをリクエストする前に対象のメンバーを選択してください。ブロック済みのマークは、ターゲットなしで送信できます。",
+      "onlyCurrentOwner": "現在の所有者のみが、レビューをリクエストしたり、ハンドオフを開始したり、このワークフローをブロック済みとしてマークしたりできます。"
+    },
+    "review": {
+      "waitingTitle": "{name} のレビューを待っています",
+      "waitingDescription": "レビューが承認されると、ワークフローは続行されます。変更が必要な場合は、直接返送してください。",
+      "placeholder": "レビューの決定または要求された変更を書き込みます",
+      "readonlyHint": "このステップは {name} を待っています。ディスカッション タブでコンテキストを追加することもできます。"
+    },
+    "handoff": {
+      "waitingTitle": "{name} が引き継ぐのを待っています",
+      "waitingDescription": "引き継ぎ後、現在のステップの所有権は新しい担当者に移ります。",
+      "placeholder": "次に何が起こるかなど、引き継ぎメモを追加します",
+      "readonlyHint": "このステップは {name} が引き継ぐのを待っています。ディスカッション タブでハンドオフ コンテキストを追加することもできます。"
+    },
+    "blocked": {
+      "title": "このステップはブロックされています",
+      "description": "所有者: {name}。ブロッカーのメモには、原因、支援者、予想される回復時間について説明する必要があります。",
+      "placeholder": "ブロッカーが解決された理由を説明するか、回復後に次の手順を追加してください",
+      "readonlyHint": "このワークフローのブロックを解除できるのは現在の所有者のみです。他のチームメイトは引き続きディスカッション タブにコンテキストを追加できます。"
+    },
+    "done": {
+      "description": "このワークフローは完了です。後でここで出力とコラボレーション履歴を再確認できます。"
+    },
+    "focusingNode": " は現在のノードに焦点を当てています",
+    "records": {
+      "title": "コラボレーション記録",
+      "history": "History",
+      "discussion": "Discussion",
+      "outputs": "出力 ({count})"
+    }
+  }
+}

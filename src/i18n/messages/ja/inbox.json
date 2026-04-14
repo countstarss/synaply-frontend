@@ -1,0 +1,90 @@
+{
+  "relativeTime": {
+    "justNow": "今",
+    "minutesAgo": "{数}分前",
+    "hoursAgo": "{数}時間前",
+    "daysAgo": "{数}日ago"
+  },
+  "views": {
+    "primary": "Primary",
+    "other": "Other",
+    "later": "Later",
+    "cleared": "Cleared"
+  },
+  "viewSubLabel": {
+    "laterCount": "{count} 件のスヌーズ済みアイテム",
+    "laterEmpty": "スヌーズなしitems",
+    "clearedCount": "{count} 個のクリアされたアイテム",
+    "clearedEmpty": "クリアされたアイテムがありません",
+    "pendingCount": "{count} 個の保留中のアイテム",
+    "pendingEmpty": "現在アイテムはありません"
+  },
+  "empty": {
+    "primary": {
+      "title": "現在待機しているものはありません",
+      "description": "新しいレビュー リクエスト、割り当て、および期限のアイテムが表示されます"
+    },
+    "other": {
+      "title": "後で注意する必要のある更新はありません",
+      "description": "リスク、ブロッカー、およびフォローシグナルは、2 回目のパスが必要なときにここに集まります。"
+    },
+    "later": {
+      "title": "現在スヌーズされているアイテムはありません",
+      "description": "シグナルが読み取られているが、フローを中断すべきでない場合は、シグナルをここに移動できます。 "
+    },
+    "cleared": {
+      "title": "まだ何もクリアされていません",
+      "description": "クリアしたシグナルはアクティブなキューを離れ、ショートとしてここに残りますレコード。"
+    }
+  },
+  "source": {
+    "workflow": "ワークフロー",
+    "project": "プロジェクト",
+    "issue": "問題"
+  },
+  "groups": {
+    "today": "今日",
+    "recentWeek": "過去 7 日間",
+    "earlierThisMonth": "これより前month"
+  },
+  "filters": {
+    "unread": "未読",
+    "actionable": "アクションが必要",
+    "clear": "フィルターのクリア",
+    "archivedHint": "このビューはすでにステータスごとにグループ化されているため、追加のフィルターは使用できません。"
+  },
+  "actions": {
+    "refresh": "Refresh",
+    "clearView": "現在をクリアview",
+    "retry": "再試行"
+  },
+  "row": {
+    "openAria": "{title} を開く",
+    "markSeen": "既読としてマーク",
+    "markUnread": "未読としてマーク",
+    "accept": "Accept",
+    "snooze": "後で使用するためにスヌーズ",
+    "clear": "Clear",
+    "cleared": "Cleared"
+  },
+  "hint": "任意の行をクリック関連する問題またはプロジェクトを開きます。既読のマークを付ける、スヌーズする、ハンドオフを受け入れる、信号を直接クリアすることもできます。",
+  "states": {
+    "loading": "受信箱を読み込んでいます...",
+    "errorTitle": "受信箱の読み込みに失敗しました",
+    "errorDescription": "しばらくしてからもう一度お試しください。"
+  },
+  "toasts": {
+    "openFailed": "この受信箱を開けませんでしたitem.",
+    "markedSeen": "既読としてマークされました。",
+    "markedUnread": "未読としてマークされました。",
+    "updateReadFailed": "読み取り状態を更新できませんでした。",
+    "snoozed": "後で移動しました。",
+    "snoozeFailed": "これをスヌーズできませんでしたitem.",
+    "cleared": "受信箱のアイテムがクリアされました。",
+    "clearFailed": "このアイテムをクリアできませんでした。",
+    "handoffAccepted": "ハンドオフが受け入れられました。",
+    "acceptFailed": "ハンドオフを受け入れられませんでした。",
+    "clearedView": "現在のビューがクリアされました。",
+    "clearAllFailed": "現在のビューをクリアできませんでした見る。"
+  }
+}

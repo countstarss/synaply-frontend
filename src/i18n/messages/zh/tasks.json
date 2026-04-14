@@ -1,0 +1,124 @@
+{
+  "tabs": {
+    "today": "今天",
+    "waiting": "等待",
+    "inProgress": "进行中",
+    "blocked": "已阻止",
+    "completed": "已完成"
+  },
+  "summary": {
+    "todayFocus": "今日重点",
+    "waiting": "等待",
+    "inProgress": "中进度",
+    "blocked": "已阻止",
+    "completedToday": "今天完成"
+  },
+  "header": {
+    "title": "我的工作概述",
+    "activeCount": "{count}个活动项目",
+    "syncing": "同步",
+    "updatedAt": "更新于{value}",
+    "waitingFirstSync": "等待第一次同步"
+  },
+  "sections": {
+    "today": {
+      "title": "今天焦点",
+      "description": "首先从这些开始。它们结合了紧急性、阻碍因素、审核请求和您当前的执行状态。",
+      "emptyTitle": "您的焦点队列现在为空",
+      "emptyDescription": "当工作正在等待、进行中或受阻时，它将上升到此处的顶部。"
+    },
+    "waiting": {
+      "title": "等我",
+      "description": "需要您开始、审核或接受的工作交接.",
+      "emptyTitle": "现在没有什么在等你",
+      "emptyDescription": "新的交接、审核请求和准备开始的工作将首先到达这里。"
+    },
+    "inProgress": {
+      "title": "进行中",
+      "description": "您已经接手并正在积极推进的工作。",
+      "emptyTitle": "没有工作当前正在进行中",
+      "emptyDescription": "一旦您启动问题或工作流程运行，它将显示在此处。"
+    },
+    "blocked": {
+      "title": "已阻止",
+      "description": "当前被阻止的与您相关的工作。",
+      "emptyTitle": "目前没有与您相关的被阻止项目",
+      "emptyDescription": "此处收集被阻止的工作，因此风险不会不要迷失在其他视图中。"
+    },
+    "completed": {
+      "title": "今天已完成",
+      "description": "您今天完成或结束的工作。",
+      "emptyTitle": "今天尚未完成任何事情",
+      "emptyDescription": "当您完成问题或工作流程步骤时，今天的交付进度将显示在此处。"
+    }
+  },
+  "table": {
+    "work": "工作",
+    "context": "Context",
+    "signal": "Signal",
+    "action": "Action"
+  },
+  "row": {
+    "source": {
+      "workflow": "工作流程",
+      "issue": "问题"
+    },
+    "quickAction": {
+      "accept": "接受",
+      "start": "开始",
+      "review": "审核",
+      "open": "打开"
+    },
+    "queue": {
+      "review": "审核· {名称}",
+      "handoff": "交接 · {名称}",
+      "assignee": "所有者 · {名称}",
+      "workflow": "工作流程运行",
+      "issue": "问题"
+    },
+    "openIssueAria": "打开{标题}",
+    "unassignedProject": "否项目",
+    "workspaceQueue": "工作空间队列",
+    "due": "到期{值}"
+  },
+  "actions": {
+    "retry": "重试"
+  },
+  "addModal": {
+    "title": "创建任务",
+    "fields": {
+      "titlePlaceholder": "标题",
+      "descriptionPlaceholder": "描述（可选）",
+      "dueDatePlaceholder": "截止日期（可选）"
+    },
+    "actions": {
+      "submit": "创建"
+    }
+  },
+  "calendar": {
+    "newTask": "创建任务",
+    "noTasks": "尚无任务",
+    "close": "关闭",
+    "more": "+{count}更多",
+    "weekdays": {
+      "sun": "周日",
+      "mon": "周一",
+      "tue": "周二",
+      "wed": "周三",
+      "thu": "周四",
+      "fri": "周五",
+      "sat": "Sat"
+    }
+  },
+  "states": {
+    "loading": "整理您的工作队列...",
+    "errorTitle": "无法加载您的工作概述",
+    "errorDescription": "请稍后再试。"
+  },
+  "toasts": {
+    "markedStarted": "标记为已开始。",
+    "markStartedFailed": "无法更新执行状态。请重试。",
+    "handoffAccepted": "接受切换。",
+    "acceptHandoffFailed": "接受切换失败。请再试一次。"
+  }
+}

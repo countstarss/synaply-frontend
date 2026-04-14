@@ -1,0 +1,90 @@
+{
+  "relativeTime": {
+    "justNow": "刚刚",
+    "minutesAgo": "{count} 分钟前",
+    "hoursAgo": "{count} 小时前",
+    "daysAgo": "{count} d前"
+  },
+  "views": {
+    "primary": "主要",
+    "other": "其他",
+    "later": "后来",
+    "cleared": "已清除"
+  },
+  "viewSubLabel": {
+    "laterCount": "{count}个已延后的项目",
+    "laterEmpty": "没有延后items",
+    "clearedCount": "{count} 个已清除的项目",
+    "clearedEmpty": "没有已清除的项目",
+    "pendingCount": "{count} 个待处理的项目",
+    "pendingEmpty": "现在没有项目"
+  },
+  "empty": {
+    "primary": {
+      "title": "现在没有任何内容",
+      "description": "新的审核请求、作业和到期项目将首先出现在此处。"
+    },
+    "other": {
+      "title": "没有更新需要稍后注意",
+      "description": "风险、阻碍因素和跟随信号在需要第二次通过时聚集在此处。"
+    },
+    "later": {
+      "title": "现在没有项目被延缓",
+      "description": "如果读取了信号但不应中断您的流程，您可以将其移至此处以等待稍后."
+    },
+    "cleared": {
+      "title": "还没有清除任何内容",
+      "description": "您清除的信号离开活动队列并短暂停留在这里记录."
+    }
+  },
+  "source": {
+    "workflow": "工作流程",
+    "project": "项目",
+    "issue": "问题"
+  },
+  "groups": {
+    "today": "今天",
+    "recentWeek": "过去7天",
+    "earlierThisMonth": "早些时候月"
+  },
+  "filters": {
+    "unread": "未读",
+    "actionable": "需要操作",
+    "clear": "清除筛选器",
+    "archivedHint": "此视图已按状态分组，因此额外的筛选器不可用。"
+  },
+  "actions": {
+    "refresh": "刷新",
+    "clearView": "清除当前查看",
+    "retry": "重试"
+  },
+  "row": {
+    "openAria": "打开{标题}",
+    "markSeen": "标记为已读",
+    "markUnread": "标记为未读",
+    "accept": "接受",
+    "snooze": "暂停后来",
+    "clear": "清除",
+    "cleared": "已清除"
+  },
+  "hint": "单击任意行打开相关问题或项目。您还可以将其标记为已读、暂停、接受切换或直接清除信号。",
+  "states": {
+    "loading": "正在加载收件箱...",
+    "errorTitle": "无法加载收件箱",
+    "errorDescription": "请稍后重试。"
+  },
+  "toasts": {
+    "openFailed": "无法打开此收件箱项目.",
+    "markedSeen": "标记为已读。",
+    "markedUnread": "标记为未读。",
+    "updateReadFailed": "无法更新读取状态。",
+    "snoozed": "移至稍后。",
+    "snoozeFailed": "无法暂停此操作项目.",
+    "cleared": "收件箱项目已清除。",
+    "clearFailed": "无法清除此项目。",
+    "handoffAccepted": "接受移交。",
+    "acceptFailed": "无法接受移交。",
+    "clearedView": "当前视图已清除.",
+    "clearAllFailed": "无法清除当前视图。"
+  }
+}

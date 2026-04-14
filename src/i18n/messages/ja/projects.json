@@ -1,0 +1,277 @@
+{
+  "status": {
+    "planning": "計画",
+    "active": "アクティブ",
+    "blocked": "ブロック",
+    "shipping": "配送",
+    "done": "完了",
+    "archived": "アーカイブ"
+  },
+  "risk": {
+    "low": "低リスク",
+    "medium": "中リスク",
+    "high": "高リスク",
+    "critical": "重大リスク"
+  },
+  "visibility": {
+    "private": {
+      "label": "プライベート",
+      "description": "個人のワークスペースに最適です。リソース レベルのアクセス許可は、可視性によってまだ厳密に適用されていません。"
+    },
+    "teamReadonly": {
+      "label": "チーム読み取り専用",
+      "description": "チーム メンバーはこのプロジェクトを表示できます。書き込みアクセスは引き続き OWNER および ADMIN ロールによって制御されます。"
+    },
+    "teamEditable": {
+      "label": "チーム編集可能",
+      "description": "共同プロジェクトに最適です。バックエンドの書き込み権限は、依然としてワークスペース メンバーのロールによって決定されます。"
+    },
+    "public": {
+      "label": "Public",
+      "description": "コンテキストとステータスを共有するための公開プロジェクト ビュー。"
+    }
+  },
+  "overview": {
+    "title": {
+      "personal": "マイ プロジェクト",
+      "team": "チーム プロジェクト"
+    },
+    "summary": "合計プロジェクト数が {total} 件、アクティブな課題があり {linked}、アクティブな課題がない {empty}、プロジェクトがないアクティブな課題が {unassigned} ",
+    "create": "プロジェクトを作成",
+    "searchPlaceholder": "プロジェクト名、概要、フェーズ、所有者、または可視性で検索...",
+    "results": "{count} 件の結果",
+    "recentlyUpdated": "最近更新されましたfirst",
+    "emptyTitle": "一致するプロジェクトはありません",
+    "emptyDescription": "別のキーワードを試すか、新しいプロジェクトを作成してください。",
+    "missingBrief": "このプロジェクトにはコラボレーション概要がまだありません。",
+    "activeIssues": "{count} 件のアクティブな問題"
+  },
+  "detail": {
+    "relativeTime": {
+      "justNow": "今",
+      "minutesAgo": "{count} 分ago",
+      "hoursAgo": "{count} 時間前",
+      "daysAgo": "{count} 日前"
+    },
+    "issueState": {
+      "blocked": "ブロック",
+      "done": "完了",
+      "inProgress": "In progress",
+      "uncategorized": "Uncategorized"
+    },
+    "assignee": {
+      "assigned": "Assigned",
+      "pending": "Assignee が必要"
+    },
+    "attention": {
+      "blockedTitle": "ブロックされた問題には注意が必要です",
+      "blockedDescription": "{count} 件の問題が現在ブロックされています。",
+      "overdueTitle": "いくつかの作業の期限が過ぎています",
+      "overdueDescription": "{count} 件の問題が期限を過ぎています。",
+      "staleSyncTitle": "同期のリズムが古くなってきています",
+      "staleSyncDescription": "最後の同期更新から {count} 日が経過しています。",
+      "healthyTitle": "プロジェクトのステータスは次のようになります。安定した",
+      "healthyDescription": "現在、強い遅延やブロッカー信号はありません。"
+    },
+    "summary": {
+      "missingIssue": "問題の詳細はまだ同期中です。しばらくしてからもう一度お試しください。",
+      "docCreateAuthRequired": "現在のユーザー情報が利用できないため、プロジェクト ドキュメントをまだ作成できません。",
+      "docCreated": "プロジェクト ドキュメントが作成されました。",
+      "docCreateFailed": "プロジェクト ドキュメントの作成に失敗しました。",
+      "missingBrief": "このプロジェクトにはまだ 1 行の概要がありません。目標、配信の方向性、成功基準を追加します。",
+      "phase": "Phase",
+      "owner": "Owner",
+      "activeIssues": "{count} 件のアクティブな問題",
+      "workflowCount": "{count} 件のワークフロー",
+      "docsCount": "{count} 件のドキュメント",
+      "updatedAt": "Updated {値}",
+      "edit": "編集",
+      "delete": "削除",
+      "completion": "配信の進行状況",
+      "completionHint": "{完了} 完了 · {合計} アクティブ",
+      "riskAndDelay": "ブロッカーと遅延",
+      "riskAndDelayHint": "{blocked} ブロック · {期限切れ} 期限超過",
+      "executionSurface": "実行面",
+      "executionSurfaceHint": "{workflowCount} 個のリンクされたワークフロー · {highPriority} 高優先度",
+      "recentSync": "最近の同期",
+      "notRecorded": "記録されていません",
+      "recentSyncHint": "レビューまたは非同期同期チェックポイントの後でこれを更新してください。",
+      "workspaceTitle": "プロジェクト ワークスペース",
+      "createIssue": "問題の作成",
+      "createDoc": "作成doc",
+      "workspaceCards": {
+        "issues": "アクティブな問題",
+        "docs": "Docs",
+        "workflow": "Workflow",
+        "sync": "Sync"
+      },
+      "risksTitle": "リスク",
+      "blockedIssuesTitle": "ブロックされた問題",
+      "blockedIssuesEmpty": "現在ブロックされている問題はありません"
+    }
+  },
+  "subviews": {
+    "relativeTime": {
+      "justNow": "たった今",
+      "minutesAgo": "{count} min ago",
+      "hoursAgo": "{count} hr ago",
+      "daysAgo": "{count} d ago"
+    },
+    "issues": {
+      "title": "Issues",
+      "subtitle": "リスト ビューとボード ビューの両方で、プロジェクト実行レイヤーを分離しておきます。",
+      "openIssue": "未解決の問題",
+      "cancelIssue": "キャンセルissue",
+      "summary": "{アクティブな}アクティブなプロジェクトの問題{suffix}",
+      "hiddenSuffix": " · {count} 件完了またはキャンセルされました{hidden}",
+      "hiddenLabel": " hidden",
+      "onlyCreatorCanCancel": "作成者のみがこの問題をキャンセルできます。",
+      "cancelled": "問題はキャンセルされました。デフォルトではリスト ビューで非表示になりました。",
+      "cancelFailed": "問題をキャンセルできませんでした。もう一度お試しください。",
+      "saveBoardOrder": "ボード注文を保存",
+      "boardOrderSaved": "ボード注文を保存",
+      "loading": "プロジェクト課題をロード中...",
+      "emptyTitle": "このプロジェクトにはまだアクティブな課題がありません",
+      "emptyDescription": "リスト ビューでは、デフォルトで完了課題とキャンセル課題が非表示になります。すべての状態を確認するには、ボード ビューに切り替えます。",
+      "createIssue": "プロジェクト課題を作成",
+      "cancelDialog": {
+        "title": "この課題をキャンセルしますか?",
+        "description": "デフォルトでは、問題は [キャンセル] に移動され、リスト ビューで非表示になります。レコードはそのまま残り、関連する担当者には引き続き表示されます。",
+        "keep": "そのままにしてください",
+        "confirm": "キャンセルを確認",
+        "pending": "キャンセルしています..."
+      }
+    },
+    "docs": {
+      "missingUser": "現在のユーザー情報が利用できないため、プロジェクト ドキュメントをロードできませんまだです。"
+    },
+    "workflow": {
+      "title": "Workflow",
+      "subtitle": "このプロジェクトに実際に接続されているワークフローを集約します。",
+      "openCenter": "ワークフロー センターを開く",
+      "empty": "このプロジェクトにリンクされているワークフローの問題はまだありません。ワークフローの問題がこのプロジェクトに追加されると、自動的にここに表示されます。",
+      "linkedIssues": "{count} 個のリンクされた問題 · {status}",
+      "steps": "{count}ステップ",
+      "version": "Version",
+      "visibility": "Visibility",
+      "notAvailable": "N/A"
+    },
+    "sync": {
+      "title": "プロジェクト同期",
+      "subtitle": "専用サーフェスで非同期同期トレースと最近の変更を保持します。",
+      "updateSync": "同期を更新しますtime",
+      "recentSync": "最近の同期",
+      "activityCount": "アクティビティ数",
+      "updatedAt": "プロジェクトが更新されました",
+      "notRecorded": "記録されていません",
+      "empty": "プロジェクトのアクティビティはまだ構築されていません。問題の更新とアクティビティ記録はここに自動的に蓄積されます。",
+      "teamMember": "チーム メンバー"
+    }
+  },
+  "kanban": {
+    "issueCount": "{count} 件の問題",
+    "reorderColumn": "{label} 列の順序を変更",
+    "dragColumn": "ドラッグして列の順序を変更します",
+    "dropIssue": "問題をこの中にドラッグしますcolumn",
+    "workflow": "ワークフロー",
+    "dragIssue": "ドラッグ {タイトル}",
+    "dragIssueCategory": "ドラッグして問題カテゴリを変更",
+    "openIssue": "問題を開く",
+    "cancelIssue": "問題をキャンセル"
+  },
+  "page": {
+    "selectWorkspaceTitle": "ワークスペースが選択されていません",
+    "selectWorkspaceDescription": "ワークスペースを選択してください",
+    "loading": "プロジェクトをロードしています...",
+    "loadFailedTitle": "プロジェクトのロードに失敗しました",
+    "loadFailedDescription": "プロジェクト リストを取得できませんでした。",
+    "emptyState": {
+      "title": "まだプロジェクトがありません",
+      "description": "プロジェクト モジュールは現在ライブ バックエンドに接続されています。まずプロジェクト コンテナを作成してから、それに関連する作業をアタッチします。",
+      "createAction": "最初のプロジェクトを作成する",
+      "readOnlyHint": "現在のチーム ワークスペースでプロジェクトを作成、編集、または削除できるのは、OWNER メンバーと ADMIN メンバーのみです。"
+    }
+  },
+  "owner": {
+    "missing": "所有者が割り当てられていません",
+    "unnamedMember": "名前のないメンバー"
+  },
+  "editor": {
+    "title": {
+      "create": "プロジェクトを作成",
+      "edit": "プロジェクトを編集"
+    },
+    "subtitle": {
+      "create": "プロジェクトを単なる問題ではなくコラボレーション コンテキストに変えますコンテナ。",
+      "edit": "概要、フェーズ、リスク レベル、所有者、およびその他のコラボレーション セマンティクスをここで管理します。"
+    },
+    "fields": {
+      "name": "プロジェクト名",
+      "namePlaceholder": "例: 第 2 四半期の開始、AI 検索の刷新",
+      "brief": "1 行の概要",
+      "briefPlaceholder": "このプロジェクトが存在する理由とチームが何を目指しているかを説明する",
+      "description": "プロジェクトの背景/目標",
+      "descriptionPlaceholder": "チームがプロジェクトのコンテキストを理解できるように、スコープ、成功基準、主要な背景を追加します。",
+      "status": "現在のステータス",
+      "statusPlaceholder": "プロジェクトのステータスを選択してください",
+      "phase": "現在のフェーズ",
+      "phasePlaceholder": "例: キックオフ、設計レビュー、構築、起動",
+      "risk": "リスク レベル",
+      "riskPlaceholder": "リスク レベルの選択",
+      "owner": "プロジェクト所有者",
+      "ownerPlaceholder": "所有者の選択",
+      "visibility": "Visibility",
+      "visibilityPlaceholder": "プロジェクトの可視性の選択"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "creating": "作成中...",
+      "saving": "保存中...",
+      "create": "プロジェクトの作成",
+      "save": "保存変更"
+    },
+    "statusDescriptions": {
+      "planning": "目標と範囲はまだ収束中です。これは概要を追加し、成功基準を定義する良い機会です。",
+      "active": "プロジェクトにはすでに実行リズムがあり、主要なコラボレーション サーフェスとして機能できます。",
+      "blocked": "主要なブロッカーがあり、チームは誰がブロックを解除するかをすぐに特定する必要があります。",
+      "shipping": "作業はリリース、受け入れ、または開始のまとめの段階にあります。",
+      "done": "目標",
+      "archived": "プロジェクトは日常のコラボレーション フローから離れましたが、コンテキストはまだ保持する必要があります。"
+    },
+    "riskDescriptions": {
+      "low": "リズムは安定しているように見えますが、明確な引き継ぎや配信のリスクはまだ現れていません。",
+      "medium": "プロジェクト ページで追跡する価値のある待機や不確実性がすでに存在します。",
+      "high": "配信、レビュー、 ",
+      "critical": "プロジェクトはすでに重大な影響を受けており、早急な介入が必要です。"
+    }
+  },
+  "deleteDialog": {
+    "title": "プロジェクトを削除",
+    "description": "このプロジェクトを削除すると、プロジェクト内のすべての問題が完全に削除されます。この操作は元に戻すことができません。",
+    "aboutToDelete": "削除しようとしています",
+    "missingProject": "プロジェクトが選択されていません",
+    "missingProjectDescription": "このプロジェクトにはまだ説明がありません。",
+    "countingIssues": "カスケード削除される問題を数えています...",
+    "issueCount": "{count} 件の関連問題がこのプロジェクトと一緒に削除されます。",
+    "confirmLabel": "確認するためにプロジェクト名を入力してください削除",
+    "confirmPlaceholder": "プロジェクト名を入力してください",
+    "confirmHint": "削除は、入力がプロジェクト名と正確に一致する場合にのみ有効になります。",
+    "deleting": "削除中...",
+    "confirmDelete": "削除を確認"
+  },
+  "toasts": {
+    "workspaceRequired": "最初にワークスペースを選択してください。",
+    "created": "プロジェクト作成されました。",
+    "updated": "プロジェクトが更新されました。",
+    "saveFailed": "プロジェクトの保存に失敗しました。",
+    "deleted": "プロジェクトは {count} 件の関連問題とともに削除されました。",
+    "deleteFailed": "プロジェクトの削除に失敗しました。",
+    "invalidIssueRoute": "現在のプロジェクト ルートが無効であるため、この問題は解決できません開かれました。",
+    "syncUpdated": "プロジェクトの同期時刻が更新されました。",
+    "syncFailed": "プロジェクトの同期時刻の更新に失敗しました。",
+    "boardOrderMissingWorkspace": "現在のワークスペースが無効であるため、ボードの順序を保存できません。",
+    "boardOrderUnchanged": "ボードの順序は変更されていません。",
+    "boardOrderSaveFailed": "ボードの順序を保存できませんでした。もう一度お試しください。",
+    "boardOrderSaved": "ボードの順序が更新されました。"
+  }
+}

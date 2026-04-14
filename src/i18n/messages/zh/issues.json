@@ -1,0 +1,402 @@
+{
+  "priority": {
+    "default": "使用默认优先级（普通）",
+    "low": "低",
+    "normal": "正常",
+    "high": "高",
+    "urgent": "紧急"
+  },
+  "status": {
+    "todo": "待办事项",
+    "inProgress": "中进度",
+    "almostDone": "即将完成",
+    "blocked": "已阻止",
+    "done": "已完成"
+  },
+  "stateCategory": {
+    "backlog": "待办事项",
+    "todo": "待办事项",
+    "inProgress": "In进度",
+    "done": "完成",
+    "canceled": "已取消"
+  },
+  "visibility": {
+    "private": "只有我",
+    "teamReadonly": "团队只读",
+    "teamEditable": "团队可编辑",
+    "public": "公共"
+  },
+  "createModal": {
+    "title": "创建问题",
+    "workspace": {
+      "personal": "个人工作空间",
+      "team": "团队工作空间"
+    },
+    "currentProject": "当前项目：{name}",
+    "type": {
+      "label": "Issue类型",
+      "normal": "标准问题",
+      "workflow": "工作流程问题"
+    },
+    "workflow": {
+      "label": "工作流程",
+      "placeholder": "选择工作流程",
+      "missingDescription": "否描述"
+    },
+    "project": {
+      "label": "项目",
+      "placeholder": "选择项目",
+      "none": "无项目"
+    },
+    "fields": {
+      "title": "标题",
+      "titlePlaceholder": "清楚地描述工作",
+      "description": "描述",
+      "descriptionPlaceholder": "添加上下文、验收标准或后续注释",
+      "dueDatePlaceholder": "选择截止日期",
+      "clearDate": "清除日期",
+      "priorityPlaceholder": "使用默认优先级",
+      "statePlaceholder": "选择状态",
+      "visibilityPlaceholder": "选择可见性",
+      "directAssignee": "直接受让人",
+      "directAssigneePlaceholder": "选择受让人",
+      "additionalAssignees": "其他受让人"
+    },
+    "assignee": {
+      "none": "无直接受让人",
+      "currentUser": "分配给me"
+    },
+    "actions": {
+      "creating": "正在创建...",
+      "submit": "创建问题"
+    }
+  },
+  "toasts": {
+    "titleRequired": "请输入问题标题。",
+    "workflowRequired": "请选择工作流程模板。",
+    "authRequired": "无法验证身份验证。请重新登录。",
+    "memberSyncPending": "我们仍在同步您的会员身份。请稍等片刻，然后重试。",
+    "createFailed": "无法创建问题。请重试。",
+    "boardOrderMissingWorkspace": "当前工作区无效，因此无法保存板卡顺序。",
+    "boardOrderUnchanged": "板卡顺序未更改。",
+    "boardOrderSaveFailed": "保存板卡顺序失败。请重试。",
+    "boardOrderSaved": "董事会订单已更新。",
+    "updateFailed": "无法更新问题状态。请重试。"
+  },
+  "page": {
+    "type": {
+      "normal": "标准",
+      "workflow": "工作流程"
+    },
+    "summary": {
+      "withState": "当前在“{state}”中显示 {count} 个问题。",
+      "activeOnly": "目前有 {count} 个活跃问题。",
+      "mixed": "当前显示 {total} 个问题，包括{active} 活跃的问题。",
+      "mySuffix": " 仅包含您拥有、参与或创建的问题。",
+      "closedSuffix": " 已完成或取消的问题还有 {count} 个。",
+      "listViewHint": " 列表视图默认隐藏已完成和已取消的问题。切换到看板视图以查看每个州。"
+    },
+    "filters": {
+      "searchPlaceholder": "按标题、项目、受让人或问题密钥搜索...",
+      "projectAria": "按项目过滤",
+      "stateAria": "按州过滤",
+      "priorityAria": "按优先级过滤",
+      "typeAria": "按类型过滤",
+      "allProjects": "所有项目",
+      "unassignedProject": "无项目",
+      "allStates": "所有状态",
+      "allPriorities": "所有优先级",
+      "allTypes": "所有类型",
+      "clear": "清除过滤器"
+    },
+    "tabs": {
+      "all": "全部{count}",
+      "my": "我的{count}"
+    },
+    "actions": {
+      "create": "创建问题",
+      "saveBoardOrder": "保存主板订单",
+      "savedOrder": "已保存主板订单",
+      "openIssue": "打开问题",
+      "cancelIssue": "取消问题",
+      "viewOrEdit": "查看或编辑"
+    },
+    "viewMode": {
+      "list": "列表",
+      "board": "板"
+    },
+    "states": {
+      "unassigned": "未分配",
+      "assignee": "受让人",
+      "workflow": "工作流程"
+    },
+    "onlyCreatorCanCancel": "只有创建者可以 cancel this issue.",
+    "cancelled": "问题取消了。现在默认隐藏在列表视图中。",
+    "cancelFailed": "Failed to cancel the issue.请重试。",
+    "loading": "加载问题...",
+    "empty": {
+      "none": "尚无问题",
+      "filtered": "未找到匹配的问题",
+      "createFirst": "创建第一期"
+    },
+    "cancelDialog": {
+      "title": "取消此问题？",
+      "description": "该问题将移至默认情况下取消并隐藏在列表视图中。该记录保持不变，相关受让人仍会看到它。",
+      "keep": "保留它",
+      "confirm": "确认取消",
+      "pending": "取消..."
+    }
+  },
+  "tabs": {
+    "discussion": {
+      "title": "讨论",
+      "empty": "尚无评论。 Be the first to add context here.",
+      "placeholder": "添加评论...使用@提及队友",
+      "noMembers": "未找到匹配的团队成员",
+      "mentionHint": "使用@提及队友",
+      "send": "发送"
+    },
+    "history": {
+      "empty": "尚未记录任何活动。"
+    },
+    "records": {
+      "stepLabel": "{name}（步骤{step}）",
+      "unknownMember": "未知member",
+      "empty": "尚未记录输出。"
+    }
+  },
+  "nodeStatus": {
+    "title": "节点状态",
+    "description": "单击状态点以更新进度，然后在准备好后移至下一步。",
+    "owner": "Owner： {name}",
+    "unassigned": "未分配",
+    "previous": "上一个",
+    "next": "下一个",
+    "cannotEdit": "只有当前所有者可以更新节点状态或向前移动工作流。",
+    "completeHint": "在移动到下一个节点之前将此节点标记为“完成”步骤.",
+    "ready": "此节点已准备好继续前进。",
+    "note": "注意",
+    "notePlaceholder": "添加注释...",
+    "add": "添加"
+  },
+  "recordModal": {
+    "title": "添加输出",
+    "placeholder": "此中完成了什么步骤？",
+    "cancel": "取消",
+    "submit": "提交"
+  },
+  "workflowDetail": {
+    "loading": "正在加载工作流问题...",
+    "notFound": "该工作流问题不存在或已被删除。",
+    "back": "返回列表"
+  },
+  "detailPage": {
+    "backToList": "返回list",
+    "missingWorkspaceTitle": "未选择工作空间",
+    "missingWorkspaceDescription": "打开此问题之前选择工作空间。",
+    "loadingTitle": "正在加载问题",
+    "loadingDescription": "正在同步问题详细信息和协作上下文。",
+    "notFoundTitle": "未找到问题",
+    "notFoundDescription": "此问题可能 have been deleted, or your current account no longer has access."
+  },
+  "normalDetail": {
+    "memberFallback": "成员{id}",
+    "user": {
+      "anonymous": "匿名用户",
+      "unknown": "未知"
+    },
+    "meta": {
+      "notSet": "未设置",
+      "unassigned": "未分配"
+    },
+    "editingHint": "{names}正在编辑此字段",
+    "toasts": {
+      "invalidWorkspace": "当前工作空间无效，因此无法保存问题。",
+      "saved": "问题已保存.",
+      "updateFailed": "Failed to update the issue.请重试。",
+      "copyFailed": "复制文本失败。",
+      "missingDoneState": "当前工作区中没有可用的完成状态。"
+    },
+    "states": {
+      "loading": "加载问题...",
+      "notFound": "此问题不存在或已被删除。",
+      "back": "返回list",
+      "saving": "正在保存更改..."
+    },
+    "badges": {
+      "state": "状态：{值}",
+      "priority": "优先级：{值}",
+      "project": "项目：{值}",
+      "assignee": "所有者：{值}",
+      "dueDate": "到期： {value}",
+      "visibility": "可见性：{value}",
+      "collaborator": "协作者：{value}"
+    },
+    "select": {
+      "statePlaceholder": "状态：未设置",
+      "stateOption": "状态：{value}",
+      "priorityPlaceholder": "优先级：未设置设置",
+      "priorityOption": "优先级：{值}",
+      "projectPlaceholder": "项目：未设置",
+      "projectOption": "项目：{值}",
+      "assigneePlaceholder": "所有者：未分配",
+      "assigneeOption": "所有者： {value}",
+      "visibilityPlaceholder": "可见性",
+      "visibilityOption": "Visibility：{value}"
+    },
+    "actions": {
+      "openAi": "打开AI助手",
+      "markComplete": "标记为完成"
+    },
+    "description": {
+      "title": "问题描述",
+      "referencedDocs": "{计数，复数，1 {#引用 document.} other {# referenced documents.}}",
+      "insertDoc": "插入团队doc",
+      "save": "保存描述",
+      "cancel": "取消",
+      "edit": "编辑描述",
+      "placeholder": "使用Markdown解释背景、验收标准、风险和后续步骤。例如：## 背景- 为什么这很重要- [ ] Pending questions",
+      "empty": "No description yet.添加背景、验收标准、风险和相关文档。"
+    },
+    "aiHandoff": {
+      "title": "AI 编码交接",
+      "updatedAt": "上次更新时间{时间}",
+      "fallback": "已保存回本期并准备交接至 Claude Code 或 Codex。",
+      "copySuccess": "编码交接提示已已复制.",
+      "copyAction": "克劳德代码/Codex的副本"
+    },
+    "footer": {
+      "createdAt": "已创建：{value}",
+      "updatedAt": "已更新：{value}"
+    },
+    "docReference": {
+      "label": "Doc",
+      "defaultTitle": "团队文档",
+      "projectDoc": "项目doc",
+      "teamDoc": "团队 doc",
+      "pickerTitle": "插入团队 doc",
+      "pickerDescription": "选择要插入到问题描述中的文档。您可以点击描述中的文档标签稍后预览。",
+      "loading": "正在加载团队文档...",
+      "empty": "尚无可供参考的团队文档。",
+      "close": "关闭",
+      "previewDescription": "团队空间中引用文档的预览。",
+      "previewEmpty": "该文档没有尚未有任何内容。"
+    }
+  },
+  "workflowFlow": {
+    "runStatus": {
+      "active": "活动",
+      "blocked": "已阻止",
+      "waitingReview": "等待审核",
+      "handoffPending": "等待交接",
+      "done": "完成"
+    },
+    "actionType": {
+      "execution": "当前执行步骤",
+      "blocked": "等待解锁",
+      "review": "等待确认",
+      "handoff": "等待接管",
+      "done": "工作流程已完成"
+    },
+    "reviewOutcome": {
+      "approved": "已批准",
+      "changesRequested": "请求更改"
+    },
+    "memberFallback": "成员 {id}",
+    "toasts": {
+      "requestReviewFailed": "未能请求审核。",
+      "requestHandoffFailed": "未能请求移交。",
+      "blockFailed": "未能将工作流标记为已阻止。",
+      "unblockFailed": "未能阻止工作流。",
+      "approveReviewFailed": "未能批准审核.",
+      "requestChangesFailed": "无法请求更改.",
+      "acceptHandoffFailed": "无法接受移交."
+    },
+    "states": {
+      "loadFailed": "无法加载工作流程data."
+    },
+    "meta": {
+      "number": "编号",
+      "workflow": "工作流程",
+      "status": "状态",
+      "currentStep": "当前步骤",
+      "currentOwner": "当前所有者",
+      "priority": "优先级",
+      "stepCount": "Step计数",
+      "action": "操作",
+      "owner": "所有者",
+      "step": "步骤",
+      "version": "版本",
+      "recentReview": "最新评论",
+      "notStarted": "未开始",
+      "unknownStep": "未命名步骤",
+      "notSet": "未设置",
+      "unassigned": "未分配",
+      "specifiedMember": "已分配成员",
+      "stepsValue": "{count}步"
+    },
+    "header": {
+      "workflow": "工作流程：{名称}",
+      "priority": "优先级： {value}",
+      "workflowTask": "工作流程问题"
+    },
+    "actions": {
+      "openAi": "开放AI助手",
+      "requestReview": "请求审核",
+      "requestHandoff": "请求交接",
+      "markBlocked": "标记为屏蔽",
+      "approveReview": "批准审核",
+      "requestChanges": "请求变更",
+      "acceptHandoff": "接受移交",
+      "unblock": "解除阻止"
+    },
+    "tabs": {
+      "overview": "概述"
+    },
+    "overview": {
+      "title": "任务概述",
+      "empty": "尚未添加介绍。添加背景、验收标准、移交注释和相关文档。"
+    },
+    "collaboration": {
+      "title": "协作状态",
+      "blockReason": "阻止原因：{value}",
+      "pendingTarget": "等待：{value}",
+      "activeTitle": "当前由{name}拥有",
+      "activeDescription": "当前所有者可以请求审核、移交步骤，或在需要外部帮助时将其标记为阻止。",
+      "targetLabel": "审核或移交目标",
+      "targetPlaceholder": "选择应由谁审核或接管",
+      "noteLabel": "协作说明",
+      "notePlaceholder": "添加审核、移交或阻止注释。标记为阻止时，请解释原因、谁可以提供帮助以及何时可以恢复进度。",
+      "targetRequired": "在请求审核或移交之前选择目标成员。可以在没有目标的情况下提交标记为已阻止的操作。",
+      "onlyCurrentOwner": "只有当前所有者可以请求审核、开始移交或将此工作流程标记为已阻止。"
+    },
+    "review": {
+      "waitingTitle": "等待 {name} 进行审核",
+      "waitingDescription": "审核获得批准后，工作流程将继续。如果需要更改，可以直接发回。",
+      "placeholder": "写审核决定或请求更改",
+      "readonlyHint": "这一步正在等待{name}。您仍然可以在讨论选项卡中添加上下文。"
+    },
+    "handoff": {
+      "waitingTitle": "等待 {name} 接管",
+      "waitingDescription": "接管后，当前步骤的所有权将转移给新的受让人。",
+      "placeholder": "添加移交注释，例如接下来会发生什么",
+      "readonlyHint": "此步骤正在等待 {name} 接管。您仍然可以在讨论选项卡中添加切换上下文。"
+    },
+    "blocked": {
+      "title": "此步骤已被阻止",
+      "description": "所有者：{name}。阻止者说明应解释原因、谁可以提供帮助以及预计恢复时间。",
+      "placeholder": "解释阻止者被解决的原因，或在恢复后添加下一步",
+      "readonlyHint": "只有当前所有者可以取消阻止此工作流。其他队友仍然可以在讨论选项卡中添加上下文。"
+    },
+    "done": {
+      "description": "此工作流程已完成。您稍后可以在此处重新查看输出和协作历史记录。"
+    },
+    "focusingNode": "专注于当前节点",
+    "records": {
+      "title": "协作记录",
+      "history": "历史记录",
+      "discussion": "讨论",
+      "outputs": "输出 ({count})"
+    }
+  }
+}

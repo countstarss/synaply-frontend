@@ -1,0 +1,101 @@
+{
+  "nav": {
+    "docs": "Docs",
+    "inbox": "Inbox",
+    "intelligence": "Intelligence",
+    "issues": "Issues",
+    "myWork": "My Work",
+    "projects": "プロジェクト",
+    "workflows": "ワークフロー"
+  },
+  "sidebar": {
+    "backToMain": "戻る",
+    "createTeam": "新規作成チーム",
+    "sections": {
+      "administration": "管理",
+      "general": "一般",
+      "team": "チーム"
+    },
+    "brand": {
+      "fallbackWorkspaceName": "私のワークスペース",
+      "loadFailed": "ワークスペースの読み込みに失敗しました",
+      "personal": "個人ワークスペース",
+      "team": "チームworkspace",
+      "loadFailedDescription": "ワークスペース データをロードできませんでした。フロントエンド バックエンド URL 構成を確認するか、しばらくしてから再試行してください。",
+      "retry": "Retry",
+      "memberCount": "{count} メンバー",
+      "inviteMember": "新しいメンバーを招待",
+      "emailFallback": "ユーザーの電子メール",
+      "workspaceListFailed": "ワークスペース リストのロードに失敗しました",
+      "workspaceEmpty": "このアカウントで使用できるワークスペースはまだありません。",
+      "createWorkspace": "新しいワークスペースを作成",
+      "settings": "Settings",
+      "logout": "Logout"
+    },
+    "footer": {
+      "title": "Insight Lab",
+      "description": "洞察がアクションを引き起こす場所。"
+    },
+    "utils": {
+      "title": "Utils",
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "addShortcut": "ショートカットを追加"
+      },
+      "dialog": {
+        "editTitle": "ショートカットを編集",
+        "editDescription": "表示ラベルとアプリ内を更新するルート.",
+        "createTitle": "ショートカットを追加",
+        "createDescription": "ラベルとアプリ内ルートを入力して、サイドバーからすぐにそこにジャンプできるようにします。",
+        "save": "保存",
+        "add": "Add"
+      },
+      "fields": {
+        "label": "ラベルを表示",
+        "labelPlaceholder": "例: ブロックされた問題",
+        "route": "ルート",
+        "routePlaceholder": "例: /projects または /issues?state=blocked"
+      },
+      "validation": {
+        "routeRequired": "ピン留めするアプリ内ルートを入力してください。",
+        "routeInternalOnly": "ここではアプリ内ルートのみが許可されます (/projects など)。",
+        "duplicateRoute": "このルートはすでにショートカット リストに含まれています。",
+        "maxReached": "ショートカットは 5 つまで追加できます。"
+      }
+    }
+  },
+  "settingsNav": {
+    "aiExecution": "AIの実行",
+    "appearance": "外観",
+    "application": "応用",
+    "billing": "請求する",
+    "members": "メンバー",
+    "notifications": "通知",
+    "profile": "プロフィール",
+    "security": "安全",
+    "teams": "チーム",
+    "workspace": "ワークスペース"
+  },
+  "infobar": {
+    "menu": "メニュー",
+    "showSidebar": "サイドバーを表示",
+    "hideSidebar": "サイドバーを隠す"
+  },
+  "search": {
+    "placeholder": "コマンドを入力するか検索...",
+    "empty": "結果が見つかりませんでした。",
+    "groups": {
+      "suggestions": "提案",
+      "settings": "設定"
+    },
+    "items": {
+      "calendar": "カレンダー",
+      "searchEmoji": "検索絵文字",
+      "calculator": "電卓",
+      "profile": "プロフィール",
+      "billing": "請求",
+      "settings": "設定"
+    }
+  }
+}

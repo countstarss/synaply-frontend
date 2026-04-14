@@ -1,0 +1,141 @@
+{
+  "sourceSwitcher": {
+    "label": "ドキュメント ソース",
+    "description": "共有チーム ドキュメントとプライベート ドキュメントを切り替えます。",
+    "placeholder": "ドキュメント ソースを選択"
+  },
+  "source": {
+    "team": "チーム ドキュメント",
+    "teamPersonal": "私のプライベート ドキュメント"
+  },
+  "creation": {
+    "newDoc": "新しいドキュメント",
+    "newFolder": "新規フォルダー",
+    "newTeamDoc": "新しいチーム ドキュメント",
+    "newPersonalDoc": "新しい個人ドキュメント"
+  },
+  "overview": {
+    "shared": {
+      "documentMetric": "ドキュメント",
+      "folderMetric": "フォルダー",
+      "newDocTitle": "新しいドキュメント",
+      "categoryTitle": "カテゴリ",
+      "recentTitle": "最近updated",
+      "folderContains": "{count} 個のアイテム",
+      "emptyFolder": "空のフォルダー",
+      "updatedAt": "{value}"
+    },
+    "personal": {
+      "title": "My docs",
+      "subtitle": "{count} 個の個人用ドキュメント",
+      "newDocDescription": "新しい個人用ドキュメントを作成doc",
+      "emptyTitle": "ドキュメントはまだありません",
+      "emptyDescription": "最初のドキュメントを作成してアイデアの収集を開始してください。",
+      "emptyAction": "ドキュメントを作成"
+    },
+    "team": {
+      "title": "チーム docs",
+      "subtitle": "{count} チーム docs",
+      "documentMetric": "チームを更新しましたdocs",
+      "newDocDescription": "新しいチームを作成します doc",
+      "emptyTitle": "チーム ドキュメントはまだありません",
+      "emptyDescription": "最初のチーム ドキュメントを作成し、チームと共同作業します。",
+      "emptyAction": "チームを作成する doc"
+    },
+    "teamPersonal": {
+      "title": "私の仕事docs",
+      "subtitle": "{count} 個の個人用作業用ドキュメント",
+      "documentMetric": "作業用ドキュメント",
+      "newDocDescription": "新しい個人用作業用ドキュメントを作成",
+      "emptyTitle": "個人用作業用ドキュメントはまだありません",
+      "emptyDescription": "自分だけがアクセスできる個人ドキュメントをチーム ワークスペース内に作成します。",
+      "emptyAction": "個人ドキュメントの作成"
+    }
+  },
+  "states": {
+    "loadingPage": "ドキュメントを読み込み中...",
+    "loadingSidebar": "読み込み中...",
+    "loadingEditor": "エディタを読み込み中..."
+  },
+  "welcome": {
+    "title": "ドキュメントへようこそ",
+    "emptyDescription": "そこにありますまだドキュメントがありません。サイドバーの + ボタンをクリックしてドキュメントを作成します。",
+    "selectDescription": "左側でドキュメントを選択して編集を開始してください。"
+  },
+  "sidebar": {
+    "title": "Docs",
+    "searchPlaceholder": "ドキュメントを検索...",
+    "newChildDoc": "子ドキュメントを作成",
+    "newDoc": "新しいドキュメント",
+    "newFolder": "Newフォルダー",
+    "rename": "名前の変更",
+    "delete": "削除",
+    "emptySearch": "一致するドキュメントが見つかりません",
+    "emptyTitle": "ドキュメントがまだありません",
+    "emptyDescription": "上の + ボタンをクリックして作成します",
+    "deleteDialog": {
+      "title": "ドキュメントを削除しますか?",
+      "description": "これにより削除されます「{タイトル}」。 {children} この操作は元に戻すことができません。",
+      "children": "その子ドキュメントも削除されます。",
+      "cancel": "Cancel",
+      "confirm": "削除を確認"
+    }
+  },
+  "toolbar": {
+    "collapseTitle": "エディタを折りたたむ",
+    "expandTitle": "展開editor",
+    "collapse": "Collapse",
+    "expand": "Expそして"
+  },
+  "tabs": {
+    "close": "閉じる"
+  },
+  "editor": {
+    "save": "保存",
+    "saving": "保存中...",
+    "cancel": "キャンセル",
+    "untitled": "無題document",
+    "clickToEdit": "編集するにはタイトルをクリックしてください",
+    "updatedAt": "更新された {value}",
+    "meta": {
+      "folder": "フォルダー",
+      "document": "Document",
+      "private": "Private",
+      "teamReadonly": "チーム読み取り専用",
+      "teamEditable": "チーム編集可能",
+      "public": "パブリック"
+    }
+  },
+  "blocknote": {
+    "conflict": "リモート変更が検出されました。ローカル ドラフトは保存されました。",
+    "saveFailed": "保存に失敗しました",
+    "saving": "保存中...",
+    "conflictStatus": "競合が検出されました。ローカルの下書きは保存されました。",
+    "errorStatus": "保存に失敗しました。ローカル ドラフトはローカルに保存されました。",
+    "recoveredDraft": "ローカル ドラフトを回復しました",
+    "draftPending": "ローカル ドラフト保留中の同期",
+    "savedAt": "保存済み • {value}",
+    "ready": "準備完了",
+    "shortcut": "保存するには {key} + S を押してください • 30 回ごとに自動保存されます秒"
+  },
+  "folderIntro": {
+    "saveFailed": "フォルダーの説明を保存できませんでした。",
+    "folderMeta": "フォルダー • {値}を作成しました",
+    "editDescription": "説明を編集",
+    "title": "フォルダーの説明",
+    "placeholder": "フォルダーを入力してください説明...",
+    "saving": "保存中...",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "emptyEditable": "クリックしてフォルダーの説明を追加...",
+    "emptyReadonly": "フォルダーの説明がまだありません",
+    "tipsTitle": "ヒント",
+    "tip1": "これは、ドキュメントを整理および分類します。",
+    "tip2": "フォルダーを右クリックして、子ドキュメントまたは子フォルダーを作成します。",
+    "tip3": "ここに詳細なガイダンスと使用上の注意を追加できます。",
+    "visibility": "フォルダーの表示/非表示: {value}"
+  },
+  "context": {
+    "docNotReady": "ドキュメントが存在しないか、読み込みがまだ完了していません。"
+  }
+}

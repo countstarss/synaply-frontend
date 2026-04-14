@@ -1,0 +1,141 @@
+{
+  "sourceSwitcher": {
+    "label": "문서 소스",
+    "description": "공유 팀 문서와 비공개 문서 간에 전환합니다.",
+    "placeholder": "문서 소스 선택"
+  },
+  "source": {
+    "team": "팀 문서",
+    "teamPersonal": "내 비공개 문서"
+  },
+  "creation": {
+    "newDoc": "새로 만들기 document",
+    "newFolder": "새 폴더",
+    "newTeamDoc": "새 팀 문서",
+    "newPersonalDoc": "새 개인 문서"
+  },
+  "overview": {
+    "shared": {
+      "documentMetric": "문서",
+      "folderMetric": "폴더",
+      "newDocTitle": "새 문서",
+      "categoryTitle": "카테고리",
+      "recentTitle": "최근 업데이트됨",
+      "folderContains": "{count}개 항목",
+      "emptyFolder": "빈 폴더",
+      "updatedAt": "업데이트됨 {값}"
+    },
+    "personal": {
+      "title": "내 docs",
+      "subtitle": "{count} 개인 문서",
+      "newDocDescription": "새 개인 문서 만들기",
+      "emptyTitle": "아직 문서 없음",
+      "emptyDescription": "아이디어 캡처를 시작하려면 첫 번째 문서를 만드세요.",
+      "emptyAction": "문서 만들기"
+    },
+    "team": {
+      "title": "팀 docs",
+      "subtitle": "{count}개의 팀 문서",
+      "documentMetric": "팀 문서",
+      "newDocDescription": "새 팀 문서 만들기",
+      "emptyTitle": "아직 팀 문서가 없습니다",
+      "emptyDescription": "첫 번째 팀 문서를 만들고 팀.",
+      "emptyAction": "팀 문서 만들기"
+    },
+    "teamPersonal": {
+      "title": "내 업무 문서",
+      "subtitle": "{count} 개인 업무 문서",
+      "documentMetric": "업무 문서",
+      "newDocDescription": "새 개인 업무 문서 만들기",
+      "emptyTitle": "아직 개인 업무 문서가 없습니다.",
+      "emptyDescription": "자신만 액세스할 수 있는 팀 작업 공간 내에 개인 문서를 만듭니다.",
+      "emptyAction": "개인 문서 만들기"
+    }
+  },
+  "states": {
+    "loadingPage": "문서 로드 중...",
+    "loadingSidebar": "로드 중...",
+    "loadingEditor": "편집기 로드 중..."
+  },
+  "welcome": {
+    "title": "환영합니다 docs",
+    "emptyDescription": "아직 문서가 없습니다. 사이드바에서 + 버튼을 클릭하여 문서를 만드세요.",
+    "selectDescription": "편집을 시작하려면 왼쪽에서 문서를 선택하세요."
+  },
+  "sidebar": {
+    "title": "Docs",
+    "searchPlaceholder": "문서 검색...",
+    "newChildDoc": "하위 문서 만들기",
+    "newDoc": "새로 만들기 document",
+    "newFolder": "새 폴더",
+    "rename": "이름 바꾸기",
+    "delete": "삭제",
+    "emptySearch": "일치하는 문서가 없습니다",
+    "emptyTitle": "아직 문서가 없습니다",
+    "emptyDescription": "만들려면 위의 + 버튼을 클릭하세요 one",
+    "deleteDialog": {
+      "title": "문서를 삭제하시겠습니까?",
+      "description": "이렇게 하면 “{title}”이(가) 삭제됩니다. {children} 이 작업은 취소할 수 없습니다.",
+      "children": "해당 하위 문서도 삭제됩니다.",
+      "cancel": "취소",
+      "confirm": "삭제 확인"
+    }
+  },
+  "toolbar": {
+    "collapseTitle": "편집 접기",
+    "expandTitle": "확장 editor",
+    "collapse": "Collapse",
+    "expand": "Expand"
+  },
+  "tabs": {
+    "close": "Close"
+  },
+  "editor": {
+    "save": "Save",
+    "saving": "저장 중...",
+    "cancel": "취소",
+    "untitled": "제목 없음 문서",
+    "clickToEdit": "수정하려면 제목을 클릭하세요.",
+    "updatedAt": "업데이트된 {값}",
+    "meta": {
+      "folder": "폴더",
+      "document": "문서",
+      "private": "Private",
+      "teamReadonly": "팀 읽기 전용",
+      "teamEditable": "팀 편집 가능",
+      "public": "Public"
+    }
+  },
+  "blocknote": {
+    "conflict": "원격 변경 사항이 감지되었습니다. 로컬 초안이 보존되었습니다.",
+    "saveFailed": "저장 실패",
+    "saving": "저장 중...",
+    "conflictStatus": "충돌이 감지되었습니다. 로컬 초안이 보존되었습니다.",
+    "errorStatus": "저장에 실패했습니다. 로컬 초안이 로컬에 보존되었습니다.",
+    "recoveredDraft": "로컬 초안을 복구했습니다.",
+    "draftPending": "로컬 초안 보류 중인 동기화",
+    "savedAt": "저장됨 • {value}",
+    "ready": "준비",
+    "shortcut": "저장하려면 {key} + S를 누르세요. • 30마다 자동 저장됩니다. 초"
+  },
+  "folderIntro": {
+    "saveFailed": "폴더 설명을 저장하지 못했습니다.",
+    "folderMeta": "폴더 • 생성된 {value}",
+    "editDescription": "설명 편집",
+    "title": "폴더 설명",
+    "placeholder": "폴더 입력 설명...",
+    "saving": "저장 중...",
+    "save": "저장",
+    "cancel": "취소",
+    "emptyEditable": "폴더 설명을 추가하려면 클릭하세요...",
+    "emptyReadonly": "폴더 설명 없음 아직",
+    "tipsTitle": "Tips",
+    "tip1": "문서를 정리하고 분류하는 데 사용되는 폴더입니다.",
+    "tip2": "하위 문서 또는 하위 폴더를 생성하려면 폴더를 마우스 오른쪽 버튼으로 클릭하세요.",
+    "tip3": "여기에 자세한 지침과 사용 참고 사항을 추가할 수 있습니다.",
+    "visibility": "폴더 표시 여부: {value}"
+  },
+  "context": {
+    "docNotReady": "문서가 존재하지 않거나 아직 로드가 완료되지 않았습니다."
+  }
+}

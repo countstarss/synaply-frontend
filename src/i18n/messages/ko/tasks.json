@@ -1,0 +1,124 @@
+{
+  "tabs": {
+    "today": "오늘",
+    "waiting": "대기 중",
+    "inProgress": "진행 중",
+    "blocked": "차단됨",
+    "completed": "완료"
+  },
+  "summary": {
+    "todayFocus": "오늘 집중",
+    "waiting": "대기 중",
+    "inProgress": "중 진행률",
+    "blocked": "차단됨",
+    "completedToday": "오늘 완료됨"
+  },
+  "header": {
+    "title": "내 작업 개요",
+    "activeCount": "{count}개의 활성 항목",
+    "syncing": "동기화",
+    "updatedAt": "업데이트 시간 {value}",
+    "waitingFirstSync": "첫 번째 동기화를 기다리는 중"
+  },
+  "sections": {
+    "today": {
+      "title": "오늘의 초점",
+      "description": "먼저 이것부터 시작하세요. 긴급성, 방해 요소, 검토 요청 및 현재 실행 상태를 결합합니다.",
+      "emptyTitle": "현재 포커스 대기열은 비어 있습니다",
+      "emptyDescription": "작업이 대기 중이거나 진행 중이거나 차단되면 여기 맨 위로 올라갑니다."
+    },
+    "waiting": {
+      "title": "기다리는 중",
+      "description": "시작, 검토 또는 수락이 필요한 작업 전달.",
+      "emptyTitle": "지금은 아무것도 기다리고 있지 않습니다",
+      "emptyDescription": "새로운 전달, 검토 요청 및 시작 준비가 된 작업이 먼저 여기에 도착합니다."
+    },
+    "inProgress": {
+      "title": "진행 중",
+      "description": "작업이 이미 선택되어 적극적으로 진행되고 있습니다.",
+      "emptyTitle": "현재 진행중인 작업이 없습니다",
+      "emptyDescription": "이슈나 워크플로 실행을 시작하면 여기에 표시됩니다."
+    },
+    "blocked": {
+      "title": "막힌",
+      "description": "현재 차단된 귀하와 관련된 업무입니다.",
+      "emptyTitle": "현재 귀하와 연결되어 있는 차단된 항목이 없습니다.",
+      "emptyDescription": "차단된 작업은 여기에 수집되므로 다른 보기에서 위험이 손실되지 않습니다."
+    },
+    "completed": {
+      "title": "오늘 완료됨",
+      "description": "오늘 완료했거나 마무리한 작업입니다.",
+      "emptyTitle": "오늘은 아직 아무것도 완료되지 않았습니다",
+      "emptyDescription": "문제 또는 워크플로 단계를 완료하면 오늘의 전달 진행 상황이 여기에 표시됩니다."
+    }
+  },
+  "table": {
+    "work": "일하다",
+    "context": "문맥",
+    "signal": "신호",
+    "action": "행동"
+  },
+  "row": {
+    "source": {
+      "workflow": "작업 흐름",
+      "issue": "문제"
+    },
+    "quickAction": {
+      "accept": "수용하다",
+      "start": "시작",
+      "review": "검토",
+      "open": "열려 있는"
+    },
+    "queue": {
+      "review": "검토 · {이름}",
+      "handoff": "핸드오프 · {name}",
+      "assignee": "소유자 · {이름}",
+      "workflow": "워크플로 실행",
+      "issue": "문제"
+    },
+    "openIssueAria": "{제목} 열기",
+    "unassignedProject": "프로젝트 없음",
+    "workspaceQueue": "작업공간 대기열",
+    "due": "마감 {value}"
+  },
+  "actions": {
+    "retry": "다시 해 보다"
+  },
+  "addModal": {
+    "title": "작업 만들기",
+    "fields": {
+      "titlePlaceholder": "제목",
+      "descriptionPlaceholder": "설명(선택사항)",
+      "dueDatePlaceholder": "마감일(선택사항)"
+    },
+    "actions": {
+      "submit": "만들다"
+    }
+  },
+  "calendar": {
+    "newTask": "작업 만들기",
+    "noTasks": "아직 할 일이 없습니다.",
+    "close": "닫다",
+    "more": "+{count}개 이상",
+    "weekdays": {
+      "sun": "해",
+      "mon": "월",
+      "tue": "화요일",
+      "wed": "수요일",
+      "thu": "목",
+      "fri": "금",
+      "sat": "앉았다"
+    }
+  },
+  "states": {
+    "loading": "작업 대기열 정리 중...",
+    "errorTitle": "작업 개요를 로드하지 못했습니다.",
+    "errorDescription": "잠시 후 다시 시도해 주세요."
+  },
+  "toasts": {
+    "markedStarted": "시작됨으로 표시되었습니다.",
+    "markStartedFailed": "실행 상태를 업데이트하지 못했습니다. 다시 시도하십시오.",
+    "handoffAccepted": "핸드오프가 승인되었습니다.",
+    "acceptHandoffFailed": "핸드오프를 승인하지 못했습니다. 다시 시도해 주세요."
+  }
+}
