@@ -383,7 +383,6 @@
     },
     "collaboration": {
       "title": "Collaboration status",
-      "blockReason": "Blocked reason: {value}",
       "pendingTarget": "Waiting on: {value}",
       "activeTitle": "Currently owned by {name}",
       "activeDescription": "The current owner can request a review, hand off the step, or mark it blocked when outside help is needed.",
@@ -391,7 +390,10 @@
       "targetPlaceholder": "Choose who should review or take over",
       "noteLabel": "Collaboration note",
       "notePlaceholder": "Add review, handoff, or blocker notes. When marking blocked, explain the cause, who can help, and when progress may resume.",
-      "targetRequired": "Choose a target member before requesting a review or handoff. Marking blocked can be submitted without a target.",
+      "targetOptionalHint": "Review and handoff need a target member. Blocking can still be submitted directly.",
+      "noEligibleTarget": "There is no other eligible teammate to receive a review or handoff yet.",
+      "latestNoteTitle": "Latest context",
+      "latestNoteMeta": "Added by {name} · {time}",
       "onlyCurrentOwner": "Only the current owner can request a review, start a handoff, or mark this workflow blocked."
     },
     "review": {
@@ -421,6 +423,13 @@
       "history": "History",
       "discussion": "Discussion",
       "outputs": "Outputs ({count})"
+    },
+    "history": {
+      "step": "Step",
+      "target": "Target",
+      "reason": "Reason",
+      "note": "Note",
+      "result": "Result"
     }
   }
 }

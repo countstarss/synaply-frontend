@@ -383,7 +383,6 @@
     },
     "collaboration": {
       "title": "コラボレーション ステータス",
-      "blockReason": "ブロックされた理由: {value}",
       "pendingTarget": "待機中: {value}",
       "activeTitle": "現在所有者: {name}",
       "activeDescription": "現在の所有者はレビュー、引き継ぎをリクエストできます。 ",
@@ -391,7 +390,10 @@
       "targetPlaceholder": "誰をレビューまたは引き継ぐかを選択してください",
       "noteLabel": "共同作業メモ",
       "notePlaceholder": "レビュー、引き継ぎ、またはブロッカーメモを追加します。ブロックされているとマークする場合は、原因、誰が助けてくれるか、いつ進捗が再開されるのかを説明してください。",
-      "targetRequired": "レビューまたはハンドオフをリクエストする前に対象のメンバーを選択してください。ブロック済みのマークは、ターゲットなしで送信できます。",
+      "targetOptionalHint": "レビューとハンドオフには対象メンバーの選択が必要です。ブロックはそのまま送信できます。",
+      "noEligibleTarget": "レビューまたはハンドオフを受け取れる他のチームメンバーがまだいません。",
+      "latestNoteTitle": "最新のコンテキスト",
+      "latestNoteMeta": "{name} が追加 · {time}",
       "onlyCurrentOwner": "現在の所有者のみが、レビューをリクエストしたり、ハンドオフを開始したり、このワークフローをブロック済みとしてマークしたりできます。"
     },
     "review": {
@@ -421,6 +423,13 @@
       "history": "History",
       "discussion": "Discussion",
       "outputs": "出力 ({count})"
+    },
+    "history": {
+      "step": "ステップ",
+      "target": "対象",
+      "reason": "理由",
+      "note": "メモ",
+      "result": "結果"
     }
   }
 }

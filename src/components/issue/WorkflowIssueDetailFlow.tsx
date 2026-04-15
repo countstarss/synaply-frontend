@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import ReactFlow, {
   Background,
   BackgroundVariant,
@@ -45,7 +45,11 @@ import {
 } from "@/hooks/useIssueApi";
 import { useIssueRealtime } from "@/hooks/realtime/useIssueRealtime";
 import { useCurrentTeam, useTeamMembers } from "@/hooks/useTeam";
-import { Issue } from "@/lib/fetchers/issue";
+import {
+  Issue,
+  type IssueActivity,
+  type WorkflowRunActivityMetadata,
+} from "@/lib/fetchers/issue";
 import useWorkflowNodeStatus from "@/app/[locale]/(main)/workflows/_components/hooks/useWorkflowNodeStatus";
 import {
   createFlowNodesAndEdges,
@@ -62,6 +66,28 @@ import { toast } from "sonner";
 const nodeTypes = {
   custom: CustomNode,
 };
+
+function isWorkflowRunActivityMetadata(
+  metadata: unknown,
+): metadata is WorkflowRunActivityMetadata {
+  if (!metadata || typeof metadata !== "object") {
+    return false;
+  }
+
+  const record = metadata as Record<string, unknown>;
+  return record.kind === "workflow" && typeof record.eventType === "string";
+}
+
+function getWorkflowActivityActorLabel(
+  activity: IssueActivity | undefined,
+  fallbackLabel: string,
+) {
+  return (
+    activity?.actor?.user?.name?.trim() ||
+    activity?.actor?.user?.email?.split("@")[0] ||
+    fallbackLabel
+  );
+}
 
 function getRunStatusLabels(tIssues: (key: string) => string) {
   return {
@@ -103,6 +129,7 @@ export function WorkflowIssueDetailFlow({
   onUpdate,
 }: WorkflowIssueDetailProps) {
   const tIssues = useTranslations("issues");
+  const locale = useLocale();
   const { team } = useCurrentTeam();
   const { data: teamMembers = [] } = useTeamMembers(team?.id);
   const { user, session } = useAuth();
@@ -197,9 +224,47 @@ export function WorkflowIssueDetailFlow({
     [tIssues, teamMembers],
   );
   const workflowRun = issue.workflowRun;
+  const collaborationEligibleMembers = useMemo(
+    () =>
+      workflowMembers.filter(
+        (member) => Boolean(member.userId) && member.userId !== user?.id,
+      ),
+    [user?.id, workflowMembers],
+  );
   const selectedCollaborationTarget =
-    workflowMembers.find((member) => member.id === collaborationTargetId) ||
+    collaborationEligibleMembers.find(
+      (member) => member.id === collaborationTargetId,
+    ) ||
     null;
+  const latestWorkflowActivity = useMemo(
+    () =>
+      activities.find((activity) =>
+        isWorkflowRunActivityMetadata(activity.metadata),
+      ),
+    [activities],
+  );
+  const latestWorkflowMetadata = isWorkflowRunActivityMetadata(
+    latestWorkflowActivity?.metadata,
+  )
+    ? latestWorkflowActivity.metadata
+    : null;
+  const latestWorkflowContextNote =
+    latestWorkflowMetadata?.reason?.trim() ||
+    latestWorkflowMetadata?.comment?.trim() ||
+    null;
+  const latestWorkflowActorLabel = getWorkflowActivityActorLabel(
+    latestWorkflowActivity,
+    tIssues("workflowFlow.meta.unassigned"),
+  );
+  const latestWorkflowContextMeta =
+    latestWorkflowActivity?.createdAt && latestWorkflowContextNote
+      ? tIssues("workflowFlow.collaboration.latestNoteMeta", {
+          name: latestWorkflowActorLabel,
+          time: new Date(latestWorkflowActivity.createdAt).toLocaleString(
+            locale,
+          ),
+        })
+      : null;
 
   const {
     handleStatusUpdate,
@@ -492,10 +557,14 @@ export function WorkflowIssueDetailFlow({
   const pendingTargetLabel =
     workflowRun?.targetName || tIssues("workflowFlow.meta.specifiedMember");
   const hasSelectedTarget = Boolean(selectedCollaborationTarget?.userId);
+  const hasEligibleCollaborationTargets = collaborationEligibleMembers.length > 0;
   const canRequestCollaboration =
     Boolean(workflowRun) &&
     workflowRun?.runStatus === "ACTIVE" &&
     isCurrentAssignee;
+  const canEditNodeStatus = workflowRun
+    ? workflowRun.runStatus === "ACTIVE" && isCurrentAssignee
+    : isCurrentAssignee;
   const issueMetaItems = [
     [tIssues("workflowFlow.meta.number"), issue.key || `#${issue.id.slice(0, 8)}`],
     [tIssues("workflowFlow.meta.workflow"), workflowIssue.workflowName],
@@ -740,22 +809,29 @@ export function WorkflowIssueDetailFlow({
                   ))}
                 </div>
 
-                {(workflowRun.blockedReason || workflowRun.targetName) && (
+                {workflowRun.targetName && (
                   <div className="flex flex-wrap gap-2 rounded-lg border border-app-border bg-app-bg px-3 py-2 text-xs text-app-text-secondary">
-                    {workflowRun.blockedReason && (
-                      <span>
-                        {tIssues("workflowFlow.collaboration.blockReason", {
-                          value: workflowRun.blockedReason,
-                        })}
-                      </span>
+                    <span>
+                      {tIssues("workflowFlow.collaboration.pendingTarget", {
+                        value: workflowRun.targetName,
+                      })}
+                    </span>
+                  </div>
+                )}
+
+                {latestWorkflowContextNote && (
+                  <div className="rounded-lg border border-app-border bg-app-bg px-3 py-2.5">
+                    <div className="text-xs font-medium uppercase tracking-wide text-app-text-muted">
+                      {tIssues("workflowFlow.collaboration.latestNoteTitle")}
+                    </div>
+                    {latestWorkflowContextMeta && (
+                      <div className="mt-1 text-[11px] text-app-text-muted">
+                        {latestWorkflowContextMeta}
+                      </div>
                     )}
-                    {workflowRun.targetName && (
-                      <span>
-                        {tIssues("workflowFlow.collaboration.pendingTarget", {
-                          value: workflowRun.targetName,
-                        })}
-                      </span>
-                    )}
+                    <div className="mt-2 whitespace-pre-wrap text-sm leading-6 text-app-text-primary">
+                      {latestWorkflowContextNote}
+                    </div>
                   </div>
                 )}
 
@@ -774,30 +850,36 @@ export function WorkflowIssueDetailFlow({
 
                     {canRequestCollaboration ? (
                       <>
-                        <div className="space-y-2">
-                          <Label className="text-sm text-app-text-primary">
-                            {tIssues("workflowFlow.collaboration.targetLabel")}
-                          </Label>
-                          <Select
-                            value={collaborationTargetId || undefined}
-                            onValueChange={setCollaborationTargetId}
-                          >
-                            <SelectTrigger className="border-app-border bg-app-content-bg text-app-text-primary">
-                              <SelectValue
-                                placeholder={tIssues(
-                                  "workflowFlow.collaboration.targetPlaceholder",
-                                )}
-                              />
-                            </SelectTrigger>
-                            <SelectContent className="border-app-border bg-app-content-bg">
-                              {workflowMembers.map((member) => (
-                                <SelectItem key={member.id} value={member.id}>
-                                  {member.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                        {hasEligibleCollaborationTargets ? (
+                          <div className="space-y-2">
+                            <Label className="text-sm text-app-text-primary">
+                              {tIssues("workflowFlow.collaboration.targetLabel")}
+                            </Label>
+                            <Select
+                              value={collaborationTargetId || undefined}
+                              onValueChange={setCollaborationTargetId}
+                            >
+                              <SelectTrigger className="border-app-border bg-app-content-bg text-app-text-primary">
+                                <SelectValue
+                                  placeholder={tIssues(
+                                    "workflowFlow.collaboration.targetPlaceholder",
+                                  )}
+                                />
+                              </SelectTrigger>
+                              <SelectContent className="border-app-border bg-app-content-bg">
+                                {collaborationEligibleMembers.map((member) => (
+                                  <SelectItem key={member.id} value={member.id}>
+                                    {member.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        ) : (
+                          <div className="rounded-lg border border-dashed border-app-border px-3 py-2 text-sm text-app-text-secondary">
+                            {tIssues("workflowFlow.collaboration.noEligibleTarget")}
+                          </div>
+                        )}
 
                         <div className="space-y-2">
                           <Label className="text-sm text-app-text-primary">
@@ -816,9 +898,9 @@ export function WorkflowIssueDetailFlow({
                           />
                         </div>
 
-                        {!hasSelectedTarget && (
+                        {hasEligibleCollaborationTargets && !hasSelectedTarget && (
                           <p className="text-xs text-app-text-muted">
-                            {tIssues("workflowFlow.collaboration.targetRequired")}
+                            {tIssues("workflowFlow.collaboration.targetOptionalHint")}
                           </p>
                         )}
 
@@ -829,7 +911,8 @@ export function WorkflowIssueDetailFlow({
                             className="border-app-border bg-transparent text-app-text-primary"
                             disabled={
                               requestWorkflowReviewMutation.isPending ||
-                              !hasSelectedTarget
+                              !hasSelectedTarget ||
+                              !hasEligibleCollaborationTargets
                             }
                             onClick={handleRequestReview}
                           >
@@ -841,7 +924,8 @@ export function WorkflowIssueDetailFlow({
                             className="border-app-border bg-transparent text-app-text-primary"
                             disabled={
                               requestWorkflowHandoffMutation.isPending ||
-                              !hasSelectedTarget
+                              !hasSelectedTarget ||
+                              !hasEligibleCollaborationTargets
                             }
                             onClick={handleRequestHandoff}
                           >
@@ -1013,12 +1097,12 @@ export function WorkflowIssueDetailFlow({
             </Card>
           )}
 
-          {currentNode && isCurrentAssignee && (
+          {currentNode && canEditNodeStatus && (
             <NodeStatusUpdate
               nodeId={currentNode.id}
               currentStatus={currentNodeStatus?.status || "TODO"}
               assignee={currentNodeStatus?.assigneeName}
-              canEdit={isCurrentAssignee}
+              canEdit={canEditNodeStatus}
               onStatusUpdate={handleStatusUpdate}
               onNext={handleNext}
               onPrevious={handlePrevious}

@@ -383,7 +383,6 @@
     },
     "collaboration": {
       "title": "协作状态",
-      "blockReason": "阻止原因：{value}",
       "pendingTarget": "等待：{value}",
       "activeTitle": "当前由{name}拥有",
       "activeDescription": "当前所有者可以请求审核、移交步骤，或在需要外部帮助时将其标记为阻止。",
@@ -391,7 +390,10 @@
       "targetPlaceholder": "选择应由谁审核或接管",
       "noteLabel": "协作说明",
       "notePlaceholder": "添加审核、移交或阻止注释。标记为阻止时，请解释原因、谁可以提供帮助以及何时可以恢复进度。",
-      "targetRequired": "在请求审核或移交之前选择目标成员。可以在没有目标的情况下提交标记为已阻止的操作。",
+      "targetOptionalHint": "发起审核或移交前需要先选择目标成员；阻塞可以直接提交。",
+      "noEligibleTarget": "当前还没有其他可接收审核或移交的团队成员。",
+      "latestNoteTitle": "最新上下文",
+      "latestNoteMeta": "由 {name} 添加 · {time}",
       "onlyCurrentOwner": "只有当前所有者可以请求审核、开始移交或将此工作流程标记为已阻止。"
     },
     "review": {
@@ -421,6 +423,13 @@
       "history": "历史记录",
       "discussion": "讨论",
       "outputs": "输出 ({count})"
+    },
+    "history": {
+      "step": "步骤",
+      "target": "目标成员",
+      "reason": "原因",
+      "note": "说明",
+      "result": "结果"
     }
   }
 }

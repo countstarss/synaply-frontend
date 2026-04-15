@@ -383,7 +383,6 @@
     },
     "collaboration": {
       "title": "협력 상태",
-      "blockReason": "차단 이유: {value}",
       "pendingTarget": "대기 중: {value}",
       "activeTitle": "현재 {name}",
       "activeDescription": "소유자 외부 도움이 필요할 때 검토를 요청하거나, 단계를 전달하거나, 차단된 것으로 표시할 수 있습니다.",
@@ -391,7 +390,10 @@
       "targetPlaceholder": "검토 또는 인계받을 사람 선택",
       "noteLabel": "협력 메모",
       "notePlaceholder": "검토, 전달 또는 차단 메모를 추가합니다. 차단된 것으로 표시할 때 원인, 도움을 줄 수 있는 사람, 진행이 재개될 수 있는 시기를 설명합니다.",
-      "targetRequired": "검토 또는 전달을 요청하기 전에 대상 구성원을 선택하세요. 차단 표시는 대상 없이 제출할 수 있습니다.",
+      "targetOptionalHint": "검토와 인계에는 대상 멤버 선택이 필요합니다. 차단은 바로 제출할 수 있습니다.",
+      "noEligibleTarget": "아직 검토나 인계를 받을 수 있는 다른 팀원이 없습니다.",
+      "latestNoteTitle": "최신 컨텍스트",
+      "latestNoteMeta": "{name} 님이 추가 · {time}",
       "onlyCurrentOwner": "현재 소유자만 검토를 요청하거나 전달을 시작하거나 이 워크플로를 차단된 것으로 표시할 수 있습니다."
     },
     "review": {
@@ -421,6 +423,13 @@
       "history": "기록",
       "discussion": "토론",
       "outputs": "출력({count})"
+    },
+    "history": {
+      "step": "단계",
+      "target": "대상",
+      "reason": "사유",
+      "note": "메모",
+      "result": "결과"
     }
   }
 }

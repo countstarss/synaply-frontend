@@ -35,7 +35,6 @@ import {
   ProjectIssueRow,
   ProjectPanel,
   ProjectPendingConfirmationRow,
-  ProjectWorkflowRuntimeRow,
   StatMiniCard,
   WorkspaceCard,
 } from "@/components/projects/ProjectDetailShared";
@@ -222,7 +221,16 @@ export function ProjectCollaborationPanel(props: {
   onOpenProjectDocHub: () => void;
   onOpenProjectWorkflow: () => void;
 }) {
-  const { locale, relatedWorkflows, recentProjectDocs, pendingConfirmationIssues, workflowRunCounts, workflowRuntimeByWorkflowId, tProjects, onOpenIssue, onOpenDoc, onOpenProjectDocHub, onOpenProjectWorkflow } = props;
+  const {
+    locale,
+    recentProjectDocs,
+    pendingConfirmationIssues,
+    workflowRunCounts,
+    tProjects,
+    onOpenIssue,
+    onOpenDoc,
+    onOpenProjectDocHub,
+  } = props;
 
   return (
     <ProjectPanel title={tProjects("detail.collaboration.title")} subtitle={tProjects("detail.collaboration.subtitle")}>
@@ -251,7 +259,6 @@ export function ProjectCollaborationPanel(props: {
             <StatMiniCard label={tProjects("detail.collaboration.workflowRuntime.handoffPending")} value={workflowRunCounts.handoffPending} />
             <StatMiniCard label={tProjects("detail.collaboration.workflowRuntime.blocked")} value={workflowRunCounts.blocked} />
           </div>
-          {relatedWorkflows.length === 0 ? <EmptyPanel text={tProjects("detail.collaboration.workflowRuntimeEmpty")} /> : <div className="space-y-2">{relatedWorkflows.slice(0, 4).map((workflow) => <ProjectWorkflowRuntimeRow key={workflow.id} workflow={workflow} runtime={workflowRuntimeByWorkflowId.get(workflow.id)} onOpen={onOpenProjectWorkflow} tProjects={tProjects} />)}</div>}
         </div>
       </div>
     </ProjectPanel>
