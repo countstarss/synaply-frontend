@@ -25,7 +25,10 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useRouter } from "@/i18n/navigation";
+import { useWorkspaceStore } from "@/stores/workspace";
 import { InviteMemberDialog } from "@/components/dialogs/InviteMemberDialog";
+import { CreateTeamDialog } from "@/components/dialogs/CreateTeamDialog";
+import type { Team } from "@/lib/fetchers/team";
 
 interface SidebarBrandProps {
   className?: string;
@@ -35,15 +38,18 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
   const tShell = useTranslations("shell");
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const { setCurrentWorkspaceId } = useWorkspaceStore();
   const {
     workspaces,
     currentWorkspace,
+    currentWorkspaceContext,
     loading,
     error,
     refetch,
     switchWorkspace,
   } = useWorkspace();
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showCreateTeamDialog, setShowCreateTeamDialog] = useState(false);
 
   const fallbackWorkspaceName =
     user?.user_metadata.name ||
@@ -68,7 +74,7 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
   };
 
   const handleCreateWorkspace = () => {
-    console.log("Create new workspace");
+    setShowCreateTeamDialog(true);
   };
 
   const handleSettings = () => {
@@ -86,6 +92,16 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
         window.location.reload();
       }, 200);
     }
+  };
+
+  const handleTeamCreated = async (team: Team) => {
+    if (!team.workspace?.id) {
+      return;
+    }
+
+    setCurrentWorkspaceId(team.workspace.id);
+    localStorage.setItem("currentWorkspaceId", team.workspace.id);
+    router.push(`/settings/team/${team.id}`);
   };
 
   if (loading) {
@@ -189,7 +205,7 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
                     count: displayWorkspace.memberCount || 1,
                   })}
                 </span>
-                {currentWorkspace?.type === "TEAM" && (
+                {currentWorkspaceContext.canInviteMembers && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -286,10 +302,15 @@ const SidebarBrand = ({ className }: SidebarBrandProps) => {
         <InviteMemberDialog
           open={showInviteDialog}
           onOpenChange={setShowInviteDialog}
-          teamId={currentWorkspace.teamId || ""}
           teamName={currentWorkspace.name}
         />
       )}
+
+      <CreateTeamDialog
+        open={showCreateTeamDialog}
+        onOpenChange={setShowCreateTeamDialog}
+        onCreated={handleTeamCreated}
+      />
     </DropdownMenu>
   );
 };

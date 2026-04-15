@@ -34,5 +34,14 @@
       "sending": "发送邀请...",
       "submit": "发送邀请"
     }
+  },
+  "workspace": {
+    "errors": {
+      "createAuthRequired": "请先登录后再创建工作空间。",
+      "personalUnsupported": "当前版本仅支持创建团队工作空间。",
+      "inviteAuthRequired": "请先登录后再邀请成员。",
+      "teamInviteOnly": "当前工作空间不支持邀请成员。",
+      "invitePermissionDenied": "你没有邀请成员的权限。"
+    }
   }
 }

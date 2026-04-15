@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
   RiAddLine,
@@ -11,6 +12,7 @@ import {
   RiLoader4Line,
   RiSettings3Line,
 } from "react-icons/ri";
+import { useRouter } from "@/i18n/navigation";
 import WorkflowEditor from "@/components/workflow/WorkflowEditor";
 import WorkflowSetupModal from "@/components/workflow/WorkflowSetupModal";
 import WorkflowSettingsModal from "@/components/workflow/WorkflowSettingsModal";
@@ -40,6 +42,8 @@ export default function WorkflowsPageContent() {
   const locale = useLocale();
   const tCommon = useTranslations("common");
   const tWorkflows = useTranslations("workflows");
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "editor">("list");
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
@@ -67,6 +71,19 @@ export default function WorkflowsPageContent() {
     setEditingWorkflow(null);
     setIsSetupModalOpen(true);
   };
+
+  useEffect(() => {
+    if (searchParams.get("intent") !== "create-workflow") {
+      return;
+    }
+
+    if (!currentWorkspace?.id || isSetupModalOpen) {
+      return;
+    }
+
+    handleCreateNew();
+    router.replace("/workflows");
+  }, [currentWorkspace?.id, isSetupModalOpen, router, searchParams]);
 
   const handleSetupContinue = async (workflowInfo: {
     name: string;

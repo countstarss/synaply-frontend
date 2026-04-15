@@ -34,16 +34,31 @@ export default function TeamsSettingsSection() {
   const { teams = [], isLoadingTeams, teamsError } = useTeam();
   const [isCreateTeamDialogOpen, setIsCreateTeamDialogOpen] = React.useState(false);
 
-  const handleTeamCreated = React.useCallback(
-    async (team: Team) => {
-      if (team.workspace?.id) {
-        setCurrentWorkspaceId(team.workspace.id);
-        localStorage.setItem("currentWorkspaceId", team.workspace.id);
+  const activateTeamWorkspace = React.useCallback(
+    (team: Team) => {
+      if (!team.workspace?.id) {
+        return;
       }
 
+      setCurrentWorkspaceId(team.workspace.id);
+      localStorage.setItem("currentWorkspaceId", team.workspace.id);
+    },
+    [setCurrentWorkspaceId],
+  );
+
+  const openTeamSettings = React.useCallback(
+    (team: Team) => {
+      activateTeamWorkspace(team);
       router.push(`/settings/team/${team.id}`);
     },
-    [router, setCurrentWorkspaceId],
+    [activateTeamWorkspace, router],
+  );
+
+  const handleTeamCreated = React.useCallback(
+    async (team: Team) => {
+      openTeamSettings(team);
+    },
+    [openTeamSettings],
   );
 
   return (
@@ -124,7 +139,7 @@ export default function TeamsSettingsSection() {
                   type="button"
                   variant="outline"
                   className="mt-auto justify-between"
-                  onClick={() => router.push(`/settings/team/${team.id}`)}
+                  onClick={() => openTeamSettings(team)}
                 >
                   {tSettings("teams.open")}
                   <ArrowRight className="size-4" />

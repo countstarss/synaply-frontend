@@ -34,5 +34,14 @@
       "sending": "Sending invitation...",
       "submit": "Send invitation"
     }
+  },
+  "workspace": {
+    "errors": {
+      "createAuthRequired": "Please sign in before creating a workspace.",
+      "personalUnsupported": "This version only supports creating team workspaces.",
+      "inviteAuthRequired": "Please sign in before inviting members.",
+      "teamInviteOnly": "The current workspace does not support member invitations.",
+      "invitePermissionDenied": "You do not have permission to invite members."
+    }
   }
 }

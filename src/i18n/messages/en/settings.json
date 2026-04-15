@@ -273,6 +273,32 @@
     "permissionBanner": {
       "message": "Your current role is {role}. You can view the team details, but only the owner or admins can save changes."
     },
+    "onboarding": {
+      "title": "Collaboration setup",
+      "description": "New teams work best when the initial handoff path is explicit: invite the people involved, then create the first project and workflow that will hold the work.",
+      "progress": "{completed}/{total} steps complete",
+      "status": {
+        "done": "Done",
+        "pending": "Pending"
+      },
+      "steps": {
+        "invite": {
+          "title": "Invite teammates",
+          "description": "Bring the core collaborators into this team workspace first. Current members: {count}.",
+          "action": "Invite member"
+        },
+        "project": {
+          "title": "Create the first project",
+          "description": "Use a project to define scope, ownership, and the working context for the team. Current projects: {count}.",
+          "action": "Create project"
+        },
+        "workflow": {
+          "title": "Create the first workflow",
+          "description": "Make review, handoff, and blocked states visible with a shared workflow template. Current workflows: {count}.",
+          "action": "Create workflow"
+        }
+      }
+    },
     "avatar": {
       "title": "Team avatar",
       "description": "The team avatar appears in workspace switching, settings, and team-facing collaboration views.",

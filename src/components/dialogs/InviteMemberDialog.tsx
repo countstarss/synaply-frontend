@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import {
   Dialog,
@@ -11,43 +13,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { inviteTeamMember } from "@/lib/fetchers/team";
-import { useAuth } from "@/context/AuthContext";
-import { useQueryClient } from "@tanstack/react-query";
 import { Mail, UserPlus } from "lucide-react";
-import { InviteMemberDto } from "@/api";
 import { useTranslations } from "next-intl";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface InviteMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  teamId: string;
   teamName: string;
 }
 
 export function InviteMemberDialog({
   open,
   onOpenChange,
-  teamId,
   teamName,
 }: InviteMemberDialogProps) {
   const tDialogs = useTranslations("dialogs");
   const tCommon = useTranslations("common");
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { session } = useAuth();
-  const queryClient = useQueryClient();
+  const { inviteMember } = useWorkspace();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const normalizedEmail = email.trim();
 
-    if (!email.trim()) {
+    if (!normalizedEmail) {
       toast.error(tDialogs("inviteMember.validation.emailRequired"));
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(normalizedEmail)) {
       toast.error(tDialogs("inviteMember.validation.emailInvalid"));
       return;
     }
@@ -55,13 +52,14 @@ export function InviteMemberDialog({
     setIsLoading(true);
 
     try {
-      const inviteData: InviteMemberDto = { email };
-      await inviteTeamMember(teamId, inviteData, session!.access_token);
+      await inviteMember(normalizedEmail);
 
-      toast.success(tDialogs("inviteMember.toasts.sent", { email, teamName }));
-
-      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
-      queryClient.invalidateQueries({ queryKey: ["teams"] });
+      toast.success(
+        tDialogs("inviteMember.toasts.sent", {
+          email: normalizedEmail,
+          teamName,
+        })
+      );
 
       setEmail("");
       onOpenChange(false);

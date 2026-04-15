@@ -5,13 +5,26 @@ import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Loader2, Save, Shield, Trash2, Upload } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  CircleDashed,
+  FolderKanban,
+  Loader2,
+  Save,
+  Shield,
+  Trash2,
+  Upload,
+  UserPlus,
+  Workflow,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,13 +37,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { InviteMemberDialog } from "@/components/dialogs/InviteMemberDialog";
 import { useAuth } from "@/context/AuthContext";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { useProjects } from "@/hooks/useProjectApi";
 import { useTeamById, useUpdateTeam } from "@/hooks/useTeam";
+import { useWorkflows } from "@/hooks/useWorkflowApi";
+import { useRouter } from "@/i18n/navigation";
 import {
   createClientComponentClient,
   SUPABASE_AVATAR_BUCKET,
 } from "@/lib/supabase";
 import type { Team } from "@/lib/fetchers/team";
+import { useWorkspaceStore } from "@/stores/workspace";
 
 const MAX_AVATAR_SIZE_BYTES = 3 * 1024 * 1024;
 const ACCEPTED_AVATAR_TYPES = new Set([
@@ -107,14 +126,18 @@ const resolveTeamErrorMessage = (
 
 export default function TeamSettingsPage() {
   const tSettings = useTranslations("settings");
+  const router = useRouter();
   const params = useParams<{ teamId: string }>();
   const teamId = Array.isArray(params.teamId) ? params.teamId[0] : params.teamId;
   const { session, loading: authLoading } = useAuth();
+  const { currentWorkspace } = useWorkspace();
+  const { setCurrentWorkspaceId } = useWorkspaceStore();
   const queryClient = useQueryClient();
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const supabase = React.useMemo(() => createClientComponentClient(), []);
   const initializedTeamIdRef = React.useRef<string | null>(null);
 
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = React.useState(false);
   const [teamName, setTeamName] = React.useState("");
   const [savedTeamName, setSavedTeamName] = React.useState("");
   const [storedAvatarUrl, setStoredAvatarUrl] = React.useState<string | null>(
@@ -127,9 +150,32 @@ export default function TeamSettingsPage() {
 
   const teamQuery = useTeamById(teamId);
   const updateTeamMutation = useUpdateTeam(teamId);
+  const currentTeam = teamQuery.data;
+  const teamWorkspaceId = currentTeam?.workspace?.id;
+  const { data: projects = [] } = useProjects(teamWorkspaceId || "", {
+    enabled: !!teamWorkspaceId,
+  });
+  const { data: workflows = [] } = useWorkflows(teamWorkspaceId);
+
+  const ensureTeamWorkspaceSelected = React.useCallback(() => {
+    if (!teamWorkspaceId) {
+      return;
+    }
+
+    setCurrentWorkspaceId(teamWorkspaceId);
+    localStorage.setItem("currentWorkspaceId", teamWorkspaceId);
+  }, [setCurrentWorkspaceId, teamWorkspaceId]);
 
   React.useEffect(() => {
-    const team = teamQuery.data;
+    if (!teamWorkspaceId || currentWorkspace?.id === teamWorkspaceId) {
+      return;
+    }
+
+    ensureTeamWorkspaceSelected();
+  }, [currentWorkspace?.id, ensureTeamWorkspaceSelected, teamWorkspaceId]);
+
+  React.useEffect(() => {
+    const team = currentTeam;
 
     if (!team?.id || initializedTeamIdRef.current === team.id) {
       return;
@@ -141,7 +187,7 @@ export default function TeamSettingsPage() {
     setStoredAvatarUrl(team.avatarUrl ?? null);
     setPendingUploadedAvatar(null);
     setAvatarMarkedForRemoval(false);
-  }, [teamQuery.data]);
+  }, [currentTeam]);
 
   const uploadAvatarMutation = useMutation({
     onMutate: (file: File) => {
@@ -270,7 +316,6 @@ export default function TeamSettingsPage() {
     uploadAvatarMutation.isPending,
   ]);
 
-  const currentTeam = teamQuery.data;
   const currentMember = currentTeam?.members.find(
     (member) => member.user.id === session?.user?.id,
   );
@@ -279,6 +324,59 @@ export default function TeamSettingsPage() {
   );
   const canManageTeam =
     currentMember?.role === "OWNER" || currentMember?.role === "ADMIN";
+  const invitedMemberCount = currentTeam?.members.length ?? 0;
+  const hasInvitedTeammates = invitedMemberCount > 1;
+  const hasCreatedProject = projects.length > 0;
+  const hasCreatedWorkflow = workflows.length > 0;
+  const onboardingSteps = [
+    {
+      key: "invite",
+      complete: hasInvitedTeammates,
+      title: tSettings("teamPage.onboarding.steps.invite.title"),
+      description: tSettings("teamPage.onboarding.steps.invite.description", {
+        count: invitedMemberCount,
+      }),
+      actionLabel: tSettings("teamPage.onboarding.steps.invite.action"),
+      onAction: () => {
+        ensureTeamWorkspaceSelected();
+        setIsInviteDialogOpen(true);
+      },
+      disabled: !canManageTeam || !teamWorkspaceId,
+    },
+    {
+      key: "project",
+      complete: hasCreatedProject,
+      title: tSettings("teamPage.onboarding.steps.project.title"),
+      description: tSettings("teamPage.onboarding.steps.project.description", {
+        count: projects.length,
+      }),
+      actionLabel: tSettings("teamPage.onboarding.steps.project.action"),
+      onAction: () => {
+        ensureTeamWorkspaceSelected();
+        router.push("/projects?intent=create-project");
+      },
+      disabled: !canManageTeam || !teamWorkspaceId,
+    },
+    {
+      key: "workflow",
+      complete: hasCreatedWorkflow,
+      title: tSettings("teamPage.onboarding.steps.workflow.title"),
+      description: tSettings("teamPage.onboarding.steps.workflow.description", {
+        count: workflows.length,
+      }),
+      actionLabel: tSettings("teamPage.onboarding.steps.workflow.action"),
+      onAction: () => {
+        ensureTeamWorkspaceSelected();
+        router.push("/workflows?intent=create-workflow");
+      },
+      disabled: !canManageTeam || !teamWorkspaceId,
+    },
+  ] as const;
+  const completedOnboardingStepCount = onboardingSteps.filter(
+    (step) => step.complete,
+  ).length;
+  const shouldShowOnboarding =
+    completedOnboardingStepCount < onboardingSteps.length;
   const normalizedTeamName = teamName.trim();
   const teamPageTitle =
     normalizedTeamName || currentTeam?.name || tSettings("teamPage.info.untitled");
@@ -448,6 +546,75 @@ export default function TeamSettingsPage() {
                 role: currentRoleLabel,
               })}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {shouldShowOnboarding && (
+        <Card className="border-none">
+          <CardHeader className="gap-3 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-1">
+              <CardTitle>{tSettings("teamPage.onboarding.title")}</CardTitle>
+              <CardDescription>
+                {tSettings("teamPage.onboarding.description")}
+              </CardDescription>
+            </div>
+            <Badge variant="secondary">
+              {tSettings("teamPage.onboarding.progress", {
+                completed: completedOnboardingStepCount,
+                total: onboardingSteps.length,
+              })}
+            </Badge>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {onboardingSteps.map((step) => (
+              <div
+                key={step.key}
+                className="flex flex-col gap-4 rounded-xl border p-4 md:flex-row md:items-center md:justify-between"
+              >
+                <div className="flex items-start gap-3">
+                  {step.complete ? (
+                    <CheckCircle2 className="mt-0.5 size-5 text-emerald-600" />
+                  ) : (
+                    <CircleDashed className="mt-0.5 size-5 text-muted-foreground" />
+                  )}
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="font-medium">{step.title}</div>
+                      <Badge variant={step.complete ? "default" : "outline"}>
+                        {tSettings(
+                          step.complete
+                            ? "teamPage.onboarding.status.done"
+                            : "teamPage.onboarding.status.pending",
+                        )}
+                      </Badge>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {step.description}
+                    </div>
+                  </div>
+                </div>
+                {!step.complete && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={step.onAction}
+                    disabled={step.disabled}
+                    className="shrink-0"
+                  >
+                    {step.key === "invite" ? (
+                      <UserPlus className="size-4" />
+                    ) : step.key === "project" ? (
+                      <FolderKanban className="size-4" />
+                    ) : (
+                      <Workflow className="size-4" />
+                    )}
+                    {step.actionLabel}
+                    <ArrowRight className="size-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
           </CardContent>
         </Card>
       )}
@@ -623,6 +790,12 @@ export default function TeamSettingsPage() {
           </CardFooter>
         </Card>
       </form>
+
+      <InviteMemberDialog
+        open={isInviteDialogOpen}
+        onOpenChange={setIsInviteDialogOpen}
+        teamName={currentTeam.name}
+      />
     </div>
   );
 }

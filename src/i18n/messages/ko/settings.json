@@ -273,6 +273,32 @@
     "permissionBanner": {
       "message": "현재 역할은 {role}입니다. 팀 세부 정보를 볼 수 있지만 소유자 또는 관리자만 변경 사항을 저장할 수 있습니다."
     },
+    "onboarding": {
+      "title": "협업 시작",
+      "description": "새 팀에서는 첫 협업 경로를 먼저 명확히 해야 합니다. 먼저 함께 일할 사람을 초대하고, 그다음 첫 프로젝트와 워크플로를 만드세요.",
+      "progress": "{completed}/{total}단계 완료",
+      "status": {
+        "done": "완료됨",
+        "pending": "진행 필요"
+      },
+      "steps": {
+        "invite": {
+          "title": "팀원 초대",
+          "description": "핵심 협업자를 먼저 이 팀 작업공간으로 초대하세요. 현재 구성원 수: {count}.",
+          "action": "구성원 초대"
+        },
+        "project": {
+          "title": "첫 프로젝트 만들기",
+          "description": "프로젝트로 범위, 담당자, 협업 맥락을 먼저 잡아두세요. 현재 프로젝트 수: {count}.",
+          "action": "프로젝트 만들기"
+        },
+        "workflow": {
+          "title": "첫 워크플로 만들기",
+          "description": "공유 워크플로로 review, handoff, blocked 상태를 드러내세요. 현재 워크플로 수: {count}.",
+          "action": "워크플로 만들기"
+        }
+      }
+    },
     "avatar": {
       "title": "팀 아바타",
       "description": "팀 아바타는 작업 공간 전환, 설정 및 팀 대상 공동 작업 보기에 나타납니다.",

@@ -6,6 +6,7 @@ import React, {
   useState,
   useTransition,
 } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -84,6 +85,7 @@ export default function ProjectsPageContent() {
   const [isSelectionPending, startTransition] = useTransition();
   const isPageVisible = useCachedPageVisibility();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { currentWorkspace } = useWorkspace();
   const workspaceId = currentWorkspace?.id || "";
@@ -168,6 +170,32 @@ export default function ProjectsPageContent() {
     setIssueBoardCategoryOrder(storedOrder);
     setSavedIssueBoardCategoryOrder(storedOrder);
   }, [workspaceId]);
+
+  useEffect(() => {
+    if (searchParams.get("intent") !== "create-project") {
+      return;
+    }
+
+    if (!workspaceId || isLoading || isProjectDialogOpen || selectedProjectId) {
+      return;
+    }
+
+    if (!canManageProjects) {
+      router.replace("/projects");
+      return;
+    }
+
+    openCreateDialog();
+    router.replace("/projects");
+  }, [
+    canManageProjects,
+    isLoading,
+    isProjectDialogOpen,
+    router,
+    searchParams,
+    selectedProjectId,
+    workspaceId,
+  ]);
 
   const hasUnsavedIssueBoardCategoryOrder = !isSameCategoryOrder(
     savedIssueBoardCategoryOrder,

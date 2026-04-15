@@ -34,5 +34,14 @@
       "sending": "招待状を送信中...",
       "submit": "招待状を送信"
     }
+  },
+  "workspace": {
+    "errors": {
+      "createAuthRequired": "ワークスペースを作成する前にログインしてください。",
+      "personalUnsupported": "現在のバージョンではチームワークスペースのみ作成できます。",
+      "inviteAuthRequired": "メンバーを招待する前にログインしてください。",
+      "teamInviteOnly": "現在のワークスペースではメンバー招待をサポートしていません。",
+      "invitePermissionDenied": "メンバーを招待する権限がありません。"
+    }
   }
 }

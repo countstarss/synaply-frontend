@@ -273,6 +273,32 @@
     "permissionBanner": {
       "message": "您当前的角色是{role}。您可以查看团队详细信息，但只有所有者或管理员才能保存更改。"
     },
+    "onboarding": {
+      "title": "协作启动",
+      "description": "新团队最先要补齐的不是更多配置，而是第一条协作路径：先把相关成员拉进来，再建立第一个项目和工作流。",
+      "progress": "已完成 {completed}/{total} 步",
+      "status": {
+        "done": "已完成",
+        "pending": "待完成"
+      },
+      "steps": {
+        "invite": {
+          "title": "邀请队友",
+          "description": "先把核心协作者加入这个团队工作空间，避免后续交接落空。当前成员数：{count}。",
+          "action": "邀请成员"
+        },
+        "project": {
+          "title": "创建第一个项目",
+          "description": "先用项目承接范围、负责人和协作上下文。当前项目数：{count}。",
+          "action": "创建项目"
+        },
+        "workflow": {
+          "title": "创建第一个工作流",
+          "description": "用工作流把 review、handoff 和 blocked 节点显性化。当前工作流数：{count}。",
+          "action": "创建工作流"
+        }
+      }
+    },
     "avatar": {
       "title": "团队头像",
       "description": "团队头像出现在工作区切换、设置和面向团队的协作视图中。",
