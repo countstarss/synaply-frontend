@@ -116,6 +116,10 @@ pnpm start
 pnpm lint
 ```
 
+## 专项文档
+
+- [SEO 第二阶段执行清单](./readme/SEO%E7%AC%AC%E4%BA%8C%E9%98%B6%E6%AE%B5%E6%89%A7%E8%A1%8C%E6%B8%85%E5%8D%95.md)
+
 ## 页面与模块结构
 
 ```text
