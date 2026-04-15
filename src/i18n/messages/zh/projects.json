@@ -36,7 +36,7 @@
       "personal": "我的项目",
       "team": "团队项目"
     },
-    "summary": "{total}个项目总数，{链接}有活跃问题， {empty} 没有活跃问题，{unassigned} 没有项目的活跃问题",
+    "summary": "{total}个项目总数，{linked}有活跃问题，{empty}没有活跃问题，{unassigned}没有项目的活跃问题",
     "create": "创建项目",
     "searchPlaceholder": "按项目名称、简介、阶段、所有者或可见性搜索...",
     "results": "{count} 个结果",
@@ -174,7 +174,7 @@
     "dragColumn": "拖动以重新排序列",
     "dropIssue": "将问题拖入此列",
     "workflow": "工作流程",
-    "dragIssue": "拖动{标题}",
+    "dragIssue": "拖动{title}",
     "dragIssueCategory": "拖动以更改问题类别",
     "openIssue": "打开问题",
     "cancelIssue": "取消问题"

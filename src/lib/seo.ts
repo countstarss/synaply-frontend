@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { ALL_MARKETING_PATHS } from "@/lib/marketing-seo";
 import { routing } from "@/i18n/routing";
 
 export type SiteLocale = (typeof routing.locales)[number];
@@ -26,11 +27,9 @@ const OPEN_GRAPH_LOCALE_MAP: Record<SiteLocale, string> = {
 };
 
 const DEFAULT_SITE_DESCRIPTIONS: Record<"en" | "zh", string> = {
-  en: "Synaply is the collaboration operating system for focused remote teams, bringing projects, issues, workflows, docs, and async execution into one shared context.",
-  zh: "Synaply 是为专注远程团队打造的协作操作系统，把 Projects、Issues、Workflows 与 Docs 收束进一个统一、清晰、可推进的工作语境。",
+  en: "Synaply helps small remote teams stay aligned with clear execution, visible handoffs, and shared context across projects, issues, workflows, docs, and updates.",
+  zh: "Synaply 帮助小型远程团队用更清晰的执行、可见的 handoff，以及贯穿 projects、issues、workflows、docs 和 updates 的共享语境保持同频。",
 };
-
-const INDEXABLE_MARKETING_PATHS = ["/landing", "/pricing", "/about"] as const;
 
 function normalizeSiteUrl(value: string) {
   return value.endsWith("/") ? value.slice(0, -1) : value;
@@ -193,7 +192,7 @@ export function getNoIndexMetadata(): Metadata {
 }
 
 export function getIndexableMarketingPaths() {
-  return [...INDEXABLE_MARKETING_PATHS];
+  return [...ALL_MARKETING_PATHS];
 }
 
 export function getRobotsDisallowPaths() {
@@ -335,6 +334,30 @@ export function buildBreadcrumbStructuredData({
       position: index + 1,
       name: item.name,
       item: absoluteUrl(getLocalizedPath(item.path, locale)),
+    })),
+  };
+}
+
+export function buildItemListStructuredData({
+  locale,
+  items,
+}: {
+  locale: SiteLocale;
+  items: Array<{
+    name: string;
+    path: string;
+    description?: string;
+  }>;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      url: absoluteUrl(getLocalizedPath(item.path, locale)),
+      description: item.description,
     })),
   };
 }

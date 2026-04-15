@@ -59,7 +59,7 @@
     "retry": "재시도"
   },
   "row": {
-    "openAria": "{제목} 열기",
+    "openAria": "{title} 열기",
     "markSeen": "읽음으로 표시",
     "markUnread": "읽지 않음으로 표시",
     "accept": "수락",

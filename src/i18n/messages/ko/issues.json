@@ -234,15 +234,15 @@
     },
     "select": {
       "statePlaceholder": "State: 설정되지 않음",
-      "stateOption": "상태: {값}",
+      "stateOption": "상태: {value}",
       "priorityPlaceholder": "우선 순위: Not set",
-      "priorityOption": "우선순위: {값}",
+      "priorityOption": "우선순위: {value}",
       "projectPlaceholder": "프로젝트: 설정되지 않음",
-      "projectOption": "프로젝트: {값}",
+      "projectOption": "프로젝트: {value}",
       "assigneePlaceholder": "소유자: 할당되지 않음",
       "assigneeOption": "소유자: {value}",
       "visibilityPlaceholder": "가시성",
-      "visibilityOption": "Visibility: {값}"
+      "visibilityOption": "Visibility: {value}"
     },
     "actions": {
       "openAi": "Open AI Assistant",
@@ -250,7 +250,7 @@
     },
     "description": {
       "title": "문제 설명",
-      "referencedDocs": "{개수, 복수형, 하나 {# 참조 문서.} other {# 참조 문서.}}",
+      "referencedDocs": "{count, plural, one {# 참조 문서.} other {# 참조 문서.}}",
       "insertDoc": "팀 문서 삽입",
       "save": "설명 저장",
       "cancel": "취소",
@@ -266,8 +266,8 @@
       "copyAction": "Claude 코드/Codex에 대한 복사본"
     },
     "footer": {
-      "createdAt": "작성됨: {값}",
-      "updatedAt": "업데이트됨: {값}"
+      "createdAt": "작성됨: {value}",
+      "updatedAt": "업데이트됨: {value}"
     },
     "docReference": {
       "label": "Doc",
@@ -336,8 +336,8 @@
       "stepsValue": "{count} 단계"
     },
     "header": {
-      "workflow": "워크플로: {이름}",
-      "priority": "우선 순위: {값}",
+      "workflow": "워크플로: {name}",
+      "priority": "우선 순위: {value}",
       "workflowTask": "워크플로 문제"
     },
     "actions": {

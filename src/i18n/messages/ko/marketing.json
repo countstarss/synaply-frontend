@@ -340,15 +340,15 @@
     },
     "summaryCards": [
       {
-        "kind": "작업 공간",
+        "kind": "workspace",
         "text": "통합 작업 공간"
       },
       {
-        "kind": "후속 조치",
+        "kind": "followUp",
         "text": "후속 소음 감소"
       },
       {
-        "kind": "조정",
+        "kind": "coordination",
         "text": "더욱 안정적인 조율"
       }
     ],

@@ -48,7 +48,7 @@
     },
     "meta": {
       "nodes": "노드: {count}",
-      "version": "버전: {값}",
+      "version": "버전: {value}",
       "activeRuns": "활성 실행: {count}",
       "totalRuns": "총 실행: {count}",
       "creator": "작성자: {value}",
@@ -166,7 +166,7 @@
     "estimatedHoursUnit": "예상: {value}h"
   },
   "node": {
-    "status": "상태: {상태}",
+    "status": "상태: {status}",
     "hasDetails": "세부정보 있음"
   },
   "nodePanel": {
@@ -238,7 +238,7 @@
     "placeholder": "소유자를 선택하세요...",
     "searchPlaceholder": "회원 검색...",
     "noMatching": "일치하는 회원이 없습니다.",
-    "customLabel": "추가: {값}",
+    "customLabel": "추가: {value}",
     "customHint": "맞춤 소유자"
   },
   "colors": {
@@ -251,7 +251,7 @@
     "cyan": "청록색",
     "pink": "분홍색",
     "yellow": "노란색",
-    "selected": "선택됨: {값}"
+    "selected": "선택됨: {value}"
   },
   "runtime": {
     "onlyCurrentOwner": "현재 노드 소유자만 이 작업을 수행할 수 있습니다.",

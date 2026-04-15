@@ -1,8 +1,8 @@
 {
   "site": {
-    "tagline": "The operating system for focused remote teams.",
+    "tagline": "A focused remote collaboration tool for small teams.",
     "hero": {
-      "eyebrow": "Remote-first collaboration operating system",
+      "eyebrow": "Remote collaboration software for small teams",
       "title": "Bring projects, workflows, issues, and docs into one deliberate rhythm.",
       "subtitle": "Synaply gives small distributed teams a shared context for planning, execution, handoff, and documentation so work keeps moving without constant follow-up.",
       "primaryCta": "Start with clarity",
@@ -79,13 +79,13 @@
     },
     "finalCta": {
       "eyebrow": "Start with clarity. Move with momentum.",
-      "description": "Build a workspace where planning, execution, and alignment operate in the same system.",
+      "description": "Build a shared workspace where planning, execution, and alignment stay connected.",
       "primary": "Build your collaboration hub"
     },
     "auth": {
       "eyebrow": "Structured access",
       "title": "Enter the workspace where remote execution stays aligned.",
-      "description": "Projects, issues, workflows, and docs stay in one operating context so every role can move in the same direction.",
+      "description": "Projects, issues, workflows, and docs stay in one shared context so every role can move in the same direction.",
       "highlights": [
         "Multi-role collaboration without tool switching",
         "Workflow visibility across every handoff",
@@ -98,7 +98,7 @@
         },
         "register": {
           "title": "Create your team workspace",
-          "description": "Start with a calmer operating system for product, design, engineering, and operations."
+          "description": "Start with a calmer remote collaboration tool for product, design, engineering, and operations."
         },
         "reset": {
           "title": "Recover access without losing context",
@@ -124,7 +124,7 @@
     },
     "productPreview": {
       "workspaceTitle": "Synaply Workspace",
-      "workspaceSubtitle": "Projects, issues, workflows, and docs in one operating context",
+      "workspaceSubtitle": "Projects, issues, workflows, and docs in one shared context",
       "syncStatus": "remote execution synced",
       "execution": {
         "eyebrow": "Current execution",
@@ -284,7 +284,7 @@
     },
     "story": [
       "Synaply was not designed to help teams manage more tasks.",
-      "It is closer to a collaboration operating system for small remote teams, where different roles can move through the same project context naturally.",
+      "It is a focused remote collaboration tool for small teams, where different roles can move through the same project context naturally.",
       "When workflow is legible, context is intact, and docs stay attached to execution, teams can focus on delivery again."
     ],
     "principlesSection": {
@@ -326,7 +326,7 @@
       "titlePrefix": "Pricing should feel as",
       "titleFocus": "clear",
       "titleSuffix": ".",
-      "description": "Synaply packaging is meant to preserve clarity. Different team stages should be able to enter the same operating system without unnecessary complexity.",
+      "description": "Synaply pricing is meant to preserve clarity. Teams at different stages should be able to start with a focused remote collaboration tool without unnecessary complexity.",
       "cta": "Start with Synaply"
     },
     "included": [
@@ -403,11 +403,11 @@
     },
     "pages": {
       "landing": {
-        "title": "Remote Collaboration Operating System for Focused Teams",
-        "description": "Synaply is a remote collaboration operating system for small teams that need projects, issues, workflows, docs, async handoffs, and delivery context in one shared workspace.",
+        "title": "Remote Collaboration Software for Small Remote Teams",
+        "description": "Synaply helps small remote teams stay aligned with clear execution, visible handoffs, and shared context across projects, issues, workflows, docs, and updates.",
         "keywords": [
           "remote collaboration software",
-          "collaboration operating system",
+          "remote team collaboration tool",
           "workflow handoff software",
           "async team coordination",
           "projects issues docs workflows"

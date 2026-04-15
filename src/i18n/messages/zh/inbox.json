@@ -59,7 +59,7 @@
     "retry": "重试"
   },
   "row": {
-    "openAria": "打开{标题}",
+    "openAria": "打开{title}",
     "markSeen": "标记为已读",
     "markUnread": "标记为未读",
     "accept": "接受",

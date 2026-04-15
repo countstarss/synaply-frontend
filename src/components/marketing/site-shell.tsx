@@ -14,7 +14,7 @@ import { AUTH_ROUTE, DEFAULT_POST_LOGIN_ROUTE } from "@/lib/auth-utils";
 import { cn } from "@/lib/utils";
 
 interface MarketingShellProps {
-  current: "home" | "pricing" | "about";
+  current?: "home" | "pricing" | "about";
   children: React.ReactNode;
 }
 

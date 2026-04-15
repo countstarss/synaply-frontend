@@ -163,10 +163,10 @@
     "descriptionPlaceholder": "このノードについて説明します...",
     "estimatedHoursLabel": "推定時間",
     "estimatedHoursPlaceholder": "例: 8",
-    "estimatedHoursUnit": "推定: {値}h"
+    "estimatedHoursUnit": "推定: {value}h"
   },
   "node": {
-    "status": "ステータス: {ステータス}",
+    "status": "ステータス: {status}",
     "hasDetails": "詳細あり"
   },
   "nodePanel": {
@@ -238,7 +238,7 @@
     "placeholder": "所有者を選択してください...",
     "searchPlaceholder": "検索メンバー...",
     "noMatching": "一致するメンバーが見つかりません",
-    "customLabel": "追加: {値}",
+    "customLabel": "追加: {value}",
     "customHint": "カスタム所有者"
   },
   "colors": {

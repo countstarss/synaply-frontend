@@ -901,7 +901,13 @@ export default function NormalIssueDetail({
                   <SelectTrigger className="h-8 w-auto min-w-[108px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
                     <SelectValue
                       placeholder={tIssues("normalDetail.select.statePlaceholder")}
-                    />
+                    >
+                      {selectedState
+                        ? tIssues("normalDetail.badges.state", {
+                            value: selectedState.name,
+                          })
+                        : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>
@@ -910,9 +916,7 @@ export default function NormalIssueDetail({
                       </SelectItem>
                       {issueStates.map((state) => (
                         <SelectItem key={state.id} value={state.id}>
-                          {tIssues("normalDetail.select.stateOption", {
-                            value: state.name,
-                          })}
+                          {state.name}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -947,7 +951,13 @@ export default function NormalIssueDetail({
                       placeholder={tIssues(
                         "normalDetail.select.priorityPlaceholder",
                       )}
-                    />
+                    >
+                      {currentPriority
+                        ? tIssues("normalDetail.badges.priority", {
+                            value: currentPriority.label,
+                          })
+                        : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>
@@ -956,9 +966,7 @@ export default function NormalIssueDetail({
                       </SelectItem>
                       {priorityOptions.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
-                          {tIssues("normalDetail.select.priorityOption", {
-                            value: option.label,
-                          })}
+                          {option.label}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -998,7 +1006,14 @@ export default function NormalIssueDetail({
                       placeholder={tIssues(
                         "normalDetail.select.projectPlaceholder",
                       )}
-                    />
+                    >
+                      {(selectedProject?.name || localIssue.project?.name)
+                        ? tIssues("normalDetail.badges.project", {
+                            value:
+                              selectedProject?.name || localIssue.project?.name,
+                          })
+                        : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>
@@ -1007,9 +1022,7 @@ export default function NormalIssueDetail({
                       </SelectItem>
                       {projects.map((project) => (
                         <SelectItem key={project.id} value={project.id}>
-                          {tIssues("normalDetail.select.projectOption", {
-                            value: project.name,
-                          })}
+                          {project.name}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -1044,7 +1057,13 @@ export default function NormalIssueDetail({
                       placeholder={tIssues(
                         "normalDetail.select.assigneePlaceholder",
                       )}
-                    />
+                    >
+                      {directAssignee
+                        ? tIssues("normalDetail.badges.assignee", {
+                            value: directAssignee.name,
+                          })
+                        : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>
@@ -1053,9 +1072,7 @@ export default function NormalIssueDetail({
                       </SelectItem>
                       {memberOptions.map((member) => (
                         <SelectItem key={member.id} value={member.id}>
-                          {tIssues("normalDetail.select.assigneeOption", {
-                            value: member.name,
-                          })}
+                          {member.name}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -1131,15 +1148,21 @@ export default function NormalIssueDetail({
                       placeholder={tIssues(
                         "normalDetail.select.visibilityPlaceholder",
                       )}
-                    />
+                    >
+                      {tIssues("normalDetail.badges.visibility", {
+                        value: getVisibilityLabel(
+                          localIssue.visibility,
+                          visibilityOptions,
+                          tIssues,
+                        ),
+                      })}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>
                       {visibilityOptions.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
-                          {tIssues("normalDetail.select.visibilityOption", {
-                            value: option.label,
-                          })}
+                          {option.label}
                         </SelectItem>
                       ))}
                     </SelectGroup>

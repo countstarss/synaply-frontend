@@ -114,18 +114,20 @@ export default function PricingPageClient() {
 
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
                 {pricing.summaryCards.map((item) => {
-                  const Icon = summaryIcons[item.kind];
+                  // Fallback keeps the page render-safe if localized content drifts from the stable icon keys.
+                  const Icon =
+                    summaryIcons[item.kind as keyof typeof summaryIcons] ?? Layers3;
 
                   return (
-                  <div
-                    key={item.kind}
-                    className="border border-white/10 bg-[#090b10] px-4 py-4 text-sm text-white/66"
-                  >
-                    <div className="mb-3 text-white/74">
-                      <Icon className="h-4 w-4" />
+                    <div
+                      key={item.kind}
+                      className="border border-white/10 bg-[#090b10] px-4 py-4 text-sm text-white/66"
+                    >
+                      <div className="mb-3 text-white/74">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      {item.text}
                     </div>
-                    {item.text}
-                  </div>
                   );
                 })}
               </div>

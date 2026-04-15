@@ -48,11 +48,11 @@
     },
     "meta": {
       "nodes": "节点：{count}",
-      "version": "版本：{值}",
+      "version": "版本：{value}",
       "activeRuns": "活跃跑步次数：{count}",
       "totalRuns": "总运行次数：{count}",
       "creator": "创建者：{value}",
-      "createdAt": "创建：{值}"
+      "createdAt": "创建：{value}"
     },
     "actions": {
       "viewEdit": "查看或编辑",
@@ -99,7 +99,7 @@
     "validation": {
       "title": "工作流程验证失败",
       "close": "关闭",
-      "summary": "工作流程验证失败：{错误}",
+      "summary": "工作流程验证失败：{errors}",
       "atLeastOneNode": "一个工作流至少需要一个节点。",
       "missingAssignees": "{count} 个节点仍未分配所有者。",
       "missingStart": "一个工作流至少需要一个起始节点。",
@@ -163,10 +163,10 @@
     "descriptionPlaceholder": "描述这个节点...",
     "estimatedHoursLabel": "预计时间",
     "estimatedHoursPlaceholder": "例如：8",
-    "estimatedHoursUnit": "估计：{值}小时"
+    "estimatedHoursUnit": "估计：{value}小时"
   },
   "node": {
-    "status": "状态：{状态}",
+    "status": "状态：{status}",
     "hasDetails": "有详细信息"
   },
   "nodePanel": {
@@ -238,7 +238,7 @@
     "placeholder": "选择一个所有者...",
     "searchPlaceholder": "搜索会员...",
     "noMatching": "未找到匹配的成员",
-    "customLabel": "添加：{值}",
+    "customLabel": "添加：{value}",
     "customHint": "自定义所有者"
   },
   "colors": {
@@ -251,7 +251,7 @@
     "cyan": "青色",
     "pink": "粉色的",
     "yellow": "黄色的",
-    "selected": "已选择：{值}"
+    "selected": "已选择：{value}"
   },
   "runtime": {
     "onlyCurrentOwner": "只有当前节点所有者可以执行此操作。",

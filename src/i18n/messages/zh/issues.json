@@ -224,10 +224,10 @@
       "saving": "正在保存更改..."
     },
     "badges": {
-      "state": "状态：{值}",
-      "priority": "优先级：{值}",
-      "project": "项目：{值}",
-      "assignee": "所有者：{值}",
+      "state": "状态：{value}",
+      "priority": "优先级：{value}",
+      "project": "项目：{value}",
+      "assignee": "所有者：{value}",
       "dueDate": "到期： {value}",
       "visibility": "可见性：{value}",
       "collaborator": "协作者：{value}"
@@ -236,9 +236,9 @@
       "statePlaceholder": "状态：未设置",
       "stateOption": "状态：{value}",
       "priorityPlaceholder": "优先级：未设置设置",
-      "priorityOption": "优先级：{值}",
+      "priorityOption": "优先级：{value}",
       "projectPlaceholder": "项目：未设置",
-      "projectOption": "项目：{值}",
+      "projectOption": "项目：{value}",
       "assigneePlaceholder": "所有者：未分配",
       "assigneeOption": "所有者： {value}",
       "visibilityPlaceholder": "可见性",
@@ -250,7 +250,7 @@
     },
     "description": {
       "title": "问题描述",
-      "referencedDocs": "{计数，复数，1 {#引用 document.} other {# referenced documents.}}",
+      "referencedDocs": "{count, plural, one {# 个引用文档。} other {# 个引用文档。}}",
       "insertDoc": "插入团队doc",
       "save": "保存描述",
       "cancel": "取消",
@@ -260,7 +260,7 @@
     },
     "aiHandoff": {
       "title": "AI 编码交接",
-      "updatedAt": "上次更新时间{时间}",
+      "updatedAt": "上次更新时间{time}",
       "fallback": "已保存回本期并准备交接至 Claude Code 或 Codex。",
       "copySuccess": "编码交接提示已已复制.",
       "copyAction": "克劳德代码/Codex的副本"
@@ -336,7 +336,7 @@
       "stepsValue": "{count}步"
     },
     "header": {
-      "workflow": "工作流程：{名称}",
+      "workflow": "工作流程：{name}",
       "priority": "优先级： {value}",
       "workflowTask": "工作流程问题"
     },

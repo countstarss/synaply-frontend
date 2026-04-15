@@ -43,7 +43,7 @@
       },
       "action": "작업: {value}",
       "batchSummary": "이 승인은 {count}개의 작업을 실행합니다. 함께.",
-      "previewStatus": "미리 보기 상태: {값}",
+      "previewStatus": "미리 보기 상태: {value}",
       "confirm": "확인 및 실행",
       "reject": "거부"
     },
@@ -61,9 +61,9 @@
       "toolFailed": "도구 실행에 실패했습니다.",
       "toolCompleted": "도구 실행이 완료되었습니다.",
       "details": "보기 구조화된 출력",
-      "status": "상태: {값}",
-      "summary": "요약: {값}",
-      "message": "메시지: {값}"
+      "status": "상태: {value}",
+      "summary": "요약: {value}",
+      "message": "메시지: {value}"
     },
     "messageBubble": {
       "empty": "표시되는 메시지 콘텐츠가 없습니다."
@@ -88,7 +88,7 @@
       "projectStart": "이 프로젝트에 대한 기본 대화를 시작합니다",
       "projectConversation": "프로젝트 대화",
       "freeConversation": "자유 대화",
-      "collapseProject": "{이름} 접기",
+      "collapseProject": "{name} 접기",
       "expandProject": "확장 {name}",
       "syncing": "대화 동기화 중...",
       "empty": "아직 대화 기록이 없습니다. 첫 번째 메시지를 보내면 작성기가 작업공간으로 이동합니다.",
@@ -129,17 +129,17 @@
       "message": "메시지"
     },
     "plainText": {
-      "status": "상태: {값}",
-      "summary": "요약: {값}",
+      "status": "상태: {value}",
+      "summary": "요약: {value}",
       "message": "메시지: {value}",
       "toolFailed": "도구 실행이 실패했습니다.",
       "toolCompleted": "도구 실행이 완료되었습니다.",
       "approval": "승인 요청",
       "action": "작업: {value}",
       "batchActions": "일괄 작업: {count} 항목",
-      "error": "오류: {값}",
-      "context": "컨텍스트: {값}",
-      "tool": "도구 {이름}",
+      "error": "오류: {value}",
+      "context": "컨텍스트: {value}",
+      "tool": "도구 {name}",
       "codingPrompt": "코딩 프롬프트",
       "options": "옵션",
       "noContent": "내용 없음"

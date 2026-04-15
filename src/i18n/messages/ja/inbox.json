@@ -1,9 +1,9 @@
 {
   "relativeTime": {
     "justNow": "今",
-    "minutesAgo": "{数}分前",
-    "hoursAgo": "{数}時間前",
-    "daysAgo": "{数}日ago"
+    "minutesAgo": "{count}分前",
+    "hoursAgo": "{count}時間前",
+    "daysAgo": "{count}日ago"
   },
   "views": {
     "primary": "Primary",

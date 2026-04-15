@@ -10,6 +10,8 @@ import {
   SquareChartGantt,
   Workflow,
 } from "lucide-react";
+import Image from "next/image";
+import { useLocale } from "next-intl";
 import { useEffect } from "react";
 
 import { MarketingShell } from "@/components/marketing/site-shell";
@@ -17,7 +19,6 @@ import {
   MarketingFooter,
   type FooterSection,
 } from "@/components/marketing/site-footer";
-import { ProductPreview } from "@/components/marketing/product-preview";
 import { SectionHeading } from "@/components/marketing/section-heading";
 import { useMarketingCopy } from "@/components/marketing/site-copy";
 import {
@@ -38,6 +39,8 @@ import {
   DEFAULT_POST_LOGIN_ROUTE,
   getAuthParam,
 } from "@/lib/auth-utils";
+import { getMarketingResourceBundle } from "@/lib/marketing-resources";
+import { normalizeSiteLocale } from "@/lib/seo";
 import { Link, useRouter } from "@/i18n/navigation";
 
 const featureIcons = {
@@ -45,6 +48,12 @@ const featureIcons = {
   Issues: SquareChartGantt,
   Workflows: Workflow,
   Docs: FileText,
+} as const;
+
+const landingHeroPreviewImage = {
+  src: "/synaply_landing.png",
+  width: 1225,
+  height: 1307,
 } as const;
 
 const revealUp = {
@@ -56,25 +65,34 @@ const revealUp = {
 
 export default function LandingPageClient() {
   const { user } = useAuth();
+  const locale = useLocale();
   const router = useRouter();
   const marketing = useMarketingCopy();
   const copy = marketing.site;
   const landing = marketing.landing;
   const proofSignals = landing.proofSignals;
+  const resourceFooterSection =
+    getMarketingResourceBundle(normalizeSiteLocale(locale)).shared.footerSections[1];
 
   const primaryHref = user ? DEFAULT_POST_LOGIN_ROUTE : AUTH_ROUTE;
   const primaryLabel = user ? copy.hero.returningCta : copy.hero.primaryCta;
   const canvasWord = landing.canvasWord;
-  const footerSections: FooterSection[] = landing.footer.sections.map((section) =>
-    section.title === "Access"
-      ? {
-          ...section,
-          items: section.items.map((item, index) =>
-            index === 0 ? { ...item, label: primaryLabel, href: primaryHref } : item,
-          ),
-        }
-      : section,
-  );
+  const footerSections: FooterSection[] = [
+    ...landing.footer.sections.map((section) =>
+      section.title === "Access"
+        ? {
+            ...section,
+            items: section.items.map((item, index) =>
+              index === 0 ? { ...item, label: primaryLabel, href: primaryHref } : item,
+            ),
+          }
+        : section,
+    ),
+    {
+      title: resourceFooterSection.title,
+      items: resourceFooterSection.items,
+    },
+  ];
 
   useEffect(() => {
     const hasAuthParams = Boolean(
@@ -178,23 +196,34 @@ export default function LandingPageClient() {
             <CardContainer
               containerClassName="py-0"
               className="w-full"
+              tiltDivider={60}
             >
-              <CardBody className="h-auto min-h-[34rem] w-full">
-                <CardItem translateZ={22} className="w-full">
-                  <ProductPreview />
+              <CardBody className="h-auto w-full">
+                <CardItem translateZ={12} className="w-full">
+                  <div className="overflow-hidden rounded-[18px] border border-white/10 bg-[#080a0f]/96 shadow-[0_40px_140px_rgba(0,0,0,0.45)]">
+                    <Image
+                      src={landingHeroPreviewImage.src}
+                      alt="Synaply 产品界面预览"
+                      width={landingHeroPreviewImage.width}
+                      height={landingHeroPreviewImage.height}
+                      priority
+                      sizes="(min-width: 1024px) 52vw, 100vw"
+                      className="block h-auto w-full"
+                    />
+                  </div>
                 </CardItem>
                 <CardItem
-                  translateX={24}
-                  translateY={-18}
-                  translateZ={56}
+                  translateX={12}
+                  translateY={-10}
+                  translateZ={24}
                   className="absolute right-6 top-6 hidden border border-white/10 bg-[#090b10]/92 px-3 py-2 text-[11px] uppercase tracking-[0.22em] text-white/54 xl:block"
                 >
                   {landing.preview.moduleStrip}
                 </CardItem>
                 <CardItem
-                  translateX={-16}
-                  translateY={18}
-                  translateZ={48}
+                  translateX={-10}
+                  translateY={10}
+                  translateZ={20}
                   className="absolute bottom-6 left-6 hidden border border-white/10 bg-[#090b10]/94 px-3 py-2 text-xs text-white/72 xl:flex xl:items-center xl:gap-2"
                 >
                   <span className="h-2 w-2 bg-emerald-200/70" />
