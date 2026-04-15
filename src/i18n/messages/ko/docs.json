@@ -23,7 +23,7 @@
       "recentTitle": "최근 업데이트됨",
       "folderContains": "{count}개 항목",
       "emptyFolder": "빈 폴더",
-      "updatedAt": "업데이트됨 {값}"
+      "updatedAt": "업데이트됨 {value}"
     },
     "personal": {
       "title": "내 docs",
@@ -96,7 +96,7 @@
     "cancel": "취소",
     "untitled": "제목 없음 문서",
     "clickToEdit": "수정하려면 제목을 클릭하세요.",
-    "updatedAt": "업데이트된 {값}",
+    "updatedAt": "업데이트된 {value}",
     "meta": {
       "folder": "폴더",
       "document": "문서",

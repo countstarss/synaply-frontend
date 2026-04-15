@@ -297,7 +297,7 @@ export default function SettingsScrollPage({
       </div>
 
       <div ref={contentRef} className="min-h-0 flex-1 overflow-y-auto">
-        <div className="px-5 sm:px-6">
+        <div className="flex max-w-5xl px-5 sm:px-6 mx-auto flex-col justify-center">
           {sections.map((section, index) => (
             <section
               key={section.id}

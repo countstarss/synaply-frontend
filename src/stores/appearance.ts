@@ -17,41 +17,15 @@ export type GlowMode =
 
 export interface GlowModeOption {
   id: GlowMode;
-  label: string;
-  description: string;
 }
 
 export const GLOW_MODES: GlowModeOption[] = [
-  {
-    id: "glow",
-    label: "定点光晕",
-    description: "柔和光斑停留在固定锚点附近，适合低干扰背景。",
-  },
-  {
-    id: "aurora",
-    label: "极光",
-    description: "模拟极光帘幕的波动层次，动态时会缓慢流动。",
-  },
-  {
-    id: "ribbon",
-    label: "流光",
-    description: "更宽的斜向光带在背景中游移，适合更有能量的界面氛围。",
-  },
-  {
-    id: "prism",
-    label: "棱镜",
-    description: "多层折射色带切过画面，带来更强的科技感和色散张力。",
-  },
-  {
-    id: "pulse",
-    label: "脉冲",
-    description: "围绕核心区域扩散能量脉冲，适合更有节奏和存在感的界面。",
-  },
-  {
-    id: "corona",
-    label: "日冕",
-    description: "高亮晕环和边缘炽光叠加，形成更具冲击力的戏剧化氛围。",
-  },
+  { id: "glow" },
+  { id: "aurora" },
+  { id: "ribbon" },
+  { id: "prism" },
+  { id: "pulse" },
+  { id: "corona" },
 ];
 
 const LEGACY_GLOW_MODE_ALIASES = {

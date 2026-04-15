@@ -116,11 +116,15 @@ function PresetSwatch({
 
 function ModeOption({
   mode,
+  label,
+  description,
   colors,
   selected,
   onSelect,
 }: {
-  mode: (typeof GLOW_MODES)[number];
+  mode: GlowMode;
+  label: string;
+  description: string;
   colors: GlowPreset["colors"];
   selected: boolean;
   onSelect: () => void;
@@ -141,17 +145,13 @@ function ModeOption({
       <span
         className="h-14 w-full overflow-hidden rounded-md"
         style={{
-          backgroundImage: getModePreviewBackground(mode.id, colors),
+          backgroundImage: getModePreviewBackground(mode, colors),
           backgroundColor: "#0b1220",
         }}
       />
       <span className="flex flex-col gap-1 whitespace-normal">
-        <span className="text-sm font-medium text-foreground">
-          {mode.label}
-        </span>
-        <span className="text-xs leading-5 text-muted-foreground">
-          {mode.description}
-        </span>
+        <span className="text-sm font-medium text-foreground">{label}</span>
+        <span className="text-xs leading-5 text-muted-foreground">{description}</span>
       </span>
     </Button>
   );
@@ -213,6 +213,13 @@ export default function AppearanceSettingsSection() {
   const setIntensity = useAppearanceStore((s) => s.setIntensity);
   const selectedPreset =
     GLOW_PRESETS.find((preset) => preset.id === presetId) ?? GLOW_PRESETS[0];
+  const getModeCopy = React.useCallback(
+    (modeOption: GlowMode) => ({
+      label: tSettings(`appearance.modes.${modeOption}.label`),
+      description: tSettings(`appearance.modes.${modeOption}.description`),
+    }),
+    [tSettings],
+  );
 
   return (
     <div className="space-y-6 py-1">
@@ -244,15 +251,21 @@ export default function AppearanceSettingsSection() {
           {tSettings("appearance.modeLabel")}
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {GLOW_MODES.map((modeOption) => (
-            <ModeOption
-              key={modeOption.id}
-              mode={modeOption}
-              colors={selectedPreset.colors}
-              selected={modeOption.id === mode}
-              onSelect={() => setMode(modeOption.id)}
-            />
-          ))}
+          {GLOW_MODES.map((modeOption) => {
+            const copy = getModeCopy(modeOption.id);
+
+            return (
+              <ModeOption
+                key={modeOption.id}
+                mode={modeOption.id}
+                label={copy.label}
+                description={copy.description}
+                colors={selectedPreset.colors}
+                selected={modeOption.id === mode}
+                onSelect={() => setMode(modeOption.id)}
+              />
+            );
+          })}
         </div>
       </div>
 

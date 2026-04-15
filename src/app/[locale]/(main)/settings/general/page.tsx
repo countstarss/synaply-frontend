@@ -1,8 +1,8 @@
 import { getTranslations } from "next-intl/server";
-import { Bell } from "lucide-react";
 import SettingsScrollPage from "@/components/settings/SettingsScrollPage";
-import SettingsPlaceholderSection from "@/components/settings/sections/SettingsPlaceholderSection";
 import ProfileSettingsSection from "@/components/settings/sections/ProfileSettingsSection";
+import NotificationsSettingsSection from "@/components/settings/sections/NotificationsSettingsSection";
+import LanguageSettingsSection from "@/components/settings/sections/LanguageSettingsSection";
 import AppearanceSettingsSection from "@/components/settings/sections/AppearanceSettingsSection";
 
 export default async function GeneralSettingsPage() {
@@ -24,21 +24,13 @@ export default async function GeneralSettingsPage() {
           id: "notifications",
           label: tSettings("general.sections.notifications.label"),
           description: tSettings("general.sections.notifications.description"),
-          content: (
-            <SettingsPlaceholderSection
-              title={tSettings("general.sections.notifications.label")}
-              description={tSettings(
-                "general.sections.notifications.placeholderDescription",
-              )}
-              icon={Bell}
-              highlights={[
-                tSettings("general.sections.notifications.highlights.digestFrequency"),
-                tSettings("general.sections.notifications.highlights.reminders"),
-                tSettings("general.sections.notifications.highlights.bridges"),
-                tSettings("general.sections.notifications.highlights.quietHours"),
-              ]}
-            />
-          ),
+          content: <NotificationsSettingsSection />,
+        },
+        {
+          id: "language",
+          label: tSettings("general.sections.language.label"),
+          description: tSettings("general.sections.language.description"),
+          content: <LanguageSettingsSection />,
         },
         {
           id: "appearance",

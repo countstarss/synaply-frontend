@@ -22,6 +22,12 @@
           "quietHours": "Quiet hours and personal attention thresholds"
         }
       },
+      "language": {
+        "label": "Language",
+        "description": "Choose the interface language used across Synaply.",
+        "selectorLabel": "Current language",
+        "selectorDescription": "Applied to navigation, notifications, and product copy."
+      },
       "appearance": {
         "label": "Appearance",
         "description": "Theme, density, and reading comfort"
@@ -184,6 +190,32 @@
     "description": "Control the global ambient glow colors and motion. Preferences are stored locally for the account and workspace separately.",
     "preview": "Live preview",
     "modeLabel": "Glow mode",
+    "modes": {
+      "glow": {
+        "label": "Fixed glow",
+        "description": "Soft light blooms stay close to fixed anchor points, ideal for low-distraction backgrounds."
+      },
+      "aurora": {
+        "label": "Aurora",
+        "description": "Simulates layered aurora curtains that drift slowly when motion is enabled."
+      },
+      "ribbon": {
+        "label": "Ribbon",
+        "description": "Wider diagonal light bands sweep across the background for a more energetic atmosphere."
+      },
+      "prism": {
+        "label": "Prism",
+        "description": "Layered refracted color bands cut across the surface for a sharper technical feel."
+      },
+      "pulse": {
+        "label": "Pulse",
+        "description": "Energy rings radiate around the center area, giving the interface more rhythm and presence."
+      },
+      "corona": {
+        "label": "Corona",
+        "description": "Bright halo rings and edge glow stack together for a more dramatic ambient effect."
+      }
+    },
     "presetLabel": "Color presets",
     "enabledLabel": "Enable background glow",
     "enabledDescription": "When disabled, the ambient light is not rendered and the page background stays solid.",

@@ -75,7 +75,7 @@
     "emptyDescription": "上の + ボタンをクリックして作成します",
     "deleteDialog": {
       "title": "ドキュメントを削除しますか?",
-      "description": "これにより削除されます「{タイトル}」。 {children} この操作は元に戻すことができません。",
+      "description": "これにより削除されます「{title}」。 {children} この操作は元に戻すことができません。",
       "children": "その子ドキュメントも削除されます。",
       "cancel": "Cancel",
       "confirm": "削除を確認"
@@ -120,7 +120,7 @@
   },
   "folderIntro": {
     "saveFailed": "フォルダーの説明を保存できませんでした。",
-    "folderMeta": "フォルダー • {値}を作成しました",
+    "folderMeta": "フォルダー • {value}を作成しました",
     "editDescription": "説明を編集",
     "title": "フォルダーの説明",
     "placeholder": "フォルダーを入力してください説明...",

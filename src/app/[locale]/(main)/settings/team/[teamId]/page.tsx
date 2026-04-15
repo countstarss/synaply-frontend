@@ -427,7 +427,7 @@ export default function TeamSettingsPage() {
       : tSettings("teamPage.avatar.statusHint");
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="flex flex-col space-y-6 p-4 max-w-5xl mx-auto">
       <Card className="overflow-hidden border-none bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_42%),linear-gradient(135deg,_rgba(10,37,64,0.96),_rgba(15,118,110,0.88))] text-white">
         <CardHeader className="gap-3">
           <CardTitle className="text-2xl font-semibold tracking-tight">

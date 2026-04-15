@@ -23,7 +23,7 @@
       "recentTitle": "最近更新",
       "folderContains": "{count}个项目",
       "emptyFolder": "空文件夹",
-      "updatedAt": "已更新{值}"
+      "updatedAt": "已更新{value}"
     },
     "personal": {
       "title": "我的docs",

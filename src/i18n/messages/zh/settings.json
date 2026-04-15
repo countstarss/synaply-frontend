@@ -22,6 +22,12 @@
           "quietHours": "安静时间和个人关注阈值"
         }
       },
+      "language": {
+        "label": "语言",
+        "description": "设置 Synaply 全局使用的界面语言。",
+        "selectorLabel": "当前语言",
+        "selectorDescription": "会应用到导航、通知和产品文案。"
+      },
       "appearance": {
         "label": "外观",
         "description": "主题、密度和阅读舒适度"
@@ -184,6 +190,32 @@
     "description": "控制全局环境发光颜色和运动。帐户和工作区的首选项分别存储在本地。",
     "preview": "实时预览",
     "modeLabel": "发光模式",
+    "modes": {
+      "glow": {
+        "label": "定点光晕",
+        "description": "柔和光斑停留在固定锚点附近，适合低干扰背景。"
+      },
+      "aurora": {
+        "label": "极光",
+        "description": "模拟极光帘幕的波动层次，动态时会缓慢流动。"
+      },
+      "ribbon": {
+        "label": "流光",
+        "description": "更宽的斜向光带在背景中游移，适合更有能量的界面氛围。"
+      },
+      "prism": {
+        "label": "棱镜",
+        "description": "多层折射色带切过画面，带来更强的科技感和色散张力。"
+      },
+      "pulse": {
+        "label": "脉冲",
+        "description": "围绕核心区域扩散能量脉冲，适合更有节奏和存在感的界面。"
+      },
+      "corona": {
+        "label": "日冕",
+        "description": "高亮晕环和边缘炽光叠加，形成更具冲击力的戏剧化氛围。"
+      }
+    },
     "presetLabel": "颜色预设",
     "enabledLabel": "启用背景发光",
     "enabledDescription": "禁用时，不会渲染环境光，页面背景保持不变solid.",
