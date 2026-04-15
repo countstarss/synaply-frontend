@@ -26,6 +26,23 @@
     "teamEditable": "팀 editable",
     "public": "Public"
   },
+  "descriptionTemplate": {
+    "actions": {
+      "insert": "구조화 템플릿 삽입"
+    },
+    "sections": {
+      "background": "배경",
+      "acceptance": "완료 기준",
+      "risks": "리스크 / 블로커",
+      "nextStep": "다음 단계"
+    },
+    "placeholders": {
+      "background": "배경, 목표, 지금 이 일을 해야 하는 이유를 정리하세요",
+      "acceptance": "완료 후 어떤 결과가 보여야 하는지 적어두세요",
+      "risks": "현재 리스크, 의존성, 누구의 도움이 필요한지 적어두세요",
+      "nextStep": "이 일을 앞으로 밀어줄 다음 액션을 적어두세요"
+    }
+  },
   "createModal": {
     "title": "문제 만들기",
     "workspace": {

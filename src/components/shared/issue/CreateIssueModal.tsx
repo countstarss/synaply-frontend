@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { IssueDescriptionTemplateAction } from "@/components/shared/issue/IssueDescriptionTemplateAction";
 import { useCreateIssue, useCreateWorkflowIssue } from "@/hooks/useIssueApi";
 import { useIssueStates } from "@/hooks/useIssueStates";
 import { useProjects } from "@/hooks/useProjectApi";
@@ -562,9 +563,16 @@ export default function CreateIssueModal({
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium text-app-text-primary">
-              {tCommon("fields.description")}
-            </label>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <label className="text-sm font-medium text-app-text-primary">
+                {tCommon("fields.description")}
+              </label>
+              <IssueDescriptionTemplateAction
+                tIssues={t}
+                value={description}
+                onApply={setDescription}
+              />
+            </div>
             <Textarea
               value={description}
               onChange={(event) => setDescription(event.target.value)}

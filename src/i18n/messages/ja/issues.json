@@ -26,6 +26,23 @@
     "teamEditable": "チーム編集可能",
     "public": "公開"
   },
+  "descriptionTemplate": {
+    "actions": {
+      "insert": "構造化テンプレートを挿入"
+    },
+    "sections": {
+      "background": "背景",
+      "acceptance": "受け入れ条件",
+      "risks": "リスク / ブロッカー",
+      "nextStep": "次の一手"
+    },
+    "placeholders": {
+      "background": "背景、目的、今やる理由を整理する",
+      "acceptance": "完了時にどうなっていればよいかを書く",
+      "risks": "現在のリスク、依存、誰の支援が必要かを書く",
+      "nextStep": "この作業を前に進める次のアクションを書く"
+    }
+  },
   "createModal": {
     "title": "作成問題",
     "workspace": {

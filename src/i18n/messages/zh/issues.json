@@ -26,6 +26,23 @@
     "teamEditable": "团队可编辑",
     "public": "公共"
   },
+  "descriptionTemplate": {
+    "actions": {
+      "insert": "插入结构化模板"
+    },
+    "sections": {
+      "background": "背景",
+      "acceptance": "验收标准",
+      "risks": "风险 / 阻塞",
+      "nextStep": "下一步"
+    },
+    "placeholders": {
+      "background": "补充问题背景、目标和为什么现在要做",
+      "acceptance": "写清楚完成后应该看到什么结果",
+      "risks": "记录当前风险、依赖或需要谁协助",
+      "nextStep": "写下推进这件事的下一步动作"
+    }
+  },
   "createModal": {
     "title": "创建问题",
     "workspace": {

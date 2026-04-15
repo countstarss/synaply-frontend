@@ -26,6 +26,23 @@
     "teamEditable": "Team editable",
     "public": "Public"
   },
+  "descriptionTemplate": {
+    "actions": {
+      "insert": "Insert structured template"
+    },
+    "sections": {
+      "background": "Background",
+      "acceptance": "Acceptance criteria",
+      "risks": "Risks / blockers",
+      "nextStep": "Next step"
+    },
+    "placeholders": {
+      "background": "Capture the context, goal, and why this matters now",
+      "acceptance": "Describe the outcome that should be true when this is done",
+      "risks": "Note the current risks, dependencies, or who can help unblock it",
+      "nextStep": "Write the next action that should move this work forward"
+    }
+  },
   "createModal": {
     "title": "Create issue",
     "workspace": {

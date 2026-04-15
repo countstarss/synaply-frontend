@@ -44,6 +44,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { IssueDescriptionTemplateAction } from "@/components/shared/issue/IssueDescriptionTemplateAction";
 import { useAuth } from "@/context/AuthContext";
 import { useIssue, useUpdateIssue } from "@/hooks/useIssueApi";
 import { useIssueStates } from "@/hooks/useIssueStates";
@@ -1253,6 +1254,17 @@ export default function NormalIssueDetail({
             </div>
             {canEditIssue && (
               <div className="flex flex-wrap gap-2">
+                <IssueDescriptionTemplateAction
+                  tIssues={tIssues}
+                  value={localIssue.description || ""}
+                  onApply={(nextDescription) => {
+                    setLocalIssue({
+                      ...localIssue,
+                      description: nextDescription,
+                    });
+                    setEditingField("description");
+                  }}
+                />
                 <Button
                   type="button"
                   variant="outline"
