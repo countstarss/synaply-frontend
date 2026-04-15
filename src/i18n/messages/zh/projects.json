@@ -63,6 +63,10 @@
       "assigned": "已分配",
       "pending": "需要受让人"
     },
+    "priority": {
+      "urgent": "紧急",
+      "high": "高优先级"
+    },
     "attention": {
       "blockedTitle": "已屏蔽的问题需要注意",
       "blockedDescription": "目前已屏蔽{count}个问题。",
@@ -78,6 +82,7 @@
       "docCreateAuthRequired": "当前用户信息不可用，因此尚无法创建项目文档。",
       "docCreated": "项目文档已创建。",
       "docCreateFailed": "无法创建项目文档。",
+      "newDocTitle": "{name} 文档",
       "missingBrief": "该项目尚无单行摘要。添加目标、交付方向和成功标准。",
       "phase": "阶段",
       "owner": "所有者",
@@ -93,6 +98,8 @@
       "riskAndDelayHint": "{blocked} 阻止 · {overdue} 过期",
       "executionSurface": "执行表面",
       "executionSurfaceHint": "{workflowCount} 链接的工作流程 · {highPriority} 高优先级",
+      "pendingConfirmations": "待确认项",
+      "pendingConfirmationsHint": "{reviewCount} 个评审 · {handoffCount} 个交接",
       "recentSync": "最近同步",
       "notRecorded": "未记录",
       "recentSyncHint": "在审核或异步同步后更新此内容检查点.",
@@ -108,6 +115,52 @@
       "risksTitle": "风险",
       "blockedIssuesTitle": "阻止问题",
       "blockedIssuesEmpty": "当前未检测到被阻止的问题。"
+    },
+    "collaboration": {
+      "title": "协作快照",
+      "subtitle": "把下一步交接、关键文档和正在推进交付的工作流运行态直接留在项目主页上。",
+      "pendingTitle": "待确认项",
+      "pendingEmpty": "当前没有等待响应的评审或交接。",
+      "docsTitle": "关键文档",
+      "docsEmpty": "这个项目还没有文档，先把 brief、决策或评审记录沉淀下来。",
+      "openDocs": "打开文档",
+      "docUpdatedAt": "更新于 {value}",
+      "workflowRuntimeTitle": "工作流运行态",
+      "workflowRuntimeEmpty": "这个项目里还没有活跃的工作流运行。",
+      "linkedWorkflowIssues": "{count} 个关联事项",
+      "workflowRuntimeSummary": "{issueCount} 个关联事项 · {activeCount} 个进行中 · {waitingReviewCount} 个等待评审 · {handoffPendingCount} 个等待交接 · {blockedCount} 个已阻塞",
+      "workflowFocusIssue": "当前焦点：{name}",
+      "currentStep": "当前步骤：{name}",
+      "pendingTarget": "等待 {name} 响应",
+      "pendingTargetFallback": "等待确认",
+      "status": {
+        "waitingReview": "等待评审",
+        "handoffPending": "等待交接",
+        "blocked": "已阻塞",
+        "active": "进行中",
+        "done": "已完成",
+        "unknown": "未知"
+      },
+      "workflowRuntime": {
+        "active": "活跃运行",
+        "waitingReview": "等待评审",
+        "handoffPending": "等待交接",
+        "blocked": "已阻塞"
+      }
+    },
+    "timeline": {
+      "title": "活动与同步时间线",
+      "subtitle": "把最近的协作动作、issue 变更和 sync checkpoint 串在一起，便于快速判断项目当前节奏。",
+      "openSync": "打开同步页",
+      "updateSync": "更新同步",
+      "recentSync": "最近同步",
+      "activityCount": "时间线事件",
+      "activityCountHint": "包含 sync checkpoint 和最近的协作活动。",
+      "updatedAt": "项目更新时间",
+      "empty": "这个项目还没有形成可用的活动时间线。",
+      "syncTitle": "记录了一次项目同步",
+      "syncDescription": "最近一次 async sync checkpoint 已更新，可作为当前节奏的参考点。",
+      "actorFallback": "团队成员"
     }
   },
   "subviews": {
@@ -121,6 +174,7 @@
       "title": "问题",
       "subtitle": "保持项目执行层分离，同时具有列表和面板视图。",
       "openIssue": "打开问题",
+      "quickComplete": "标记为完成",
       "cancelIssue": "取消问题",
       "summary": "{active}活动项目issues{suffix}",
       "hiddenSuffix": " · {count} 已完成或取消{hidden}",
@@ -128,6 +182,7 @@
       "onlyCreatorCanCancel": "只有创建者可以取消此问题。",
       "cancelled": "问题已取消。现在默认隐藏在列表视图中。",
       "cancelFailed": "无法取消该问题。请重试。",
+      "updateStateFailed": "无法更新该问题状态。请重试。",
       "saveBoardOrder": "保存主板订单",
       "boardOrderSaved": "已保存主板订单",
       "loading": "正在加载项目问题...",
@@ -165,7 +220,11 @@
       "updatedAt": "项目已更新",
       "notRecorded": "未记录",
       "empty": "项目活动尚未建立。问题更新和活动记录将自动累积在此处。",
-      "teamMember": "团队成员"
+      "teamMember": "团队成员",
+      "timeline": {
+        "syncTitle": "记录了一次项目同步",
+        "syncDescription": "最近一次 async sync checkpoint 已更新，可作为当前节奏的参考点。"
+      }
     }
   },
   "kanban": {

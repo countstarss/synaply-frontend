@@ -63,6 +63,10 @@
       "assigned": "Assigned",
       "pending": "Assignee が必要"
     },
+    "priority": {
+      "urgent": "緊急",
+      "high": "高優先度"
+    },
     "attention": {
       "blockedTitle": "ブロックされた問題には注意が必要です",
       "blockedDescription": "{count} 件の問題が現在ブロックされています。",
@@ -78,6 +82,7 @@
       "docCreateAuthRequired": "現在のユーザー情報が利用できないため、プロジェクト ドキュメントをまだ作成できません。",
       "docCreated": "プロジェクト ドキュメントが作成されました。",
       "docCreateFailed": "プロジェクト ドキュメントの作成に失敗しました。",
+      "newDocTitle": "{name} doc",
       "missingBrief": "このプロジェクトにはまだ 1 行の概要がありません。目標、配信の方向性、成功基準を追加します。",
       "phase": "Phase",
       "owner": "Owner",
@@ -93,6 +98,8 @@
       "riskAndDelayHint": "{blocked} ブロック · {overdue} 期限超過",
       "executionSurface": "実行面",
       "executionSurfaceHint": "{workflowCount} 個のリンクされたワークフロー · {highPriority} 高優先度",
+      "pendingConfirmations": "確認待ち",
+      "pendingConfirmationsHint": "{reviewCount} 件のレビュー · {handoffCount} 件のハンドオフ",
       "recentSync": "最近の同期",
       "notRecorded": "記録されていません",
       "recentSyncHint": "レビューまたは非同期同期チェックポイントの後でこれを更新してください。",
@@ -108,6 +115,52 @@
       "risksTitle": "リスク",
       "blockedIssuesTitle": "ブロックされた問題",
       "blockedIssuesEmpty": "現在ブロックされている問題はありません"
+    },
+    "collaboration": {
+      "title": "コラボレーションのスナップショット",
+      "subtitle": "次のハンドオフ、重要なドキュメント、今まさに動いているワークフロー実行をプロジェクト画面に残します。",
+      "pendingTitle": "確認待ち",
+      "pendingEmpty": "現在、応答待ちのレビューやハンドオフはありません。",
+      "docsTitle": "主要ドキュメント",
+      "docsEmpty": "このプロジェクトにはまだドキュメントがありません。最初の brief、decision、review note を残してください。",
+      "openDocs": "ドキュメントを開く",
+      "docUpdatedAt": "{value} に更新",
+      "workflowRuntimeTitle": "ワークフロー実行状況",
+      "workflowRuntimeEmpty": "このプロジェクトではまだアクティブなワークフロー実行がありません。",
+      "linkedWorkflowIssues": "{count} 件の関連課題",
+      "workflowRuntimeSummary": "{issueCount} 件の関連課題 · {activeCount} 件進行中 · {waitingReviewCount} 件レビュー待ち · {handoffPendingCount} 件ハンドオフ待ち · {blockedCount} 件ブロック中",
+      "workflowFocusIssue": "現在の焦点: {name}",
+      "currentStep": "現在のステップ: {name}",
+      "pendingTarget": "{name} の応答待ち",
+      "pendingTargetFallback": "確認待ち",
+      "status": {
+        "waitingReview": "レビュー待ち",
+        "handoffPending": "ハンドオフ待ち",
+        "blocked": "ブロック中",
+        "active": "進行中",
+        "done": "完了",
+        "unknown": "不明"
+      },
+      "workflowRuntime": {
+        "active": "アクティブ実行",
+        "waitingReview": "レビュー待ち",
+        "handoffPending": "ハンドオフ待ち",
+        "blocked": "ブロック中"
+      }
+    },
+    "timeline": {
+      "title": "活動と同期のタイムライン",
+      "subtitle": "最近の協作アクション、issue の変化、sync checkpoint をひとつの流れで見られるようにします。",
+      "openSync": "同期画面を開く",
+      "updateSync": "同期を更新",
+      "recentSync": "最近の同期",
+      "activityCount": "タイムラインイベント",
+      "activityCountHint": "sync checkpoint と最近の協作アクティビティを含みます。",
+      "updatedAt": "プロジェクト更新",
+      "empty": "このプロジェクトにはまだ有効な活動タイムラインがありません。",
+      "syncTitle": "プロジェクト同期を記録",
+      "syncDescription": "最新の async sync checkpoint が更新され、現在の進行ペースの目印になります。",
+      "actorFallback": "チームメンバー"
     }
   },
   "subviews": {
@@ -121,6 +174,7 @@
       "title": "Issues",
       "subtitle": "リスト ビューとボード ビューの両方で、プロジェクト実行レイヤーを分離しておきます。",
       "openIssue": "未解決の問題",
+      "quickComplete": "完了としてマーク",
       "cancelIssue": "キャンセルissue",
       "summary": "{active} 件のアクティブなプロジェクト課題{suffix}",
       "hiddenSuffix": " · {count} 件完了またはキャンセルされました{hidden}",
@@ -128,6 +182,7 @@
       "onlyCreatorCanCancel": "作成者のみがこの問題をキャンセルできます。",
       "cancelled": "問題はキャンセルされました。デフォルトではリスト ビューで非表示になりました。",
       "cancelFailed": "問題をキャンセルできませんでした。もう一度お試しください。",
+      "updateStateFailed": "課題の状態を更新できませんでした。もう一度お試しください。",
       "saveBoardOrder": "ボード注文を保存",
       "boardOrderSaved": "ボード注文を保存",
       "loading": "プロジェクト課題をロード中...",
@@ -165,7 +220,11 @@
       "updatedAt": "プロジェクトが更新されました",
       "notRecorded": "記録されていません",
       "empty": "プロジェクトのアクティビティはまだ構築されていません。問題の更新とアクティビティ記録はここに自動的に蓄積されます。",
-      "teamMember": "チーム メンバー"
+      "teamMember": "チーム メンバー",
+      "timeline": {
+        "syncTitle": "プロジェクト同期を記録",
+        "syncDescription": "最新の async sync checkpoint が更新され、現在の進行ペースの目印になります。"
+      }
     }
   },
   "kanban": {

@@ -63,6 +63,10 @@
       "assigned": "Assigned",
       "pending": "Needs assignee"
     },
+    "priority": {
+      "urgent": "Urgent",
+      "high": "High priority"
+    },
     "attention": {
       "blockedTitle": "Blocked issues need attention",
       "blockedDescription": "{count} issues are currently blocked.",
@@ -78,6 +82,7 @@
       "docCreateAuthRequired": "Current user info is unavailable, so a project doc cannot be created yet.",
       "docCreated": "Project doc created.",
       "docCreateFailed": "Failed to create a project doc.",
+      "newDocTitle": "{name} doc",
       "missingBrief": "This project does not have a one-line brief yet. Add the goal, delivery direction, and success criteria.",
       "phase": "Phase",
       "owner": "Owner",
@@ -93,6 +98,8 @@
       "riskAndDelayHint": "{blocked} blocked · {overdue} overdue",
       "executionSurface": "Execution surface",
       "executionSurfaceHint": "{workflowCount} linked workflows · {highPriority} high priority",
+      "pendingConfirmations": "Pending confirmations",
+      "pendingConfirmationsHint": "{reviewCount} reviews · {handoffCount} handoffs",
       "recentSync": "Recent sync",
       "notRecorded": "Not recorded",
       "recentSyncHint": "Update this after a review or async sync checkpoint.",
@@ -108,6 +115,52 @@
       "risksTitle": "Risks",
       "blockedIssuesTitle": "Blocked issues",
       "blockedIssuesEmpty": "No blocked issues are currently detected."
+    },
+    "collaboration": {
+      "title": "Collaboration snapshot",
+      "subtitle": "Keep the project page anchored in the next handoff, key docs, and the workflow runs that are currently moving delivery.",
+      "pendingTitle": "Pending confirmations",
+      "pendingEmpty": "No review or handoff is waiting on a response right now.",
+      "docsTitle": "Key docs",
+      "docsEmpty": "No project docs have been created yet. Capture the first brief, decision, or review note here.",
+      "openDocs": "Open docs",
+      "docUpdatedAt": "Updated {value}",
+      "workflowRuntimeTitle": "Workflow runtime",
+      "workflowRuntimeEmpty": "No workflow run is active in this project yet.",
+      "linkedWorkflowIssues": "{count} linked issues",
+      "workflowRuntimeSummary": "{issueCount} linked issues · {activeCount} active · {waitingReviewCount} waiting review · {handoffPendingCount} waiting handoff · {blockedCount} blocked",
+      "workflowFocusIssue": "Current focus: {name}",
+      "currentStep": "Current step: {name}",
+      "pendingTarget": "Waiting on {name}",
+      "pendingTargetFallback": "Waiting on confirmation",
+      "status": {
+        "waitingReview": "Waiting review",
+        "handoffPending": "Waiting handoff",
+        "blocked": "Blocked",
+        "active": "Active",
+        "done": "Done",
+        "unknown": "Unknown"
+      },
+      "workflowRuntime": {
+        "active": "Active runs",
+        "waitingReview": "Waiting review",
+        "handoffPending": "Waiting handoff",
+        "blocked": "Blocked"
+      }
+    },
+    "timeline": {
+      "title": "Activity and sync timeline",
+      "subtitle": "Keep the latest collaboration moves, issue changes, and sync checkpoints in one place so the project rhythm is easy to read.",
+      "openSync": "Open sync view",
+      "updateSync": "Update sync",
+      "recentSync": "Recent sync",
+      "activityCount": "Timeline events",
+      "activityCountHint": "Includes sync checkpoints and recent collaboration activity.",
+      "updatedAt": "Project updated",
+      "empty": "This project has not formed a useful activity timeline yet.",
+      "syncTitle": "Project sync recorded",
+      "syncDescription": "The latest async sync checkpoint has been updated and can serve as the current pace marker.",
+      "actorFallback": "Team member"
     }
   },
   "subviews": {
@@ -121,6 +174,7 @@
       "title": "Issues",
       "subtitle": "Keep the project execution layer separate, with both list and board views.",
       "openIssue": "Open issue",
+      "quickComplete": "Mark as done",
       "cancelIssue": "Cancel issue",
       "summary": "{active} active project issues{suffix}",
       "hiddenSuffix": " · {count} done or canceled{hidden}",
@@ -128,6 +182,7 @@
       "onlyCreatorCanCancel": "Only the creator can cancel this issue.",
       "cancelled": "Issue canceled. It is now hidden in list view by default.",
       "cancelFailed": "Failed to cancel the issue. Please try again.",
+      "updateStateFailed": "Failed to update the issue state. Please try again.",
       "saveBoardOrder": "Save board order",
       "boardOrderSaved": "Board order saved",
       "loading": "Loading project issues...",
@@ -165,7 +220,11 @@
       "updatedAt": "Project updated",
       "notRecorded": "Not recorded",
       "empty": "Project activity has not built up yet. Issue updates and activity records will accumulate here automatically.",
-      "teamMember": "Team member"
+      "teamMember": "Team member",
+      "timeline": {
+        "syncTitle": "Project sync recorded",
+        "syncDescription": "The latest async sync checkpoint has been updated and can serve as the current pace marker."
+      }
     }
   },
   "kanban": {

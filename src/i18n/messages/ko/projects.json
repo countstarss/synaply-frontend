@@ -63,6 +63,10 @@
       "assigned": "할당됨",
       "pending": "담당자 필요"
     },
+    "priority": {
+      "urgent": "긴급",
+      "high": "높은 우선순위"
+    },
     "attention": {
       "blockedTitle": "차단된 문제에는 주의가 필요합니다",
       "blockedDescription": "{count}개의 문제가 현재 차단되었습니다.",
@@ -78,6 +82,7 @@
       "docCreateAuthRequired": "현재 사용자 정보를 사용할 수 없으므로 아직 프로젝트 문서를 생성할 수 없습니다.",
       "docCreated": "프로젝트 문서가 생성되었습니다.",
       "docCreateFailed": "프로젝트 문서를 생성하지 못했습니다.",
+      "newDocTitle": "{name} 문서",
       "missingBrief": "이 프로젝트에는 아직 한 줄 요약이 없습니다. 목표, 전달 방향 및 성공 기준을 추가합니다.",
       "phase": "단계",
       "owner": "소유자",
@@ -93,6 +98,8 @@
       "riskAndDelayHint": "{blocked} 차단됨 · {overdue} 기한 초과",
       "executionSurface": "실행 표면",
       "executionSurfaceHint": "{workflowCount} 연결된 워크플로 · {highPriority} 높은 우선 순위",
+      "pendingConfirmations": "확인 대기",
+      "pendingConfirmationsHint": "{reviewCount}개 리뷰 · {handoffCount}개 핸드오프",
       "recentSync": "최근 동기화",
       "notRecorded": "Not 기록됨",
       "recentSyncHint": "검토 또는 비동기 동기화 체크포인트 후에 이를 업데이트하세요.",
@@ -108,6 +115,52 @@
       "risksTitle": "Risks",
       "blockedIssuesTitle": "차단된 문제",
       "blockedIssuesEmpty": "현재 차단된 문제는 없습니다. 감지되었습니다."
+    },
+    "collaboration": {
+      "title": "협업 스냅샷",
+      "subtitle": "다음 handoff, 핵심 문서, 지금 전달을 움직이고 있는 워크플로 실행 상태를 프로젝트 화면에 바로 보여줍니다.",
+      "pendingTitle": "확인 대기",
+      "pendingEmpty": "지금 응답을 기다리는 리뷰나 핸드오프가 없습니다.",
+      "docsTitle": "핵심 문서",
+      "docsEmpty": "이 프로젝트에는 아직 문서가 없습니다. 먼저 brief, decision, review note를 남겨두세요.",
+      "openDocs": "문서 열기",
+      "docUpdatedAt": "{value}에 업데이트됨",
+      "workflowRuntimeTitle": "워크플로 실행 상태",
+      "workflowRuntimeEmpty": "이 프로젝트에는 아직 활성 워크플로 실행이 없습니다.",
+      "linkedWorkflowIssues": "{count}개 연결된 이슈",
+      "workflowRuntimeSummary": "{issueCount}개 연결된 이슈 · {activeCount}개 진행 중 · {waitingReviewCount}개 리뷰 대기 · {handoffPendingCount}개 핸드오프 대기 · {blockedCount}개 차단됨",
+      "workflowFocusIssue": "현재 초점: {name}",
+      "currentStep": "현재 단계: {name}",
+      "pendingTarget": "{name}의 응답 대기",
+      "pendingTargetFallback": "확인 대기",
+      "status": {
+        "waitingReview": "리뷰 대기",
+        "handoffPending": "핸드오프 대기",
+        "blocked": "차단됨",
+        "active": "진행 중",
+        "done": "완료됨",
+        "unknown": "알 수 없음"
+      },
+      "workflowRuntime": {
+        "active": "활성 실행",
+        "waitingReview": "리뷰 대기",
+        "handoffPending": "핸드오프 대기",
+        "blocked": "차단됨"
+      }
+    },
+    "timeline": {
+      "title": "활동 및 동기화 타임라인",
+      "subtitle": "최근 협업 액션, issue 변화, sync checkpoint를 한 흐름으로 보여줘서 프로젝트 리듬을 빠르게 읽을 수 있게 합니다.",
+      "openSync": "동기화 화면 열기",
+      "updateSync": "동기화 업데이트",
+      "recentSync": "최근 동기화",
+      "activityCount": "타임라인 이벤트",
+      "activityCountHint": "sync checkpoint와 최근 협업 활동을 함께 집계합니다.",
+      "updatedAt": "프로젝트 업데이트",
+      "empty": "이 프로젝트에는 아직 의미 있는 활동 타임라인이 없습니다.",
+      "syncTitle": "프로젝트 동기화가 기록되었습니다",
+      "syncDescription": "가장 최근의 async sync checkpoint가 업데이트되어 현재 리듬의 기준점이 됩니다.",
+      "actorFallback": "팀 구성원"
     }
   },
   "subviews": {
@@ -121,6 +174,7 @@
       "title": "문제",
       "subtitle": "다음을 사용하여 프로젝트 실행 레이어를 별도로 유지합니다. 목록 및 보드 보기 모두.",
       "openIssue": "미결 문제",
+      "quickComplete": "완료로 표시",
       "cancelIssue": "문제 취소",
       "summary": "{active} 활성 프로젝트 문제{suffix}",
       "hiddenSuffix": " · {count} 완료 또는 취소됨{hidden}",
@@ -128,6 +182,7 @@
       "onlyCreatorCanCancel": "생성자만 이 문제를 취소할 수 있습니다.",
       "cancelled": "문제가 취소되었습니다. 이제 기본적으로 목록 보기에서 숨겨져 있습니다.",
       "cancelFailed": "문제를 취소하지 못했습니다. 다시 시도하십시오.",
+      "updateStateFailed": "문제 상태를 업데이트하지 못했습니다. 다시 시도해 주세요.",
       "saveBoardOrder": "보드 주문 저장",
       "boardOrderSaved": "보드 주문이 저장되었습니다",
       "loading": "프로젝트 문제 로드 중...",
@@ -165,7 +220,11 @@
       "updatedAt": "프로젝트 업데이트",
       "notRecorded": "기록되지 않음",
       "empty": "프로젝트 활동이 아직 구축되지 않았습니다. 문제 업데이트 및 활동 기록이 여기에 자동으로 누적됩니다.",
-      "teamMember": "팀 구성원"
+      "teamMember": "팀 구성원",
+      "timeline": {
+        "syncTitle": "프로젝트 동기화가 기록되었습니다",
+        "syncDescription": "가장 최근의 async sync checkpoint가 업데이트되어 현재 리듬의 기준점이 됩니다."
+      }
     }
   },
   "kanban": {

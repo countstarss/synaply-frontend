@@ -51,6 +51,13 @@ type DragEntity = {
 const COLUMN_ID_PREFIX = "project-issue-column:";
 const CARD_ID_PREFIX = "project-issue-card:";
 const DROPZONE_ID_PREFIX = "project-issue-dropzone:";
+const ISSUE_STATE_CATEGORY_MESSAGE_KEYS: Record<IssueStateCategory, string> = {
+  [IssueStateCategory.BACKLOG]: "backlog",
+  [IssueStateCategory.TODO]: "todo",
+  [IssueStateCategory.IN_PROGRESS]: "inProgress",
+  [IssueStateCategory.DONE]: "done",
+  [IssueStateCategory.CANCELED]: "canceled",
+};
 
 function getIdentifierFromEntity(entity: DragEntity) {
   const identifier = entity?.id;
@@ -187,9 +194,12 @@ function ProjectIssueKanbanColumn({
   onCancelIssue?: (issue: Issue) => void;
   canCancelIssue?: (issue: Issue) => boolean;
   tProjects: (key: string, values?: Record<string, string | number>) => string;
-  tIssues: (key: string, values?: Record<string, string | number>) => string;
+  tIssues: ReturnType<typeof useTranslations>;
 }) {
-  const categoryLabel = tIssues(`stateCategory.${category.toLowerCase()}`);
+  const categoryMessageKey = ISSUE_STATE_CATEGORY_MESSAGE_KEYS[category];
+  const categoryLabel = tIssues.has(`stateCategory.${categoryMessageKey}`)
+    ? tIssues(`stateCategory.${categoryMessageKey}`)
+    : category;
   const { ref, handleRef, isDragSource, isDropTarget } = useSortable({
     id: `project-issue-column:${category}`,
     index,

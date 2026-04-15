@@ -13,8 +13,8 @@ import { toast } from "sonner";
 import { RiLoader4Line } from "react-icons/ri";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/context/AuthContext";
-import AmbientGlow from "@/components/global/AmbientGlow";
 import { useCachedPageVisibility } from "@/components/cache/CachedPageVisibility";
+import { ProjectsPageLayout } from "@/components/projects/ProjectsPageLayout";
 import { useIssues } from "@/hooks/useIssueApi";
 import { useWorkspaceRealtime } from "@/hooks/realtime/useWorkspaceRealtime";
 import {
@@ -27,17 +27,8 @@ import {
 } from "@/hooks/useProjectApi";
 import { useTeamMembers } from "@/hooks/useTeam";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { ProjectDetailView } from "@/components/projects/ProjectDetailView";
-import { ProjectRouteShell } from "@/components/projects/ProjectRouteShell";
-import {
-  ProjectDocsSubview,
-  ProjectIssuesSubview,
-  ProjectSyncSubview,
-  ProjectWorkflowSubview,
-} from "@/components/projects/ProjectSubviewContent";
+import { useProjectBoardState } from "@/components/projects/useProjectBoardState";
 import { DeleteProjectDialog } from "@/components/projects/DeleteProjectDialog";
-import { ProjectsEmptyState } from "@/components/projects/ProjectsEmptyState";
-import { ProjectsOverviewPage } from "@/components/projects/ProjectsOverviewPage";
 import {
   ProjectEditorDialog,
   type ProjectEditorValues,
@@ -52,30 +43,15 @@ import {
   getProjectViewModeFromPathname,
   getSelectedProjectIdFromPathname,
 } from "@/components/projects/project-route-utils";
-import IssueDetailPageSurface from "@/components/issue/IssueDetailPageSurface";
 import CreateIssueModal from "@/components/shared/issue/CreateIssueModal";
 import {
   isActiveIssue,
-  normalizeIssueStateCategoryOrder,
-  persistIssueBoardCategoryOrderToStorage,
-  readIssueBoardCategoryOrderFromStorage,
 } from "@/lib/issue-board";
 import type { Issue } from "@/lib/fetchers/issue";
 import type {
   Project,
   ProjectDetail,
 } from "@/lib/fetchers/project";
-import { IssueStateCategory } from "@/types/prisma";
-
-function isSameCategoryOrder(
-  left: IssueStateCategory[],
-  right: IssueStateCategory[],
-) {
-  return (
-    left.length === right.length &&
-    left.every((category, index) => category === right[index])
-  );
-}
 
 // MARK: 项目页面内容
 export default function ProjectsPageContent() {
@@ -122,17 +98,20 @@ export default function ProjectsPageContent() {
   const [projectDialogMode, setProjectDialogMode] = useState<"create" | "edit">(
     "create",
   );
-  const [issuesViewMode, setIssuesViewMode] = useState<"list" | "board">("list");
-  const [issueBoardCategoryOrder, setIssueBoardCategoryOrder] = useState<
-    IssueStateCategory[]
-  >(() => readIssueBoardCategoryOrderFromStorage(workspaceId));
-  const [savedIssueBoardCategoryOrder, setSavedIssueBoardCategoryOrder] =
-    useState<IssueStateCategory[]>(() =>
-      readIssueBoardCategoryOrderFromStorage(workspaceId),
-    );
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [isCreateIssueOpen, setIsCreateIssueOpen] = useState(false);
+  const {
+    issuesViewMode,
+    issueBoardCategoryOrder,
+    hasUnsavedIssueBoardCategoryOrder,
+    setIssuesViewMode,
+    handleIssueBoardCategoryOrderChange,
+    handleSaveIssueBoardCategoryOrder,
+  } = useProjectBoardState({
+    workspaceId,
+    tProjects: t,
+  });
 
   const deferredSearch = useDeferredValue(searchQuery);
   const createProjectMutation = useCreateProject();
@@ -165,13 +144,6 @@ export default function ProjectsPageContent() {
   }, [isLoading, projects, router, selectedProjectId, workspaceId]);
 
   useEffect(() => {
-    const storedOrder = readIssueBoardCategoryOrderFromStorage(workspaceId);
-
-    setIssueBoardCategoryOrder(storedOrder);
-    setSavedIssueBoardCategoryOrder(storedOrder);
-  }, [workspaceId]);
-
-  useEffect(() => {
     if (searchParams.get("intent") !== "create-project") {
       return;
     }
@@ -196,57 +168,6 @@ export default function ProjectsPageContent() {
     selectedProjectId,
     workspaceId,
   ]);
-
-  const hasUnsavedIssueBoardCategoryOrder = !isSameCategoryOrder(
-    savedIssueBoardCategoryOrder,
-    issueBoardCategoryOrder,
-  );
-
-  const handleIssueBoardCategoryOrderChange = (
-    nextOrder: IssueStateCategory[],
-  ) => {
-    const normalizedOrder = normalizeIssueStateCategoryOrder(nextOrder);
-
-    if (isSameCategoryOrder(issueBoardCategoryOrder, normalizedOrder)) {
-      return;
-    }
-
-    setIssueBoardCategoryOrder(normalizedOrder);
-  };
-
-  const handleSaveIssueBoardCategoryOrder = () => {
-    if (!workspaceId) {
-      toast.error(t("toasts.boardOrderMissingWorkspace"));
-      return;
-    }
-
-    const normalizedOrder = normalizeIssueStateCategoryOrder(
-      issueBoardCategoryOrder,
-    );
-
-    if (
-      isSameCategoryOrder(savedIssueBoardCategoryOrder, normalizedOrder)
-    ) {
-      toast.message(t("toasts.boardOrderUnchanged"));
-      return;
-    }
-
-    const didPersist = persistIssueBoardCategoryOrderToStorage(
-      workspaceId,
-      normalizedOrder,
-    );
-
-    if (!didPersist) {
-      toast.error(t("toasts.boardOrderSaveFailed"));
-      return;
-    }
-
-    const persistedOrder = readIssueBoardCategoryOrderFromStorage(workspaceId);
-
-    setIssueBoardCategoryOrder(persistedOrder);
-    setSavedIssueBoardCategoryOrder(persistedOrder);
-    toast.success(t("toasts.boardOrderSaved"));
-  };
 
   const normalizedSearch = deferredSearch.trim().toLowerCase();
   const projectVisibilityMeta = getProjectVisibilityMeta(t);
@@ -468,124 +389,64 @@ export default function ProjectsPageContent() {
     );
   }
 
-  if (selectedProjectId && selectedProjectIssueId) {
-    return (
-      <div className="h-full w-full bg-transparent">
-        <IssueDetailPageSurface
-          issueId={selectedProjectIssueId}
-          workspaceId={workspaceId}
-          onClose={() => router.push(buildProjectPath(selectedProjectId, "issues"))}
-          onUpdate={invalidateIssues}
-        />
-      </div>
-    );
-  }
-
   return (
     <>
-      <div className="relative flex h-full min-h-0 flex-col bg-app-bg">
-        <AmbientGlow />
-        <div className="relative z-10 flex h-full min-h-0 flex-col">
-        {!projects.length ? (
-          <ProjectsEmptyState
-            canManageProjects={canManageProjects}
-            onCreate={openCreateDialog}
-          />
-        ) : !selectedProject ? (
-          <ProjectsOverviewPage
-            workspaceType={workspaceType}
-            projects={projects}
-            filteredProjects={filteredProjects}
-            issueCountByProject={issueCountByProject}
-            linkedProjectCount={linkedProjectCount}
-            emptyProjectCount={emptyProjectCount}
-            unassignedIssueCount={unassignedIssueCount}
-            canManageProjects={canManageProjects}
-            isFetching={isFetching}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onCreate={openCreateDialog}
-            onOpenProject={(projectId) =>
-              startTransition(() => {
-                router.push(buildProjectPath(projectId));
-              })
-            }
-          />
-        ) : (
-          <ProjectRouteShell
-            project={selectedProject}
-            activeView={projectViewMode}
-          >
-            {projectViewMode === "issues" ? (
-              <ProjectIssuesSubview
-                workspaceId={workspaceId}
-                projectIssues={projectIssues}
-                issuesViewMode={issuesViewMode}
-                issueBoardCategoryOrder={issueBoardCategoryOrder}
-                isLoadingProjectIssues={isLoadingProjectIssues}
-                hasUnsavedIssueBoardCategoryOrder={
-                  hasUnsavedIssueBoardCategoryOrder
-                }
-                currentTeamMemberId={currentTeamMember?.id}
-                onCreateIssue={() => setIsCreateIssueOpen(true)}
-                onOpenIssue={handleOpenIssue}
-                onIssueBoardCategoryOrderChange={
-                  handleIssueBoardCategoryOrderChange
-                }
-                onSaveIssueBoardCategoryOrder={
-                  handleSaveIssueBoardCategoryOrder
-                }
-                onIssuesViewModeChange={setIssuesViewMode}
-              />
-            ) : projectViewMode === "docs" ? (
-              <ProjectDocsSubview
-                workspaceId={workspaceId}
-                workspaceType={workspaceType}
-                currentUserId={session?.user?.id}
-                projectId={selectedProject.id}
-              />
-            ) : projectViewMode === "workflow" ? (
-              <ProjectWorkflowSubview relatedWorkflows={relatedWorkflows} />
-            ) : projectViewMode === "sync" ? (
-              <ProjectSyncSubview
-                selectedProject={selectedProject}
-                recentActivity={recentActivity}
-                projectIssues={projectIssues}
-                onMarkSync={() => handleMarkSync(selectedProject.id)}
-                isMarkingSync={updateProjectMutation.isPending}
-                onOpenIssue={handleOpenIssue}
-              />
-            ) : (
-              <ProjectDetailView
-                workspaceId={workspaceId}
-                selectedProject={selectedProject}
-                workspaceType={workspaceType}
-                workspaceName={selectedProjectWorkspaceName}
-                visibilityLabel={
-                  selectedProjectVisibility?.label || selectedProject.visibility
-                }
-                currentUserId={session?.user?.id}
-                projectSummary={projectSummary}
-                projectIssues={projectIssues}
-                isSelectionPending={isSelectionPending}
-                isLoadingProjectDetail={
-                  isLoadingProjectDetail || isLoadingProjectSummary
-                }
-                canManageProjects={canManageProjects}
-                onBack={() => router.push("/projects")}
-                onCreateIssue={() => setIsCreateIssueOpen(true)}
-                onEdit={() => openEditDialog(selectedProject)}
-                onDelete={() => setProjectToDelete(selectedProject)}
-                onOpenIssue={handleOpenIssue}
-                onMarkSync={() => handleMarkSync(selectedProject.id)}
-                isMarkingSync={updateProjectMutation.isPending}
-                showBackButton={false}
-              />
-            )}
-          </ProjectRouteShell>
-        )}
-        </div>
-      </div>
+      <ProjectsPageLayout
+        workspaceId={workspaceId}
+        workspaceType={workspaceType}
+        projects={projects}
+        filteredProjects={filteredProjects}
+        issueCountByProject={issueCountByProject}
+        linkedProjectCount={linkedProjectCount}
+        emptyProjectCount={emptyProjectCount}
+        unassignedIssueCount={unassignedIssueCount}
+        canManageProjects={canManageProjects}
+        isFetching={isFetching}
+        searchQuery={searchQuery}
+        selectedProjectId={selectedProjectId}
+        selectedProjectIssueId={selectedProjectIssueId}
+        selectedProject={selectedProject}
+        selectedProjectWorkspaceName={selectedProjectWorkspaceName}
+        selectedProjectVisibilityLabel={
+          selectedProjectVisibility?.label || selectedProject?.visibility || ""
+        }
+        projectSummary={projectSummary}
+        projectViewMode={projectViewMode}
+        relatedWorkflows={relatedWorkflows}
+        recentActivity={recentActivity}
+        projectIssues={projectIssues}
+        currentTeamMemberId={currentTeamMember?.id}
+        currentUserId={session?.user?.id}
+        isSelectionPending={isSelectionPending}
+        isLoadingProjectDetail={
+          isLoadingProjectDetail || isLoadingProjectSummary
+        }
+        issuesViewMode={issuesViewMode}
+        issueBoardCategoryOrder={issueBoardCategoryOrder}
+        hasUnsavedIssueBoardCategoryOrder={hasUnsavedIssueBoardCategoryOrder}
+        isLoadingProjectIssues={isLoadingProjectIssues}
+        isMarkingSync={updateProjectMutation.isPending}
+        onSearchChange={setSearchQuery}
+        onCreateProject={openCreateDialog}
+        onOpenProject={(projectId) =>
+          startTransition(() => {
+            router.push(buildProjectPath(projectId));
+          })
+        }
+        onInvalidateIssues={invalidateIssues}
+        onCreateIssue={() => setIsCreateIssueOpen(true)}
+        onOpenIssue={handleOpenIssue}
+        onEditProject={() => selectedProject && openEditDialog(selectedProject)}
+        onDeleteProject={() => selectedProject && setProjectToDelete(selectedProject)}
+        onMarkSync={() => selectedProject && handleMarkSync(selectedProject.id)}
+        onBackToOverview={() => router.push("/projects")}
+        onProjectIssuesViewModeChange={setIssuesViewMode}
+        onIssueBoardCategoryOrderChange={handleIssueBoardCategoryOrderChange}
+        onSaveIssueBoardCategoryOrder={handleSaveIssueBoardCategoryOrder}
+        onCloseIssueDetail={() =>
+          selectedProjectId && router.push(buildProjectPath(selectedProjectId, "issues"))
+        }
+      />
 
       <ProjectEditorDialog
         open={isProjectDialogOpen}
