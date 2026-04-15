@@ -42,7 +42,7 @@ export function ProductPreview({
   const preview = landing.productPreview;
   const containerRef = useRef<HTMLDivElement>(null);
   const canvas = compact ? PREVIEW_CANVAS.compact : PREVIEW_CANVAS.regular;
-  const [containerWidth, setContainerWidth] = useState(canvas.width);
+  const [containerWidth, setContainerWidth] = useState<number>(canvas.width);
 
   useEffect(() => {
     const element = containerRef.current;

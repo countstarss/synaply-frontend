@@ -612,6 +612,8 @@ export default function NormalIssueDetail({
   const selectedProject = projects.find(
     (project) => project.id === localIssue?.projectId,
   );
+  const selectedProjectName =
+    selectedProject?.name ?? localIssue?.project?.name ?? null;
   const selectedState = issueStates.find(
     (state) => state.id === localIssue?.stateId,
   );
@@ -1008,10 +1010,9 @@ export default function NormalIssueDetail({
                         "normalDetail.select.projectPlaceholder",
                       )}
                     >
-                      {(selectedProject?.name || localIssue.project?.name)
+                      {selectedProjectName
                         ? tIssues("normalDetail.badges.project", {
-                            value:
-                              selectedProject?.name || localIssue.project?.name,
+                            value: selectedProjectName,
                           })
                         : undefined}
                     </SelectValue>

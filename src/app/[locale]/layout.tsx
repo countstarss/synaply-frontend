@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
+import { getMessages } from "next-intl/server";
 import { IBM_Plex_Mono, Manrope } from "next/font/google";
 
 import { routing } from "@/i18n/routing";
@@ -53,6 +54,8 @@ export default async function LocaleLayout({
     notFound();
   }
 
+  const messages = await getMessages({ locale });
+
   return (
     <html
       lang={locale}
@@ -72,7 +75,9 @@ export default async function LocaleLayout({
         />
       </head>
       <body className="bg-background font-sans text-foreground antialiased">
-        <AppProvider>{children}</AppProvider>
+        <AppProvider locale={locale} messages={messages}>
+          {children}
+        </AppProvider>
         <Toaster position="top-right" richColors /> {/* 添加 Toaster 组件 */}
       </body>
     </html>

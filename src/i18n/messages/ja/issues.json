@@ -81,7 +81,14 @@
     },
     "assignee": {
       "none": "直接担当者なし",
-      "currentUser": "私に割り当ててください"
+      "currentUser": "私に割り当ててください",
+      "teamHint": "このワークスペースのチームメンバー一覧から選択します。",
+      "personalHint": "個人ワークスペースでは、あなたが常に担当者になります。",
+      "personalQueueHint": "この issue は自動的にあなたの個人キューに入ります。",
+      "personalPendingHint": "メンバー情報はまだ同期中です。しばらくすると issue を作成できます。",
+      "additionalPlaceholder": "追加担当者を選択",
+      "searchPlaceholder": "メンバーを検索...",
+      "noMembers": "一致するチームメンバーが見つかりません"
     },
     "actions": {
       "creating": "作成中...",

@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "fs";
-import { join, relative, sep } from "path";
+import { fileURLToPath } from "url";
+import { dirname, join, relative, sep } from "path";
 
 type MessagePrimitive = string | number | boolean | null;
 type MessageValue = MessagePrimitive | MessageTree | MessageValue[];
@@ -8,8 +9,54 @@ interface MessageTree {
   [key: string]: MessageValue;
 }
 
+const moduleDir = dirname(fileURLToPath(import.meta.url));
+let resolvedMessagesRoot: string | null = null;
+
 function isPlainObject(value: unknown): value is MessageTree {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function resolveMessagesRoot() {
+  if (resolvedMessagesRoot) {
+    return resolvedMessagesRoot;
+  }
+
+  const directCandidate = join(process.cwd(), "src", "i18n", "messages");
+
+  if (existsSync(directCandidate)) {
+    resolvedMessagesRoot = directCandidate;
+    return resolvedMessagesRoot;
+  }
+
+  for (const entry of readdirSync(process.cwd(), { withFileTypes: true })) {
+    if (!entry.isDirectory() || entry.name.startsWith(".")) {
+      continue;
+    }
+
+    const nestedCandidate = join(
+      process.cwd(),
+      entry.name,
+      "src",
+      "i18n",
+      "messages",
+    );
+
+    if (existsSync(nestedCandidate)) {
+      resolvedMessagesRoot = nestedCandidate;
+      return resolvedMessagesRoot;
+    }
+  }
+
+  const moduleCandidate = join(moduleDir, "messages");
+
+  if (existsSync(moduleCandidate)) {
+    resolvedMessagesRoot = moduleCandidate;
+    return resolvedMessagesRoot;
+  }
+
+  throw new Error(
+    `Unable to locate i18n messages directory from cwd: ${process.cwd()}`,
+  );
 }
 
 function deepMergeMessages(base: MessageTree, override: MessageTree) {
@@ -30,7 +77,7 @@ function deepMergeMessages(base: MessageTree, override: MessageTree) {
 }
 
 function getJsonFiles(locale: string) {
-  const localeDir = join(process.cwd(), "src", "i18n", "messages", locale);
+  const localeDir = join(resolveMessagesRoot(), locale);
 
   if (!existsSync(localeDir)) {
     return [];
@@ -86,7 +133,7 @@ function setNestedMessage(
 
 async function loadLocaleMessages(locale: string) {
   const messages: MessageTree = {};
-  const localeDir = join(process.cwd(), "src", "i18n", "messages", locale);
+  const localeDir = join(resolveMessagesRoot(), locale);
 
   for (const file of getJsonFiles(locale)) {
     const fullPath = join(localeDir, file);

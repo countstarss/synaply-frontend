@@ -9,18 +9,19 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { IssueDescriptionTemplateAction } from "@/components/shared/issue/IssueDescriptionTemplateAction";
+import { IssueMemberMultiSelect } from "@/components/shared/issue/IssueMemberMultiSelect";
 import { useCreateIssue, useCreateWorkflowIssue } from "@/hooks/useIssueApi";
 import { useIssueStates } from "@/hooks/useIssueStates";
 import { useProjects } from "@/hooks/useProjectApi";
@@ -295,20 +296,12 @@ export default function CreateIssueModal({
     onClose();
   };
 
-  const handleToggleAssignee = (memberId: string, checked: boolean) => {
-    setSelectedAssigneeIds((previousIds) => {
-      if (!checked) {
-        if (directAssigneeId === memberId) {
-          setDirectAssigneeId("");
-        }
+  const handleAssigneeSelectionChange = (nextIds: string[]) => {
+    setSelectedAssigneeIds(nextIds);
 
-        return previousIds.filter((currentId) => currentId !== memberId);
-      }
-
-      return previousIds.includes(memberId)
-        ? previousIds
-        : [...previousIds, memberId];
-    });
+    if (directAssigneeId && !nextIds.includes(directAssigneeId)) {
+      setDirectAssigneeId("");
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -685,8 +678,8 @@ export default function CreateIssueModal({
               </div>
               <p className="mt-1 text-xs text-app-text-muted">
                 {workspaceType === "PERSONAL"
-                  ? "You are always the assignee in a personal workspace."
-                  : "Choose from the full team member list in this workspace."}
+                  ? t("createModal.assignee.personalHint")
+                  : t("createModal.assignee.teamHint")}
               </p>
             </div>
 
@@ -700,8 +693,8 @@ export default function CreateIssueModal({
                 </div>
                 <div className="mt-2 text-xs text-app-text-muted">
                   {personalAssigneeId
-                    ? "This issue will automatically land in your personal queue."
-                    : "Your member identity is still syncing. You will be able to create the issue shortly."}
+                    ? t("createModal.assignee.personalQueueHint")
+                    : t("createModal.assignee.personalPendingHint")}
                 </div>
               </div>
             ) : (
@@ -720,14 +713,16 @@ export default function CreateIssueModal({
                       <SelectValue placeholder={t("createModal.fields.directAssigneePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent className="border-app-border bg-app-content-bg">
-                      <SelectItem value={NONE_VALUE}>
-                        {t("createModal.assignee.none")}
-                      </SelectItem>
-                      {teamMemberOptions.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
-                          {member.name}
+                      <SelectGroup>
+                        <SelectItem value={NONE_VALUE}>
+                          {t("createModal.assignee.none")}
                         </SelectItem>
-                      ))}
+                        {teamMemberOptions.map((member) => (
+                          <SelectItem key={member.id} value={member.id}>
+                            {member.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
                 </div>
@@ -736,36 +731,14 @@ export default function CreateIssueModal({
                   <label className="text-sm font-medium text-app-text-primary">
                     {t("createModal.fields.additionalAssignees")}
                   </label>
-                  <div className="max-h-44 space-y-2 overflow-y-auto rounded-2xl border border-app-border bg-app-content-bg p-3">
-                    {teamMemberOptions.length === 0 ? (
-                      <p className="text-sm text-app-text-muted">
-                        No team members are available right now.
-                      </p>
-                    ) : (
-                      teamMemberOptions.map((member) => (
-                        <label
-                          key={member.id}
-                          className="flex items-start gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-app-button-hover"
-                        >
-                          <Checkbox
-                            checked={selectedAssigneeIds.includes(member.id)}
-                            onCheckedChange={(checked) =>
-                              handleToggleAssignee(member.id, checked === true)
-                            }
-                            className="mt-0.5"
-                          />
-                          <div className="min-w-0">
-                            <div className="text-sm text-app-text-primary">
-                              {member.name}
-                            </div>
-                            <div className="truncate text-xs text-app-text-muted">
-                              {member.email}
-                            </div>
-                          </div>
-                        </label>
-                      ))
-                    )}
-                  </div>
+                  <IssueMemberMultiSelect
+                    members={teamMemberOptions}
+                    selectedIds={selectedAssigneeIds}
+                    onSelectionChange={handleAssigneeSelectionChange}
+                    placeholder={t("createModal.assignee.additionalPlaceholder")}
+                    searchPlaceholder={t("createModal.assignee.searchPlaceholder")}
+                    emptyMessage={t("createModal.assignee.noMembers")}
+                  />
                 </div>
               </div>
             )}

@@ -81,7 +81,14 @@
     },
     "assignee": {
       "none": "无直接受让人",
-      "currentUser": "分配给me"
+      "currentUser": "分配给我",
+      "teamHint": "可从当前工作区的完整团队成员列表中选择。",
+      "personalHint": "在个人工作区中，你始终是该问题的受让人。",
+      "personalQueueHint": "该问题会自动进入你的个人队列。",
+      "personalPendingHint": "你的成员身份仍在同步中，稍后即可创建该问题。",
+      "additionalPlaceholder": "选择其他受让人",
+      "searchPlaceholder": "搜索成员...",
+      "noMembers": "未找到匹配的团队成员"
     },
     "actions": {
       "creating": "正在创建...",

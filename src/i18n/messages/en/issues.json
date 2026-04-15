@@ -81,7 +81,14 @@
     },
     "assignee": {
       "none": "No direct assignee",
-      "currentUser": "Assign to me"
+      "currentUser": "Assign to me",
+      "teamHint": "Choose from the full team member list in this workspace.",
+      "personalHint": "You are always the assignee in a personal workspace.",
+      "personalQueueHint": "This issue will automatically land in your personal queue.",
+      "personalPendingHint": "Your member identity is still syncing. You will be able to create the issue shortly.",
+      "additionalPlaceholder": "Choose additional assignees",
+      "searchPlaceholder": "Search members...",
+      "noMembers": "No matching team members found"
     },
     "actions": {
       "creating": "Creating...",
