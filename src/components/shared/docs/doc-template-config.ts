@@ -1,6 +1,9 @@
 import { DocKind } from "@/lib/fetchers/doc";
 
-export type DocsTranslationFn = (key: string, ...args: any[]) => string;
+export type DocsTranslationFn = (
+  key: string,
+  values?: Record<string, string | number>,
+) => string;
 
 export type DocTemplateKey =
   | "blank"

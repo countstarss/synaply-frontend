@@ -20,6 +20,19 @@
     "updatedAt": "更新于 {value}",
     "waitingFirstSync": "等待首次同步"
   },
+  "pulse": {
+    "title": {
+      "team": "团队协作脉冲",
+      "personal": "协作脉冲"
+    },
+    "description": {
+      "team": "把最近被聚合出来的文档摘要直接投递到首页，这样你不用反复进 Inbox 才能知道团队协作上下文发生了什么。",
+      "personal": "把最近被聚合出来的文档摘要直接投递到首页，方便你从工作总览进入最新的协作上下文。"
+    },
+    "openDigest": "打开摘要队列",
+    "emptyTitle": "还没有可投递到首页的摘要",
+    "emptyDescription": "当同一项目、事项或工作流积累了足够多的结构化文档变化，这里会先出现一条可直接打开的摘要。"
+  },
   "sections": {
     "today": {
       "title": "今日重点",

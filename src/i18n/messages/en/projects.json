@@ -220,6 +220,12 @@
       "updatedAt": "Project updated",
       "notRecorded": "Not recorded",
       "empty": "Project activity has not built up yet. Issue updates and activity records will accumulate here automatically.",
+      "digest": {
+        "title": "Project digest pulse",
+        "description": "Deliver the latest aggregated doc digests directly into the sync view so you can catch the key collaboration changes before reading the full timeline.",
+        "emptyTitle": "No digest is ready for this project yet",
+        "emptyDescription": "When the same project accumulates enough structured doc changes, a digest will show up here first."
+      },
       "teamMember": "Team member",
       "timeline": {
         "syncTitle": "Project sync recorded",

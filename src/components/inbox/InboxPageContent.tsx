@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
   differenceInCalendarDays,
@@ -47,13 +48,15 @@ import {
   InboxQueryParams,
   InboxSummary,
 } from "@/lib/fetchers/inbox";
-import type { DocKind } from "@/lib/fetchers/doc";
 import { cn } from "@/lib/utils";
-import { useRouter } from "@/i18n/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { buildProjectPath } from "@/components/projects/project-route-utils";
 import { useDocStore } from "@/stores/doc-store";
 import { openDocRoute } from "@/components/shared/docs/doc-navigation";
-import { getDocKindLabel } from "@/components/shared/docs/doc-template-config";
+import {
+  getInboxDigestSummary,
+  resolveInboxDocContext,
+} from "@/components/inbox/inbox-digest-utils";
 import AmbientGlow from "../global/AmbientGlow";
 
 type InboxViewId = "primary" | "other" | "digest" | "later" | "cleared";
@@ -79,6 +82,16 @@ const ICON_BUTTON_CLASS =
 
 const PRIMARY_ACTION_CLASS =
   "border border-[#6a5cff] bg-[#6a5cff] text-white hover:bg-[#5d51ea] dark:border-white/12 dark:bg-[#262626] dark:text-[#f3f1f7] dark:hover:bg-[#303030] disabled:border-[#e3deef] disabled:bg-[#f3f1f9] disabled:text-[#9b96a8] dark:disabled:border-white/10 dark:disabled:bg-[#1a1a1a] dark:disabled:text-[#6f697a]";
+
+function isInboxView(value: string | null): value is InboxViewId {
+  return (
+    value === "primary" ||
+    value === "other" ||
+    value === "digest" ||
+    value === "later" ||
+    value === "cleared"
+  );
+}
 
 function formatRelativeTime(
   value: string,
@@ -351,42 +364,6 @@ function getDisplayTitle(
   }
 }
 
-function isDocKind(value: unknown): value is DocKind {
-  return (
-    value === "GENERAL" ||
-    value === "PROJECT_BRIEF" ||
-    value === "DECISION_LOG" ||
-    value === "REVIEW_PACKET" ||
-    value === "HANDOFF_PACKET" ||
-    value === "RELEASE_CHECKLIST"
-  );
-}
-
-function getDigestKinds(
-  item: InboxItem,
-): Array<{ kind: DocKind; count: number }> {
-  const rawKinds = item.metadata?.digestKinds;
-
-  if (!Array.isArray(rawKinds)) {
-    return [];
-  }
-
-  return rawKinds.flatMap((entry) => {
-    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
-      return [];
-    }
-
-    const kind = (entry as { kind?: unknown }).kind;
-    const count = (entry as { count?: unknown }).count;
-
-    if (!isDocKind(kind) || typeof count !== "number" || count <= 0) {
-      return [];
-    }
-
-    return [{ kind, count }];
-  });
-}
-
 function getDisplaySummary(
   item: InboxItem,
   locale: string,
@@ -397,40 +374,7 @@ function getDisplaySummary(
     return null;
   }
 
-  const digestKinds = getDigestKinds(item);
-  const latestDocTitle =
-    typeof item.metadata?.latestDocTitle === "string"
-      ? item.metadata.latestDocTitle
-      : null;
-
-  if (digestKinds.length === 0 && !latestDocTitle) {
-    return null;
-  }
-
-  const summaryParts: string[] = [];
-
-  if (digestKinds.length > 0) {
-    const formatter = new Intl.ListFormat(locale, {
-      style: "short",
-      type: "conjunction",
-    });
-    const items = formatter.format(
-      digestKinds.map(({ kind, count }) =>
-        tInbox("digest.summaryCount", {
-          count,
-          label: getDocKindLabel(kind, tDocs),
-        }),
-      ),
-    );
-
-    summaryParts.push(tInbox("digest.summaryPrefix", { items }));
-  }
-
-  if (latestDocTitle) {
-    summaryParts.push(tInbox("digest.summaryLatest", { title: latestDocTitle }));
-  }
-
-  return summaryParts.join(" · ");
+  return getInboxDigestSummary(item, locale, tInbox, tDocs);
 }
 
 function filterItemsForView(items: InboxItem[], activeView: InboxViewId) {
@@ -727,9 +671,13 @@ function InboxRow({
 
 export default function InboxPageContent() {
   const tInbox = useTranslations("inbox");
+  const searchParams = useSearchParams();
   const isPageVisible = useCachedPageVisibility();
   const hasMountedRef = useRef(false);
-  const [activeView, setActiveView] = useState<InboxViewId>("primary");
+  const [activeView, setActiveView] = useState<InboxViewId>(() => {
+    const requestedView = searchParams.get("view");
+    return isInboxView(requestedView) ? requestedView : "primary";
+  });
   const [onlyActionable, setOnlyActionable] = useState(false);
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
@@ -738,6 +686,7 @@ export default function InboxPageContent() {
   const { currentWorkspace } = useWorkspace();
   const setActiveDocId = useDocStore((state) => state.setActiveDocId);
   const workspaceId = currentWorkspace?.id || "";
+  const pathname = usePathname();
   const router = useRouter();
   const supportsUnreadFilter =
     activeView === "primary" ||
@@ -815,6 +764,33 @@ export default function InboxPageContent() {
     void refetch();
   }, [isPageVisible, refetch]);
 
+  useEffect(() => {
+    const requestedView = searchParams.get("view");
+
+    if (!isInboxView(requestedView) || requestedView === activeView) {
+      return;
+    }
+
+    setActiveView(requestedView);
+  }, [activeView, searchParams]);
+
+  const handleViewChange = useCallback(
+    (nextView: InboxViewId) => {
+      setActiveView(nextView);
+
+      const params = new URLSearchParams(searchParams.toString());
+      if (nextView === "primary") {
+        params.delete("view");
+      } else {
+        params.set("view", nextView);
+      }
+
+      const nextHref = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+      router.replace(nextHref);
+    },
+    [pathname, router, searchParams],
+  );
+
   const rawItems = useMemo(() => feed?.items ?? [], [feed?.items]);
   const visibleItems = useMemo(
     () => filterItemsForView(rawItems, activeView),
@@ -842,23 +818,13 @@ export default function InboxPageContent() {
       }
 
       if (item.docId) {
-        const rawDocContext =
-          typeof item.metadata?.docContext === "string"
-            ? item.metadata.docContext
-            : null;
-        const docContext =
-          rawDocContext === "team" ||
-          rawDocContext === "team-personal" ||
-          rawDocContext === "personal"
-            ? rawDocContext
-            : currentWorkspace?.type === "TEAM"
-              ? "team"
-              : "personal";
-
         openDocRoute({
           workspaceId,
           workspaceType: currentWorkspace?.type || "PERSONAL",
-          context: docContext,
+          context: resolveInboxDocContext(
+            item,
+            currentWorkspace?.type || "PERSONAL",
+          ),
           docId: item.docId,
           projectId: item.projectId,
           router,
@@ -1053,7 +1019,7 @@ export default function InboxPageContent() {
           <ViewTabs
             activeView={activeView}
             summary={summary}
-            onChange={setActiveView}
+            onChange={handleViewChange}
           />
 
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-[#e9e6f0] isolate bg-app-content-bg/80 px-4 py-3 dark:border-white/10">

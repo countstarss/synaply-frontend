@@ -542,7 +542,7 @@ function WorkSection({
   isMutatingIssueId,
 }: WorkSectionProps) {
   return (
-    <Card className="overflow-hidden rounded-2xl border border-app-border bg-app-content-bg shadow-none  cursor-pointer">
+    <Card className="overflow-hidden rounded-2xl border border-app-border bg-app-content-bg shadow-none">
       <CardHeader className="gap-2 border-b border-app-border px-5 py-4">
         <div className="flex items-center justify-between gap-4">
           <div>

@@ -177,6 +177,8 @@ export function ProjectsPageLayout({
               <ProjectWorkflowSubview relatedWorkflows={relatedWorkflows} />
             ) : projectViewMode === "sync" ? (
               <ProjectSyncSubview
+                workspaceId={workspaceId}
+                workspaceType={workspaceType}
                 selectedProject={selectedProject}
                 recentActivity={recentActivity}
                 projectIssues={projectIssues}

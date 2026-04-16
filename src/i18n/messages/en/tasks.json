@@ -20,6 +20,19 @@
     "updatedAt": "Updated at {value}",
     "waitingFirstSync": "Waiting for the first sync"
   },
+  "pulse": {
+    "title": {
+      "team": "Team collaboration pulse",
+      "personal": "Collaboration pulse"
+    },
+    "description": {
+      "team": "Deliver the latest aggregated doc digests straight to the homepage so you do not need to keep checking Inbox just to understand what changed across the team.",
+      "personal": "Deliver the latest aggregated doc digests straight to the homepage so your work overview can lead you into the newest collaboration context."
+    },
+    "openDigest": "Open digest queue",
+    "emptyTitle": "No digest is ready for the homepage yet",
+    "emptyDescription": "Once the same project, issue, or workflow accumulates enough structured doc changes, a digest will appear here first."
+  },
   "sections": {
     "today": {
       "title": "Today focus",

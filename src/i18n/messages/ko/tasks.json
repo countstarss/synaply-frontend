@@ -20,6 +20,19 @@
     "updatedAt": "{value} 기준 업데이트",
     "waitingFirstSync": "첫 동기화를 기다리는 중"
   },
+  "pulse": {
+    "title": {
+      "team": "팀 협업 펄스",
+      "personal": "협업 펄스"
+    },
+    "description": {
+      "team": "집계된 문서 다이제스트를 홈에 바로 전달해 팀에서 무엇이 바뀌었는지 알기 위해 Inbox를 계속 열지 않아도 되게 합니다.",
+      "personal": "집계된 문서 다이제스트를 홈에 바로 전달해 작업 개요에서 최신 협업 맥락으로 바로 들어갈 수 있게 합니다."
+    },
+    "openDigest": "다이제스트 열기",
+    "emptyTitle": "홈에 전달할 다이제스트가 아직 없습니다",
+    "emptyDescription": "같은 프로젝트, 이슈 또는 워크플로에 구조화된 문서 변화가 충분히 쌓이면 먼저 여기에 다이제스트가 나타납니다."
+  },
   "sections": {
     "today": {
       "title": "오늘의 집중 항목",
