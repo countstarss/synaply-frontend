@@ -82,6 +82,9 @@
     "showSidebar": "显示侧边栏",
     "hideSidebar": "隐藏侧边栏"
   },
+  "entryIntro": {
+    "prompt": "按任意键进入应用"
+  },
   "search": {
     "placeholder": "输入命令或搜索...",
     "empty": "没有找到结果。",

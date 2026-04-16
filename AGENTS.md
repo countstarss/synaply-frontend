@@ -5,7 +5,8 @@ These instructions apply to the `synaply-frontend` project.
 ## Commit Message Rule
 
 - Always use a conventional, structured commit message.
-- Preferred format: `type(scope): short summary`
+- Required format: `type(scope): commit message`
+- If additional context is useful, write it in the commit body below the subject line.
 - Use lowercase `type` values such as `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `build`, `ci`, `perf`, or `revert`.
 - Keep the summary concise and action-oriented.
 

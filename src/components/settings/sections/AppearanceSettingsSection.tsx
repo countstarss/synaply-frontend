@@ -3,6 +3,8 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { Check, Sparkles } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { requestAppEntryIntroReplay } from "@/lib/app-entry-intro";
 import { cn } from "@/lib/utils";
 import {
   GLOW_MODES,
@@ -22,9 +24,9 @@ function getModePreviewBackground(
 
   if (mode === "aurora") {
     return [
-      `linear-gradient(115deg, transparent 0%, ${a}40 22%, ${b}4d 42%, transparent 66%)`,
-      `linear-gradient(74deg, transparent 8%, ${c}38 30%, transparent 62%)`,
-      `radial-gradient(circle at 50% 18%, ${a}33, transparent 46%)`,
+      `linear-gradient(115deg, transparent 4%, ${a}40 26%, ${b}4d 52%, transparent 78%)`,
+      `linear-gradient(74deg, transparent 12%, ${c}38 38%, transparent 72%)`,
+      `radial-gradient(circle at 50% 30%, ${a}33, transparent 54%)`,
     ].join(", ");
   }
 
@@ -42,24 +44,6 @@ function getModePreviewBackground(
       `linear-gradient(146deg, transparent 18%, ${b}3a 42%, transparent 62%)`,
       `linear-gradient(158deg, transparent 28%, ${c}30 58%, transparent 76%)`,
       `radial-gradient(circle at 76% 20%, ${a}1e, transparent 26%)`,
-    ].join(", ");
-  }
-
-  if (mode === "pulse") {
-    return [
-      `radial-gradient(circle at 50% 56%, ${a}32 0%, transparent 18%)`,
-      `radial-gradient(circle at 50% 56%, transparent 20%, ${b}2a 32%, transparent 44%)`,
-      `radial-gradient(circle at 50% 56%, transparent 38%, ${c}22 52%, transparent 66%)`,
-      `radial-gradient(circle at 50% 56%, ${a}16, transparent 74%)`,
-    ].join(", ");
-  }
-
-  if (mode === "corona") {
-    return [
-      `radial-gradient(circle at 50% 48%, transparent 26%, ${a}2c 34%, transparent 48%)`,
-      `radial-gradient(circle at 50% 48%, ${b}20, transparent 62%)`,
-      `radial-gradient(circle at 14% 14%, ${c}20, transparent 28%)`,
-      `radial-gradient(circle at 86% 18%, ${a}1c, transparent 30%)`,
     ].join(", ");
   }
 
@@ -201,6 +185,7 @@ function ToggleRow({
 
 export default function AppearanceSettingsSection() {
   const tSettings = useTranslations("settings");
+  const { user } = useAuth();
   const enabled = useAppearanceStore((s) => s.enabled);
   const animated = useAppearanceStore((s) => s.animated);
   const presetId = useAppearanceStore((s) => s.presetId);
@@ -220,21 +205,39 @@ export default function AppearanceSettingsSection() {
     }),
     [tSettings],
   );
+  const handleReplayIntro = React.useCallback(() => {
+    if (!user) {
+      return;
+    }
+
+    requestAppEntryIntroReplay(user.id);
+  }, [user]);
 
   return (
     <div className="space-y-6 py-1">
-      <div className="flex items-start gap-4">
-        <div className="border border-app-border bg-app-bg/40 p-3 text-muted-foreground">
-          <Sparkles className="size-5" />
-        </div>
-        <div className="space-y-1">
-          <div className="text-lg font-semibold text-foreground">
-            {tSettings("appearance.title")}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex items-start gap-4">
+          <div className="border border-app-border bg-app-bg/40 p-3 text-muted-foreground">
+            <Sparkles className="size-5" />
           </div>
-          <div className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            {tSettings("appearance.description")}
+          <div className="space-y-1">
+            <div className="text-lg font-semibold text-foreground">
+              {tSettings("appearance.title")}
+            </div>
+            <div className="max-w-2xl text-sm leading-6 text-muted-foreground">
+              {tSettings("appearance.description")}
+            </div>
           </div>
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleReplayIntro}
+          disabled={!user}
+          className="h-10 rounded-none shrink-0 self-start border-app-border bg-black/80 hover:bg-app-button-hover/60"
+        >
+          {tSettings("appearance.replayIntro")}
+        </Button>
       </div>
 
       <div className="relative h-40 overflow-hidden rounded-lg border border-app-border bg-app-bg">
@@ -250,7 +253,7 @@ export default function AppearanceSettingsSection() {
         <div className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
           {tSettings("appearance.modeLabel")}
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {GLOW_MODES.map((modeOption) => {
             const copy = getModeCopy(modeOption.id);
 

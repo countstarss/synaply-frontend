@@ -11,9 +11,7 @@ export type GlowMode =
   | "glow"
   | "aurora"
   | "ribbon"
-  | "prism"
-  | "pulse"
-  | "corona";
+  | "prism";
 
 export interface GlowModeOption {
   id: GlowMode;
@@ -24,14 +22,14 @@ export const GLOW_MODES: GlowModeOption[] = [
   { id: "aurora" },
   { id: "ribbon" },
   { id: "prism" },
-  { id: "pulse" },
-  { id: "corona" },
 ];
 
 const LEGACY_GLOW_MODE_ALIASES = {
   mist: "prism",
-  softwave: "pulse",
-  edgeglow: "corona",
+  softwave: "ribbon",
+  edgeglow: "glow",
+  pulse: "ribbon",
+  corona: "glow",
 } as const;
 
 // Each preset defines three hues. The primary color fills the three larger
@@ -86,6 +84,14 @@ const DEFAULT_PREFERENCES: AppearancePreferences = {
   intensity: 1,
 };
 
+export const FIRST_APP_APPEARANCE_DEFAULTS: AppearancePreferences = {
+  presetId: "emerald",
+  mode: "aurora",
+  animated: true,
+  enabled: true,
+  intensity: 1.8,
+};
+
 interface AppearanceScope {
   userId: string | null;
   workspaceId: string | null;
@@ -95,6 +101,10 @@ interface AppearanceState extends AppearancePreferences {
   scope: AppearanceScope;
   scopedPreferences: Record<string, AppearancePreferences>;
   setScope: (scope: AppearanceScope) => void;
+  ensureScopedPreferences: (
+    scope: AppearanceScope,
+    defaults?: Partial<AppearancePreferences>,
+  ) => void;
   setPresetId: (presetId: string) => void;
   setMode: (mode: GlowMode) => void;
   setAnimated: (animated: boolean) => void;
@@ -164,6 +174,31 @@ export const useAppearanceStore = create<AppearanceState>()(
         const { scopedPreferences } = get();
         const prefs = readPreferences(scopedPreferences, scope);
         set({ scope, ...prefs });
+      },
+      ensureScopedPreferences: (scope, defaults) => {
+        const { scopedPreferences } = get();
+        const key = scopeKey(scope);
+        const existing = scopedPreferences[key];
+
+        if (existing) {
+          if (scopeKey(get().scope) === key) {
+            set({ scope, ...readPreferences(scopedPreferences, scope) });
+          }
+          return;
+        }
+
+        const seeded = normalizePreferences(defaults);
+        const next = {
+          ...scopedPreferences,
+          [key]: seeded,
+        };
+
+        if (scopeKey(get().scope) === key) {
+          set({ scope, scopedPreferences: next, ...seeded });
+          return;
+        }
+
+        set({ scopedPreferences: next });
       },
       setPresetId: (presetId) => {
         const { scope, scopedPreferences } = get();

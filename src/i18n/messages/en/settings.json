@@ -188,6 +188,7 @@
   "appearance": {
     "title": "Background glow",
     "description": "Control the global ambient glow colors and motion. Preferences are stored locally for the account and workspace separately.",
+    "replayIntro": "Replay intro",
     "preview": "Live preview",
     "modeLabel": "Glow mode",
     "modes": {
@@ -206,14 +207,6 @@
       "prism": {
         "label": "Prism",
         "description": "Layered refracted color bands cut across the surface for a sharper technical feel."
-      },
-      "pulse": {
-        "label": "Pulse",
-        "description": "Energy rings radiate around the center area, giving the interface more rhythm and presence."
-      },
-      "corona": {
-        "label": "Corona",
-        "description": "Bright halo rings and edge glow stack together for a more dramatic ambient effect."
       }
     },
     "presetLabel": "Color presets",

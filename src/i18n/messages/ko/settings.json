@@ -188,6 +188,7 @@
   "appearance": {
     "title": "Background Glow",
     "description": "전역 주변 광선 색상과 동작을 제어합니다. 환경 설정은 계정 및 작업 영역에 대해 별도로 로컬에 저장됩니다.",
+    "replayIntro": "인트로 다시 보기",
     "preview": "실시간 미리 보기",
     "modeLabel": "발광 모드",
     "modes": {
@@ -206,14 +207,6 @@
       "prism": {
         "label": "프리즘",
         "description": "굴절된 색 띠가 여러 겹으로 지나가며 더 날카롭고 기술적인 느낌을 줍니다."
-      },
-      "pulse": {
-        "label": "펄스",
-        "description": "중심 영역을 따라 에너지 파동이 퍼져 나가며 화면에 리듬감과 존재감을 더합니다."
-      },
-      "corona": {
-        "label": "코로나",
-        "description": "밝은 후광과 가장자리 발광이 겹쳐져 더 극적인 분위기를 만듭니다."
       }
     },
     "presetLabel": "색상 사전 설정",

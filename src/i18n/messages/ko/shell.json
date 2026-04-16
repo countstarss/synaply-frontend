@@ -82,6 +82,9 @@
     "showSidebar": "사이드바 표시",
     "hideSidebar": "사이드바 숨기기"
   },
+  "entryIntro": {
+    "prompt": "아무 키나 눌러 앱으로 들어가기"
+  },
   "search": {
     "placeholder": "명령을 입력하거나 검색하세요...",
     "empty": "검색된 결과가 없습니다.",

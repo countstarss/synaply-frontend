@@ -82,6 +82,9 @@
     "showSidebar": "Show sidebar",
     "hideSidebar": "Hide sidebar"
   },
+  "entryIntro": {
+    "prompt": "Press any key to enter"
+  },
   "search": {
     "placeholder": "Type a command or search...",
     "empty": "No results found.",

@@ -188,6 +188,7 @@
   "appearance": {
     "title": "Background发光",
     "description": "控制全局环境发光颜色和运动。帐户和工作区的首选项分别存储在本地。",
+    "replayIntro": "重看首次过场",
     "preview": "实时预览",
     "modeLabel": "发光模式",
     "modes": {
@@ -206,14 +207,6 @@
       "prism": {
         "label": "棱镜",
         "description": "多层折射色带切过画面，带来更强的科技感和色散张力。"
-      },
-      "pulse": {
-        "label": "脉冲",
-        "description": "围绕核心区域扩散能量脉冲，适合更有节奏和存在感的界面。"
-      },
-      "corona": {
-        "label": "日冕",
-        "description": "高亮晕环和边缘炽光叠加，形成更具冲击力的戏剧化氛围。"
       }
     },
     "presetLabel": "颜色预设",

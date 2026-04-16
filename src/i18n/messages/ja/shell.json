@@ -82,6 +82,9 @@
     "showSidebar": "サイドバーを表示",
     "hideSidebar": "サイドバーを隠す"
   },
+  "entryIntro": {
+    "prompt": "いずれかのキーでアプリに入る"
+  },
   "search": {
     "placeholder": "コマンドを入力するか検索...",
     "empty": "結果が見つかりませんでした。",
