@@ -8,10 +8,13 @@
   "views": {
     "primary": "主要",
     "other": "其他",
+    "digest": "摘要",
     "later": "后来",
     "cleared": "已清除"
   },
   "viewSubLabel": {
+    "digestCount": "{count} 条摘要汇总",
+    "digestEmpty": "没有新的摘要汇总",
     "laterCount": "{count}个已延后的项目",
     "laterEmpty": "没有延后items",
     "clearedCount": "{count} 个已清除的项目",
@@ -28,6 +31,10 @@
       "title": "没有更新需要稍后注意",
       "description": "风险、阻碍因素和跟随信号在需要第二次通过时聚集在此处。"
     },
+    "digest": {
+      "title": "还没有可消费的文档摘要",
+      "description": "当同一条 Project、Issue 或 Workflow 里积累了足够的文档变化后，这里会把它们合并成 digest。"
+    },
     "later": {
       "title": "现在没有项目被延缓",
       "description": "如果读取了信号但不应中断您的流程，您可以将其移至此处以等待稍后."
@@ -40,7 +47,20 @@
   "source": {
     "workflow": "工作流程",
     "project": "项目",
-    "issue": "问题"
+    "issue": "问题",
+    "doc": "文档"
+  },
+  "docTitles": {
+    "reviewReady": "评审包已就绪：{title}",
+    "handoffReady": "交接包已就绪：{title}",
+    "releaseUpdated": "发布检查清单已更新：{title}",
+    "decisionUpdated": "决策记录已更新：{title}",
+    "digestGenerated": "最近有 {count} 份协作文档更新"
+  },
+  "digest": {
+    "summaryPrefix": "包含 {items}",
+    "summaryCount": "{count} 份{label}",
+    "summaryLatest": "最近更新：{title}"
   },
   "groups": {
     "today": "今天",
@@ -67,7 +87,7 @@
     "clear": "清除",
     "cleared": "已清除"
   },
-  "hint": "单击任意行打开相关问题或项目。您还可以将其标记为已读、暂停、接受切换或直接清除信号。",
+  "hint": "单击任意行打开相关问题、项目、工作流或文档。您还可以将其标记为已读、暂停、接受切换或直接清除信号。",
   "states": {
     "loading": "正在加载收件箱...",
     "errorTitle": "无法加载收件箱",

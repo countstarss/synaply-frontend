@@ -12,7 +12,112 @@
     "newDoc": "New document",
     "newFolder": "New folder",
     "newTeamDoc": "New team doc",
-    "newPersonalDoc": "New personal doc"
+    "newPersonalDoc": "New personal doc",
+    "dialog": {
+      "title": "Create a structured doc",
+      "description": "Choose the collaboration shape this doc should carry. Synaply will insert a starter structure for the team.",
+      "templateLabel": "Template",
+      "templatePlaceholder": "Choose a template",
+      "titleLabel": "Document title",
+      "titlePlaceholder": "Enter a document title",
+      "projectHint": "This doc will be linked to the current project automatically.",
+      "parentHint": "This doc will be created inside the current folder.",
+      "cancel": "Cancel",
+      "create": "Create document",
+      "creating": "Creating...",
+      "createFailed": "Failed to create the document."
+    },
+    "template": {
+      "blank": {
+        "label": "Blank doc",
+        "description": "Start from an empty page when you just need a free-form note.",
+        "title": "New document"
+      },
+      "projectBrief": {
+        "label": "Project brief",
+        "description": "Clarify why this project exists, what is in scope, and what success looks like.",
+        "title": "Project brief"
+      },
+      "decisionLog": {
+        "label": "Decision log",
+        "description": "Capture the decision, rationale, impacted work, and follow-up so handoffs stay grounded.",
+        "title": "Decision log"
+      },
+      "reviewPacket": {
+        "label": "Review packet",
+        "description": "Package the context, changes, and questions reviewers need before giving a response.",
+        "title": "Review packet"
+      },
+      "handoffPacket": {
+        "label": "Handoff packet",
+        "description": "Prepare the next owner with readiness notes, dependencies, links, and expectations.",
+        "title": "Handoff packet"
+      },
+      "releaseChecklist": {
+        "label": "Release checklist",
+        "description": "Keep launch readiness, risk checks, owners, and post-release watchpoints in one place.",
+        "title": "Release checklist"
+      }
+    },
+    "templateContent": {
+      "projectBrief": {
+        "intro": "Summarize what this project is trying to move forward and why the team should align around it now.",
+        "goal": "[Goal and scope] Describe the delivery goal, scope boundary, and what this project will intentionally not cover.",
+        "scope": "[Key context] Capture the current context, constraints, dependencies, and any assumptions the team should hold.",
+        "success": "[Success signal] Explain how the team will know this project is ready, successful, or safe to ship.",
+        "openQuestions": "[Open questions] List the unresolved questions, decisions, or risks that still need follow-up."
+      },
+      "decisionLog": {
+        "intro": "Use this note to preserve one concrete decision so the next owner can understand the why without replaying the entire discussion.",
+        "decision": "[Decision] State the decision in one sentence.",
+        "context": "[Context] Explain what changed, what pressure triggered the decision, or what tradeoff needed resolution.",
+        "rationale": "[Rationale] Write why this option won over the alternatives.",
+        "impact": "[Affected work] Link the impacted project, issue, workflow, or release surface and note what changes next.",
+        "followUp": "[Follow-up] Capture the next actions, owners, and the point when this decision should be revisited."
+      },
+      "reviewPacket": {
+        "intro": "Package the minimum context a reviewer needs so the review can move asynchronously without extra chasing.",
+        "goal": "[Review goal] Clarify what kind of review you need and what decision should come out of it.",
+        "changeSummary": "[What changed] Summarize the proposal, implementation, or artifact under review.",
+        "focusQuestions": "[Reviewer focus] List the questions, risks, or edge cases you want reviewers to inspect closely.",
+        "decision": "[Decision / requested changes] Leave space to record the outcome, requested changes, or approval notes.",
+        "nextStep": "[Next handoff] Explain what should happen after review and who is expected to take over."
+      },
+      "handoffPacket": {
+        "intro": "Use this packet to make the next owner productive without needing another synchronous walkthrough.",
+        "target": "[Handoff target] State who this handoff is for and what they are expected to take over.",
+        "readyNow": "[Ready now] Summarize what is already done, verified, and safe for the next owner to trust.",
+        "dependencies": "[Dependencies and blockers] List open blockers, risks, decisions, or inputs still needed.",
+        "links": "[Links and evidence] Attach the issue, doc, design, PR, or release context the receiver should read first.",
+        "receiverChecklist": "[Receiver checklist] Spell out the first checks or actions the receiver should complete after accepting the handoff."
+      },
+      "releaseChecklist": {
+        "intro": "Keep launch readiness visible so product, design, engineering, ops, and support can self-serve the current state.",
+        "scope": "[Release scope] Describe what is shipping, what is intentionally excluded, and what environments are affected.",
+        "risk": "[Risks and safeguards] Record the visible risks, rollback path, monitoring, and any coordination dependencies.",
+        "goNoGo": "[Go / no-go checks] List the checks that must pass before release is considered ready.",
+        "ownerMap": "[Owner map] Make clear who owns approval, execution, communication, and post-release follow-up.",
+        "postRelease": "[Post-release watch] Capture what the team should monitor immediately after release and what thresholds require action."
+      }
+    }
+  },
+  "docKind": {
+    "general": "General doc",
+    "projectBrief": "Project brief",
+    "decisionLog": "Decision log",
+    "reviewPacket": "Review packet",
+    "handoffPacket": "Handoff packet",
+    "releaseChecklist": "Release checklist"
+  },
+  "consumption": {
+    "summaryPrefix": "Digest-ready doc changes: {items}",
+    "summaryEmpty": "No structured doc has been linked yet. Start with the packet the next owner will need most.",
+    "summaryCount": "{count} {label}",
+    "emptyTitle": "No doc yet",
+    "emptyDescription": "This collaboration packet has not been captured yet.",
+    "updatedAt": "Updated {value}",
+    "openDoc": "Open doc",
+    "createDoc": "Create doc"
   },
   "overview": {
     "shared": {

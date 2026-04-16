@@ -8,10 +8,13 @@
   "views": {
     "primary": "Primary",
     "other": "Other",
+    "digest": "Digest",
     "later": "Later",
     "cleared": "Cleared"
   },
   "viewSubLabel": {
+    "digestCount": "{count} 件の digest summary",
+    "digestEmpty": "digest summary はありません",
     "laterCount": "{count} 件のスヌーズ済みアイテム",
     "laterEmpty": "スヌーズなしitems",
     "clearedCount": "{count} 個のクリアされたアイテム",
@@ -28,6 +31,10 @@
       "title": "後で注意する必要のある更新はありません",
       "description": "リスク、ブロッカー、およびフォローシグナルは、2 回目のパスが必要なときにここに集まります。"
     },
+    "digest": {
+      "title": "まだ doc digest はありません",
+      "description": "同じ project、issue、workflow の文書更新がたまると、ここで 1 つの digest にまとめます。"
+    },
     "later": {
       "title": "現在スヌーズされているアイテムはありません",
       "description": "シグナルが読み取られているが、フローを中断すべきでない場合は、シグナルをここに移動できます。 "
@@ -40,7 +47,20 @@
   "source": {
     "workflow": "ワークフロー",
     "project": "プロジェクト",
-    "issue": "問題"
+    "issue": "問題",
+    "doc": "ドキュメント"
+  },
+  "docTitles": {
+    "reviewReady": "レビュー packet の準備完了: {title}",
+    "handoffReady": "handoff packet の準備完了: {title}",
+    "releaseUpdated": "release checklist が更新されました: {title}",
+    "decisionUpdated": "decision log が更新されました: {title}",
+    "digestGenerated": "最近 {count} 件の collaboration docs が更新されました"
+  },
+  "digest": {
+    "summaryPrefix": "{items} を含みます",
+    "summaryCount": "{count} 件の{label}",
+    "summaryLatest": "最新: {title}"
   },
   "groups": {
     "today": "今日",
@@ -67,7 +87,7 @@
     "clear": "Clear",
     "cleared": "Cleared"
   },
-  "hint": "任意の行をクリック関連する問題またはプロジェクトを開きます。既読のマークを付ける、スヌーズする、ハンドオフを受け入れる、信号を直接クリアすることもできます。",
+  "hint": "任意の行をクリックすると、関連する issue、project、workflow、doc を開けます。既読のマーク、スヌーズ、handoff の受け入れ、signal のクリアもここから行えます。",
   "states": {
     "loading": "受信箱を読み込んでいます...",
     "errorTitle": "受信箱の読み込みに失敗しました",

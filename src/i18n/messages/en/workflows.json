@@ -154,6 +154,12 @@
       "publishFailed": "Failed to publish the workflow."
     }
   },
+  "docCards": {
+    "title": "Workflow docs",
+    "subtitle": "Tie the handoff packet, review packet, and release checklist to the workflow template so reuse does not lose context.",
+    "created": "Workflow doc created.",
+    "createFailed": "Failed to create the workflow doc."
+  },
   "nodeDetails": {
     "title": "Node details",
     "nodeFallback": "Node",

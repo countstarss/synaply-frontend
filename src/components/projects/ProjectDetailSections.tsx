@@ -31,13 +31,17 @@ import type { WorkflowRuntimeSnapshot } from "@/components/projects/project-deta
 import { formatPreciseDate, getProjectOwnerLabel } from "@/components/projects/project-view-utils";
 import {
   EmptyPanel,
-  ProjectDocRow,
   ProjectIssueRow,
   ProjectPanel,
   ProjectPendingConfirmationRow,
   StatMiniCard,
   WorkspaceCard,
 } from "@/components/projects/ProjectDetailShared";
+import {
+  DocKindCards,
+  type DocKindCardSlot,
+} from "@/components/shared/docs/DocKindCards";
+import type { DocsTranslationFn } from "@/components/shared/docs/doc-template-config";
 
 export { ProjectMetricCard } from "@/components/projects/ProjectDetailShared";
 
@@ -211,26 +215,35 @@ export function ProjectWorkspacePanel(props: {
 export function ProjectCollaborationPanel(props: {
   locale: string;
   relatedWorkflows: ProjectWorkflowSummary[];
-  recentProjectDocs: DocRecord[];
+  projectDocs: DocRecord[];
   pendingConfirmationIssues: Issue[];
   workflowRunCounts: Omit<WorkflowRuntimeSnapshot, "focusIssue">;
   workflowRuntimeByWorkflowId: Map<string, WorkflowRuntimeSnapshot>;
   tProjects: ProjectsTranslationFn;
+  tDocs: DocsTranslationFn;
   onOpenIssue: (issue: Issue) => void;
   onOpenDoc: (docId: string) => void;
+  onCreateProjectDoc: (slot: DocKindCardSlot) => void;
   onOpenProjectDocHub: () => void;
   onOpenProjectWorkflow: () => void;
 }) {
   const {
     locale,
-    recentProjectDocs,
+    projectDocs,
     pendingConfirmationIssues,
     workflowRunCounts,
     tProjects,
+    tDocs,
     onOpenIssue,
     onOpenDoc,
+    onCreateProjectDoc,
     onOpenProjectDocHub,
   } = props;
+  const docSlots: DocKindCardSlot[] = [
+    { kind: "PROJECT_BRIEF", templateKey: "project-brief-v1" },
+    { kind: "DECISION_LOG", templateKey: "decision-log-v1" },
+    { kind: "RELEASE_CHECKLIST", templateKey: "release-checklist-v1" },
+  ];
 
   return (
     <ProjectPanel title={tProjects("detail.collaboration.title")} subtitle={tProjects("detail.collaboration.subtitle")}>
@@ -248,7 +261,14 @@ export function ProjectCollaborationPanel(props: {
               <RiArrowRightSLine className="size-3.5" />
             </button>
           </div>
-          {recentProjectDocs.length === 0 ? <EmptyPanel text={tProjects("detail.collaboration.docsEmpty")} /> : <div className="space-y-2">{recentProjectDocs.map((doc) => <ProjectDocRow key={doc._id} doc={doc} locale={locale} onOpenDoc={onOpenDoc} tProjects={tProjects} />)}</div>}
+          <DocKindCards
+            docs={projectDocs}
+            slots={docSlots}
+            locale={locale}
+            tDocs={tDocs}
+            onOpenDoc={(doc) => onOpenDoc(doc._id)}
+            onCreateDoc={onCreateProjectDoc}
+          />
         </div>
 
         <div className="space-y-3">

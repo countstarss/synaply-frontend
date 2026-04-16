@@ -25,6 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import DocCreateDialog from "./DocCreateDialog";
 
 interface DocsSidebarProps {
   onSelectDoc: (doc: DocsDocument) => void;
@@ -51,7 +52,6 @@ function TreeNode({
 }: TreeNodeProps) {
   const tDocs = useTranslations("docs");
   const {
-    createDoc,
     createFolder,
     deleteDoc,
     updateDocTitle,
@@ -64,6 +64,7 @@ function TreeNode({
   const [showMenu, setShowMenu] = useState(false);
   const [isHoveringNode, setIsHoveringNode] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isCreateChildDialogOpen, setIsCreateChildDialogOpen] = useState(false);
 
   // Refs for click outside and mouse leave detection
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -151,14 +152,10 @@ function TreeNode({
     };
   }, [showMenu, isHoveringNode]);
 
-  const handleCreateChild = async (e: React.MouseEvent) => {
+  const handleCreateChild = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowMenu(false);
-    const createdDoc = await createDoc(tDocs("creation.newDoc"), doc._id);
-    onNewDocCreated?.(createdDoc._id);
-    if (!isExpanded) {
-      onToggleExpand(doc._id);
-    }
+    setIsCreateChildDialogOpen(true);
   };
 
   const handleCreateChildFolder = async (e: React.MouseEvent) => {
@@ -379,6 +376,18 @@ function TreeNode({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <DocCreateDialog
+        open={isCreateChildDialogOpen}
+        onOpenChange={setIsCreateChildDialogOpen}
+        parentId={doc._id}
+        onCreated={(createdDoc) => {
+          onNewDocCreated?.(createdDoc._id);
+          if (!isExpanded) {
+            onToggleExpand(doc._id);
+          }
+        }}
+      />
     </>
   );
 }
@@ -387,12 +396,14 @@ export default function DocsSidebar({
   onSelectDoc,
 }: DocsSidebarProps) {
   const tDocs = useTranslations("docs");
-  const { documents, createDoc, createFolder, isLoading } = useDocs();
+  const { documents, createFolder, isLoading, projectId } = useDocs();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [newlyCreatedDocId, setNewlyCreatedDocId] = useState<
     string | undefined
   >(undefined);
+  const [isCreateRootDocDialogOpen, setIsCreateRootDocDialogOpen] =
+    useState(false);
 
   const handleToggleExpand = (uid: string) => {
     const newExpanded = new Set(expandedIds);
@@ -402,10 +413,6 @@ export default function DocsSidebar({
       newExpanded.add(uid);
     }
     setExpandedIds(newExpanded);
-  };
-
-  const handleCreateRootDoc = async () => {
-    await createDoc(tDocs("creation.newDoc"));
   };
 
   const handleCreateRootFolder = async () => {
@@ -455,7 +462,7 @@ export default function DocsSidebar({
             <h2 className="font-semibold text-app-text-primary">{tDocs("sidebar.title")}</h2>
             <div className="flex items-center gap-1">
               <button
-                onClick={handleCreateRootDoc}
+                onClick={() => setIsCreateRootDocDialogOpen(true)}
                 className="rounded-lg p-1.5 text-app-text-secondary hover:bg-app-button-hover"
                 title={tDocs("sidebar.newDoc")}
               >
@@ -533,6 +540,14 @@ export default function DocsSidebar({
           )}
         </div>
       </div>
+
+      <DocCreateDialog
+        open={isCreateRootDocDialogOpen}
+        onOpenChange={setIsCreateRootDocDialogOpen}
+        projectId={projectId}
+        defaultTemplateKey={projectId ? "project-brief-v1" : "blank"}
+        onCreated={(createdDoc) => handleNewDocCreated(createdDoc._id)}
+      />
     </ContextMenuWrapper>
   );
 }

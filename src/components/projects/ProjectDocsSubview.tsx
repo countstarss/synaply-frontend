@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import DocsPage from "@/components/shared/docs/DocsPage";
+import { resolveProjectDocsContext } from "@/components/shared/docs/doc-navigation-utils";
 
 export function ProjectDocsSubview({
   workspaceId,
@@ -16,6 +18,11 @@ export function ProjectDocsSubview({
   projectId: string;
 }) {
   const tProjects = useTranslations("projects");
+  const searchParams = useSearchParams();
+  const docsContext = resolveProjectDocsContext(
+    workspaceType,
+    searchParams.get("context"),
+  );
 
   if (!currentUserId) {
     return (
@@ -34,7 +41,7 @@ export function ProjectDocsSubview({
           workspaceId={workspaceId}
           workspaceType={workspaceType}
           userId={currentUserId}
-          context={workspaceType === "PERSONAL" ? "personal" : "team"}
+          context={docsContext}
           projectId={projectId}
         />
       </div>

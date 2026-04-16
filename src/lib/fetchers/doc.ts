@@ -5,12 +5,21 @@ const API_BASE_URL = getBackendBaseUrl();
 
 export type DocContext = "personal" | "team" | "team-personal";
 export type DocVisibility = VisibilityType;
+export type DocKind =
+  | "GENERAL"
+  | "PROJECT_BRIEF"
+  | "DECISION_LOG"
+  | "REVIEW_PACKET"
+  | "HANDOFF_PACKET"
+  | "RELEASE_CHECKLIST";
 
 export interface DocRecord {
   id: string;
   _id: string;
   title: string;
   type: "document" | "folder";
+  kind: DocKind;
+  templateKey?: string;
   content?: string;
   description?: string;
   creatorId: string;
@@ -40,12 +49,16 @@ export interface QueryDocsTreeParams {
   context?: DocContext;
   workspaceType?: "PERSONAL" | "TEAM";
   projectId?: string;
+  issueId?: string;
+  workflowId?: string;
   includeArchived?: boolean;
 }
 
 export interface CreateDocInput {
   title: string;
   content?: string;
+  kind?: DocKind;
+  templateKey?: string;
   parentDocument?: string;
   projectId?: string;
   issueId?: string;
@@ -70,6 +83,8 @@ export interface UpdateDocMetaInput {
   description?: string;
   icon?: string;
   coverImage?: string;
+  kind?: DocKind;
+  templateKey?: string;
   visibility?: DocVisibility;
 }
 
@@ -172,6 +187,16 @@ function buildDocsQuery(params: QueryDocsTreeParams = {}) {
   const projectId = normalizeOptionalId(params.projectId);
   if (projectId) {
     searchParams.set("projectId", projectId);
+  }
+
+  const issueId = normalizeOptionalId(params.issueId);
+  if (issueId) {
+    searchParams.set("issueId", issueId);
+  }
+
+  const workflowId = normalizeOptionalId(params.workflowId);
+  if (workflowId) {
+    searchParams.set("workflowId", workflowId);
   }
 
   if (params.includeArchived) {

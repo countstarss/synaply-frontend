@@ -5,6 +5,7 @@ import { useDocStore } from "@/stores/doc-store";
 import { VisibilityType } from "@/types/prisma";
 import {
   DocContext,
+  DocKind,
   DocRecord,
   DocRevisionMutationResult,
   DocVisibility,
@@ -30,17 +31,23 @@ interface UpdateDocContentOptions {
   }>;
 }
 
+interface CreateDocOptions {
+  parentId?: string;
+  projectId?: string;
+  issueId?: string;
+  workflowId?: string;
+  content?: string;
+  kind?: DocKind;
+  templateKey?: string;
+}
+
 interface DocsContextType {
   documents: DocsDocument[];
   openDocs: DocsDocument[];
   activeDocId: string | null;
   openDoc: (doc: DocsDocument) => void;
   closeDoc: (docId: string) => void;
-  createDoc: (
-    title: string,
-    parentId?: string,
-    projectId?: string
-  ) => Promise<DocsDocument>;
+  createDoc: (title: string, options?: CreateDocOptions) => Promise<DocsDocument>;
   createFolder: (
     title: string,
     parentId?: string,
@@ -233,20 +240,26 @@ export default function DocsProvider({
 
   const createDoc = async (
     title: string,
-    parentId?: string,
-    docProjectId?: string
+    options?: CreateDocOptions
   ) => {
+    const resolvedParentId = normalizeOptionalId(options?.parentId);
     const resolvedProjectId =
-      normalizeOptionalId(docProjectId) ?? normalizeOptionalId(projectId);
+      normalizeOptionalId(options?.projectId) ?? normalizeOptionalId(projectId);
+    const resolvedIssueId = normalizeOptionalId(options?.issueId);
+    const resolvedWorkflowId = normalizeOptionalId(options?.workflowId);
 
     const createdDoc = await createDocMutation.mutateAsync({
       workspaceId,
       data: {
         title,
-        parentDocument: parentId,
+        parentDocument: resolvedParentId,
         projectId: resolvedProjectId,
+        issueId: resolvedIssueId,
+        workflowId: resolvedWorkflowId,
         visibility: getDocumentVisibility(),
-        content: getEmptyDocContent(),
+        content: options?.content ?? getEmptyDocContent(),
+        kind: options?.kind,
+        templateKey: options?.templateKey,
         order: documents.length,
       },
     });

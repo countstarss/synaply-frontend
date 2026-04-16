@@ -5,6 +5,14 @@ import { useUpdateWorkflow, usePublishWorkflow } from "@/hooks/useWorkflowApi";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { toast } from "sonner";
 import { WorkflowResponse } from "@/lib/fetchers/workflow";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { WorkflowDocKindPanel } from "@/components/workflow/WorkflowDocKindPanel";
 
 interface WorkflowSettingsModalProps {
   isOpen: boolean;
@@ -176,32 +184,36 @@ export default function WorkflowSettingsModal({
             <label className="block text-sm font-medium text-app-text-primary mb-1">
               {tWorkflows("settingsModal.visibilityLabel")}
             </label>
-            <select
+            <Select
               value={visibility}
-              onChange={(e) =>
+              onValueChange={(value) =>
                 setVisibility(
-                  e.target.value as
+                  value as
                     | "PRIVATE"
                     | "TEAM_READONLY"
                     | "TEAM_EDITABLE"
                     | "PUBLIC",
                 )
               }
-              className="w-full px-3 py-2 border border-app-border rounded-lg bg-app-bg text-app-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="PRIVATE">
-                {tWorkflows("settingsModal.visibility.private")}
-              </option>
-              <option value="PUBLIC">
-                {tWorkflows("settingsModal.visibility.public")}
-              </option>
-              <option value="TEAM_READONLY">
-                {tWorkflows("settingsModal.visibility.teamReadonly")}
-              </option>
-              <option value="TEAM_EDITABLE">
-                {tWorkflows("settingsModal.visibility.teamEditable")}
-              </option>
-            </select>
+              <SelectTrigger className="w-full border-app-border bg-app-bg text-app-text-primary">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="border-app-border bg-app-content-bg">
+                <SelectItem value="PRIVATE">
+                  {tWorkflows("settingsModal.visibility.private")}
+                </SelectItem>
+                <SelectItem value="PUBLIC">
+                  {tWorkflows("settingsModal.visibility.public")}
+                </SelectItem>
+                <SelectItem value="TEAM_READONLY">
+                  {tWorkflows("settingsModal.visibility.teamReadonly")}
+                </SelectItem>
+                <SelectItem value="TEAM_EDITABLE">
+                  {tWorkflows("settingsModal.visibility.teamEditable")}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* 状态信息 */}
@@ -239,6 +251,14 @@ export default function WorkflowSettingsModal({
               </span>
             </div>
           </div>
+
+          {currentWorkspace?.id ? (
+            <WorkflowDocKindPanel
+              workspaceId={currentWorkspace.id}
+              workspaceType={currentWorkspace.type}
+              workflow={workflow}
+            />
+          ) : null}
         </div>
 
         <div className="flex items-center justify-between p-4 border-t border-app-border">

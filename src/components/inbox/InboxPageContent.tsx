@@ -15,6 +15,7 @@ import {
   Bug,
   CheckCheck,
   Clock3,
+  FileText,
   Inbox as InboxIcon,
   Loader2,
   Mail,
@@ -46,19 +47,29 @@ import {
   InboxQueryParams,
   InboxSummary,
 } from "@/lib/fetchers/inbox";
+import type { DocKind } from "@/lib/fetchers/doc";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/i18n/navigation";
 import { buildProjectPath } from "@/components/projects/project-route-utils";
+import { useDocStore } from "@/stores/doc-store";
+import { openDocRoute } from "@/components/shared/docs/doc-navigation";
+import { getDocKindLabel } from "@/components/shared/docs/doc-template-config";
 import AmbientGlow from "../global/AmbientGlow";
 
-type InboxViewId = "primary" | "other" | "later" | "cleared";
+type InboxViewId = "primary" | "other" | "digest" | "later" | "cleared";
 
 type GroupedItems = {
   label: string;
   items: InboxItem[];
 };
 
-const VIEW_ORDER: InboxViewId[] = ["primary", "other", "later", "cleared"];
+const VIEW_ORDER: InboxViewId[] = [
+  "primary",
+  "other",
+  "digest",
+  "later",
+  "cleared",
+];
 
 const GHOST_BUTTON_CLASS =
   "border border-[#e5e1ee] bg-white text-[#655f72] hover:bg-[#faf9fd] dark:border-white/10 dark:bg-[#161616] dark:text-[#b8b2c4] dark:hover:bg-[#222222] dark:hover:text-[#f2eefb]";
@@ -107,6 +118,8 @@ function getViewIcon(view: InboxViewId) {
       return <InboxIcon className="size-4.5" />;
     case "other":
       return <Activity className="size-4.5" />;
+    case "digest":
+      return <FileText className="size-4.5" />;
     case "later":
       return <Clock3 className="size-4.5" />;
     case "cleared":
@@ -123,6 +136,8 @@ function getViewLabel(
       return t("views.primary");
     case "other":
       return t("views.other");
+    case "digest":
+      return t("views.digest");
     case "later":
       return t("views.later");
     case "cleared":
@@ -140,6 +155,8 @@ function getViewCount(summary: InboxSummary | undefined, view: InboxViewId) {
       return summary.needsResponse;
     case "other":
       return summary.needsAttention + summary.following;
+    case "digest":
+      return summary.digest;
     case "later":
       return summary.snoozed;
     case "cleared":
@@ -158,6 +175,12 @@ function getViewSubLabel(
     return count
       ? t("viewSubLabel.laterCount", { count })
       : t("viewSubLabel.laterEmpty");
+  }
+
+  if (view === "digest") {
+    return count
+      ? t("viewSubLabel.digestCount", { count })
+      : t("viewSubLabel.digestEmpty");
   }
 
   if (view === "cleared") {
@@ -189,6 +212,13 @@ function getEmptyCopy(
     };
   }
 
+  if (activeView === "digest") {
+    return {
+      title: t("empty.digest.title"),
+      description: t("empty.digest.description"),
+    };
+  }
+
   if (activeView === "later") {
     return {
       title: t("empty.later.title"),
@@ -206,10 +236,17 @@ function getSourceMeta(
   item: InboxItem,
   t: (key: string) => string,
 ) {
+  const digestTargetLabel =
+    item.type === "digest.generated" &&
+    typeof item.metadata?.digestTargetLabel === "string"
+      ? item.metadata.digestTargetLabel
+      : null;
+  const preferredLabel = digestTargetLabel || item.projectName || item.issueKey;
+
   if (item.sourceType === "workflow") {
     return {
       icon: <Workflow className="size-4" />,
-      label: item.projectName || item.issueKey || t("source.workflow"),
+      label: preferredLabel || t("source.workflow"),
       tone: "bg-[#ecebff] text-[#6a5cff] dark:bg-[#242424] dark:text-[#c9c4d4]",
     };
   }
@@ -217,14 +254,22 @@ function getSourceMeta(
   if (item.sourceType === "project") {
     return {
       icon: <ShieldAlert className="size-4" />,
-      label: item.projectName || t("source.project"),
+      label: preferredLabel || t("source.project"),
       tone: "bg-[#fff4e8] text-[#b76d20] dark:bg-[#242424] dark:text-[#c9c4d4]",
+    };
+  }
+
+  if (item.sourceType === "doc") {
+    return {
+      icon: <FileText className="size-4" />,
+      label: preferredLabel || t("source.doc"),
+      tone: "bg-[#edf8f1] text-[#1f8f57] dark:bg-[#242424] dark:text-[#c9c4d4]",
     };
   }
 
   return {
     icon: <Bug className="size-4" />,
-    label: item.projectName || item.issueKey || t("source.issue"),
+    label: preferredLabel || t("source.issue"),
     tone: "bg-[#edf5ff] text-[#3b6edc] dark:bg-[#242424] dark:text-[#c9c4d4]",
   };
 }
@@ -271,12 +316,133 @@ function groupItemsByDate(
   }));
 }
 
+function getDisplayTitle(
+  item: InboxItem,
+  t: (key: string, values?: Record<string, string | number>) => string,
+) {
+  const docTitle =
+    typeof item.metadata?.docTitle === "string" ? item.metadata.docTitle : null;
+  const digestDocCount =
+    typeof item.metadata?.digestDocCount === "number"
+      ? item.metadata.digestDocCount
+      : 1;
+
+  if (item.type === "digest.generated") {
+    return t("docTitles.digestGenerated", {
+      count: digestDocCount,
+    });
+  }
+
+  if (!docTitle) {
+    return item.title;
+  }
+
+  switch (item.type) {
+    case "doc.review.ready":
+      return t("docTitles.reviewReady", { title: docTitle });
+    case "doc.handoff.ready":
+      return t("docTitles.handoffReady", { title: docTitle });
+    case "doc.release.updated":
+      return t("docTitles.releaseUpdated", { title: docTitle });
+    case "doc.decision.updated":
+      return t("docTitles.decisionUpdated", { title: docTitle });
+    default:
+      return item.title;
+  }
+}
+
+function isDocKind(value: unknown): value is DocKind {
+  return (
+    value === "GENERAL" ||
+    value === "PROJECT_BRIEF" ||
+    value === "DECISION_LOG" ||
+    value === "REVIEW_PACKET" ||
+    value === "HANDOFF_PACKET" ||
+    value === "RELEASE_CHECKLIST"
+  );
+}
+
+function getDigestKinds(
+  item: InboxItem,
+): Array<{ kind: DocKind; count: number }> {
+  const rawKinds = item.metadata?.digestKinds;
+
+  if (!Array.isArray(rawKinds)) {
+    return [];
+  }
+
+  return rawKinds.flatMap((entry) => {
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      return [];
+    }
+
+    const kind = (entry as { kind?: unknown }).kind;
+    const count = (entry as { count?: unknown }).count;
+
+    if (!isDocKind(kind) || typeof count !== "number" || count <= 0) {
+      return [];
+    }
+
+    return [{ kind, count }];
+  });
+}
+
+function getDisplaySummary(
+  item: InboxItem,
+  locale: string,
+  tInbox: (key: string, values?: Record<string, string | number>) => string,
+  tDocs: (key: string, values?: Record<string, string | number>) => string,
+) {
+  if (item.type !== "digest.generated") {
+    return null;
+  }
+
+  const digestKinds = getDigestKinds(item);
+  const latestDocTitle =
+    typeof item.metadata?.latestDocTitle === "string"
+      ? item.metadata.latestDocTitle
+      : null;
+
+  if (digestKinds.length === 0 && !latestDocTitle) {
+    return null;
+  }
+
+  const summaryParts: string[] = [];
+
+  if (digestKinds.length > 0) {
+    const formatter = new Intl.ListFormat(locale, {
+      style: "short",
+      type: "conjunction",
+    });
+    const items = formatter.format(
+      digestKinds.map(({ kind, count }) =>
+        tInbox("digest.summaryCount", {
+          count,
+          label: getDocKindLabel(kind, tDocs),
+        }),
+      ),
+    );
+
+    summaryParts.push(tInbox("digest.summaryPrefix", { items }));
+  }
+
+  if (latestDocTitle) {
+    summaryParts.push(tInbox("digest.summaryLatest", { title: latestDocTitle }));
+  }
+
+  return summaryParts.join(" · ");
+}
+
 function filterItemsForView(items: InboxItem[], activeView: InboxViewId) {
   if (activeView === "other") {
     return items.filter(
       (item) =>
         item.bucket === "needs-attention" || item.bucket === "following",
     );
+  }
+
+  if (activeView === "digest") {
+    return items.filter((item) => item.bucket === "digest");
   }
 
   return items;
@@ -301,7 +467,7 @@ function ViewTabs({
   const tInbox = useTranslations("inbox");
   return (
     <div className="overflow-hidden rounded-[18px] border border-[#e8e7ef] bg-app-content-bg dark:border-white/10">
-      <div className="grid min-w-0 grid-cols-2 md:grid-cols-4">
+      <div className="grid min-w-0 grid-cols-2 md:grid-cols-5">
         {VIEW_ORDER.map((view) => {
           const active = activeView === view;
 
@@ -399,8 +565,11 @@ function InboxRow({
   onAccept: (item: InboxItem) => Promise<void> | void;
 }) {
   const tInbox = useTranslations("inbox");
+  const tDocs = useTranslations("docs");
   const locale = useLocale();
   const sourceMeta = getSourceMeta(item, tInbox);
+  const displayTitle = getDisplayTitle(item, tInbox);
+  const displaySummary = getDisplaySummary(item, locale, tInbox, tDocs);
   const isUnread = item.status === "unread";
   const canAccept = hasAction(item, "accept_handoff");
   const shouldRaiseRow = isUnread;
@@ -420,12 +589,12 @@ function InboxRow({
       tabIndex={0}
       onKeyDown={handleRowKeyDown}
       onClick={() => void onOpen(item)}
-      aria-label={tInbox("row.openAria", { title: item.title })}
+      aria-label={tInbox("row.openAria", { title: displayTitle })}
       className="group block w-full px-1 py-1 text-left focus:outline-none"
     >
       <div
         className={cn(
-          "grid gap-4 rounded-sm border px-4 py-3 transition-all duration-200 md:grid-cols-[240px_minmax(0,1fr)_auto] cursor-pointer",
+          "grid cursor-pointer gap-4 rounded-sm border px-4 py-3 transition-all duration-200 md:grid-cols-[240px_minmax(0,1fr)_auto]",
           shouldRaiseRow
             ? "border-[#e7e1ef] bg-app-content-bg shadow-[0_14px_34px_rgba(29,25,38,0.06)] dark:border-white/10 dark:!bg-[#171717] dark:shadow-[0_20px_42px_rgba(0,0,0,0.32)]"
             : "border-transparent bg-transparent shadow-none",
@@ -454,15 +623,22 @@ function InboxRow({
         </div>
 
         <div className="flex min-w-0 items-center">
-          <div
-            className={cn(
-              "line-clamp-1 text-[1rem]",
-              isUnread
-                ? "font-semibold text-[#2f2b39] dark:text-[#f7f3ff]"
-                : "font-medium text-[#403b4c] dark:text-[#ddd7e8]",
-            )}
-          >
-            {item.title}
+          <div className="min-w-0">
+            <div
+              className={cn(
+                "line-clamp-1 text-[1rem]",
+                isUnread
+                  ? "font-semibold text-[#2f2b39] dark:text-[#f7f3ff]"
+                  : "font-medium text-[#403b4c] dark:text-[#ddd7e8]",
+              )}
+            >
+              {displayTitle}
+            </div>
+            {displaySummary ? (
+              <div className="mt-1 line-clamp-2 text-sm leading-6 text-[#8a8595] dark:text-[#9c96aa]">
+                {displaySummary}
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -560,9 +736,14 @@ export default function InboxPageContent() {
   const [selectedIssueIsWorkflow, setSelectedIssueIsWorkflow] = useState(false);
   const [mutatingItemId, setMutatingItemId] = useState<string | null>(null);
   const { currentWorkspace } = useWorkspace();
+  const setActiveDocId = useDocStore((state) => state.setActiveDocId);
   const workspaceId = currentWorkspace?.id || "";
   const router = useRouter();
-  const supportsLiveFilters =
+  const supportsUnreadFilter =
+    activeView === "primary" ||
+    activeView === "other" ||
+    activeView === "digest";
+  const supportsActionableFilter =
     activeView === "primary" || activeView === "other";
 
   const inboxParams = useMemo<InboxQueryParams>(() => {
@@ -574,6 +755,10 @@ export default function InboxPageContent() {
       params.bucket = "needs-response";
     }
 
+    if (activeView === "digest") {
+      params.bucket = "digest";
+    }
+
     if (activeView === "later") {
       params.status = "snoozed";
     }
@@ -582,16 +767,22 @@ export default function InboxPageContent() {
       params.status = "done";
     }
 
-    if (supportsLiveFilters && onlyActionable) {
+    if (supportsActionableFilter && onlyActionable) {
       params.requiresAction = true;
     }
 
-    if (supportsLiveFilters && unreadOnly) {
+    if (supportsUnreadFilter && unreadOnly) {
       params.status = "unread";
     }
 
     return params;
-  }, [activeView, onlyActionable, supportsLiveFilters, unreadOnly]);
+  }, [
+    activeView,
+    onlyActionable,
+    supportsActionableFilter,
+    supportsUnreadFilter,
+    unreadOnly,
+  ]);
 
   const {
     data: feed,
@@ -648,6 +839,32 @@ export default function InboxPageContent() {
           workspaceId,
           itemId: item.id,
         });
+      }
+
+      if (item.docId) {
+        const rawDocContext =
+          typeof item.metadata?.docContext === "string"
+            ? item.metadata.docContext
+            : null;
+        const docContext =
+          rawDocContext === "team" ||
+          rawDocContext === "team-personal" ||
+          rawDocContext === "personal"
+            ? rawDocContext
+            : currentWorkspace?.type === "TEAM"
+              ? "team"
+              : "personal";
+
+        openDocRoute({
+          workspaceId,
+          workspaceType: currentWorkspace?.type || "PERSONAL",
+          context: docContext,
+          docId: item.docId,
+          projectId: item.projectId,
+          router,
+          setActiveDocId,
+        });
+        return;
       }
 
       if (item.issueId) {
@@ -841,18 +1058,22 @@ export default function InboxPageContent() {
 
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-[#e9e6f0] isolate bg-app-content-bg/80 px-4 py-3 dark:border-white/10">
             <div className="flex flex-wrap items-center gap-2">
-              {supportsLiveFilters ? (
+              {supportsUnreadFilter || supportsActionableFilter ? (
                 <>
-                  <FilterButton
-                    label={tInbox("filters.unread")}
-                    active={unreadOnly}
-                    onClick={() => setUnreadOnly((value) => !value)}
-                  />
-                  <FilterButton
-                    label={tInbox("filters.actionable")}
-                    active={onlyActionable}
-                    onClick={() => setOnlyActionable((value) => !value)}
-                  />
+                  {supportsUnreadFilter ? (
+                    <FilterButton
+                      label={tInbox("filters.unread")}
+                      active={unreadOnly}
+                      onClick={() => setUnreadOnly((value) => !value)}
+                    />
+                  ) : null}
+                  {supportsActionableFilter ? (
+                    <FilterButton
+                      label={tInbox("filters.actionable")}
+                      active={onlyActionable}
+                      onClick={() => setOnlyActionable((value) => !value)}
+                    />
+                  ) : null}
                   {(onlyActionable || unreadOnly) && (
                     <FilterButton
                       label={tInbox("filters.clear")}
@@ -950,9 +1171,7 @@ export default function InboxPageContent() {
                         key={item.id}
                         item={item}
                         isMutating={mutatingItemId === item.id}
-                        showReadToggle={
-                          activeView === "primary" || activeView === "other"
-                        }
+                        showReadToggle={supportsUnreadFilter}
                         onOpen={handleOpenItem}
                         onToggleRead={handleToggleRead}
                         onSnooze={handleSnooze}

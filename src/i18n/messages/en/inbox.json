@@ -8,10 +8,13 @@
   "views": {
     "primary": "Primary",
     "other": "Other",
+    "digest": "Digest",
     "later": "Later",
     "cleared": "Cleared"
   },
   "viewSubLabel": {
+    "digestCount": "{count} digest summaries",
+    "digestEmpty": "No digest summaries",
     "laterCount": "{count} snoozed items",
     "laterEmpty": "No snoozed items",
     "clearedCount": "{count} cleared items",
@@ -28,6 +31,10 @@
       "title": "No updates need later attention",
       "description": "Risks, blockers, and follow signals gather here when they need a second pass."
     },
+    "digest": {
+      "title": "No doc digest is ready yet",
+      "description": "When the same project, issue, or workflow collects enough doc changes, this view merges them into one digest."
+    },
     "later": {
       "title": "No items are snoozed right now",
       "description": "If a signal is read but should not interrupt your flow, you can move it here for later."
@@ -40,7 +47,20 @@
   "source": {
     "workflow": "Workflow",
     "project": "Project",
-    "issue": "Issue"
+    "issue": "Issue",
+    "doc": "Doc"
+  },
+  "docTitles": {
+    "reviewReady": "Review packet ready: {title}",
+    "handoffReady": "Handoff packet ready: {title}",
+    "releaseUpdated": "Release checklist updated: {title}",
+    "decisionUpdated": "Decision updated: {title}",
+    "digestGenerated": "{count} collaboration docs changed recently"
+  },
+  "digest": {
+    "summaryPrefix": "Includes {items}",
+    "summaryCount": "{count} {label}",
+    "summaryLatest": "Latest: {title}"
   },
   "groups": {
     "today": "Today",
@@ -67,7 +87,7 @@
     "clear": "Clear",
     "cleared": "Cleared"
   },
-  "hint": "Click any row to open the related issue or project. You can also mark it read, snooze it, accept a handoff, or clear the signal directly.",
+  "hint": "Click any row to open the related issue, project, workflow, or doc. You can also mark it read, snooze it, accept a handoff, or clear the signal directly.",
   "states": {
     "loading": "Loading inbox...",
     "errorTitle": "Failed to load the inbox",

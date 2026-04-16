@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "lint:i18n": "node scripts/validate-i18n-placeholders.js"
+    "lint:i18n": "node scripts/validate-i18n-placeholders.js",
+    "test:unit": "rm -rf node_modules/.cache/unit-tests && tsc -p tsconfig.unit-tests.json && node --test node_modules/.cache/unit-tests/components/shared/docs/doc-navigation-utils.test.js node_modules/.cache/unit-tests/components/workflow/workflow-doc-utils.test.js"
   },
   "dependencies": {
     "@blocknote/core": "^0.32.0",

@@ -11,6 +11,7 @@ import DocsProvider, {
 import DocsSidebar from "./DocsSidebar";
 import DocsTabs from "./DocsTabs";
 import DocsEditor from "./DocsEditor";
+import DocCreateDialog from "./DocCreateDialog";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import AmbientGlow from "@/components/global/AmbientGlow";
 import { useDocStore } from "@/stores/doc-store";
@@ -129,7 +130,8 @@ function DocsSourceSwitcher({
 function PersonalDocsOverviewPage() {
   const tDocs = useTranslations("docs");
   const locale = useLocale();
-  const { documents, createDoc, openDoc } = useDocs();
+  const { documents, openDoc, projectId } = useDocs();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // Split the overview into root-level docs and recent updates.
   const rootDocs = documents.filter((doc) => !doc.parentDocument);
@@ -142,7 +144,7 @@ function PersonalDocsOverviewPage() {
   };
 
   const handleCreateNewDoc = async () => {
-    await createDoc(tDocs("creation.newDoc"));
+    setIsCreateDialogOpen(true);
   };
 
   return (
@@ -324,6 +326,12 @@ function PersonalDocsOverviewPage() {
           </div>
         )}
       </div>
+      <DocCreateDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        projectId={projectId}
+        defaultTemplateKey={projectId ? "project-brief-v1" : "blank"}
+      />
     </DocsPageFrame>
   );
 }
@@ -331,7 +339,8 @@ function PersonalDocsOverviewPage() {
 function TeamDocsOverviewPage() {
   const tDocs = useTranslations("docs");
   const locale = useLocale();
-  const { documents, createDoc, openDoc } = useDocs();
+  const { documents, openDoc, projectId } = useDocs();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // Split the overview into root-level docs and recent updates.
   const rootDocs = documents.filter((doc) => !doc.parentDocument);
@@ -344,7 +353,7 @@ function TeamDocsOverviewPage() {
   };
 
   const handleCreateNewDoc = async () => {
-    await createDoc(tDocs("creation.newTeamDoc"));
+    setIsCreateDialogOpen(true);
   };
 
   return (
@@ -526,6 +535,12 @@ function TeamDocsOverviewPage() {
           </div>
         )}
       </div>
+      <DocCreateDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        projectId={projectId}
+        defaultTemplateKey={projectId ? "project-brief-v1" : "blank"}
+      />
     </DocsPageFrame>
   );
 }
@@ -533,7 +548,8 @@ function TeamDocsOverviewPage() {
 function TeamPersonalDocsOverviewPage() {
   const tDocs = useTranslations("docs");
   const locale = useLocale();
-  const { documents, createDoc, openDoc } = useDocs();
+  const { documents, openDoc, projectId } = useDocs();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // Split the overview into root-level docs and recent updates.
   const rootDocs = documents.filter((doc) => !doc.parentDocument);
@@ -546,7 +562,7 @@ function TeamPersonalDocsOverviewPage() {
   };
 
   const handleCreateNewDoc = async () => {
-    await createDoc(tDocs("creation.newPersonalDoc"));
+    setIsCreateDialogOpen(true);
   };
 
   return (
@@ -730,6 +746,12 @@ function TeamPersonalDocsOverviewPage() {
           </div>
         )}
       </div>
+      <DocCreateDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        projectId={projectId}
+        defaultTemplateKey={projectId ? "project-brief-v1" : "blank"}
+      />
     </DocsPageFrame>
   );
 }

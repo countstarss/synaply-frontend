@@ -289,6 +289,13 @@
       "copySuccess": "코딩 핸드오프 프롬프트가 다음과 같습니다. 복사됨.",
       "copyAction": "Claude 코드/Codex에 대한 복사본"
     },
+    "docCards": {
+      "title": "핵심 문서",
+      "subtitle": "review packet, handoff packet, decision log 를 이 issue 에 직접 연결해 채팅에 흩어지지 않게 합니다.",
+      "created": "issue 문서를 만들었습니다.",
+      "createFailed": "issue 문서를 만들지 못했습니다.",
+      "createForbidden": "여기에서는 issue 문서를 만들 권한이 없습니다."
+    },
     "footer": {
       "createdAt": "작성됨: {value}",
       "updatedAt": "업데이트됨: {value}"

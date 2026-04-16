@@ -289,6 +289,13 @@
       "copySuccess": "The coding handoff prompt has been copied.",
       "copyAction": "Copy for Claude Code / Codex"
     },
+    "docCards": {
+      "title": "Key docs",
+      "subtitle": "Keep the review packet, handoff packet, and decision note anchored to the issue instead of scattering them across chat.",
+      "created": "Issue doc created.",
+      "createFailed": "Failed to create the issue doc.",
+      "createForbidden": "You do not have permission to create an issue doc here."
+    },
     "footer": {
       "createdAt": "Created: {value}",
       "updatedAt": "Updated: {value}"

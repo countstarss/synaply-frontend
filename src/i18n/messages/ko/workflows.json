@@ -154,6 +154,12 @@
       "publishFailed": "워크플로를 게시하지 못했습니다."
     }
   },
+  "docCards": {
+    "title": "워크플로 문서",
+    "subtitle": "handoff packet, review packet, release checklist 를 workflow 템플릿에 직접 연결해 재사용해도 문맥이 사라지지 않게 합니다.",
+    "created": "워크플로 문서를 만들었습니다.",
+    "createFailed": "워크플로 문서를 만들지 못했습니다."
+  },
   "nodeDetails": {
     "title": "노드 세부정보",
     "nodeFallback": "마디",

@@ -26,6 +26,8 @@ export const getDocsQueryKey = (
   params.context ?? "all",
   params.workspaceType ?? "all",
   params.projectId ?? "all",
+  params.issueId ?? "all",
+  params.workflowId ?? "all",
   params.includeArchived ? "archived" : "active",
 ] as const;
 

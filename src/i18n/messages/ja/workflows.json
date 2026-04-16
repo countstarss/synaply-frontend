@@ -154,6 +154,12 @@
       "publishFailed": "ワークフローの公開に失敗しました。"
     }
   },
+  "docCards": {
+    "title": "ワークフロードキュメント",
+    "subtitle": "handoff packet、review packet、release checklist を workflow テンプレートに結び付け、再利用しても文脈が失われないようにします。",
+    "created": "ワークフロードキュメントを作成しました。",
+    "createFailed": "ワークフロードキュメントの作成に失敗しました。"
+  },
   "nodeDetails": {
     "title": "Node詳細",
     "nodeFallback": "Node",

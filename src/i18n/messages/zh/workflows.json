@@ -154,6 +154,12 @@
       "publishFailed": "无法发布工作流程。"
     }
   },
+  "docCards": {
+    "title": "工作流文档",
+    "subtitle": "把交接包、评审包和发布检查清单直接挂在 workflow 模板上，后续复用时不会丢上下文。",
+    "created": "已创建工作流文档。",
+    "createFailed": "创建工作流文档失败。"
+  },
   "nodeDetails": {
     "title": "节点详情",
     "nodeFallback": "节点",

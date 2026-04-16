@@ -12,7 +12,112 @@
     "newDoc": "새로 만들기 document",
     "newFolder": "새 폴더",
     "newTeamDoc": "새 팀 문서",
-    "newPersonalDoc": "새 개인 문서"
+    "newPersonalDoc": "새 개인 문서",
+    "dialog": {
+      "title": "구조화된 문서 만들기",
+      "description": "이 문서가 어떤 협업 맥락을 담아야 하는지 고르면 Synaply가 시작 구조를 넣어줍니다.",
+      "templateLabel": "템플릿",
+      "templatePlaceholder": "템플릿 선택",
+      "titleLabel": "문서 제목",
+      "titlePlaceholder": "문서 제목 입력",
+      "projectHint": "이 문서는 현재 프로젝트에 자동으로 연결됩니다.",
+      "parentHint": "이 문서는 현재 폴더 안에 생성됩니다.",
+      "cancel": "취소",
+      "create": "문서 만들기",
+      "creating": "생성 중...",
+      "createFailed": "문서를 생성하지 못했습니다."
+    },
+    "template": {
+      "blank": {
+        "label": "빈 문서",
+        "description": "자유로운 메모나 보충 설명이 필요할 때 빈 페이지에서 시작합니다.",
+        "title": "새 문서"
+      },
+      "projectBrief": {
+        "label": "프로젝트 brief",
+        "description": "왜 이 프로젝트가 존재하는지, 범위가 어디까지인지, 성공을 무엇으로 판단할지 정리합니다.",
+        "title": "프로젝트 brief"
+      },
+      "decisionLog": {
+        "label": "Decision log",
+        "description": "결론, 이유, 영향 범위, 후속 조치를 남겨 handoff 때 배경 설명을 줄입니다.",
+        "title": "Decision log"
+      },
+      "reviewPacket": {
+        "label": "Review packet",
+        "description": "리뷰에 필요한 배경, 변경 요약, 집중 질문을 한곳에 모읍니다.",
+        "title": "Review packet"
+      },
+      "handoffPacket": {
+        "label": "Handoff packet",
+        "description": "다음 owner가 ready 상태, 의존성, 첫 행동을 바로 파악할 수 있게 합니다.",
+        "title": "Handoff packet"
+      },
+      "releaseChecklist": {
+        "label": "Release checklist",
+        "description": "배포 범위, 리스크 점검, owner, 배포 후 관찰 항목을 한곳에 유지합니다.",
+        "title": "Release checklist"
+      }
+    },
+    "templateContent": {
+      "projectBrief": {
+        "intro": "이 brief에는 이번 일이 무엇을 앞으로 밀어야 하는지, 그리고 왜 지금 팀이 여기에 정렬되어야 하는지 적습니다.",
+        "goal": "[목표와 범위] 전달 목표, 범위 경계, 이번에 의도적으로 포함하지 않는 내용을 적습니다.",
+        "scope": "[핵심 맥락] 현재 배경, 제약, 의존성, 팀이 공유해야 하는 가정을 정리합니다.",
+        "success": "[성공 신호] 어떤 상태가 ready / 성공 / 안전한 출시를 의미하는지 설명합니다.",
+        "openQuestions": "[열린 질문] 아직 남아 있는 쟁점, 결정, 리스크를 기록합니다."
+      },
+      "decisionLog": {
+        "intro": "이 기록은 다음 담당자가 전체 대화를 다시 보지 않아도 why를 이해할 수 있게 남깁니다.",
+        "decision": "[결론] 이번 결정을 한 문장으로 적습니다.",
+        "context": "[배경] 어떤 변화, 압력, tradeoff가 이 결정을 만들었는지 설명합니다.",
+        "rationale": "[이유] 왜 이 선택지가 다른 대안보다 나았는지 적습니다.",
+        "impact": "[영향 대상] 영향을 받는 project / issue / workflow / release와 다음으로 바뀌는 점을 적습니다.",
+        "followUp": "[후속 조치] 다음 액션, owner, 다시 검토할 시점을 기록합니다."
+      },
+      "reviewPacket": {
+        "intro": "reviewer가 추가 설명을 기다리지 않고 비동기로 검토를 진행할 수 있도록 최소한의 맥락을 모읍니다.",
+        "goal": "[리뷰 목표] 어떤 종류의 리뷰가 필요한지, 어떤 결론이 나오길 원하는지 적습니다.",
+        "changeSummary": "[변경 요약] 이번 제안, 구현, 산출물에서 무엇이 바뀌었는지 요약합니다.",
+        "focusQuestions": "[집중 확인 항목] reviewer가 특히 봐야 할 질문, 리스크, 경계 상황을 적습니다.",
+        "decision": "[리뷰 결론 / 수정 요청] 결론, 수정 요청, 승인 메모를 남기는 자리입니다.",
+        "nextStep": "[다음 handoff] 리뷰 이후 누가 무엇을 이어받아야 하는지 적습니다."
+      },
+      "handoffPacket": {
+        "intro": "다음 owner가 추가 동기화 없이 바로 움직일 수 있도록 필요한 정보를 이 packet에 정리합니다.",
+        "target": "[인계 대상] 누구에게 넘기는지, 그 사람이 무엇을 맡게 되는지 적습니다.",
+        "readyNow": "[지금 바로 신뢰 가능한 것] 이미 완료되고 검증되어 다음 owner가 전제로 삼아도 되는 내용을 정리합니다.",
+        "dependencies": "[의존성과 blocker] 아직 남아 있는 blocker, 리스크, 결정, 외부 입력을 적습니다.",
+        "links": "[링크와 근거] issue, doc, design, PR, release 맥락 중 먼저 읽어야 할 것을 연결합니다.",
+        "receiverChecklist": "[수신자 체크리스트] 인계 직후 먼저 수행해야 할 확인과 액션을 적습니다."
+      },
+      "releaseChecklist": {
+        "intro": "배포 전후의 핵심 신호를 한곳에 모아 각 역할이 현재 readiness를 스스로 판단할 수 있게 합니다.",
+        "scope": "[배포 범위] 무엇을 배포하는지, 무엇은 제외되는지, 어떤 환경과 대상이 영향을 받는지 적습니다.",
+        "risk": "[리스크와 보호장치] 주요 리스크, 롤백 경로, 모니터링 포인트, 협업 의존성을 기록합니다.",
+        "goNoGo": "[Go / No-go 체크] 배포 전에 반드시 만족해야 하는 확인 항목을 적습니다.",
+        "ownerMap": "[Owner 맵] 승인, 실행, 공지, 배포 후 후속 대응을 누가 맡는지 명확히 합니다.",
+        "postRelease": "[배포 후 관찰] 배포 직후 볼 지표와 어떤 임계치에서 바로 대응해야 하는지 적습니다."
+      }
+    }
+  },
+  "docKind": {
+    "general": "일반 문서",
+    "projectBrief": "프로젝트 brief",
+    "decisionLog": "Decision log",
+    "reviewPacket": "Review packet",
+    "handoffPacket": "Handoff packet",
+    "releaseChecklist": "Release checklist"
+  },
+  "consumption": {
+    "summaryPrefix": "digest 에 바로 쓸 수 있는 문서 변화: {items}",
+    "summaryEmpty": "아직 구조화된 문서가 없습니다. 다음 담당자가 가장 먼저 필요로 할 packet 부터 만드세요.",
+    "summaryCount": "{count}개의 {label}",
+    "emptyTitle": "아직 없음",
+    "emptyDescription": "이 유형의 협업 문서는 아직 만들어지지 않았습니다.",
+    "updatedAt": "{value} 업데이트",
+    "openDoc": "문서 열기",
+    "createDoc": "문서 만들기"
   },
   "overview": {
     "shared": {

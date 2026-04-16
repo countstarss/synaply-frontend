@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { IssueDescriptionTemplateAction } from "@/components/shared/issue/IssueDescriptionTemplateAction";
+import { IssueDocKindPanel } from "@/components/shared/issue/IssueDocKindPanel";
 import { useAuth } from "@/context/AuthContext";
 import { useIssue, useUpdateIssue } from "@/hooks/useIssueApi";
 import { useIssueStates } from "@/hooks/useIssueStates";
@@ -524,6 +525,16 @@ export default function NormalIssueDetail({
       includeArchived: false,
     },
     { enabled: isOpen && !!workspaceId },
+  );
+  const { data: issueDocs = [] } = useDocsTree(
+    workspaceId,
+    {
+      context: docsContext,
+      workspaceType: workspaceType === "TEAM" ? "TEAM" : "PERSONAL",
+      issueId,
+      includeArchived: false,
+    },
+    { enabled: isOpen && !!workspaceId && !!issueId },
   );
   const updateIssueMutation = useUpdateIssue();
 
@@ -1384,21 +1395,32 @@ export default function NormalIssueDetail({
           </ScrollArea>
         </Card>
 
-        <Card className="flex min-h-[320px] flex-col overflow-hidden border-app-border bg-app-content-bg shadow-none xl:min-h-0">
-          <CardHeader className="border-b border-app-border p-4">
-            <CardTitle className="flex items-center gap-2 text-lg text-app-text-primary">
-              <RiFileTextLine className="h-5 w-5" />
-              {tIssues("tabs.discussion.title")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="min-h-0 flex-1 p-0">
-            <DiscussionTab
-              issueId={issueId}
-              workspaceId={workspaceId}
-              members={discussionMembers}
-            />
-          </CardContent>
-        </Card>
+        <div className="flex min-h-[320px] flex-col gap-2 xl:min-h-0">
+          <IssueDocKindPanel
+            workspaceId={workspaceId}
+            workspaceType={workspaceType === "TEAM" ? "TEAM" : "PERSONAL"}
+            issue={localIssue}
+            docs={issueDocs}
+            locale={locale}
+            canCreate={canEditIssue}
+          />
+
+          <Card className="flex min-h-[320px] flex-1 flex-col overflow-hidden border-app-border bg-app-content-bg shadow-none xl:min-h-0">
+            <CardHeader className="border-b border-app-border p-4">
+              <CardTitle className="flex items-center gap-2 text-lg text-app-text-primary">
+                <RiFileTextLine className="h-5 w-5" />
+                {tIssues("tabs.discussion.title")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="min-h-0 flex-1 p-0">
+              <DiscussionTab
+                issueId={issueId}
+                workspaceId={workspaceId}
+                members={discussionMembers}
+              />
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3 rounded-lg border border-app-border bg-app-content-bg px-4 py-2 text-xs text-app-text-muted">

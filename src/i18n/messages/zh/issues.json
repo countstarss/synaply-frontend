@@ -289,6 +289,13 @@
       "copySuccess": "编码交接提示已已复制.",
       "copyAction": "克劳德代码/Codex的副本"
     },
+    "docCards": {
+      "title": "关键文档",
+      "subtitle": "把评审包、交接包和决策记录直接挂在这个 issue 上，不再散落在聊天和口头背景里。",
+      "created": "已创建 issue 文档。",
+      "createFailed": "创建 issue 文档失败。",
+      "createForbidden": "你当前没有权限在这里创建 issue 文档。"
+    },
     "footer": {
       "createdAt": "已创建：{value}",
       "updatedAt": "已更新：{value}"

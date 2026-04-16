@@ -12,7 +12,112 @@
     "newDoc": "新しいドキュメント",
     "newFolder": "新規フォルダー",
     "newTeamDoc": "新しいチーム ドキュメント",
-    "newPersonalDoc": "新しい個人ドキュメント"
+    "newPersonalDoc": "新しい個人ドキュメント",
+    "dialog": {
+      "title": "構造化ドキュメントを作成",
+      "description": "このドキュメントが担う協業コンテキストを選ぶと、Synaply が初期構成を挿入します。",
+      "templateLabel": "テンプレート",
+      "templatePlaceholder": "テンプレートを選択",
+      "titleLabel": "ドキュメント名",
+      "titlePlaceholder": "ドキュメント名を入力",
+      "projectHint": "このドキュメントは現在のプロジェクトに自動で紐づきます。",
+      "parentHint": "このドキュメントは現在のフォルダー内に作成されます。",
+      "cancel": "キャンセル",
+      "create": "ドキュメントを作成",
+      "creating": "作成中...",
+      "createFailed": "ドキュメントの作成に失敗しました。"
+    },
+    "template": {
+      "blank": {
+        "label": "空白ドキュメント",
+        "description": "自由記述のメモや補足を残したいときに、空のページから始めます。",
+        "title": "新しいドキュメント"
+      },
+      "projectBrief": {
+        "label": "プロジェクト brief",
+        "description": "なぜこのプロジェクトが存在し、何がスコープで、成功をどう判断するかを揃えます。",
+        "title": "プロジェクト brief"
+      },
+      "decisionLog": {
+        "label": "Decision log",
+        "description": "結論、理由、影響範囲、次のアクションを残し、handoff 時の背景説明を減らします。",
+        "title": "Decision log"
+      },
+      "reviewPacket": {
+        "label": "Review packet",
+        "description": "レビューに必要な背景、変更点、確認してほしい論点をまとめます。",
+        "title": "Review packet"
+      },
+      "handoffPacket": {
+        "label": "Handoff packet",
+        "description": "次の owner が ready 状態、依存関係、最初の一手をすぐ把握できるようにします。",
+        "title": "Handoff packet"
+      },
+      "releaseChecklist": {
+        "label": "Release checklist",
+        "description": "リリース範囲、リスク確認、owner、公開後の監視項目を一か所に集めます。",
+        "title": "Release checklist"
+      }
+    },
+    "templateContent": {
+      "projectBrief": {
+        "intro": "この brief では、この仕事で何を前に進めるのか、そして今なぜチームの足並みを揃える必要があるのかを書きます。",
+        "goal": "[目標と範囲] 目標、スコープ境界、今回あえて扱わない内容を記載します。",
+        "scope": "[主要コンテキスト] 背景、制約、依存関係、前提条件をまとめます。",
+        "success": "[成功シグナル] どの状態になれば ready / 成功 / 安全にリリース可能と判断するかを書きます。",
+        "openQuestions": "[未解決事項] まだ残っている論点、決定事項、リスクを記録します。"
+      },
+      "decisionLog": {
+        "intro": "この記録は、次の担当者が議論を最初から追わなくても why を理解できるように残します。",
+        "decision": "[結論] 今回の決定を一文で書きます。",
+        "context": "[背景] どんな変化、圧力、tradeoff がこの決定を生んだかを説明します。",
+        "rationale": "[理由] なぜこの案が他の選択肢より良かったかを書きます。",
+        "impact": "[影響対象] 影響を受ける project / issue / workflow / release と、次に何が変わるかを示します。",
+        "followUp": "[次のアクション] 次の行動、owner、見直しタイミングを残します。"
+      },
+      "reviewPacket": {
+        "intro": "reviewer が追加確認なしで非同期レビューを進められる最小コンテキストをまとめます。",
+        "goal": "[レビュー目的] どの種類のレビューが必要で、どんな判断を得たいかを明確にします。",
+        "changeSummary": "[変更概要] 今回の提案、実装、成果物で何が変わったかを要約します。",
+        "focusQuestions": "[重点確認] reviewer に特に見てほしい論点、リスク、境界ケースを書きます。",
+        "decision": "[レビュー結果 / 修正依頼] 結論、修正依頼、承認メモを残す場所です。",
+        "nextStep": "[次の handoff] レビュー後に誰が何を引き継ぐかを書きます。"
+      },
+      "handoffPacket": {
+        "intro": "次の owner が追加の同期なしで動き出せるように、この packet で必要な情報を渡します。",
+        "target": "[引き継ぎ先] 誰に渡すのか、その人が何を引き受けるのかを書きます。",
+        "readyNow": "[今すぐ信頼できること] すでに完了し、検証され、次の owner が前提にしてよい内容をまとめます。",
+        "dependencies": "[依存関係と blocker] 未解決の blocker、リスク、決定、外部入力を列挙します。",
+        "links": "[リンクと根拠] issue、doc、design、PR、release 文脈のうち、まず読むべきものを示します。",
+        "receiverChecklist": "[受け手チェックリスト] 受け取った直後に行うべき最初の確認やアクションを書きます。"
+      },
+      "releaseChecklist": {
+        "intro": "リリース前後の重要シグナルを一か所にまとめ、各ロールが現在の readiness を自分で確認できるようにします。",
+        "scope": "[リリース範囲] 何を出すか、何を出さないか、どの環境や対象に影響するかを書きます。",
+        "risk": "[リスクとガード] 主要リスク、ロールバック手段、監視ポイント、連携依存を記録します。",
+        "goNoGo": "[Go / No-go チェック] リリース前に必ず満たすべき確認項目を並べます。",
+        "ownerMap": "[Owner マップ] 承認、実行、告知、リリース後のフォローを誰が持つかを明確にします。",
+        "postRelease": "[公開後の監視] 公開直後に見る指標と、どの閾値で対応が必要かを書きます。"
+      }
+    }
+  },
+  "docKind": {
+    "general": "一般ドキュメント",
+    "projectBrief": "プロジェクト brief",
+    "decisionLog": "Decision log",
+    "reviewPacket": "Review packet",
+    "handoffPacket": "Handoff packet",
+    "releaseChecklist": "Release checklist"
+  },
+  "consumption": {
+    "summaryPrefix": "digest に使えるドキュメント更新: {items}",
+    "summaryEmpty": "まだ構造化ドキュメントがありません。次の担当者に一番必要な packet から作成してください。",
+    "summaryCount": "{count} 件の{label}",
+    "emptyTitle": "まだありません",
+    "emptyDescription": "この種類の協力ドキュメントはまだ作成されていません。",
+    "updatedAt": "{value} に更新",
+    "openDoc": "ドキュメントを開く",
+    "createDoc": "ドキュメントを作成"
   },
   "overview": {
     "shared": {

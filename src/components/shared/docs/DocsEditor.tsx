@@ -6,6 +6,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useDocs, DocsDocument } from "./DocsContext";
 import DocsToolbar from "./DocsToolbar";
 import FolderIntro from "./FolderIntro";
+import { Badge } from "@/components/ui/badge";
+import { getDocKindLabel } from "./doc-template-config";
 
 function DocsEditorLoadingState() {
   const tDocs = useTranslations("docs");
@@ -39,6 +41,7 @@ export default function DocsEditor({
   const [title, setTitle] = useState(doc.title);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isSavingTitle, setIsSavingTitle] = useState(false);
+  const showKindBadge = doc.type === "document" && doc.kind !== "GENERAL";
 
   useEffect(() => {
     setTitle(doc.title);
@@ -130,20 +133,30 @@ export default function DocsEditor({
             >
               {title || tDocs("editor.untitled")}
             </h1>
-            <div className="flex items-center justify-between mt-1">
-              <p className="text-sm text-app-text-muted">
-                {doc.canEdit
-                  ? tDocs("editor.clickToEdit")
-                  : `${doc.type === "folder" ? tDocs("editor.meta.folder") : tDocs("editor.meta.document")} • ${
-                      doc.visibility === "PRIVATE"
-                        ? tDocs("editor.meta.private")
-                        : doc.visibility === "TEAM_READONLY"
-                        ? tDocs("editor.meta.teamReadonly")
-                        : doc.visibility === "TEAM_EDITABLE"
-                        ? tDocs("editor.meta.teamEditable")
-                        : tDocs("editor.meta.public")
-                    }`}
-              </p>
+            <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm text-app-text-muted">
+                  {doc.canEdit
+                    ? tDocs("editor.clickToEdit")
+                    : `${doc.type === "folder" ? tDocs("editor.meta.folder") : tDocs("editor.meta.document")} • ${
+                        doc.visibility === "PRIVATE"
+                          ? tDocs("editor.meta.private")
+                          : doc.visibility === "TEAM_READONLY"
+                            ? tDocs("editor.meta.teamReadonly")
+                            : doc.visibility === "TEAM_EDITABLE"
+                              ? tDocs("editor.meta.teamEditable")
+                              : tDocs("editor.meta.public")
+                      }`}
+                </p>
+                {showKindBadge ? (
+                  <Badge
+                    variant="outline"
+                    className="border-app-border bg-app-bg text-app-text-secondary"
+                  >
+                    {getDocKindLabel(doc.kind, tDocs)}
+                  </Badge>
+                ) : null}
+              </div>
               <p className="text-xs text-app-text-muted">
                 {tDocs("editor.updatedAt", {
                   value: new Date(doc.updatedAt).toLocaleString(locale),

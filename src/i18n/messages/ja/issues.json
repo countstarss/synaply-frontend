@@ -289,6 +289,13 @@
       "copySuccess": "コーディングのハンドオフ プロンプトは次のとおりです。コピーしました。",
       "copyAction": "クロード コード / Codex のコピー"
     },
+    "docCards": {
+      "title": "主要ドキュメント",
+      "subtitle": "レビュー packet、handoff packet、decision log をこの issue に直接結び付け、チャットに散らさないようにします。",
+      "created": "issue ドキュメントを作成しました。",
+      "createFailed": "issue ドキュメントの作成に失敗しました。",
+      "createForbidden": "ここで issue ドキュメントを作成する権限がありません。"
+    },
     "footer": {
       "createdAt": "作成: {value}",
       "updatedAt": "更新: {value}"

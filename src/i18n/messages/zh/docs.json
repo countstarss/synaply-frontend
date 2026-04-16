@@ -12,7 +12,112 @@
     "newDoc": "新文档",
     "newFolder": "New文件夹",
     "newTeamDoc": "新团队文档",
-    "newPersonalDoc": "新个人文档"
+    "newPersonalDoc": "新个人文档",
+    "dialog": {
+      "title": "创建结构化文档",
+      "description": "选择这份文档要承载的协作语义，Synaply 会自动插入一套起步结构。",
+      "templateLabel": "模板",
+      "templatePlaceholder": "选择模板",
+      "titleLabel": "文档标题",
+      "titlePlaceholder": "输入文档标题",
+      "projectHint": "这份文档会自动绑定到当前项目。",
+      "parentHint": "这份文档会创建在当前文件夹下。",
+      "cancel": "取消",
+      "create": "创建文档",
+      "creating": "创建中...",
+      "createFailed": "创建文档失败。"
+    },
+    "template": {
+      "blank": {
+        "label": "空白文档",
+        "description": "从空白页开始，适合自由记录临时想法或补充说明。",
+        "title": "新文档"
+      },
+      "projectBrief": {
+        "label": "项目 brief",
+        "description": "说明这个项目为什么存在、边界是什么，以及团队要以什么标准判断它推进得对不对。",
+        "title": "项目 brief"
+      },
+      "decisionLog": {
+        "label": "决策记录",
+        "description": "把结论、原因、影响范围和后续动作记清楚，减少下一次 handoff 时的背景补课。",
+        "title": "决策记录"
+      },
+      "reviewPacket": {
+        "label": "评审包",
+        "description": "把评审需要的上下文、变化摘要和关注问题提前收拢，方便异步 review。",
+        "title": "评审包"
+      },
+      "handoffPacket": {
+        "label": "交接包",
+        "description": "让下一位 owner 一眼看到当前 ready 状态、依赖项和接手后的第一步。",
+        "title": "交接包"
+      },
+      "releaseChecklist": {
+        "label": "发布检查清单",
+        "description": "把上线范围、风险检查、owner 和发布后观察项放在一处维护。",
+        "title": "发布检查清单"
+      }
+    },
+    "templateContent": {
+      "projectBrief": {
+        "intro": "先用这份 brief 说明这项工作要推动什么，以及为什么团队现在要围绕它形成一致。",
+        "goal": "[目标与范围] 说明交付目标、范围边界，以及这次明确不覆盖的内容。",
+        "scope": "[关键背景] 补充当前背景、约束条件、依赖项和团队需要默认成立的假设。",
+        "success": "[成功信号] 写清楚什么状态代表这项工作已经 ready、达标或可以安全上线。",
+        "openQuestions": "[待解问题] 记录还未收敛的问题、决策点或需要继续跟进的风险。"
+      },
+      "decisionLog": {
+        "intro": "用这份记录沉淀一条明确 decision，让下一位接手的人不用重放整个讨论，也能理解 why。",
+        "decision": "[结论] 用一句话写清楚本次决策本身。",
+        "context": "[背景] 说明是什么变化、压力或 tradeoff 触发了这次决策。",
+        "rationale": "[原因] 解释为什么当前方案胜过其他备选项。",
+        "impact": "[影响对象] 标记受影响的项目、issue、workflow 或 release，并说明接下来哪里要跟着调整。",
+        "followUp": "[后续动作] 记录下一步动作、owner，以及何时需要重新审视这条决策。"
+      },
+      "reviewPacket": {
+        "intro": "把 reviewer 需要的最小上下文准备好，让评审能异步推进，而不是继续追问背景。",
+        "goal": "[评审目标] 说明你需要哪一类 review，以及希望这次评审产出什么结论。",
+        "changeSummary": "[这次变更] 总结本次方案、实现或产物到底改了什么。",
+        "focusQuestions": "[重点关注] 列出希望 reviewer 重点查看的问题、风险或边界场景。",
+        "decision": "[评审结论 / 修改要求] 预留位置记录结论、修改意见或通过说明。",
+        "nextStep": "[下一步交接] 写清楚评审后应该由谁接手、往哪里继续推进。"
+      },
+      "handoffPacket": {
+        "intro": "用这份交接包让下一位 owner 不用再开一场同步，也能马上进入有效推进。",
+        "target": "[交接对象] 说明这次交接是给谁的，以及对方接手后要负责什么。",
+        "readyNow": "[当前已就绪] 总结哪些内容已经完成、验证过、可以被下一位直接信任。",
+        "dependencies": "[依赖与阻塞] 列出还没解决的 blocker、风险、决策或外部输入。",
+        "links": "[链接与证据] 附上 issue、文档、设计、PR 或 release 上下文，说明接手者先看什么。",
+        "receiverChecklist": "[接手检查单] 写清楚接手后第一轮需要完成的检查和动作。"
+      },
+      "releaseChecklist": {
+        "intro": "把上线前后的关键信号放在同一处，让产品、设计、工程、运营都能自助判断当前 readiness。",
+        "scope": "[发布范围] 说明这次要发什么、明确不发什么，以及影响哪些环境或人群。",
+        "risk": "[风险与保障] 记录当前风险、回滚路径、监控点和协作依赖。",
+        "goNoGo": "[Go / No-go 检查] 列出上线前必须满足的检查项。",
+        "ownerMap": "[Owner 分工] 写清楚谁负责审批、执行、沟通和发布后跟进。",
+        "postRelease": "[发布后观察] 记录上线后要盯哪些信号，什么阈值意味着需要立即处理。"
+      }
+    }
+  },
+  "docKind": {
+    "general": "通用文档",
+    "projectBrief": "项目 brief",
+    "decisionLog": "决策记录",
+    "reviewPacket": "评审包",
+    "handoffPacket": "交接包",
+    "releaseChecklist": "发布检查清单"
+  },
+  "consumption": {
+    "summaryPrefix": "可直接进入 digest 的文档变化：{items}",
+    "summaryEmpty": "还没有结构化文档挂进来，先补最能支撑下一次协作推进的一份。",
+    "summaryCount": "{count} 份{label}",
+    "emptyTitle": "尚未沉淀",
+    "emptyDescription": "这类协作文档还没有建立。",
+    "updatedAt": "更新于 {value}",
+    "openDoc": "打开文档",
+    "createDoc": "创建文档"
   },
   "overview": {
     "shared": {

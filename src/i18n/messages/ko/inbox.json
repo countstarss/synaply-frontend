@@ -8,10 +8,13 @@
   "views": {
     "primary": "기본",
     "other": "기타",
+    "digest": "Digest",
     "later": "나중에",
     "cleared": "삭제됨"
   },
   "viewSubLabel": {
+    "digestCount": "{count}개의 digest 요약",
+    "digestEmpty": "digest 요약이 없습니다",
     "laterCount": "{count}개의 일시 중지된 항목",
     "laterEmpty": "일시 중지된 항목 없음 items",
     "clearedCount": "{count}개의 지워진 항목",
@@ -28,6 +31,10 @@
       "title": "나중에 주의가 필요한 업데이트가 없습니다",
       "description": "위험, 방해 요소 및 팔로우 신호는 두 번째 패스가 필요할 때 여기에 모입니다."
     },
+    "digest": {
+      "title": "아직 볼 문서 digest 가 없습니다",
+      "description": "같은 project, issue, workflow 안에 문서 변화가 쌓이면 여기서 하나의 digest 로 합쳐 보여줍니다."
+    },
     "later": {
       "title": "지금은 일시 중지된 항목이 없습니다",
       "description": "신호를 읽었지만 흐름을 방해해서는 안 되는 경우 여기로 이동할 수 있습니다. 나중을 위해."
@@ -40,7 +47,20 @@
   "source": {
     "workflow": "워크플로",
     "project": "프로젝트",
-    "issue": "문제"
+    "issue": "문제",
+    "doc": "문서"
+  },
+  "docTitles": {
+    "reviewReady": "review packet 준비 완료: {title}",
+    "handoffReady": "handoff packet 준비 완료: {title}",
+    "releaseUpdated": "release checklist 업데이트: {title}",
+    "decisionUpdated": "decision log 업데이트: {title}",
+    "digestGenerated": "최근 {count}개의 협업 문서가 업데이트되었습니다"
+  },
+  "digest": {
+    "summaryPrefix": "{items} 포함",
+    "summaryCount": "{count}개의 {label}",
+    "summaryLatest": "최근 업데이트: {title}"
   },
   "groups": {
     "today": "오늘",
@@ -67,7 +87,7 @@
     "clear": "분명한",
     "cleared": "삭제됨"
   },
-  "hint": "관련 문제나 프로젝트를 열려면 행을 클릭하세요. 읽음으로 표시하거나 일시 중지하거나 전달을 수락하거나 신호를 직접 지울 수도 있습니다.",
+  "hint": "행을 클릭하면 관련 issue, project, workflow, doc 를 바로 열 수 있습니다. 읽음 처리, 일시 중지, handoff 수락, signal 지우기도 여기서 할 수 있습니다.",
   "states": {
     "loading": "받은 편지함 로드 중...",
     "errorTitle": "받은 편지함을 로드하지 못했습니다",

@@ -40,6 +40,13 @@ import {
   buildProjectTimelineEntries,
   formatProjectRelativeTime,
 } from "@/components/projects/project-activity-utils";
+import {
+  buildDocTemplateContent,
+  findDocTemplateDefinition,
+  resolveDocTemplateTitle,
+} from "@/components/shared/docs/doc-template-config";
+import { openDocRoute } from "@/components/shared/docs/doc-navigation";
+import type { DocKindCardSlot } from "@/components/shared/docs/DocKindCards";
 import { IssueType, VisibilityType } from "@/types/prisma";
 
 interface ProjectDetailViewProps {
@@ -86,13 +93,13 @@ export function ProjectDetailView({
   showBackButton = true,
 }: ProjectDetailViewProps) {
   const tProjects = useTranslations("projects");
+  const tDocs = useTranslations("docs");
   const locale = useLocale();
   const router = useRouter();
   const setActiveDocId = useDocStore((state) => state.setActiveDocId);
   const createProjectDoc = useCreateDocMutation();
   const docsContext = workspaceType === "PERSONAL" ? "personal" : "team";
   const projectDocsRoute = buildProjectPath(selectedProject.id, "docs");
-  const docsStorageKey = `docs-open-${workspaceId}-${workspaceType}-${docsContext}-${selectedProject.id}`;
 
   const { data: projectDocs = [] } = useDocsTree(
     workspaceId,
@@ -225,14 +232,6 @@ export function ProjectDetailView({
       }, new Map<string, WorkflowRuntimeSnapshot>()),
     [displayedIssues],
   );
-  const recentProjectDocs = useMemo(
-    () =>
-      [...projectDocs]
-        .filter((doc) => doc.type === "document")
-        .sort((left, right) => right.lastEditedAt - left.lastEditedAt)
-        .slice(0, 4),
-    [projectDocs],
-  );
   const projectIssueMap = useMemo(
     () => new Map<string, Issue>(projectIssues.map((issue) => [issue.id, issue])),
     [projectIssues],
@@ -271,39 +270,45 @@ export function ProjectDetailView({
   const openProjectSync = () => router.push(buildProjectPath(selectedProject.id, "sync"));
 
   const openProjectDoc = (docId: string) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(docsStorageKey, JSON.stringify([docId]));
-    }
-
-    setActiveDocId(docId);
-    router.push(projectDocsRoute);
+    openDocRoute({
+      workspaceId,
+      workspaceType,
+      context: docsContext,
+      docId,
+      projectId: selectedProject.id,
+      router,
+      setActiveDocId,
+    });
   };
 
-  const handleCreateProjectDoc = async () => {
+  const handleCreateProjectDoc = async (
+    slot: DocKindCardSlot = {
+      kind: "PROJECT_BRIEF",
+      templateKey: "project-brief-v1",
+    },
+  ) => {
     if (!currentUserId) {
       toast.error(tProjects("detail.summary.docCreateAuthRequired"));
       return;
     }
 
+    const template = findDocTemplateDefinition(slot.templateKey);
+
     try {
       const createdDoc = await createProjectDoc.mutateAsync({
         workspaceId,
         data: {
-          title: tProjects("detail.summary.newDocTitle", {
-            name: selectedProject.name,
+          title: resolveDocTemplateTitle(slot.templateKey, tDocs, {
+            projectName: selectedProject.name,
           }),
           projectId: selectedProject.id,
+          kind: template?.kind ?? slot.kind,
+          templateKey: slot.templateKey,
           visibility:
             workspaceType === "TEAM"
               ? VisibilityType.TEAM_EDITABLE
               : VisibilityType.PRIVATE,
-          content: JSON.stringify([
-            {
-              id: "initial",
-              type: "paragraph",
-              content: [],
-            },
-          ]),
+          content: buildDocTemplateContent(slot.templateKey, tDocs),
         },
       });
 
@@ -423,13 +428,15 @@ export function ProjectDetailView({
           <ProjectCollaborationPanel
             locale={locale}
             relatedWorkflows={relatedWorkflows}
-            recentProjectDocs={recentProjectDocs}
+            projectDocs={projectDocs}
             pendingConfirmationIssues={pendingConfirmationIssues}
             workflowRunCounts={workflowRunCounts}
             workflowRuntimeByWorkflowId={workflowRuntimeByWorkflowId}
             tProjects={tProjects}
+            tDocs={tDocs}
             onOpenIssue={onOpenIssue}
             onOpenDoc={openProjectDoc}
+            onCreateProjectDoc={handleCreateProjectDoc}
             onOpenProjectDocHub={openProjectDocHub}
             onOpenProjectWorkflow={openProjectWorkflow}
           />
