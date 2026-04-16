@@ -1,101 +1,101 @@
 {
   "nav": {
-    "docs": "Docs",
-    "inbox": "Inbox",
-    "intelligence": "Intelligence",
-    "issues": "Issues",
-    "myWork": "My Work",
+    "docs": "ドキュメント",
+    "inbox": "受信トレイ",
+    "intelligence": "インテリジェンス",
+    "issues": "課題",
+    "myWork": "マイワーク",
     "projects": "プロジェクト",
     "workflows": "ワークフロー"
   },
   "sidebar": {
     "backToMain": "戻る",
-    "createTeam": "新規作成チーム",
+    "createTeam": "新しいチームを作成",
     "sections": {
       "administration": "管理",
       "general": "一般",
       "team": "チーム"
     },
     "brand": {
-      "fallbackWorkspaceName": "私のワークスペース",
+      "fallbackWorkspaceName": "自分のワークスペース",
       "loadFailed": "ワークスペースの読み込みに失敗しました",
       "personal": "個人ワークスペース",
-      "team": "チームworkspace",
-      "loadFailedDescription": "ワークスペース データをロードできませんでした。フロントエンド バックエンド URL 構成を確認するか、しばらくしてから再試行してください。",
-      "retry": "Retry",
-      "memberCount": "{count} メンバー",
+      "team": "チームワークスペース",
+      "loadFailedDescription": "ワークスペースデータを読み込めませんでした。フロントエンドとバックエンドの URL 設定を確認するか、少し待ってからもう一度お試しください。",
+      "retry": "再試行",
+      "memberCount": "{count} 人のメンバー",
       "inviteMember": "新しいメンバーを招待",
-      "emailFallback": "ユーザーの電子メール",
-      "workspaceListFailed": "ワークスペース リストのロードに失敗しました",
-      "workspaceEmpty": "このアカウントで使用できるワークスペースはまだありません。",
+      "emailFallback": "ユーザーのメールアドレス",
+      "workspaceListFailed": "ワークスペース一覧の読み込みに失敗しました",
+      "workspaceEmpty": "このアカウントで利用できるワークスペースはまだありません。",
       "createWorkspace": "新しいワークスペースを作成",
-      "settings": "Settings",
-      "logout": "Logout"
+      "settings": "設定",
+      "logout": "ログアウト"
     },
     "footer": {
-      "title": "Insight Lab",
-      "description": "洞察がアクションを引き起こす場所。"
+      "title": "インサイトラボ",
+      "description": "インサイトがアクションに変わる場所。"
     },
     "utils": {
-      "title": "Utils",
+      "title": "ショートカット",
       "actions": {
-        "edit": "Edit",
-        "delete": "Delete",
+        "edit": "編集",
+        "delete": "削除",
         "addShortcut": "ショートカットを追加"
       },
       "dialog": {
         "editTitle": "ショートカットを編集",
-        "editDescription": "表示ラベルとアプリ内を更新するルート.",
+        "editDescription": "表示ラベルとアプリ内ルートを更新します。",
         "createTitle": "ショートカットを追加",
-        "createDescription": "ラベルとアプリ内ルートを入力して、サイドバーからすぐにそこにジャンプできるようにします。",
+        "createDescription": "ラベルとアプリ内ルートを入力すると、サイドバーからすばやく移動できます。",
         "save": "保存",
-        "add": "Add"
+        "add": "追加"
       },
       "fields": {
-        "label": "ラベルを表示",
-        "labelPlaceholder": "例: ブロックされた問題",
+        "label": "表示ラベル",
+        "labelPlaceholder": "例: ブロック中の課題",
         "route": "ルート",
         "routePlaceholder": "例: /projects または /issues?state=blocked"
       },
       "validation": {
-        "routeRequired": "ピン留めするアプリ内ルートを入力してください。",
-        "routeInternalOnly": "ここではアプリ内ルートのみが許可されます (/projects など)。",
-        "duplicateRoute": "このルートはすでにショートカット リストに含まれています。",
-        "maxReached": "ショートカットは 5 つまで追加できます。"
+        "routeRequired": "固定するアプリ内ルートを入力してください。",
+        "routeInternalOnly": "ここではアプリ内ルートのみ使えます。例: /projects",
+        "duplicateRoute": "このルートはすでにショートカット一覧にあります。",
+        "maxReached": "ショートカットは最大 5 件まで追加できます。"
       }
     }
   },
   "settingsNav": {
-    "aiExecution": "AIの実行",
+    "aiExecution": "AI実行",
     "appearance": "外観",
-    "application": "応用",
-    "billing": "請求する",
+    "application": "アプリケーション",
+    "billing": "請求",
     "members": "メンバー",
     "notifications": "通知",
     "profile": "プロフィール",
-    "security": "安全",
+    "security": "セキュリティ",
     "teams": "チーム",
     "workspace": "ワークスペース"
   },
   "infobar": {
     "menu": "メニュー",
     "showSidebar": "サイドバーを表示",
-    "hideSidebar": "サイドバーを隠す"
+    "hideSidebar": "サイドバーを非表示"
   },
   "entryIntro": {
-    "prompt": "いずれかのキーでアプリに入る"
+    "prompt": "いずれかのキーを押して続行"
   },
   "search": {
     "placeholder": "コマンドを入力するか検索...",
     "empty": "結果が見つかりませんでした。",
     "groups": {
-      "suggestions": "提案",
+      "suggestions": "候補",
       "settings": "設定"
     },
     "items": {
       "calendar": "カレンダー",
-      "searchEmoji": "検索絵文字",
-      "calculator": "電卓",
+      "searchEmoji": "絵文字を検索",
+      "calculator": "計算機",
       "profile": "プロフィール",
       "billing": "請求",
       "settings": "設定"

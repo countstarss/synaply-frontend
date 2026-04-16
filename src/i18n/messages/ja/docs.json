@@ -1,27 +1,27 @@
 {
   "sourceSwitcher": {
-    "label": "ドキュメント ソース",
-    "description": "共有チーム ドキュメントとプライベート ドキュメントを切り替えます。",
-    "placeholder": "ドキュメント ソースを選択"
+    "label": "ドキュメントのソース",
+    "description": "チーム共有ドキュメントと自分専用ドキュメントを切り替えます。",
+    "placeholder": "ドキュメントのソースを選択"
   },
   "source": {
-    "team": "チーム ドキュメント",
-    "teamPersonal": "私のプライベート ドキュメント"
+    "team": "チームドキュメント",
+    "teamPersonal": "自分専用ドキュメント"
   },
   "creation": {
-    "newDoc": "新しいドキュメント",
-    "newFolder": "新規フォルダー",
-    "newTeamDoc": "新しいチーム ドキュメント",
+    "newDoc": "新規ドキュメント",
+    "newFolder": "新規フォルダ",
+    "newTeamDoc": "新しいチームドキュメント",
     "newPersonalDoc": "新しい個人ドキュメント",
     "dialog": {
       "title": "構造化ドキュメントを作成",
-      "description": "このドキュメントが担う協業コンテキストを選ぶと、Synaply が初期構成を挿入します。",
+      "description": "このドキュメントに持たせたい協業の形を選んでください。Synaply がチーム向けのスターター構成を挿入します。",
       "templateLabel": "テンプレート",
       "templatePlaceholder": "テンプレートを選択",
-      "titleLabel": "ドキュメント名",
-      "titlePlaceholder": "ドキュメント名を入力",
+      "titleLabel": "ドキュメントタイトル",
+      "titlePlaceholder": "ドキュメントタイトルを入力",
       "projectHint": "このドキュメントは現在のプロジェクトに自動で紐づきます。",
-      "parentHint": "このドキュメントは現在のフォルダー内に作成されます。",
+      "parentHint": "このドキュメントは現在のフォルダ内に作成されます。",
       "cancel": "キャンセル",
       "create": "ドキュメントを作成",
       "creating": "作成中...",
@@ -30,91 +30,91 @@
     "template": {
       "blank": {
         "label": "空白ドキュメント",
-        "description": "自由記述のメモや補足を残したいときに、空のページから始めます。",
+        "description": "自由記述のメモだけが必要なときは、空のページから始めます。",
         "title": "新しいドキュメント"
       },
       "projectBrief": {
-        "label": "プロジェクト brief",
-        "description": "なぜこのプロジェクトが存在し、何がスコープで、成功をどう判断するかを揃えます。",
-        "title": "プロジェクト brief"
+        "label": "プロジェクトブリーフ",
+        "description": "このプロジェクトの目的、範囲、成功条件を明確にします。",
+        "title": "プロジェクトブリーフ"
       },
       "decisionLog": {
-        "label": "Decision log",
-        "description": "結論、理由、影響範囲、次のアクションを残し、handoff 時の背景説明を減らします。",
-        "title": "Decision log"
+        "label": "意思決定ログ",
+        "description": "決定内容、理由、影響範囲、フォローアップを残し、引き継ぎの土台にします。",
+        "title": "意思決定ログ"
       },
       "reviewPacket": {
-        "label": "Review packet",
-        "description": "レビューに必要な背景、変更点、確認してほしい論点をまとめます。",
-        "title": "Review packet"
+        "label": "レビューパケット",
+        "description": "レビュー担当が返答する前に必要な文脈、変更点、確認事項をまとめます。",
+        "title": "レビューパケット"
       },
       "handoffPacket": {
-        "label": "Handoff packet",
-        "description": "次の owner が ready 状態、依存関係、最初の一手をすぐ把握できるようにします。",
-        "title": "Handoff packet"
+        "label": "引き継ぎパケット",
+        "description": "次の担当者が引き継ぐための準備状況、依存関係、リンク、期待値を整理します。",
+        "title": "引き継ぎパケット"
       },
       "releaseChecklist": {
-        "label": "Release checklist",
-        "description": "リリース範囲、リスク確認、owner、公開後の監視項目を一か所に集めます。",
-        "title": "Release checklist"
+        "label": "リリースチェックリスト",
+        "description": "ローンチ準備、リスク確認、担当者、リリース後の監視ポイントを 1 か所にまとめます。",
+        "title": "リリースチェックリスト"
       }
     },
     "templateContent": {
       "projectBrief": {
-        "intro": "この brief では、この仕事で何を前に進めるのか、そして今なぜチームの足並みを揃える必要があるのかを書きます。",
-        "goal": "[目標と範囲] 目標、スコープ境界、今回あえて扱わない内容を記載します。",
-        "scope": "[主要コンテキスト] 背景、制約、依存関係、前提条件をまとめます。",
-        "success": "[成功シグナル] どの状態になれば ready / 成功 / 安全にリリース可能と判断するかを書きます。",
-        "openQuestions": "[未解決事項] まだ残っている論点、決定事項、リスクを記録します。"
+        "intro": "このプロジェクトが何を前に進めようとしているのか、そしてなぜ今チームが足並みをそろえるべきなのかを要約します。",
+        "goal": "[目的と範囲] デリバリー目標、範囲の境界、そしてこのプロジェクトで意図的に扱わないことを記述します。",
+        "scope": "[主要な文脈] 現在の文脈、制約、依存関係、チームが共有すべき前提を記録します。",
+        "success": "[成功のシグナル] このプロジェクトが準備完了・成功・安全にリリース可能と判断できる条件を書きます。",
+        "openQuestions": "[未解決の問い] まだ追う必要がある未解決の問い、意思決定、リスクを列挙します。"
       },
       "decisionLog": {
-        "intro": "この記録は、次の担当者が議論を最初から追わなくても why を理解できるように残します。",
-        "decision": "[結論] 今回の決定を一文で書きます。",
-        "context": "[背景] どんな変化、圧力、tradeoff がこの決定を生んだかを説明します。",
-        "rationale": "[理由] なぜこの案が他の選択肢より良かったかを書きます。",
-        "impact": "[影響対象] 影響を受ける project / issue / workflow / release と、次に何が変わるかを示します。",
-        "followUp": "[次のアクション] 次の行動、owner、見直しタイミングを残します。"
+        "intro": "このメモには 1 つの具体的な意思決定を残し、次の担当者が議論全体を見直さなくても背景を理解できるようにします。",
+        "decision": "[意思決定] 1 文で結論を明記します。",
+        "context": "[文脈] 何が変わったのか、どの圧力が意思決定のきっかけになったのか、どのトレードオフを解消する必要があったのかを説明します。",
+        "rationale": "[理由] なぜこの案が他の選択肢より優先されたのかを書きます。",
+        "impact": "[影響を受ける作業] 影響を受けるプロジェクト、課題、ワークフロー、リリース面を紐づけ、次に何が変わるかを記します。",
+        "followUp": "[フォローアップ] 次のアクション、担当者、そしてこの判断を見直すべきタイミングを残します。"
       },
       "reviewPacket": {
-        "intro": "reviewer が追加確認なしで非同期レビューを進められる最小コンテキストをまとめます。",
-        "goal": "[レビュー目的] どの種類のレビューが必要で、どんな判断を得たいかを明確にします。",
-        "changeSummary": "[変更概要] 今回の提案、実装、成果物で何が変わったかを要約します。",
-        "focusQuestions": "[重点確認] reviewer に特に見てほしい論点、リスク、境界ケースを書きます。",
-        "decision": "[レビュー結果 / 修正依頼] 結論、修正依頼、承認メモを残す場所です。",
-        "nextStep": "[次の handoff] レビュー後に誰が何を引き継ぐかを書きます。"
+        "intro": "レビュー担当が最低限必要とする文脈をまとめ、追加の確認なしで非同期レビューを進められるようにします。",
+        "goal": "[レビューの目的] どの種類のレビューが必要か、そしてその結果どんな判断が必要かを明確にします。",
+        "changeSummary": "[何が変わるか] レビュー対象の提案、実装、成果物を要約します。",
+        "focusQuestions": "[レビューの焦点] レビュー担当に重点的に見てほしい論点、リスク、境界ケースを列挙します。",
+        "decision": "[結論 / 修正依頼] 結果、修正依頼、承認メモを書き残す場所を用意します。",
+        "nextStep": "[次の引き継ぎ] レビュー後に何が起きるべきか、誰が引き継ぐのかを明記します。"
       },
       "handoffPacket": {
-        "intro": "次の owner が追加の同期なしで動き出せるように、この packet で必要な情報を渡します。",
-        "target": "[引き継ぎ先] 誰に渡すのか、その人が何を引き受けるのかを書きます。",
-        "readyNow": "[今すぐ信頼できること] すでに完了し、検証され、次の owner が前提にしてよい内容をまとめます。",
-        "dependencies": "[依存関係と blocker] 未解決の blocker、リスク、決定、外部入力を列挙します。",
-        "links": "[リンクと根拠] issue、doc、design、PR、release 文脈のうち、まず読むべきものを示します。",
-        "receiverChecklist": "[受け手チェックリスト] 受け取った直後に行うべき最初の確認やアクションを書きます。"
+        "intro": "このパケットを使って、追加の同期説明なしでも次の担当者がすぐに動ける状態を作ります。",
+        "target": "[引き継ぎ先] 誰に向けた引き継ぎか、その相手が何を引き継ぐのかを明確にします。",
+        "readyNow": "[今すぐ信頼できること] すでに完了・検証済みで、次の担当者が安心して引き継げる内容を要約します。",
+        "dependencies": "[依存関係とブロッカー] まだ必要な入力、意思決定、リスク、ブロッカーを列挙します。",
+        "links": "[リンクと根拠] 受け手が最初に確認すべき課題、ドキュメント、デザイン、PR、リリース文脈を添えます。",
+        "receiverChecklist": "[受け手のチェックリスト] 引き継ぎ受諾後に最初に行うべき確認やアクションを明記します。"
       },
       "releaseChecklist": {
-        "intro": "リリース前後の重要シグナルを一か所にまとめ、各ロールが現在の readiness を自分で確認できるようにします。",
-        "scope": "[リリース範囲] 何を出すか、何を出さないか、どの環境や対象に影響するかを書きます。",
-        "risk": "[リスクとガード] 主要リスク、ロールバック手段、監視ポイント、連携依存を記録します。",
-        "goNoGo": "[Go / No-go チェック] リリース前に必ず満たすべき確認項目を並べます。",
-        "ownerMap": "[Owner マップ] 承認、実行、告知、リリース後のフォローを誰が持つかを明確にします。",
-        "postRelease": "[公開後の監視] 公開直後に見る指標と、どの閾値で対応が必要かを書きます。"
+        "intro": "ローンチ準備の状態を見える化し、プロダクト、デザイン、エンジニアリング、オペレーション、サポートが自分で状況を追えるようにします。",
+        "scope": "[リリース範囲] 何を出すのか、意図的に除外するものは何か、どの環境に影響するのかを記述します。",
+        "risk": "[リスクと安全策] 見えているリスク、ロールバック経路、監視方法、調整が必要な依存関係を記録します。",
+        "goNoGo": "[リリース可否チェック] リリース準備完了と見なす前に通すべきチェックを列挙します。",
+        "ownerMap": "[担当マップ] 承認、実行、周知、リリース後フォローを誰が担うのかを明確にします。",
+        "postRelease": "[リリース後の監視] リリース直後に見るべき項目と、対応が必要になる閾値を記録します。"
       }
     }
   },
   "docKind": {
     "general": "一般ドキュメント",
-    "projectBrief": "プロジェクト brief",
-    "decisionLog": "Decision log",
-    "reviewPacket": "Review packet",
-    "handoffPacket": "Handoff packet",
-    "releaseChecklist": "Release checklist"
+    "projectBrief": "プロジェクトブリーフ",
+    "decisionLog": "意思決定ログ",
+    "reviewPacket": "レビューパケット",
+    "handoffPacket": "引き継ぎパケット",
+    "releaseChecklist": "リリースチェックリスト"
   },
   "consumption": {
-    "summaryPrefix": "digest に使えるドキュメント更新: {items}",
-    "summaryEmpty": "まだ構造化ドキュメントがありません。次の担当者に一番必要な packet から作成してください。",
+    "summaryPrefix": "ダイジェスト向けドキュメント変更: {items}",
+    "summaryEmpty": "まだ構造化ドキュメントは紐づいていません。まずは次の担当者に最も必要なパケットから始めましょう。",
     "summaryCount": "{count} 件の{label}",
-    "emptyTitle": "まだありません",
-    "emptyDescription": "この種類の協力ドキュメントはまだ作成されていません。",
+    "emptyTitle": "まだドキュメントはありません",
+    "emptyDescription": "この協業パケットはまだ記録されていません。",
     "updatedAt": "{value} に更新",
     "openDoc": "ドキュメントを開く",
     "createDoc": "ドキュメントを作成"
@@ -122,75 +122,75 @@
   "overview": {
     "shared": {
       "documentMetric": "ドキュメント",
-      "folderMetric": "フォルダー",
-      "newDocTitle": "新しいドキュメント",
+      "folderMetric": "フォルダ",
+      "newDocTitle": "新規ドキュメント",
       "categoryTitle": "カテゴリ",
-      "recentTitle": "最近updated",
-      "folderContains": "{count} 個のアイテム",
-      "emptyFolder": "空のフォルダー",
-      "updatedAt": "{value}"
+      "recentTitle": "最近更新",
+      "folderContains": "{count} 件",
+      "emptyFolder": "空のフォルダ",
+      "updatedAt": "{value} に更新"
     },
     "personal": {
-      "title": "My docs",
-      "subtitle": "{count} 個の個人用ドキュメント",
-      "newDocDescription": "新しい個人用ドキュメントを作成doc",
-      "emptyTitle": "ドキュメントはまだありません",
-      "emptyDescription": "最初のドキュメントを作成してアイデアの収集を開始してください。",
+      "title": "マイドキュメント",
+      "subtitle": "{count} 件の個人ドキュメント",
+      "newDocDescription": "新しい個人ドキュメントを作成",
+      "emptyTitle": "まだドキュメントはありません",
+      "emptyDescription": "最初のドキュメントを作成して、アイデアを残し始めましょう。",
       "emptyAction": "ドキュメントを作成"
     },
     "team": {
-      "title": "チーム docs",
-      "subtitle": "{count} チーム docs",
-      "documentMetric": "チームを更新しましたdocs",
-      "newDocDescription": "新しいチームを作成します doc",
-      "emptyTitle": "チーム ドキュメントはまだありません",
-      "emptyDescription": "最初のチーム ドキュメントを作成し、チームと共同作業します。",
-      "emptyAction": "チームを作成する doc"
+      "title": "チームドキュメント",
+      "subtitle": "{count} 件のチームドキュメント",
+      "documentMetric": "チームドキュメント",
+      "newDocDescription": "新しいチームドキュメントを作成",
+      "emptyTitle": "まだチームドキュメントはありません",
+      "emptyDescription": "最初のチームドキュメントを作成し、チームでの協業を始めましょう。",
+      "emptyAction": "チームドキュメントを作成"
     },
     "teamPersonal": {
-      "title": "私の仕事docs",
-      "subtitle": "{count} 個の個人用作業用ドキュメント",
-      "documentMetric": "作業用ドキュメント",
-      "newDocDescription": "新しい個人用作業用ドキュメントを作成",
-      "emptyTitle": "個人用作業用ドキュメントはまだありません",
-      "emptyDescription": "自分だけがアクセスできる個人ドキュメントをチーム ワークスペース内に作成します。",
-      "emptyAction": "個人ドキュメントの作成"
+      "title": "マイワークドキュメント",
+      "subtitle": "{count} 件の個人作業ドキュメント",
+      "documentMetric": "作業ドキュメント",
+      "newDocDescription": "新しい個人作業ドキュメントを作成",
+      "emptyTitle": "まだ個人作業ドキュメントはありません",
+      "emptyDescription": "チームワークスペース内に、自分だけが見られる個人ドキュメントを作成します。",
+      "emptyAction": "個人ドキュメントを作成"
     }
   },
   "states": {
-    "loadingPage": "ドキュメントを読み込み中...",
+    "loadingPage": "ドキュメントを読み込んでいます...",
     "loadingSidebar": "読み込み中...",
-    "loadingEditor": "エディタを読み込み中..."
+    "loadingEditor": "エディタを読み込んでいます..."
   },
   "welcome": {
     "title": "ドキュメントへようこそ",
-    "emptyDescription": "そこにありますまだドキュメントがありません。サイドバーの + ボタンをクリックしてドキュメントを作成します。",
-    "selectDescription": "左側でドキュメントを選択して編集を開始してください。"
+    "emptyDescription": "まだドキュメントはありません。サイドバーの + ボタンから作成してください。",
+    "selectDescription": "左側でドキュメントを選ぶと編集を開始できます。"
   },
   "sidebar": {
-    "title": "Docs",
+    "title": "ドキュメント",
     "searchPlaceholder": "ドキュメントを検索...",
     "newChildDoc": "子ドキュメントを作成",
-    "newDoc": "新しいドキュメント",
-    "newFolder": "Newフォルダー",
-    "rename": "名前の変更",
+    "newDoc": "新規ドキュメント",
+    "newFolder": "新規フォルダ",
+    "rename": "名前を変更",
     "delete": "削除",
     "emptySearch": "一致するドキュメントが見つかりません",
-    "emptyTitle": "ドキュメントがまだありません",
-    "emptyDescription": "上の + ボタンをクリックして作成します",
+    "emptyTitle": "まだドキュメントはありません",
+    "emptyDescription": "上の + ボタンから作成してください",
     "deleteDialog": {
-      "title": "ドキュメントを削除しますか?",
-      "description": "これにより削除されます「{title}」。 {children} この操作は元に戻すことができません。",
-      "children": "その子ドキュメントも削除されます。",
-      "cancel": "Cancel",
-      "confirm": "削除を確認"
+      "title": "ドキュメントを削除しますか？",
+      "description": "「{title}」を削除します。{children} この操作は元に戻せません。",
+      "children": "子ドキュメントも一緒に削除されます。",
+      "cancel": "キャンセル",
+      "confirm": "削除を確定"
     }
   },
   "toolbar": {
     "collapseTitle": "エディタを折りたたむ",
-    "expandTitle": "展開editor",
-    "collapse": "Collapse",
-    "expand": "Expそして"
+    "expandTitle": "エディタを広げる",
+    "collapse": "折りたたむ",
+    "expand": "広げる"
   },
   "tabs": {
     "close": "閉じる"
@@ -199,48 +199,48 @@
     "save": "保存",
     "saving": "保存中...",
     "cancel": "キャンセル",
-    "untitled": "無題document",
-    "clickToEdit": "編集するにはタイトルをクリックしてください",
-    "updatedAt": "更新された {value}",
+    "untitled": "無題のドキュメント",
+    "clickToEdit": "タイトルをクリックして編集",
+    "updatedAt": "{value} に更新",
     "meta": {
-      "folder": "フォルダー",
-      "document": "Document",
-      "private": "Private",
+      "folder": "フォルダ",
+      "document": "ドキュメント",
+      "private": "非公開",
       "teamReadonly": "チーム読み取り専用",
-      "teamEditable": "チーム編集可能",
-      "public": "パブリック"
+      "teamEditable": "チーム編集可",
+      "public": "公開"
     }
   },
   "blocknote": {
-    "conflict": "リモート変更が検出されました。ローカル ドラフトは保存されました。",
+    "conflict": "リモートの変更を検知しました。ローカル下書きは保持されています。",
     "saveFailed": "保存に失敗しました",
     "saving": "保存中...",
-    "conflictStatus": "競合が検出されました。ローカルの下書きは保存されました。",
-    "errorStatus": "保存に失敗しました。ローカル ドラフトはローカルに保存されました。",
-    "recoveredDraft": "ローカル ドラフトを回復しました",
-    "draftPending": "ローカル ドラフト保留中の同期",
+    "conflictStatus": "競合を検知しました。ローカル下書きは保持されています。",
+    "errorStatus": "保存に失敗しました。ローカル下書きは端末上に保持されています。",
+    "recoveredDraft": "ローカル下書きを復元しました",
+    "draftPending": "ローカル下書きは同期待ちです",
     "savedAt": "保存済み • {value}",
     "ready": "準備完了",
-    "shortcut": "保存するには {key} + S を押してください • 30 回ごとに自動保存されます秒"
+    "shortcut": "{key} + S で保存 • 30 秒ごとに自動保存"
   },
   "folderIntro": {
-    "saveFailed": "フォルダーの説明を保存できませんでした。",
-    "folderMeta": "フォルダー • {value}を作成しました",
+    "saveFailed": "フォルダ説明の保存に失敗しました。",
+    "folderMeta": "フォルダ • {value} に作成",
     "editDescription": "説明を編集",
-    "title": "フォルダーの説明",
-    "placeholder": "フォルダーを入力してください説明...",
+    "title": "フォルダ説明",
+    "placeholder": "フォルダ説明を入力...",
     "saving": "保存中...",
     "save": "保存",
     "cancel": "キャンセル",
-    "emptyEditable": "クリックしてフォルダーの説明を追加...",
-    "emptyReadonly": "フォルダーの説明がまだありません",
+    "emptyEditable": "クリックしてフォルダ説明を追加...",
+    "emptyReadonly": "まだフォルダ説明はありません",
     "tipsTitle": "ヒント",
-    "tip1": "これは、ドキュメントを整理および分類します。",
-    "tip2": "フォルダーを右クリックして、子ドキュメントまたは子フォルダーを作成します。",
-    "tip3": "ここに詳細なガイダンスと使用上の注意を追加できます。",
-    "visibility": "フォルダーの表示/非表示: {value}"
+    "tip1": "このフォルダはドキュメントを整理・分類するために使います。",
+    "tip2": "フォルダを右クリックすると、子ドキュメントや子フォルダを作成できます。",
+    "tip3": "ここに詳細なガイドや利用メモを追記できます。",
+    "visibility": "フォルダの公開範囲: {value}"
   },
   "context": {
-    "docNotReady": "ドキュメントが存在しないか、読み込みがまだ完了していません。"
+    "docNotReady": "このドキュメントは存在しないか、まだ読み込みが完了していません。"
   }
 }

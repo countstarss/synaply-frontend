@@ -2,10 +2,10 @@
   "home": "首页",
   "pricing": "定价",
   "about": "关于",
-  "dashboard": "仪表板",
-  "login": "Logi n",
+  "dashboard": "仪表盘",
+  "login": "登录",
   "register": "注册",
-  "logout": "注销",
-  "profile": "配置文件",
+  "logout": "退出登录",
+  "profile": "个人资料",
   "settings": "设置"
 }

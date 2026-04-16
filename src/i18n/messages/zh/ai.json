@@ -1,40 +1,40 @@
 {
   "shared": {
-    "copyFailed": "复制失败.",
-    "assistant": "AI助手",
-    "surfaceLabel": "情报",
-    "newConversation": "新对话",
-    "conversation": "情报对话",
-    "conversationLegacy": "AI协作线程"
+    "copyFailed": "复制失败。",
+    "assistant": "AI 助手",
+    "surfaceLabel": "智能协作",
+    "newConversation": "新建对话",
+    "conversation": "智能协作会话",
+    "conversationLegacy": "AI 协作线程"
   },
   "thread": {
     "shell": {
-      "title": "AI Assistant",
-      "description": "首先从当前任务上下文开始工作，然后帮助阐明、推进和制定下一步。"
+      "title": "AI 助手",
+      "description": "先从当前任务语境出发，再帮助你澄清、推进并塑造下一步。"
     },
     "list": {
-      "fallbackTitle": "AI协作线程",
-      "description": "此线程会记住当前任务上下文和您的协作历史记录。",
-      "noPins": "尚无上下文引脚"
+      "fallbackTitle": "AI 协作线程",
+      "description": "这个线程会记住当前任务语境以及你的协作历史。",
+      "noPins": "还没有固定的上下文"
     },
     "messages": {
-      "loading": "同步线程和消息历史...",
-      "empty": "告诉AI你想要前进什么，它会从当前任务上下文中做出响应。",
-      "streaming": "生成回复..."
+      "loading": "正在同步线程和消息历史...",
+      "empty": "告诉 AI 你想推进什么，它会基于当前任务语境给出回应。",
+      "streaming": "正在生成回复..."
     },
     "composer": {
-      "placeholder": "例如：帮助我规划此问题的下一步并指出缺失的部分context.",
+      "placeholder": "例如：帮我梳理这个事项的下一步，并指出还缺哪些上下文。",
       "send": "发送"
     },
     "approval": {
-      "readStatusFailed": "我们现在无法读取批准状态。",
+      "readStatusFailed": "当前无法读取确认状态。",
       "confirmUnavailable": "当前无法确认此操作。",
-      "actionIncomplete": "操作未成功完成。",
-      "confirmSuccess": "已确认。 AI 正在继续运行。",
+      "actionIncomplete": "该操作未能成功完成。",
+      "confirmSuccess": "已确认，AI 正在继续执行。",
       "confirmFailed": "确认失败。",
-      "rejectUnavailable": "此操作现在无法拒绝。",
-      "rejectSuccess": "操作已被拒绝。",
-      "rejectFailed": "拒绝失败.",
+      "rejectUnavailable": "当前无法拒绝此操作。",
+      "rejectSuccess": "已拒绝该操作。",
+      "rejectFailed": "拒绝失败。",
       "statuses": {
         "confirmed": "已确认",
         "rejected": "已拒绝",
@@ -42,91 +42,91 @@
         "pending": "等待确认"
       },
       "action": "操作：{value}",
-      "batchSummary": "此批准将执行{count}个操作一起.",
+      "batchSummary": "这次确认会一次执行 {count} 个操作。",
       "previewStatus": "预览状态：{value}",
-      "confirm": "确认并运行",
+      "confirm": "确认并执行",
       "reject": "拒绝"
     },
     "codingPrompt": {
-      "copied": "编码交接提示已复制.",
-      "title": "编码交接提示",
-      "issueLabel": "问题 {id}",
-      "unbound": "未链接到特定问题",
-      "copy": "Claude 代码/Codex 的副本"
+      "copied": "编码交接提示词已复制。",
+      "title": "编码交接提示词",
+      "issueLabel": "事项 {id}",
+      "unbound": "未绑定到具体事项",
+      "copy": "复制给 Claude Code / Codex"
     },
     "clarification": {
       "fallbackTitle": "选项"
     },
     "toolResult": {
       "toolFailed": "工具执行失败。",
-      "toolCompleted": "工具执行已完成。",
+      "toolCompleted": "工具执行完成。",
       "details": "查看结构化输出",
       "status": "状态：{value}",
       "summary": "摘要：{value}",
       "message": "消息：{value}"
     },
     "messageBubble": {
-      "empty": "没有可见的消息内容."
+      "empty": "没有可见消息内容。"
     }
   },
   "workbench": {
     "page": {
-      "fallbackWorkspace": "无标题工作区",
-      "defaultOriginTitle": "{name}·情报工作空间",
-      "unauthorized": "未经授权.",
-      "sendFailed": "发送AI消息失败.",
-      "loading": "正在准备Intelligence工作区...",
-      "emptyWorkspace": "尚无可用工作区，因此Intelligence无法start."
+      "fallbackWorkspace": "未命名工作空间",
+      "defaultOriginTitle": "{name} · 智能协作工作区",
+      "unauthorized": "无权访问。",
+      "sendFailed": "AI 消息发送失败。",
+      "loading": "正在准备智能协作工作区...",
+      "emptyWorkspace": "目前还没有可用工作空间，因此无法启动智能协作。"
     },
     "sidebar": {
-      "new": "新的",
+      "new": "新建",
       "workspaceSection": "工作空间",
       "projectsSection": "项目",
-      "sectionTitle": "智力",
-      "freeEmpty": "尚无自由格式的对话历史记录。您可以直接从当前上下文开始。",
-      "projectEmpty": "该项目还没有问题聊天记录。单击项目本身进入项目对话。",
-      "projectStart": "开始该项目的主要对话",
+      "sectionTitle": "智能协作",
+      "freeEmpty": "还没有自由对话记录。你可以直接从当前上下文开始。",
+      "projectEmpty": "这个项目还没有事项对话记录。点击项目本身即可进入项目对话。",
+      "projectStart": "从这个项目开始主对话",
       "projectConversation": "项目对话",
       "freeConversation": "自由对话",
-      "collapseProject": "折叠{name}",
-      "expandProject": "展开{name}",
+      "collapseProject": "收起 {name}",
+      "expandProject": "展开 {name}",
       "syncing": "正在同步对话...",
-      "empty": "尚无对话历史记录。发送第一条消息，创作者将向下移动到工作区。",
+      "empty": "还没有任何对话记录。发送第一条消息后，输入框会下移到工作区中。",
       "justNow": "刚刚",
       "minutesAgo": "{count} 分钟前",
       "hoursAgo": "{count} 小时前",
-      "daysAgo": "{count} d 前"
+      "daysAgo": "{count} 天前"
     },
     "chat": {
-      "loading": "同步线程和消息历史记录...",
-      "heroTitle": "首先说出您想要继续前进的内容。",
-      "streaming": "AI 正在塑造回复",
+      "loading": "正在同步线程和消息历史...",
+      "heroTitle": "先说说你想推进什么。",
+      "streaming": "AI 正在组织回复",
       "copySuccess": "消息已复制。",
       "copy": "复制",
       "deselect": "取消选择",
       "select": "选择",
-      "exitMultiSelect": "Exit多选",
+      "exitMultiSelect": "退出多选",
       "multiSelect": "多选",
-      "noContent": "没有可见的消息内容。",
-      "selected": "选定的{count}条消息",
+      "noContent": "没有可见消息内容。",
+      "selected": "已选择 {count} 条消息",
       "autoSelect": "自动选择",
-      "mergeCopy": "合并并copy",
-      "copying": "正在复制...",
-      "clearSelection": "清除选择",
+      "mergeCopy": "合并复制",
+      "copying": "复制中...",
+      "clearSelection": "清空选择",
       "exit": "退出",
-      "selectionHint": "右键单击消息以保持多选状态。稍后，这可以自然地发展为剪辑、总结或保存。"
+      "selectionHint": "右键消息可继续多选，之后也可以自然扩展成摘录、总结或保存。"
     },
     "composer": {
-      "placeholder": "继续输入您的想法、阻止程序或下一步操作...",
-      "sending": "发送...",
+      "placeholder": "继续输入你的想法、阻塞或下一步...",
+      "sending": "发送中...",
       "send": "发送"
     },
     "roles": {
       "user": "用户",
-      "assistant": "AI Assistant",
+      "assistant": "AI 助手",
       "system": "系统",
       "tool": "工具",
-      "message": "信息"
+      "message": "消息"
     },
     "plainText": {
       "status": "状态：{value}",
@@ -134,13 +134,13 @@
       "message": "消息：{value}",
       "toolFailed": "工具执行失败。",
       "toolCompleted": "工具执行完成。",
-      "approval": "批准请求",
+      "approval": "确认请求",
       "action": "操作：{value}",
-      "batchActions": "批量操作：{count}项目",
+      "batchActions": "批量操作：{count} 项",
       "error": "错误：{value}",
       "context": "上下文：{value}",
-      "tool": "工具{name}",
-      "codingPrompt": "编码提示",
+      "tool": "工具 {name}",
+      "codingPrompt": "编码提示词",
       "options": "选项",
       "noContent": "无内容"
     }

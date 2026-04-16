@@ -1,10 +1,10 @@
 {
   "home": "홈",
-  "pricing": "가격",
-  "about": "정보",
+  "pricing": "요금",
+  "about": "소개",
   "dashboard": "대시보드",
-  "login": "Logi n",
-  "register": "등록",
+  "login": "로그인",
+  "register": "회원가입",
   "logout": "로그아웃",
   "profile": "프로필",
   "settings": "설정"

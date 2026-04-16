@@ -1,34 +1,34 @@
 {
   "title": "Synaply へようこそ",
-  "subtitle": "アプリケーションに安全で信頼性の高いユーザー管理ソリューションを提供する最新の認証システム",
-  "getStarted": "始めましょう",
-  "learnMore": "詳細",
-  "enterDashboard": "ダッシュボードに入る",
-  "whyChoose": "Synaply を選ぶ理由",
+  "subtitle": "アプリケーションに安全で信頼性の高いユーザー管理体験を提供する、モダンな認証システムです。",
+  "getStarted": "はじめる",
+  "learnMore": "詳しく見る",
+  "enterDashboard": "ダッシュボードへ入る",
+  "whyChoose": "なぜ Synaply を選ぶのか？",
   "features": {
     "security": {
       "title": "安全な認証",
-      "description": "Supabase を活用したエンタープライズ グレードのセキュリティ認証システム"
+      "description": "Supabase を基盤にしたエンタープライズ水準の認証基盤"
     },
     "performance": {
-      "title": "高性能",
-      "description": "Next.js で構築され、最高のユーザー エクスペリエンスを提供"
+      "title": "高いパフォーマンス",
+      "description": "Next.js で構築され、快適な操作体験を提供します"
     },
     "design": {
       "title": "モダンなデザイン",
-      "description": "さまざまなデバイスと画面をサポートするレスポンシブ デザインサイズ"
+      "description": "さまざまな端末と画面サイズに対応するレスポンシブデザイン"
     }
   },
   "systemFeatures": "システム機能",
   "featuresList": {
     "secureAuth": "安全なユーザー登録とログイン",
-    "passwordReset": "パスワード リセット機能",
-    "emailVerification": "電子メール検証",
-    "modernUI": "最新のユーザー インターフェイス",
-    "responsive": "応答性設計",
-    "realTime": "リアルタイムのステータス更新",
+    "passwordReset": "パスワード再設定",
+    "emailVerification": "メール認証",
+    "modernUI": "モダンなユーザーインターフェース",
+    "responsive": "レスポンシブ対応",
+    "realTime": "リアルタイムな状態更新",
     "routeProtection": "ルート保護",
     "errorHandling": "エラー処理"
   },
-  "copyright": "© 2024 Synaply.無断転載を禁じます。"
+  "copyright": "© 2024 Synaply. All rights reserved."
 }

@@ -3,122 +3,122 @@
     "today": "今日",
     "waiting": "待機中",
     "inProgress": "進行中",
-    "blocked": "ブロック",
+    "blocked": "ブロック中",
     "completed": "完了"
   },
   "summary": {
-    "todayFocus": "今日の焦点",
+    "todayFocus": "今日のフォーカス",
     "waiting": "待機中",
-    "inProgress": "開始progress",
+    "inProgress": "進行中",
     "blocked": "ブロック中",
-    "completedToday": "今日完了"
+    "completedToday": "本日完了"
   },
   "header": {
-    "title": "仕事の概要",
-    "activeCount": "{count} 件のアクティブアイテム",
+    "title": "マイワーク概要",
+    "activeCount": "アクティブ項目 {count} 件",
     "syncing": "同期中",
-    "updatedAt": "更新日: {value}",
-    "waitingFirstSync": "待機中最初の同期"
+    "updatedAt": "{value} に更新",
+    "waitingFirstSync": "初回同期を待っています"
   },
   "sections": {
     "today": {
-      "title": "今日の焦点",
-      "description": "まずこれらから始めてください。これらは、緊急性、ブロッカー、レビュー要求、現在の実行状態を組み合わせたものです。",
-      "emptyTitle": "今のところ、フォーカス キューは空です",
-      "emptyDescription": "作業が待機中、進行中、またはブロックされている場合は、ここで一番上に表示されます。"
+      "title": "今日のフォーカス",
+      "description": "まずはここから。緊急度、ブロッカー、レビュー依頼、現在の実行状態をまとめて見られます。",
+      "emptyTitle": "今のところ重点項目はありません",
+      "emptyDescription": "待機中、進行中、ブロック中の作業があると、ここに優先して表示されます。"
     },
     "waiting": {
-      "title": "私を待っています",
-      "description": "開始、レビュー、またはハンドオフの受け入れが必要な作業。",
-      "emptyTitle": "現在、あなたを待っているものはありません",
-      "emptyDescription": "新しいハンドオフ、レビュー要求、すぐに開始できる作業が最初にここに表示されます。"
+      "title": "自分待ち",
+      "description": "開始、レビュー、または引き継ぎの受け入れが必要な作業です。",
+      "emptyTitle": "現在あなた待ちの作業はありません",
+      "emptyDescription": "新しい引き継ぎ、レビュー依頼、着手可能な作業はまずここに入ります。"
     },
     "inProgress": {
       "title": "進行中",
-      "description": "すでに取得し、現在進行中の作業forward.",
+      "description": "すでに引き取り、現在進めている作業です。",
       "emptyTitle": "現在進行中の作業はありません",
-      "emptyDescription": "問題またはワークフローの実行を開始すると、ここに表示されます。"
+      "emptyDescription": "課題やワークフロー実行を開始すると、ここに表示されます。"
     },
     "blocked": {
-      "title": "ブロックされています",
-      "description": "現在ブロックされているあなたに関連する作業。",
-      "emptyTitle": "あなたに関連付けられているブロックされたアイテムはありませんnow",
-      "emptyDescription": "ブロックされた作業がここに収集されるため、他のビューでリスクが失われることはありません。"
+      "title": "ブロック中",
+      "description": "現在あなたに関係していて、進行が止まっている作業です。",
+      "emptyTitle": "現在あなたに紐づくブロック中の項目はありません",
+      "emptyDescription": "ブロック中の作業はここに集約されるため、他のビューに埋もれません。"
     },
     "completed": {
-      "title": "今日完了",
-      "description": "今日完了または終了した作業。",
-      "emptyTitle": "今日はまだ何も完了していません",
-      "emptyDescription": "問題またはワークフロー ステップを完了すると、今日の配信の進行状況が表示されます。ここに来てください。"
+      "title": "本日完了",
+      "description": "今日完了、または区切りを付けた作業です。",
+      "emptyTitle": "今日はまだ完了した作業がありません",
+      "emptyDescription": "課題やワークフローのステップを完了すると、今日の進捗がここに現れます。"
     }
   },
   "table": {
-    "work": "Work",
-    "context": "Context",
-    "signal": "Signal",
-    "action": "Action"
+    "work": "作業",
+    "context": "文脈",
+    "signal": "シグナル",
+    "action": "アクション"
   },
   "row": {
     "source": {
-      "workflow": "Workflow",
-      "issue": "Issue"
+      "workflow": "ワークフロー",
+      "issue": "課題"
     },
     "quickAction": {
-      "accept": "Accept",
-      "start": "Start",
-      "review": "Review",
-      "open": "Open"
+      "accept": "受け入れる",
+      "start": "開始",
+      "review": "レビュー",
+      "open": "開く"
     },
     "queue": {
-      "review": "Review · {name}",
-      "handoff": "Handoff · {name}",
-      "assignee": "Owner · {name}",
+      "review": "レビュー · {name}",
+      "handoff": "引き継ぎ · {name}",
+      "assignee": "担当者 · {name}",
       "workflow": "ワークフロー実行",
-      "issue": "問題"
+      "issue": "課題"
     },
-    "openIssueAria": "Open {title}",
+    "openIssueAria": "{title} を開く",
     "unassignedProject": "プロジェクトなし",
     "workspaceQueue": "ワークスペースキュー",
     "due": "期限 {value}"
   },
   "actions": {
-    "retry": "Retry"
+    "retry": "再試行"
   },
   "addModal": {
-    "title": "タスクの作成",
+    "title": "タスクを作成",
     "fields": {
       "titlePlaceholder": "タイトル",
-      "descriptionPlaceholder": "説明 (オプション)",
-      "dueDatePlaceholder": "期限 (オプション)"
+      "descriptionPlaceholder": "説明（任意）",
+      "dueDatePlaceholder": "期限（任意）"
     },
     "actions": {
       "submit": "作成"
     }
   },
   "calendar": {
-    "newTask": "タスクの作成",
-    "noTasks": "タスクはまだありません",
+    "newTask": "タスクを作成",
+    "noTasks": "まだタスクはありません",
     "close": "閉じる",
-    "more": "+{count}詳細",
+    "more": "+{count} 件",
     "weekdays": {
-      "sun": "Sun",
-      "mon": "Mon",
+      "sun": "日",
+      "mon": "月",
       "tue": "火",
       "wed": "水",
       "thu": "木",
       "fri": "金",
-      "sat": "Sat"
+      "sat": "土"
     }
   },
   "states": {
-    "loading": "作業の整理キュー...",
-    "errorTitle": "作業概要のロードに失敗しました",
+    "loading": "作業キューを整理しています...",
+    "errorTitle": "作業概要の読み込みに失敗しました",
     "errorDescription": "しばらくしてからもう一度お試しください。"
   },
   "toasts": {
-    "markedStarted": "開始済みとしてマークされています。",
+    "markedStarted": "開始済みとして記録しました。",
     "markStartedFailed": "実行状態の更新に失敗しました。もう一度お試しください。",
-    "handoffAccepted": "ハンドオフが受け入れられました。",
-    "acceptHandoffFailed": "ハンドオフの受け入れに失敗しました。もう一度試してください。"
+    "handoffAccepted": "引き継ぎを受け入れました。",
+    "acceptHandoffFailed": "引き継ぎの受け入れに失敗しました。もう一度お試しください。"
   }
 }

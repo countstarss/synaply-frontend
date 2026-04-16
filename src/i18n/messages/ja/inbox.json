@@ -1,110 +1,110 @@
 {
   "relativeTime": {
-    "justNow": "今",
-    "minutesAgo": "{count}分前",
-    "hoursAgo": "{count}時間前",
-    "daysAgo": "{count}日ago"
+    "justNow": "たった今",
+    "minutesAgo": "{count} 分前",
+    "hoursAgo": "{count} 時間前",
+    "daysAgo": "{count} 日前"
   },
   "views": {
-    "primary": "Primary",
-    "other": "Other",
-    "digest": "Digest",
-    "later": "Later",
-    "cleared": "Cleared"
+    "primary": "優先",
+    "other": "その他",
+    "digest": "ダイジェスト",
+    "later": "あとで",
+    "cleared": "クリア済み"
   },
   "viewSubLabel": {
-    "digestCount": "{count} 件の digest summary",
-    "digestEmpty": "digest summary はありません",
-    "laterCount": "{count} 件のスヌーズ済みアイテム",
-    "laterEmpty": "スヌーズなしitems",
-    "clearedCount": "{count} 個のクリアされたアイテム",
-    "clearedEmpty": "クリアされたアイテムがありません",
-    "pendingCount": "{count} 個の保留中のアイテム",
-    "pendingEmpty": "現在アイテムはありません"
+    "digestCount": "{count} 件のダイジェスト",
+    "digestEmpty": "ダイジェストはありません",
+    "laterCount": "{count} 件のあとで見る項目",
+    "laterEmpty": "あとで見る項目はありません",
+    "clearedCount": "{count} 件のクリア済み項目",
+    "clearedEmpty": "クリア済み項目はありません",
+    "pendingCount": "{count} 件の未処理項目",
+    "pendingEmpty": "現在項目はありません"
   },
   "empty": {
     "primary": {
-      "title": "現在待機しているものはありません",
-      "description": "新しいレビュー リクエスト、割り当て、および期限のアイテムが表示されます"
+      "title": "今あなたの対応を待っているものはありません",
+      "description": "新しいレビュー依頼、アサイン、期限付きの項目はまずここに表示されます。"
     },
     "other": {
-      "title": "後で注意する必要のある更新はありません",
-      "description": "リスク、ブロッカー、およびフォローシグナルは、2 回目のパスが必要なときにここに集まります。"
+      "title": "あとで確認すべき更新はありません",
+      "description": "リスク、ブロッカー、フォローシグナルは、もう一度見る必要があるときにここに集まります。"
     },
     "digest": {
-      "title": "まだ doc digest はありません",
-      "description": "同じ project、issue、workflow の文書更新がたまると、ここで 1 つの digest にまとめます。"
+      "title": "ドキュメントダイジェストはまだありません",
+      "description": "同じプロジェクト、課題、またはワークフローで十分な文書変更が集まると、このビューで 1 つのダイジェストにまとまります。"
     },
     "later": {
-      "title": "現在スヌーズされているアイテムはありません",
-      "description": "シグナルが読み取られているが、フローを中断すべきでない場合は、シグナルをここに移動できます。 "
+      "title": "今はあとで見る項目がありません",
+      "description": "シグナルを既読にはしたいが作業を中断したくないときは、ここに移してあとで見返せます。"
     },
     "cleared": {
-      "title": "まだ何もクリアされていません",
-      "description": "クリアしたシグナルはアクティブなキューを離れ、ショートとしてここに残りますレコード。"
+      "title": "まだクリア済みの項目はありません",
+      "description": "クリアしたシグナルはアクティブなキューから外れ、ここに短い記録として残ります。"
     }
   },
   "source": {
     "workflow": "ワークフロー",
     "project": "プロジェクト",
-    "issue": "問題",
+    "issue": "課題",
     "doc": "ドキュメント"
   },
   "docTitles": {
-    "reviewReady": "レビュー packet の準備完了: {title}",
-    "handoffReady": "handoff packet の準備完了: {title}",
-    "releaseUpdated": "release checklist が更新されました: {title}",
-    "decisionUpdated": "decision log が更新されました: {title}",
-    "digestGenerated": "最近 {count} 件の collaboration docs が更新されました"
+    "reviewReady": "レビューパケットの準備ができました: {title}",
+    "handoffReady": "引き継ぎパケットの準備ができました: {title}",
+    "releaseUpdated": "リリースチェックリストを更新しました: {title}",
+    "decisionUpdated": "意思決定を更新しました: {title}",
+    "digestGenerated": "直近で {count} 件の協業ドキュメントが更新されました"
   },
   "digest": {
-    "summaryPrefix": "{items} を含みます",
+    "summaryPrefix": "含まれる項目: {items}",
     "summaryCount": "{count} 件の{label}",
     "summaryLatest": "最新: {title}"
   },
   "groups": {
     "today": "今日",
-    "recentWeek": "過去 7 日間",
-    "earlierThisMonth": "これより前month"
+    "recentWeek": "過去 7 日",
+    "earlierThisMonth": "今月それ以前"
   },
   "filters": {
     "unread": "未読",
-    "actionable": "アクションが必要",
-    "clear": "フィルターのクリア",
-    "archivedHint": "このビューはすでにステータスごとにグループ化されているため、追加のフィルターは使用できません。"
+    "actionable": "対応が必要",
+    "clear": "絞り込みをクリア",
+    "archivedHint": "このビューはすでに状態ごとにまとまっているため、追加の絞り込みは使えません。"
   },
   "actions": {
-    "refresh": "Refresh",
-    "clearView": "現在をクリアview",
+    "refresh": "更新",
+    "clearView": "現在のビューをクリア",
     "retry": "再試行"
   },
   "row": {
     "openAria": "{title} を開く",
-    "markSeen": "既読としてマーク",
-    "markUnread": "未読としてマーク",
-    "accept": "Accept",
-    "snooze": "後で使用するためにスヌーズ",
-    "clear": "Clear",
-    "cleared": "Cleared"
+    "markSeen": "既読にする",
+    "markUnread": "未読に戻す",
+    "accept": "引き受ける",
+    "snooze": "あとで見る",
+    "clear": "クリア",
+    "cleared": "クリア済み"
   },
-  "hint": "任意の行をクリックすると、関連する issue、project、workflow、doc を開けます。既読のマーク、スヌーズ、handoff の受け入れ、signal のクリアもここから行えます。",
+  "hint": "任意の行をクリックすると、関連する課題、プロジェクト、ワークフロー、またはドキュメントを開けます。ここから既読、あとで見る、引き継ぎの受け入れ、シグナルのクリアも行えます。",
   "states": {
-    "loading": "受信箱を読み込んでいます...",
-    "errorTitle": "受信箱の読み込みに失敗しました",
-    "errorDescription": "しばらくしてからもう一度お試しください。"
+    "loading": "受信トレイを読み込んでいます...",
+    "errorTitle": "受信トレイの読み込みに失敗しました",
+    "errorDescription": "少し待ってからもう一度お試しください。"
   },
   "toasts": {
-    "openFailed": "この受信箱を開けませんでしたitem.",
-    "markedSeen": "既読としてマークされました。",
-    "markedUnread": "未読としてマークされました。",
-    "updateReadFailed": "読み取り状態を更新できませんでした。",
-    "snoozed": "後で移動しました。",
-    "snoozeFailed": "これをスヌーズできませんでしたitem.",
-    "cleared": "受信箱のアイテムがクリアされました。",
-    "clearFailed": "このアイテムをクリアできませんでした。",
-    "handoffAccepted": "ハンドオフが受け入れられました。",
-    "acceptFailed": "ハンドオフを受け入れられませんでした。",
-    "clearedView": "現在のビューがクリアされました。",
-    "clearAllFailed": "現在のビューをクリアできませんでした見る。"
+    "openFailed": "この受信トレイ項目を開けませんでした。",
+    "markedSeen": "既読にしました。",
+    "markedUnread": "未読に戻しました。",
+    "updateReadFailed": "既読状態を更新できませんでした。",
+    "snoozed": "あとで見るに移動しました。",
+    "snoozeFailed": "この項目をあとで見るにできませんでした。",
+    "cleared": "受信トレイ項目をクリアしました。",
+    "clearFailed": "この項目をクリアできませんでした。",
+    "handoffAccepted": "引き継ぎを受け入れました。",
+    "acceptFailed": "引き継ぎを受け入れられませんでした。",
+    "clearedView": "現在のビューをクリアしました。",
+    "clearAllFailed": "現在のビューをクリアできませんでした。"
   }
 }

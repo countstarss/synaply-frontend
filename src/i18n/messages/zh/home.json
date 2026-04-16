@@ -1,34 +1,34 @@
 {
   "title": "欢迎使用 Synaply",
-  "subtitle": "现代身份验证系统，为您的应用程序提供安全可靠的用户管理解决方案",
+  "subtitle": "一个现代认证系统，为你的应用提供安全可靠的用户管理体验。",
   "getStarted": "开始使用",
   "learnMore": "了解更多",
-  "enterDashboard": "进入仪表板",
-  "whyChoose": "为什么选择Synaply？",
+  "enterDashboard": "进入仪表盘",
+  "whyChoose": "为什么选择 Synaply？",
   "features": {
     "security": {
-      "title": "安全身份验证",
-      "description": "由Supabase提供支持的企业级安全身份验证系统"
+      "title": "安全认证",
+      "description": "由 Supabase 提供支持的企业级安全认证系统"
     },
     "performance": {
       "title": "高性能",
-      "description": "使用Next.js构建，提供最佳用户体验"
+      "description": "基于 Next.js 构建，带来流畅稳定的使用体验"
     },
     "design": {
       "title": "现代设计",
-      "description": "支持各种设备和屏幕尺寸的响应式设计"
+      "description": "响应式设计，适配多种设备与屏幕尺寸"
     }
   },
   "systemFeatures": "系统功能",
   "featuresList": {
-    "secureAuth": "安全用户注册和登录",
-    "passwordReset": "密码重置功能",
-    "emailVerification": "电子邮件验证",
-    "modernUI": "现代用户接口",
-    "responsive": "响应式设计",
+    "secureAuth": "安全的用户注册与登录",
+    "passwordReset": "密码重置",
+    "emailVerification": "邮箱验证",
+    "modernUI": "现代界面设计",
+    "responsive": "响应式布局",
     "realTime": "实时状态更新",
     "routeProtection": "路由保护",
     "errorHandling": "错误处理"
   },
-  "copyright": "© 2024 Synaply。版权所有。"
+  "copyright": "© 2024 Synaply。保留所有权利。"
 }

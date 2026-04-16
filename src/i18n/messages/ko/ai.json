@@ -1,144 +1,144 @@
 {
   "shared": {
     "copyFailed": "복사에 실패했습니다.",
-    "assistant": "AI 보조자",
-    "surfaceLabel": "Intelligence",
+    "assistant": "AI 어시스턴트",
+    "surfaceLabel": "인텔리전스",
     "newConversation": "새 대화",
-    "conversation": "Intelligence 대화",
-    "conversationLegacy": "AI 공동 작업 스레드"
+    "conversation": "인텔리전스 대화",
+    "conversationLegacy": "AI 협업 스레드"
   },
   "thread": {
     "shell": {
-      "title": "AI Assistant",
-      "description": "먼저 현재 작업 컨텍스트에서 작업한 후 다음 단계를 명확하게 하고 진행하고 형성하는 데 도움을 줍니다."
+      "title": "AI 어시스턴트",
+      "description": "현재 작업 맥락에서 먼저 출발한 뒤, 다음 단계를 더 분명하게 만들고 앞으로 밀어 주며 형태를 잡도록 돕습니다."
     },
     "list": {
-      "fallbackTitle": "AI 공동 작업 스레드",
-      "description": "이 스레드는 현재 작업 컨텍스트와 공동 작업 기록을 기억합니다.",
-      "noPins": "아직 컨텍스트 핀이 없습니다"
+      "fallbackTitle": "AI 협업 스레드",
+      "description": "이 스레드는 현재 작업 맥락과 협업 기록을 기억합니다.",
+      "noPins": "아직 고정된 맥락이 없습니다"
     },
     "messages": {
-      "loading": "스레드 및 메시지 동기화 중 기록...",
-      "empty": "앞으로 나아갈 내용을 AI에게 말하면 AI는 현재 작업 컨텍스트에서 응답합니다.",
-      "streaming": "답장 생성 중..."
+      "loading": "스레드와 메시지 기록을 동기화하는 중...",
+      "empty": "AI에 지금 앞으로 밀고 싶은 일을 말하면, 현재 작업 맥락을 바탕으로 응답합니다.",
+      "streaming": "답변을 생성하는 중..."
     },
     "composer": {
-      "placeholder": "예: 이 문제에 대한 다음 단계를 매핑하고 누락된 부분을 지적할 수 있도록 도와주세요. context.",
-      "send": "Send"
+      "placeholder": "예: 이 이슈의 다음 단계를 정리해 주고, 빠진 맥락도 짚어 줘.",
+      "send": "보내기"
     },
     "approval": {
-      "readStatusFailed": "현재 승인 상태를 읽을 수 없습니다.",
-      "confirmUnavailable": "이 작업을 지금 확인할 수 없습니다.",
-      "actionIncomplete": "작업이 성공적으로 완료되지 않았습니다.",
-      "confirmSuccess": "확인되었습니다. AI가 실행을 계속하고 있습니다.",
+      "readStatusFailed": "지금은 확인 상태를 불러올 수 없습니다.",
+      "confirmUnavailable": "이 작업은 지금 확인할 수 없습니다.",
+      "actionIncomplete": "이 작업은 정상적으로 완료되지 않았습니다.",
+      "confirmSuccess": "확인되었습니다. AI가 실행을 이어가고 있습니다.",
       "confirmFailed": "확인에 실패했습니다.",
-      "rejectUnavailable": "이 작업을 지금은 거부할 수 없습니다.",
-      "rejectSuccess": "작업이 거부되었습니다.",
-      "rejectFailed": "거부 실패했습니다.",
+      "rejectUnavailable": "이 작업은 지금 거부할 수 없습니다.",
+      "rejectSuccess": "이 작업을 거부했습니다.",
+      "rejectFailed": "거부에 실패했습니다.",
       "statuses": {
         "confirmed": "확인됨",
         "rejected": "거부됨",
         "expired": "만료됨",
         "pending": "확인 대기 중"
       },
-      "action": "작업: {value}",
-      "batchSummary": "이 승인은 {count}개의 작업을 실행합니다. 함께.",
-      "previewStatus": "미리 보기 상태: {value}",
-      "confirm": "확인 및 실행",
+      "action": "액션: {value}",
+      "batchSummary": "이번 확인으로 {count}개의 액션이 함께 실행됩니다.",
+      "previewStatus": "미리보기 상태: {value}",
+      "confirm": "확인 후 실행",
       "reject": "거부"
     },
     "codingPrompt": {
-      "copied": "코딩 핸드오프 프롬프트가 복사되었습니다.",
+      "copied": "코딩 핸드오프 프롬프트를 복사했습니다.",
       "title": "코딩 핸드오프 프롬프트",
-      "issueLabel": "문제 {id}",
-      "unbound": "특정 문제에 연결되지 않음",
-      "copy": "Claude Code/Codex용 복사"
+      "issueLabel": "이슈 {id}",
+      "unbound": "특정 이슈에 연결되어 있지 않습니다",
+      "copy": "Claude Code / Codex용으로 복사"
     },
     "clarification": {
-      "fallbackTitle": "Options"
+      "fallbackTitle": "옵션"
     },
     "toolResult": {
       "toolFailed": "도구 실행에 실패했습니다.",
       "toolCompleted": "도구 실행이 완료되었습니다.",
-      "details": "보기 구조화된 출력",
+      "details": "구조화된 출력 보기",
       "status": "상태: {value}",
       "summary": "요약: {value}",
       "message": "메시지: {value}"
     },
     "messageBubble": {
-      "empty": "표시되는 메시지 콘텐츠가 없습니다."
+      "empty": "표시할 메시지 내용이 없습니다."
     }
   },
   "workbench": {
     "page": {
-      "fallbackWorkspace": "제목 없는 작업 영역",
-      "defaultOriginTitle": "{name} · Intelligence 작업 영역",
+      "fallbackWorkspace": "이름 없는 워크스페이스",
+      "defaultOriginTitle": "{name} · 인텔리전스 워크스페이스",
       "unauthorized": "권한이 없습니다.",
-      "sendFailed": "AI 메시지를 보내지 못했습니다.",
-      "loading": "Intelligence 작업 영역을 준비하는 중...",
-      "emptyWorkspace": "아직 작업 영역을 사용할 수 없으므로 Intelligence에서 사용할 수 없습니다. start."
+      "sendFailed": "AI 메시지 전송에 실패했습니다.",
+      "loading": "인텔리전스 워크스페이스를 준비하는 중...",
+      "emptyWorkspace": "아직 사용할 수 있는 워크스페이스가 없어 인텔리전스를 시작할 수 없습니다."
     },
     "sidebar": {
-      "new": "New",
-      "workspaceSection": "Workspace",
-      "projectsSection": "Pro jects",
-      "sectionTitle": "I ntelligence",
-      "freeEmpty": "자유 형식 대화 기록이 아직 없습니다. 현재 컨텍스트에서 직접 시작할 수 있습니다.",
-      "projectEmpty": "이 프로젝트에 대한 이슈 채팅 기록이 아직 없습니다. 프로젝트 대화에 들어가려면 프로젝트 자체를 클릭하세요.",
-      "projectStart": "이 프로젝트에 대한 기본 대화를 시작합니다",
+      "new": "새로 만들기",
+      "workspaceSection": "워크스페이스",
+      "projectsSection": "프로젝트",
+      "sectionTitle": "인텔리전스",
+      "freeEmpty": "아직 자유 대화 기록이 없습니다. 현재 맥락에서 바로 시작할 수 있습니다.",
+      "projectEmpty": "이 프로젝트에는 아직 이슈 대화 기록이 없습니다. 프로젝트 자체를 클릭하면 프로젝트 대화로 들어갑니다.",
+      "projectStart": "이 프로젝트의 메인 대화 시작",
       "projectConversation": "프로젝트 대화",
       "freeConversation": "자유 대화",
       "collapseProject": "{name} 접기",
-      "expandProject": "확장 {name}",
-      "syncing": "대화 동기화 중...",
-      "empty": "아직 대화 기록이 없습니다. 첫 번째 메시지를 보내면 작성기가 작업공간으로 이동합니다.",
-      "justNow": "지금",
+      "expandProject": "{name} 펼치기",
+      "syncing": "대화를 동기화하는 중...",
+      "empty": "아직 대화 기록이 없습니다. 첫 메시지를 보내면 입력창이 워크스페이스 안으로 내려옵니다.",
+      "justNow": "방금",
       "minutesAgo": "{count}분 전",
       "hoursAgo": "{count}시간 전",
       "daysAgo": "{count}일 전"
     },
     "chat": {
-      "loading": "스레드 및 메시지 기록을 동기화하는 중...",
-      "heroTitle": "앞으로 나아갈 내용을 말하는 것부터 시작하세요.",
-      "streaming": "AI가 응답을 형성하고 있습니다",
-      "copySuccess": "메시지가 복사되었습니다.",
+      "loading": "스레드와 메시지 기록을 동기화하는 중...",
+      "heroTitle": "먼저 무엇을 앞으로 밀고 싶은지 말해 주세요.",
+      "streaming": "AI가 답변을 구성하는 중입니다",
+      "copySuccess": "메시지를 복사했습니다.",
       "copy": "복사",
-      "deselect": "선택 취소",
+      "deselect": "선택 해제",
       "select": "선택",
-      "exitMultiSelect": "종료 다중 선택",
+      "exitMultiSelect": "다중 선택 종료",
       "multiSelect": "다중 선택",
-      "noContent": "표시되는 메시지 내용이 없습니다.",
-      "selected": "선택한 {count}개의 메시지",
+      "noContent": "표시할 메시지 내용이 없습니다.",
+      "selected": "{count}개의 메시지 선택됨",
       "autoSelect": "자동 선택",
-      "mergeCopy": "병합 및 copy",
+      "mergeCopy": "합쳐서 복사",
       "copying": "복사 중...",
-      "clearSelection": "선택 취소",
-      "exit": "Exit",
-      "selectionHint": "여러 항목을 계속 선택하려면 메시지를 마우스 오른쪽 버튼으로 클릭하세요. 나중에 이것은 자연스럽게 잘라내기, 요약 또는 저장으로 발전할 수 있습니다."
+      "clearSelection": "선택 지우기",
+      "exit": "종료",
+      "selectionHint": "메시지를 오른쪽 클릭하면 다중 선택을 계속할 수 있습니다. 이후에는 발췌, 요약, 저장으로도 자연스럽게 확장할 수 있습니다."
     },
     "composer": {
-      "placeholder": "아이디어, 차단기 또는 다음 작업을 계속 입력하세요...",
-      "sending": "보내기...",
+      "placeholder": "생각, 막힌 지점, 다음 액션을 계속 입력해 보세요...",
+      "sending": "보내는 중...",
       "send": "보내기"
     },
     "roles": {
-      "user": "User",
-      "assistant": "AI Assistant",
-      "system": "System",
-      "tool": "Tool",
+      "user": "사용자",
+      "assistant": "AI 어시스턴트",
+      "system": "시스템",
+      "tool": "도구",
       "message": "메시지"
     },
     "plainText": {
       "status": "상태: {value}",
       "summary": "요약: {value}",
       "message": "메시지: {value}",
-      "toolFailed": "도구 실행이 실패했습니다.",
+      "toolFailed": "도구 실행에 실패했습니다.",
       "toolCompleted": "도구 실행이 완료되었습니다.",
-      "approval": "승인 요청",
-      "action": "작업: {value}",
-      "batchActions": "일괄 작업: {count} 항목",
+      "approval": "확인 요청",
+      "action": "액션: {value}",
+      "batchActions": "일괄 액션: {count}개",
       "error": "오류: {value}",
-      "context": "컨텍스트: {value}",
+      "context": "맥락: {value}",
       "tool": "도구 {name}",
       "codingPrompt": "코딩 프롬프트",
       "options": "옵션",

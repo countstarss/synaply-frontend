@@ -1,14 +1,14 @@
 {
   "createTeam": {
-    "title": "チームの作成",
-    "description": "チームメイトと共同作業するための新しいチームを作成します。専用のワークスペースが自動的に作成されます。",
+    "title": "チームを作成",
+    "description": "チームメイトと協業するための新しいチームを作成します。対応する専用ワークスペースも自動で作成されます。",
     "nameLabel": "チーム名",
-    "namePlaceholder": "チーム名を入力してください",
+    "namePlaceholder": "チーム名を入力",
     "validation": {
       "nameRequired": "チーム名を入力してください。"
     },
     "toasts": {
-      "created": "チームが作成されました。",
+      "created": "チームを作成しました。",
       "createFailed": "チームの作成に失敗しました。もう一度お試しください。"
     },
     "actions": {
@@ -18,21 +18,21 @@
   },
   "inviteMember": {
     "title": "新しいメンバーを招待",
-    "description": "新しいメンバーを「{teamName}」に招待します。",
-    "emailLabel": "メール アドレス",
-    "emailPlaceholder": "メールを入力してください招待するには",
+    "description": "「{teamName}」に新しいメンバーを招待します。",
+    "emailLabel": "メールアドレス",
+    "emailPlaceholder": "招待するメールアドレスを入力",
     "emailHint": "このアドレスに招待リンクを送信します。",
     "validation": {
-      "emailRequired": "メール アドレスを入力してください。",
-      "emailInvalid": "有効なメール アドレスを入力してください。"
+      "emailRequired": "メールアドレスを入力してください。",
+      "emailInvalid": "有効なメールアドレスを入力してください。"
     },
     "toasts": {
       "sent": "{email} を {teamName} に招待しました。",
       "sendFailed": "メンバーの招待中に問題が発生しました。もう一度お試しください。"
     },
     "actions": {
-      "sending": "招待状を送信中...",
-      "submit": "招待状を送信"
+      "sending": "招待を送信中...",
+      "submit": "招待を送信"
     }
   },
   "workspace": {
@@ -40,7 +40,7 @@
       "createAuthRequired": "ワークスペースを作成する前にログインしてください。",
       "personalUnsupported": "現在のバージョンではチームワークスペースのみ作成できます。",
       "inviteAuthRequired": "メンバーを招待する前にログインしてください。",
-      "teamInviteOnly": "現在のワークスペースではメンバー招待をサポートしていません。",
+      "teamInviteOnly": "現在のワークスペースではメンバー招待を利用できません。",
       "invitePermissionDenied": "メンバーを招待する権限がありません。"
     }
   }

@@ -1,9 +1,9 @@
 {
-  "label": "Lang",
+  "label": "语言",
   "switch": "切换语言",
   "current": "当前语言",
-  "english": "英语",
+  "english": "英文",
   "chinese": "中文",
-  "korean": "한국어",
-  "japanese": "日本语"
+  "korean": "韩语",
+  "japanese": "日语"
 }
