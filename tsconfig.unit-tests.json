@@ -3,6 +3,11 @@
     "target": "ES2022",
     "module": "commonjs",
     "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/assets/*": ["./src/assets/*"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -16,6 +21,8 @@
     "src/components/shared/docs/doc-navigation-utils.ts",
     "src/components/shared/docs/doc-navigation-utils.test.ts",
     "src/components/workflow/workflow-doc-utils.ts",
-    "src/components/workflow/workflow-doc-utils.test.ts"
+    "src/components/workflow/workflow-doc-utils.test.ts",
+    "src/lib/ai/agent.ts",
+    "src/lib/ai/agent.test.ts"
   ]
 }

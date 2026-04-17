@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { generateAiText, type AiRuntimeMessage } from "@/lib/ai/agent";
+import {
+  generateAiText,
+  getAiRuntimeErrorMessage,
+  isTransientAiProviderError,
+  type AiRuntimeMessage,
+} from "@/lib/ai/agent";
 import { DEFAULT_AI_MODEL_ID } from "@/lib/ai/models";
 import {
   appendAiMessage,
@@ -1887,9 +1892,25 @@ export async function POST(
   } catch (error) {
     await finishRunAsFailed(error);
 
-    return NextResponse.json(
-      { message: error instanceof Error ? error.message : "发送 AI 消息失败" },
-      { status: 500 },
-    );
+    const responseHeaders = new Headers({
+      "Cache-Control": "no-store",
+      "Content-Type": "text/plain; charset=utf-8",
+    });
+
+    if (
+      isTransientAiProviderError(error) &&
+      typeof error.retryAfterMs === "number" &&
+      error.retryAfterMs >= 1000
+    ) {
+      responseHeaders.set(
+        "Retry-After",
+        String(Math.ceil(error.retryAfterMs / 1000)),
+      );
+    }
+
+    return new Response(getAiRuntimeErrorMessage(error), {
+      status: isTransientAiProviderError(error) ? 503 : 500,
+      headers: responseHeaders,
+    });
   }
 }
