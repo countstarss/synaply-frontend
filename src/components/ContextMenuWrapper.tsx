@@ -2,8 +2,7 @@ import React from 'react';
 import { ContextMenu, ContextMenuTrigger } from './ui/context-menu';
 
 interface ContextMenuWrapperProps {
-  // You can define any props needed here
-  children: React.ReactNode;
+  children: React.ReactElement;
 }
 
 const ContextMenuWrapper = ({ 
@@ -12,9 +11,7 @@ const ContextMenuWrapper = ({
   
   return (
     <ContextMenu>
-      <ContextMenuTrigger>
-        {children}
-      </ContextMenuTrigger>
+      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
     </ContextMenu>
   );
 };
