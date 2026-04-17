@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale } from "next-intl";
 import { getMessages } from "next-intl/server";
-import { IBM_Plex_Mono, Manrope } from "next/font/google";
 
 import { routing } from "@/i18n/routing";
 import "@/app/globals.css";
@@ -12,17 +11,6 @@ import {
   getBaseSiteMetadata,
   normalizeSiteLocale,
 } from "@/lib/seo";
-
-const sans = Manrope({
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
-});
-
-const mono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
-  weight: ["400", "500", "600"],
-});
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -57,11 +45,7 @@ export default async function LocaleLayout({
   const messages = await getMessages({ locale });
 
   return (
-    <html
-      lang={locale}
-      suppressHydrationWarning
-      className={`${sans.variable} ${mono.variable}`}
-    >
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -74,7 +58,7 @@ export default async function LocaleLayout({
           }}
         />
       </head>
-      <body className="bg-background font-sans text-foreground antialiased">
+      <body className="bg-background font-sans text-foreground">
         <AppProvider locale={locale} messages={messages}>
           {children}
         </AppProvider>
