@@ -35,16 +35,14 @@ export function ProjectDocsSubview({
   }
 
   return (
-    <div className="h-full p-4">
-      <div className="h-full overflow-hidden rounded-[28px] border border-app-border isolate bg-app-content-bg/80 shadow-sm">
-        <DocsPage
-          workspaceId={workspaceId}
-          workspaceType={workspaceType}
-          userId={currentUserId}
-          context={docsContext}
-          projectId={projectId}
-        />
-      </div>
+    <div className="h-full overflow-hidden">
+      <DocsPage
+        workspaceId={workspaceId}
+        workspaceType={workspaceType}
+        userId={currentUserId}
+        context={docsContext}
+        projectId={projectId}
+      />
     </div>
   );
 }

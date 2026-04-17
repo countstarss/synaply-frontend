@@ -300,7 +300,11 @@ export default function ProjectsPageContent() {
       });
       setProjectToDelete(null);
       toast.success(
-        t("toasts.deleted", { count: deletedResult.deletedIssueCount }),
+        t("toasts.deleted", {
+          issueCount: deletedResult.deletedIssueCount,
+          docCount: deletedResult.deletedDocCount,
+          folderCount: deletedResult.deletedFolderCount,
+        }),
       );
     } catch (deleteError) {
       toast.error(

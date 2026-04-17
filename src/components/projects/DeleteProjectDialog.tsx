@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { RiAlertLine, RiDeleteBinLine, RiLoader4Line } from "react-icons/ri";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useDocsTree } from "@/hooks/useDocApi";
 import { useIssues } from "@/hooks/useIssueApi";
 import { Project } from "@/lib/fetchers/project";
 
@@ -41,6 +42,14 @@ export function DeleteProjectDialog({
     { projectId: project?.id },
     { enabled: open && !!workspaceId && !!project?.id },
   );
+  const { data: projectDocs = [], isLoading: isLoadingDocs } = useDocsTree(
+    workspaceId,
+    {
+      projectId: project?.id,
+      includeArchived: true,
+    },
+    { enabled: open && !!workspaceId && !!project?.id },
+  );
 
   useEffect(() => {
     if (!open) {
@@ -48,17 +57,27 @@ export function DeleteProjectDialog({
     }
   }, [open, project?.id]);
 
+  const resourceCounts = useMemo(
+    () => ({
+      issues: projectIssues.length,
+      docs: projectDocs.filter((doc) => doc.type === "document").length,
+      folders: projectDocs.filter((doc) => doc.type === "folder").length,
+    }),
+    [projectDocs, projectIssues.length],
+  );
+
+  const isCountingResources = isLoadingIssues || isLoadingDocs;
   const isMatched = confirmationName === project?.name;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-lg border-app-border bg-app-content-bg p-0 shadow-2xl"
+        className="max-w-lg border-app-border/70 bg-app-content-bg p-0 shadow-2xl"
         showCloseButton={false}
       >
-        <DialogHeader className="border-b border-app-border px-6 py-5">
+        <DialogHeader className="border-b border-app-border/60 px-6 py-5">
           <DialogTitle className="flex items-center gap-3 text-red-600 dark:text-red-400">
-            <span className="flex size-10 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-red-500/10">
               <RiAlertLine className="size-5" />
             </span>
             {t("deleteDialog.title")}
@@ -69,7 +88,7 @@ export function DeleteProjectDialog({
         </DialogHeader>
 
         <div className="space-y-5 px-6 py-6">
-          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
+          <div className="rounded-xl bg-red-500/10 p-4">
             <div className="text-sm font-medium text-app-text-primary">
               {t("deleteDialog.aboutToDelete")}
             </div>
@@ -81,16 +100,53 @@ export function DeleteProjectDialog({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-app-border bg-app-bg px-4 py-3 text-sm text-app-text-secondary">
-            {isLoadingIssues ? (
+          <div className="rounded-xl bg-app-bg/70 px-4 py-4">
+            {isCountingResources ? (
               <div className="flex items-center gap-2">
                 <RiLoader4Line className="size-4 animate-spin" />
-                {t("deleteDialog.countingIssues")}
+                <span className="text-sm text-app-text-secondary">
+                  {t("deleteDialog.countingResources")}
+                </span>
               </div>
             ) : (
-              <span>
-                {t("deleteDialog.issueCount", { count: projectIssues.length })}
-              </span>
+              <div className="space-y-3">
+                <div className="text-sm font-medium text-app-text-primary">
+                  {t("deleteDialog.cascadeWarning")}
+                </div>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <div className="rounded-lg bg-app-content-bg px-3 py-3">
+                    <div className="text-lg font-semibold text-app-text-primary">
+                      {resourceCounts.issues}
+                    </div>
+                    <div className="text-xs text-app-text-secondary">
+                      {t("deleteDialog.issueCountLabel")}
+                    </div>
+                  </div>
+                  <div className="rounded-lg bg-app-content-bg px-3 py-3">
+                    <div className="text-lg font-semibold text-app-text-primary">
+                      {resourceCounts.docs}
+                    </div>
+                    <div className="text-xs text-app-text-secondary">
+                      {t("deleteDialog.docCountLabel")}
+                    </div>
+                  </div>
+                  <div className="rounded-lg bg-app-content-bg px-3 py-3">
+                    <div className="text-lg font-semibold text-app-text-primary">
+                      {resourceCounts.folders}
+                    </div>
+                    <div className="text-xs text-app-text-secondary">
+                      {t("deleteDialog.folderCountLabel")}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm leading-6 text-app-text-secondary">
+                  {t("deleteDialog.resourceSummary", {
+                    issues: resourceCounts.issues,
+                    docs: resourceCounts.docs,
+                    folders: resourceCounts.folders,
+                  })}
+                </p>
+              </div>
             )}
           </div>
 
@@ -110,7 +166,7 @@ export function DeleteProjectDialog({
           </div>
         </div>
 
-        <DialogFooter className="border-t border-app-border px-6 py-5">
+        <DialogFooter className="border-t border-app-border/60 px-6 py-5">
           <Button
             type="button"
             variant="outline"

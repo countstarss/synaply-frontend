@@ -105,6 +105,9 @@ export const useCreateProject = () => {
         queryKey: ["projects", variables.workspaceId],
       });
       queryClient.invalidateQueries({
+        queryKey: ["docs", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
         queryKey: ["project-summary", variables.workspaceId],
       });
       queryClient.invalidateQueries({
@@ -140,6 +143,9 @@ export const useUpdateProject = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["projects", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["docs", variables.workspaceId],
       });
       queryClient.invalidateQueries({
         queryKey: ["project", variables.workspaceId, variables.projectId],
@@ -178,6 +184,9 @@ export const useDeleteProject = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["projects", variables.workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["docs", variables.workspaceId],
       });
       queryClient.invalidateQueries({
         queryKey: ["project", variables.workspaceId, variables.projectId],

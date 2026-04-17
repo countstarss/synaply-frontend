@@ -113,6 +113,14 @@ export function ProjectDetailView({
       enabled: !!workspaceId && !!currentUserId,
     },
   );
+  const visibleProjectDocs = useMemo(
+    () => projectDocs.filter((doc) => !doc.isProjectRootFolder),
+    [projectDocs],
+  );
+  const projectDocumentCount = useMemo(
+    () => visibleProjectDocs.filter((doc) => doc.type === "document").length,
+    [visibleProjectDocs],
+  );
 
   const displayedIssues = useMemo(
     () => sortIssuesByUrgency(projectIssues),
@@ -334,7 +342,7 @@ export function ProjectDetailView({
           isLoadingProjectDetail={isLoadingProjectDetail}
           canManageProjects={canManageProjects}
           metricsTotalIssues={metrics.totalIssues}
-          projectDocsCount={projectDocs.length}
+          projectDocsCount={projectDocumentCount}
           workflowCount={metrics.workflowCount}
           statusMeta={statusMeta}
           riskMeta={riskMeta}
@@ -413,7 +421,7 @@ export function ProjectDetailView({
         <div className="mt-4">
           <ProjectWorkspacePanel
             metricsTotalIssues={metrics.totalIssues}
-            projectDocsCount={projectDocs.length}
+            projectDocsCount={projectDocumentCount}
             relatedWorkflowsLength={relatedWorkflows.length}
             tProjects={tProjects}
             onCreateIssue={onCreateIssue}
@@ -428,7 +436,7 @@ export function ProjectDetailView({
           <ProjectCollaborationPanel
             locale={locale}
             relatedWorkflows={relatedWorkflows}
-            projectDocs={projectDocs}
+            projectDocs={visibleProjectDocs}
             pendingConfirmationIssues={pendingConfirmationIssues}
             workflowRunCounts={workflowRunCounts}
             workflowRuntimeByWorkflowId={workflowRuntimeByWorkflowId}

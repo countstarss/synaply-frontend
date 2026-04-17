@@ -140,6 +140,8 @@ export interface ProjectSummary {
 
 export interface DeleteProjectResult extends Project {
   deletedIssueCount: number;
+  deletedDocCount: number;
+  deletedFolderCount: number;
 }
 
 export interface CreateProjectDto {
