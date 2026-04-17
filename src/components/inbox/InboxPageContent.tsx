@@ -760,6 +760,7 @@ export default function InboxPageContent() {
 
   useWorkspaceRealtime(workspaceId, {
     enabled: isPageVisible && !selectedIssueId,
+    userEnabled: isPageVisible,
   });
 
   useEffect(() => {

@@ -3,29 +3,12 @@
 import { getSupabasePublicConfig } from "@/lib/supabase";
 import {
   REALTIME_EVENTS,
-  type CommentCreatedPayload,
-  type IssueCreatedPayload,
   type IssueDeletedPayload,
-  type IssueActivityCreatedPayload,
-  type IssueStepRecordCreatedPayload,
-  type IssueUpdatedPayload,
-  type WorkflowRunEventPayload,
   type RealtimeEventName,
 } from "./events";
-import {
-  buildIssueTopic,
-  buildWorkflowIssueTopic,
-  buildWorkspaceTopic,
-} from "./topics";
+import { buildIssueTopic } from "./topics";
 
-type RealtimePayload =
-  | CommentCreatedPayload
-  | IssueCreatedPayload
-  | IssueDeletedPayload
-  | IssueUpdatedPayload
-  | IssueActivityCreatedPayload
-  | IssueStepRecordCreatedPayload
-  | WorkflowRunEventPayload;
+type RealtimePayload = IssueDeletedPayload;
 
 function logBroadcastDebug(message: string, payload?: unknown) {
   void message;
@@ -93,110 +76,14 @@ async function sendBroadcast(
   }
 }
 
-export async function broadcastCommentCreated(
-  payload: CommentCreatedPayload,
-  accessToken: string,
-) {
-  await sendBroadcast(
-    buildIssueTopic(payload.issueId),
-    REALTIME_EVENTS.COMMENT_CREATED,
-    payload,
-    accessToken,
-  );
-}
-
-export async function broadcastIssueCreated(
-  payload: IssueCreatedPayload,
-  accessToken: string,
-) {
-  await sendBroadcast(
-    buildWorkspaceTopic(payload.workspaceId),
-    REALTIME_EVENTS.ISSUE_CREATED,
-    payload,
-    accessToken,
-  );
-}
-
-export async function broadcastIssueUpdated(
-  payload: IssueUpdatedPayload,
-  accessToken: string,
-) {
-  await Promise.all([
-    sendBroadcast(
-      buildIssueTopic(payload.issueId),
-      REALTIME_EVENTS.ISSUE_UPDATED,
-      payload,
-      accessToken,
-    ),
-    sendBroadcast(
-      buildWorkspaceTopic(payload.workspaceId),
-      REALTIME_EVENTS.ISSUE_UPDATED,
-      payload,
-      accessToken,
-    ),
-  ]);
-}
-
 export async function broadcastIssueDeleted(
   payload: IssueDeletedPayload,
   accessToken: string,
 ) {
-  await Promise.all([
-    sendBroadcast(
-      buildIssueTopic(payload.issueId),
-      REALTIME_EVENTS.ISSUE_DELETED,
-      payload,
-      accessToken,
-    ),
-    sendBroadcast(
-      buildWorkspaceTopic(payload.workspaceId),
-      REALTIME_EVENTS.ISSUE_DELETED,
-      payload,
-      accessToken,
-    ),
-  ]);
-}
-
-export async function broadcastIssueActivityCreated(
-  payload: IssueActivityCreatedPayload,
-  accessToken: string,
-){
   await sendBroadcast(
     buildIssueTopic(payload.issueId),
-    REALTIME_EVENTS.ISSUE_ACTIVITY_CREATED,
+    REALTIME_EVENTS.ISSUE_DELETED,
     payload,
     accessToken,
   );
-}
-
-export async function broadcastIssueStepRecordCreated(
-  payload: IssueStepRecordCreatedPayload,
-  accessToken: string,
-) {
-  await sendBroadcast(
-    buildWorkflowIssueTopic(payload.issueId),
-    REALTIME_EVENTS.ISSUE_STEP_RECORD_CREATED,
-    payload,
-    accessToken,
-  );
-}
-
-export async function broadcastWorkflowRunEvent(
-  payload: WorkflowRunEventPayload,
-  accessToken: string,
-) {
-  await Promise.all([
-    sendBroadcast(
-      buildWorkflowIssueTopic(payload.issueId),
-      payload.event as RealtimeEventName,
-      payload,
-      accessToken,
-    ),
-    sendBroadcast(
-      buildWorkspaceTopic(payload.workspaceId),
-      payload.event as RealtimeEventName,
-      payload,
-      accessToken,
-    ),
-  ]);
 }

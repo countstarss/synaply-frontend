@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { createComment, getComments } from "@/lib/fetchers/comment";
 import { CreateCommentDto, Comment } from "@/lib/fetchers/comment";
-import { broadcastCommentCreated } from "@/lib/realtime/broadcast";
 
 /**
  * 获取评论列表
@@ -34,25 +33,10 @@ export const useCreateComment = () => {
       }
       return createComment(data, session.access_token);
     },
-    onSuccess: async (createdComment, variables) => {
+    onSuccess: (_createdComment, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["comments", variables.issueId],
       });
-
-      if (!session?.access_token) {
-        return;
-      }
-
-      await broadcastCommentCreated(
-        {
-          issueId: variables.issueId,
-          workspaceId: variables.workspaceId,
-          commentId: createdComment.id,
-          parentId: createdComment.parentId ?? null,
-          authorId: createdComment.authorId,
-        },
-        session.access_token,
-      );
     },
   });
 };

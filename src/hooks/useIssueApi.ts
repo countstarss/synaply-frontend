@@ -41,14 +41,7 @@ import {
   createIssueActivity,
   createIssueStepRecord,
 } from "@/lib/fetchers/issue";
-import {
-  broadcastIssueCreated,
-  broadcastIssueDeleted,
-  broadcastIssueActivityCreated,
-  broadcastIssueStepRecordCreated,
-  broadcastIssueUpdated,
-  broadcastWorkflowRunEvent,
-} from "@/lib/realtime/broadcast";
+import { broadcastIssueDeleted } from "@/lib/realtime/broadcast";
 import { IssueType } from "@/types/prisma";
 
 /**
@@ -155,7 +148,7 @@ export const useCreateIssue = () => {
 
       return createIssue(issueData, session.access_token);
     },
-    onSuccess: async (createdIssue, variables) => {
+    onSuccess: (_createdIssue, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issues", variables.workspaceId],
       });
@@ -172,18 +165,6 @@ export const useCreateIssue = () => {
         queryKey: ["project-summary", variables.workspaceId],
       });
 
-      if (!session?.access_token || !createdIssue?.id) {
-        return;
-      }
-
-      await broadcastIssueCreated(
-        {
-          issueId: createdIssue.id,
-          workspaceId: variables.workspaceId,
-          issueType: createdIssue.issueType ?? null,
-        },
-        session.access_token,
-      );
     },
   });
 };
@@ -233,7 +214,7 @@ export const useCreateWorkflowIssue = () => {
         ? createdIssue
         : { ...createdIssue, issueType: IssueType.WORKFLOW };
     },
-    onSuccess: async (createdIssue, variables) => {
+    onSuccess: (_createdIssue, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issues", variables.workspaceId],
       });
@@ -250,18 +231,6 @@ export const useCreateWorkflowIssue = () => {
         queryKey: ["project-summary", variables.workspaceId],
       });
 
-      if (!session?.access_token || !createdIssue?.id) {
-        return;
-      }
-
-      await broadcastIssueCreated(
-        {
-          issueId: createdIssue.id,
-          workspaceId: variables.workspaceId,
-          issueType: createdIssue.issueType ?? null,
-        },
-        session.access_token,
-      );
     },
   });
 };
@@ -300,20 +269,6 @@ function invalidateWorkflowRunQueries(
   });
 }
 
-async function emitWorkflowRunEvent(
-  accessToken: string,
-  payload: {
-    issueId: string;
-    workspaceId: string;
-    event: string;
-    runStatus: string | null;
-    currentStepId: string | null;
-    targetStepId?: string | null;
-  }
-) {
-  await broadcastWorkflowRunEvent(payload, accessToken);
-}
-
 export const useUpdateWorkflowRunStatus = () => {
   const { session } = useAuth();
   const queryClient = useQueryClient();
@@ -339,24 +294,12 @@ export const useUpdateWorkflowRunStatus = () => {
         session.access_token
       );
     },
-    onSuccess: async (updatedIssue, variables) => {
+    onSuccess: (_updatedIssue, variables) => {
       invalidateWorkflowRunQueries(
         queryClient,
         variables.workspaceId,
         variables.issueId
       );
-
-      if (!session?.access_token) {
-        return;
-      }
-
-      await emitWorkflowRunEvent(session.access_token, {
-        issueId: variables.issueId,
-        workspaceId: variables.workspaceId,
-        event: "workflow.step.status_changed",
-        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
-        currentStepId: updatedIssue.currentStepId ?? null,
-      });
     },
   });
 };
@@ -381,27 +324,12 @@ export const useAdvanceWorkflowRun = () => {
 
       return advanceWorkflowRun(workspaceId, issueId, data, session.access_token);
     },
-    onSuccess: async (updatedIssue, variables) => {
+    onSuccess: (_updatedIssue, variables) => {
       invalidateWorkflowRunQueries(
         queryClient,
         variables.workspaceId,
         variables.issueId
       );
-
-      if (!session?.access_token) {
-        return;
-      }
-
-      await emitWorkflowRunEvent(session.access_token, {
-        issueId: variables.issueId,
-        workspaceId: variables.workspaceId,
-        event:
-          updatedIssue.workflowRun?.runStatus === "DONE"
-            ? "workflow.run.completed"
-            : "workflow.step.completed",
-        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
-        currentStepId: updatedIssue.currentStepId ?? null,
-      });
     },
   });
 };
@@ -426,24 +354,12 @@ export const useRevertWorkflowRun = () => {
 
       return revertWorkflowRun(workspaceId, issueId, data, session.access_token);
     },
-    onSuccess: async (updatedIssue, variables) => {
+    onSuccess: (_updatedIssue, variables) => {
       invalidateWorkflowRunQueries(
         queryClient,
         variables.workspaceId,
         variables.issueId
       );
-
-      if (!session?.access_token) {
-        return;
-      }
-
-      await emitWorkflowRunEvent(session.access_token, {
-        issueId: variables.issueId,
-        workspaceId: variables.workspaceId,
-        event: "workflow.step.reverted",
-        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
-        currentStepId: updatedIssue.currentStepId ?? null,
-      });
     },
   });
 };
@@ -468,24 +384,12 @@ export const useBlockWorkflowRun = () => {
 
       return blockWorkflowRun(workspaceId, issueId, data, session.access_token);
     },
-    onSuccess: async (updatedIssue, variables) => {
+    onSuccess: (_updatedIssue, variables) => {
       invalidateWorkflowRunQueries(
         queryClient,
         variables.workspaceId,
         variables.issueId
       );
-
-      if (!session?.access_token) {
-        return;
-      }
-
-      await emitWorkflowRunEvent(session.access_token, {
-        issueId: variables.issueId,
-        workspaceId: variables.workspaceId,
-        event: "workflow.blocked",
-        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
-        currentStepId: updatedIssue.currentStepId ?? null,
-      });
     },
   });
 };
@@ -510,24 +414,12 @@ export const useUnblockWorkflowRun = () => {
 
       return unblockWorkflowRun(workspaceId, issueId, data, session.access_token);
     },
-    onSuccess: async (updatedIssue, variables) => {
+    onSuccess: (_updatedIssue, variables) => {
       invalidateWorkflowRunQueries(
         queryClient,
         variables.workspaceId,
         variables.issueId
       );
-
-      if (!session?.access_token) {
-        return;
-      }
-
-      await emitWorkflowRunEvent(session.access_token, {
-        issueId: variables.issueId,
-        workspaceId: variables.workspaceId,
-        event: "workflow.unblocked",
-        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
-        currentStepId: updatedIssue.currentStepId ?? null,
-      });
     },
   });
 };
@@ -557,24 +449,12 @@ export const useRequestWorkflowReview = () => {
         session.access_token
       );
     },
-    onSuccess: async (updatedIssue, variables) => {
+    onSuccess: (_updatedIssue, variables) => {
       invalidateWorkflowRunQueries(
         queryClient,
         variables.workspaceId,
         variables.issueId
       );
-
-      if (!session?.access_token) {
-        return;
-      }
-
-      await emitWorkflowRunEvent(session.access_token, {
-        issueId: variables.issueId,
-        workspaceId: variables.workspaceId,
-        event: "workflow.review.requested",
-        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
-        currentStepId: updatedIssue.currentStepId ?? null,
-      });
     },
   });
 };
@@ -604,24 +484,12 @@ export const useRequestWorkflowHandoff = () => {
         session.access_token
       );
     },
-    onSuccess: async (updatedIssue, variables) => {
+    onSuccess: (_updatedIssue, variables) => {
       invalidateWorkflowRunQueries(
         queryClient,
         variables.workspaceId,
         variables.issueId
       );
-
-      if (!session?.access_token) {
-        return;
-      }
-
-      await emitWorkflowRunEvent(session.access_token, {
-        issueId: variables.issueId,
-        workspaceId: variables.workspaceId,
-        event: "workflow.handoff.requested",
-        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
-        currentStepId: updatedIssue.currentStepId ?? null,
-      });
     },
   });
 };
@@ -651,27 +519,12 @@ export const useRespondWorkflowReview = () => {
         session.access_token
       );
     },
-    onSuccess: async (updatedIssue, variables) => {
+    onSuccess: (_updatedIssue, variables) => {
       invalidateWorkflowRunQueries(
         queryClient,
         variables.workspaceId,
         variables.issueId
       );
-
-      if (!session?.access_token) {
-        return;
-      }
-
-      await emitWorkflowRunEvent(session.access_token, {
-        issueId: variables.issueId,
-        workspaceId: variables.workspaceId,
-        event:
-          variables.data.outcome === "APPROVED"
-            ? "workflow.review.approved"
-            : "workflow.review.changes_requested",
-        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
-        currentStepId: updatedIssue.currentStepId ?? null,
-      });
     },
   });
 };
@@ -701,24 +554,12 @@ export const useAcceptWorkflowHandoff = () => {
         session.access_token
       );
     },
-    onSuccess: async (updatedIssue, variables) => {
+    onSuccess: (_updatedIssue, variables) => {
       invalidateWorkflowRunQueries(
         queryClient,
         variables.workspaceId,
         variables.issueId
       );
-
-      if (!session?.access_token) {
-        return;
-      }
-
-      await emitWorkflowRunEvent(session.access_token, {
-        issueId: variables.issueId,
-        workspaceId: variables.workspaceId,
-        event: "workflow.handoff.accepted",
-        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
-        currentStepId: updatedIssue.currentStepId ?? null,
-      });
     },
   });
 };
@@ -748,24 +589,12 @@ export const useSubmitWorkflowRecord = () => {
         session.access_token
       );
     },
-    onSuccess: async (updatedIssue, variables) => {
+    onSuccess: (_updatedIssue, variables) => {
       invalidateWorkflowRunQueries(
         queryClient,
         variables.workspaceId,
         variables.issueId
       );
-
-      if (!session?.access_token) {
-        return;
-      }
-
-      await emitWorkflowRunEvent(session.access_token, {
-        issueId: variables.issueId,
-        workspaceId: variables.workspaceId,
-        event: "workflow.record.submitted",
-        runStatus: updatedIssue.workflowRun?.runStatus ?? null,
-        currentStepId: updatedIssue.currentStepId ?? null,
-      });
     },
   });
 };
@@ -793,7 +622,7 @@ export const useUpdateIssue = () => {
 
       return updateIssue(workspaceId, issueId, data, session.access_token);
     },
-    onSuccess: async (updatedIssue, variables) => {
+    onSuccess: (_updatedIssue, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issues", variables.workspaceId],
       });
@@ -810,19 +639,6 @@ export const useUpdateIssue = () => {
         queryKey: ["project-summary", variables.workspaceId],
       });
 
-      if (!session?.access_token) {
-        return;
-      }
-
-      await broadcastIssueUpdated(
-        {
-          issueId: variables.issueId,
-          workspaceId: variables.workspaceId,
-          changedFields: Object.keys(variables.data),
-          issueType: updatedIssue.issueType ?? null,
-        },
-        session.access_token,
-      );
     },
   });
 };
@@ -848,7 +664,7 @@ export const useCancelIssue = () => {
 
       return cancelIssue(workspaceId, issueId, session.access_token);
     },
-    onSuccess: async (updatedIssue, variables) => {
+    onSuccess: (_updatedIssue, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issues", variables.workspaceId],
       });
@@ -868,19 +684,6 @@ export const useCancelIssue = () => {
         queryKey: ["issue-activities", variables.issueId],
       });
 
-      if (!session?.access_token) {
-        return;
-      }
-
-      await broadcastIssueUpdated(
-        {
-          issueId: variables.issueId,
-          workspaceId: variables.workspaceId,
-          changedFields: ["stateId"],
-          issueType: updatedIssue.issueType ?? null,
-        },
-        session.access_token,
-      );
     },
   });
 };
@@ -973,28 +776,13 @@ export const useCreateIssueStepRecord = () => {
         session.access_token,
       );
     },
-    onSuccess: async (createdStepRecord, variables) => {
+    onSuccess: (_createdStepRecord, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issue-step-records", variables.issueId],
       });
       queryClient.invalidateQueries({
         queryKey: ["project-summary", variables.workspaceId],
       });
-
-      if (!session?.access_token) {
-        return;
-      }
-
-      await broadcastIssueStepRecordCreated(
-        {
-          issueId: variables.issueId,
-          workspaceId: variables.workspaceId,
-          stepRecordId: createdStepRecord.id,
-          stepId: createdStepRecord.stepId,
-          assigneeId: createdStepRecord.assigneeId,
-        },
-        session.access_token,
-      );
     },
   });
 };
@@ -1033,25 +821,10 @@ export const useCreateIssueActivity = () => {
         session.access_token
       );
     },
-    onSuccess: async (createdActivity, variables) => {
+    onSuccess: (_createdActivity, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["issue-activities", variables.issueId],
       });
-
-      if (!session?.access_token) {
-        return;
-      }
-
-      await broadcastIssueActivityCreated(
-        {
-          issueId: variables.issueId,
-          workspaceId: variables.workspaceId,
-          activityId: createdActivity.id,
-          actorId: createdActivity.actorId,
-          action: createdActivity.action,
-        },
-        session.access_token,
-      );
     },
   });
 };

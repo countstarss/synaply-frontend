@@ -14,11 +14,12 @@ import { useUserRealtime } from "./useUserRealtime";
 
 interface UseWorkspaceRealtimeOptions {
   enabled?: boolean;
+  userEnabled?: boolean;
 }
 
 export function useWorkspaceRealtime(
   workspaceId: string,
-  { enabled = true }: UseWorkspaceRealtimeOptions = {},
+  { enabled = true, userEnabled = enabled }: UseWorkspaceRealtimeOptions = {},
 ) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -63,5 +64,7 @@ export function useWorkspaceRealtime(
   // Per-user inbox push: backend triggers emit `inbox.updated` on
   // user:{userId} as soon as inbox_items rows are written or status
   // changes (see realtime_inbox_item_broadcast trigger).
-  useUserRealtime(user?.id ?? null, workspaceId, { enabled });
+  useUserRealtime(user?.id ?? null, workspaceId, {
+    enabled: userEnabled && !!workspaceId,
+  });
 }

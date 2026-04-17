@@ -710,6 +710,7 @@ export default function TasksPageContent() {
 
   useWorkspaceRealtime(workspaceId, {
     enabled: isPageVisible && !selectedIssueId,
+    userEnabled: isPageVisible,
   });
 
   useEffect(() => {
