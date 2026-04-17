@@ -196,12 +196,27 @@
     "unassigned": "Unassigned",
     "previous": "Previous",
     "next": "Next",
+    "finishWorkflow": "Finish issue",
     "cannotEdit": "Only the current owner can update the node status or move the workflow forward.",
     "completeHint": "Mark this node as Done before moving to the next step.",
+    "finishHint": "Mark this node as Done before finishing the workflow.",
     "ready": "This node is ready to move forward.",
+    "finalReady": "This node is ready to finish the workflow issue: {title}.",
     "note": "Note",
     "notePlaceholder": "Add a note...",
     "add": "Add"
+  },
+  "workflowCompletionDialog": {
+    "title": "Confirm workflow completion",
+    "description": "This is the final node. Once you submit, this workflow issue will be marked as done.",
+    "confirmLabel": "I have confirmed with the team that this issue is ready to be completed",
+    "confirmDescription": "Only finish the workflow after any needed review, handoff, or team confirmation is complete.",
+    "inputLabel": "Type the current issue title to confirm",
+    "inputPlaceholder": "Enter the current issue title",
+    "inputHint": "Please type exactly: {title}",
+    "inputError": "The issue title does not match.",
+    "cancel": "Cancel",
+    "submit": "Confirm completion"
   },
   "recordModal": {
     "title": "Add output",

@@ -13,16 +13,26 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import {
+  RiCalendarLine,
   RiCloseLine,
+  RiEditLine,
   RiFileTextLine,
   RiHistoryLine,
+  RiSaveLine,
   RiSparklingLine,
 } from "react-icons/ri";
 import { AiThreadShell } from "@/components/ai/thread/AiThreadShell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -42,14 +52,29 @@ import {
   useRequestWorkflowHandoff,
   useRequestWorkflowReview,
   useUnblockWorkflowRun,
+  useUpdateIssue,
 } from "@/hooks/useIssueApi";
+import { useIssueStates } from "@/hooks/useIssueStates";
+import { useProjects } from "@/hooks/useProjectApi";
 import { useIssueRealtime } from "@/hooks/realtime/useIssueRealtime";
-import { useCurrentTeam, useTeamMembers } from "@/hooks/useTeam";
+import {
+  useCurrentTeam,
+  useTeamMemberByUserId,
+  useTeamMembers,
+} from "@/hooks/useTeam";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import {
   Issue,
+  IssueAssigneeMember,
   type IssueActivity,
   type WorkflowRunActivityMetadata,
 } from "@/lib/fetchers/issue";
+import type { TeamMember } from "@/lib/fetchers/team";
+import { cn } from "@/lib/utils";
+import {
+  IssuePriority,
+  VisibilityType,
+} from "@/types/prisma";
 import useWorkflowNodeStatus from "@/app/[locale]/(main)/workflows/_components/hooks/useWorkflowNodeStatus";
 import {
   createFlowNodesAndEdges,
@@ -59,6 +84,7 @@ import {
 import { WorkflowIssue } from "@/types/team";
 import { NodeStatusUpdate } from "./NodeStatusUpdate";
 import { RecordModal } from "./RecordModal";
+import { WorkflowCompletionConfirmDialog } from "./WorkflowCompletionConfirmDialog";
 import { DiscussionTab, HistoryTab, RecordsTab } from "./tabs";
 import CustomNode from "../workflow/CustomNode";
 import { toast } from "sonner";
@@ -66,6 +92,126 @@ import { toast } from "sonner";
 const nodeTypes = {
   custom: CustomNode,
 };
+
+interface MemberOption {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl?: string;
+}
+
+const EMPTY_PRIORITY_VALUE = "__empty_priority__";
+const EMPTY_STATE_VALUE = "__empty_state__";
+const EMPTY_PROJECT_VALUE = "__empty_project__";
+const EMPTY_ASSIGNEE_VALUE = "__empty_assignee__";
+
+function getPriorityOptions(tIssues: ReturnType<typeof useTranslations>) {
+  return [
+    {
+      value: IssuePriority.LOW,
+      label: tIssues("priority.low"),
+      color: "bg-gray-100 text-gray-700",
+    },
+    {
+      value: IssuePriority.NORMAL,
+      label: tIssues("priority.normal"),
+      color: "bg-yellow-100 text-yellow-700",
+    },
+    {
+      value: IssuePriority.HIGH,
+      label: tIssues("priority.high"),
+      color: "bg-orange-100 text-orange-700",
+    },
+    {
+      value: IssuePriority.URGENT,
+      label: tIssues("priority.urgent"),
+      color: "bg-red-100 text-red-700",
+    },
+  ] as const;
+}
+
+function getVisibilityOptions(tIssues: ReturnType<typeof useTranslations>) {
+  return [
+    {
+      value: VisibilityType.PRIVATE,
+      label: tIssues("visibility.private"),
+    },
+    {
+      value: VisibilityType.TEAM_READONLY,
+      label: tIssues("visibility.teamReadonly"),
+    },
+    {
+      value: VisibilityType.TEAM_EDITABLE,
+      label: tIssues("visibility.teamEditable"),
+    },
+    {
+      value: VisibilityType.PUBLIC,
+      label: tIssues("visibility.public"),
+    },
+  ] as const;
+}
+
+function getTeamMemberName(
+  member: TeamMember,
+  tIssues: ReturnType<typeof useTranslations>,
+) {
+  return (
+    member.user.name?.trim() ||
+    member.user.email?.split("@")[0] ||
+    tIssues("normalDetail.memberFallback", { id: member.id.slice(0, 6) })
+  );
+}
+
+function getIssueMemberName(
+  member: IssueAssigneeMember | null | undefined,
+  tIssues: ReturnType<typeof useTranslations>,
+) {
+  return (
+    member?.user?.name?.trim() ||
+    member?.user?.email?.split("@")[0] ||
+    tIssues("normalDetail.memberFallback", {
+      id: member?.id?.slice(0, 6) || tIssues("normalDetail.user.unknown"),
+    })
+  );
+}
+
+function formatDateOnly(
+  dateString: string | null | undefined,
+  locale: string,
+  tIssues: ReturnType<typeof useTranslations>,
+) {
+  if (!dateString) {
+    return tIssues("normalDetail.meta.notSet");
+  }
+
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+  }).format(new Date(dateString));
+}
+
+function toUtcMidnightIso(date: Date) {
+  return new Date(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
+  ).toISOString();
+}
+
+function getPriorityOption(
+  priority: IssuePriority | null | undefined,
+  options: ReturnType<typeof getPriorityOptions>,
+) {
+  return options.find((option) => option.value === priority) || null;
+}
+
+function getVisibilityLabel(
+  visibility: VisibilityType | null | undefined,
+  options: ReturnType<typeof getVisibilityOptions>,
+  tIssues: ReturnType<typeof useTranslations>,
+) {
+  return (
+    options.find((option) => option.value === visibility)?.label ||
+    tIssues("normalDetail.meta.notSet")
+  );
+}
 
 function isWorkflowRunActivityMetadata(
   metadata: unknown,
@@ -130,9 +276,30 @@ export function WorkflowIssueDetailFlow({
 }: WorkflowIssueDetailProps) {
   const tIssues = useTranslations("issues");
   const locale = useLocale();
-  const { team } = useCurrentTeam();
-  const { data: teamMembers = [] } = useTeamMembers(team?.id);
   const { user, session } = useAuth();
+  const { currentWorkspace } = useWorkspace();
+  const { team } = useCurrentTeam();
+  const workspaceType = currentWorkspace?.type || "PERSONAL";
+  const teamId = currentWorkspace?.teamId || team?.id;
+  const { data: teamMembers = [] } = useTeamMembers(teamId);
+  const { data: currentUserTeamMember } = useTeamMemberByUserId(user?.id);
+  const { data: projects = [] } = useProjects(issue.workspaceId);
+  const { data: issueStates = [] } = useIssueStates(issue.workspaceId, {
+    enabled: true,
+  });
+  const updateIssueMutation = useUpdateIssue();
+  const priorityOptions = React.useMemo(
+    () => getPriorityOptions(tIssues),
+    [tIssues],
+  );
+  const visibilityOptions = React.useMemo(
+    () => getVisibilityOptions(tIssues),
+    [tIssues],
+  );
+  const currentUserName =
+    user?.user_metadata?.name?.trim() ||
+    user?.email?.split("@")[0] ||
+    tIssues("normalDetail.user.anonymous");
   const { getFocusedUsersForNode, setFocusingNode } = useIssueRealtime(
     issue.id,
     issue.workspaceId,
@@ -155,6 +322,9 @@ export function WorkflowIssueDetailFlow({
   const [workflowIssue, setWorkflowIssue] = useState<WorkflowIssue | null>(
     initialWorkflowIssue,
   );
+  const [committedIssue, setCommittedIssue] = useState<Issue>(issue);
+  const [localIssue, setLocalIssue] = useState<Issue>(issue);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isAiThreadOpen, setIsAiThreadOpen] = useState(false);
   const [workflowPanelTab, setWorkflowPanelTab] = useState<
     "overview" | "canvas"
@@ -197,6 +367,11 @@ export function WorkflowIssueDetailFlow({
     setWorkflowIssue(initialWorkflowIssue);
   }, [initialWorkflowIssue]);
 
+  React.useEffect(() => {
+    setCommittedIssue(issue);
+    setLocalIssue((current) => (isEditingTitle ? current : issue));
+  }, [isEditingTitle, issue]);
+
   const runStatusLabels = getRunStatusLabels(tIssues);
   const actionTypeLabels = getActionTypeLabels(tIssues);
   const reviewOutcomeLabels = getReviewOutcomeLabels(tIssues);
@@ -207,23 +382,91 @@ export function WorkflowIssueDetailFlow({
       (node: Node) => node.id === workflowIssue.currentNodeId,
     );
   }, [workflow, workflowIssue]);
+  const memberMap = new Map<string, MemberOption>();
+
+  for (const member of teamMembers) {
+    memberMap.set(member.id, {
+      id: member.id,
+      name: getTeamMemberName(member, tIssues),
+      email: member.user.email,
+      avatarUrl: member.user.avatar_url || member.user.avatarUrl,
+    });
+  }
+
+  for (const assignee of localIssue.assignees || []) {
+    if (!memberMap.has(assignee.memberId)) {
+      memberMap.set(assignee.memberId, {
+        id: assignee.memberId,
+        name: getIssueMemberName(assignee.member, tIssues),
+        email: assignee.member?.user?.email || "",
+        avatarUrl:
+          assignee.member?.user?.avatar_url ||
+          assignee.member?.user?.avatarUrl ||
+          undefined,
+      });
+    }
+  }
+
+  const memberOptions = Array.from(memberMap.values()).sort((left, right) =>
+    left.name.localeCompare(right.name, locale),
+  );
+  const currentWorkspaceMember = teamMembers.find(
+    (member) => member.user.id === user?.id,
+  );
+  const currentMemberId =
+    currentWorkspaceMember?.id || currentUserTeamMember?.id;
+  const personalDirectAssignee =
+    workspaceType === "PERSONAL" &&
+    localIssue.directAssigneeId &&
+    currentUserTeamMember?.id === localIssue.directAssigneeId
+      ? {
+          id: currentUserTeamMember.id,
+          name: currentUserName,
+          email: user?.email || "",
+        }
+      : null;
+  const directAssignee =
+    memberOptions.find((member) => member.id === localIssue.directAssigneeId) ||
+    personalDirectAssignee;
+  const selectedProject = projects.find(
+    (project) => project.id === localIssue.projectId,
+  );
+  const selectedProjectName =
+    selectedProject?.name ?? localIssue.project?.name ?? null;
+  const selectedState = issueStates.find(
+    (state) => state.id === localIssue.stateId,
+  );
+  const currentPriority = getPriorityOption(
+    localIssue.priority,
+    priorityOptions,
+  );
+  const dueDateValue = localIssue.dueDate
+    ? new Date(localIssue.dueDate)
+    : undefined;
+  const canEditIssue = Boolean(
+    user?.id &&
+      (workspaceType === "PERSONAL" ||
+        currentWorkspaceMember?.role === "OWNER" ||
+        currentWorkspaceMember?.role === "ADMIN" ||
+        localIssue.creatorId === user.id ||
+        localIssue.creatorMemberId === currentMemberId ||
+        localIssue.directAssigneeId === currentMemberId ||
+        localIssue.assignees?.some(
+          (assignee) =>
+            assignee.memberId === currentMemberId ||
+            assignee.member?.user?.id === user.id,
+        )),
+  );
   const workflowMembers = useMemo(
     () =>
-      teamMembers.map((member) => ({
-        id: member.id,
-        userId: member.user?.id,
-        name:
-          member.user?.name?.trim() ||
-          member.user?.email?.split("@")[0] ||
-          tIssues("workflowFlow.memberFallback", {
-            id: member.id.slice(0, 6),
-          }),
-        email: member.user?.email,
-        avatarUrl: member.user?.avatar_url || member.user?.avatarUrl,
+      memberOptions.map((member) => ({
+        ...member,
+        userId: teamMembers.find((teamMember) => teamMember.id === member.id)?.user
+          ?.id,
       })),
-    [tIssues, teamMembers],
+    [memberOptions, teamMembers],
   );
-  const workflowRun = issue.workflowRun;
+  const workflowRun = localIssue.workflowRun;
   const collaborationEligibleMembers = useMemo(
     () =>
       workflowMembers.filter(
@@ -266,20 +509,80 @@ export function WorkflowIssueDetailFlow({
         })
       : null;
 
+  const persistIssuePatch = React.useCallback(
+    async (patch: Partial<Issue>, relationOverrides: Partial<Issue> = {}) => {
+      if (!issue.workspaceId || !committedIssue) {
+        toast.error(tIssues("normalDetail.toasts.invalidWorkspace"));
+        return;
+      }
+
+      const sanitizedPatch = Object.fromEntries(
+        Object.entries(patch).filter(([, value]) => value !== undefined),
+      ) as Partial<Issue>;
+
+      if (Object.keys(sanitizedPatch).length === 0) {
+        setLocalIssue(committedIssue);
+        setIsEditingTitle(false);
+        return;
+      }
+
+      try {
+        const updatedIssue = await updateIssueMutation.mutateAsync({
+          workspaceId: issue.workspaceId,
+          issueId: committedIssue.id,
+          data: sanitizedPatch,
+        });
+
+        const mergedIssue: Issue = {
+          ...committedIssue,
+          ...sanitizedPatch,
+          ...updatedIssue,
+          ...relationOverrides,
+        };
+
+        setCommittedIssue(mergedIssue);
+        setLocalIssue(mergedIssue);
+        setIsEditingTitle(false);
+        onUpdate();
+        toast.success(tIssues("normalDetail.toasts.saved"));
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : tIssues("normalDetail.toasts.updateFailed"),
+        );
+      }
+    },
+    [committedIssue, issue.workspaceId, onUpdate, tIssues, updateIssueMutation],
+  );
+
+  const handleCancelTitleEdit = React.useCallback(() => {
+    setLocalIssue(committedIssue);
+    setIsEditingTitle(false);
+  }, [committedIssue]);
+
   const {
     handleStatusUpdate,
-    handleNext,
+    handleAdvance,
     handlePrevious,
     handleSubmitRecord,
+    handleConfirmWorkflowCompletion,
     isRecordModalOpen,
     setIsRecordModalOpen,
-    canNext,
+    isCompletionConfirmOpen,
+    setIsCompletionConfirmOpen,
+    canAdvance,
+    isFinalNode,
     canPrevious,
   } = useWorkflowNodeStatus({
-    issue,
+    issue: localIssue,
     workflow,
     workflowIssue,
     setWorkflowIssue,
+    onIssueSynced: (nextIssue) => {
+      setCommittedIssue(nextIssue);
+      setLocalIssue(nextIssue);
+    },
     currentNode,
     user,
     session,
@@ -538,9 +841,12 @@ export function WorkflowIssueDetailFlow({
     assigneeName?: string;
   };
 
-  const isCurrentAssignee =
-    (workflowRun?.currentAssigneeUserId || currentNodeStatus?.assigneeId) ===
-    user?.id;
+  const isCurrentAssignee = Boolean(
+    (currentMemberId && localIssue.directAssigneeId === currentMemberId) ||
+      (workflowRun?.currentAssigneeUserId &&
+        workflowRun.currentAssigneeUserId === user?.id) ||
+      (currentNodeStatus?.assigneeId && currentNodeStatus.assigneeId === user?.id),
+  );
   const isPendingReviewer =
     workflowRun?.runStatus === "WAITING_REVIEW" &&
     workflowRun.targetUserId === user?.id;
@@ -551,6 +857,7 @@ export function WorkflowIssueDetailFlow({
     ? getFocusedUsersForNode(currentNode.id)
     : [];
   const currentOwnerLabel =
+    directAssignee?.name ||
     workflowRun?.currentAssigneeName ||
     currentNodeStatus?.assigneeName ||
     tIssues("workflowFlow.meta.unassigned");
@@ -565,41 +872,13 @@ export function WorkflowIssueDetailFlow({
   const canEditNodeStatus = workflowRun
     ? workflowRun.runStatus === "ACTIVE" && isCurrentAssignee
     : isCurrentAssignee;
-  const issueMetaItems = [
-    [tIssues("workflowFlow.meta.number"), issue.key || `#${issue.id.slice(0, 8)}`],
-    [tIssues("workflowFlow.meta.workflow"), workflowIssue.workflowName],
-    [
-      tIssues("workflowFlow.meta.status"),
-      workflowRun
-        ? runStatusLabels[workflowRun.runStatus]
-        : tIssues("workflowFlow.meta.notStarted"),
-    ],
-    [
-      tIssues("workflowFlow.meta.currentStep"),
-      workflowRun?.currentStepName ||
-        currentNode?.data?.label ||
-        tIssues("workflowFlow.meta.unknownStep"),
-    ],
-    [tIssues("workflowFlow.meta.currentOwner"), currentOwnerLabel],
-    [
-      tIssues("workflowFlow.meta.priority"),
-      issue.priority
-        ? tIssues(`priority.${issue.priority.toLowerCase()}`)
-        : tIssues("workflowFlow.meta.notSet"),
-    ],
-    [
-      tIssues("workflowFlow.meta.stepCount"),
-      tIssues("workflowFlow.meta.stepsValue", {
-        count: workflowRun?.totalSteps || workflow.nodes.length,
-      }),
-    ],
-  ] as const;
+  const showNodeStatusPanel = Boolean(currentNode && canEditNodeStatus);
   const collaborationTags = workflowRun
     ? [
         [tIssues("workflowFlow.meta.action"), actionTypeLabels[workflowRun.currentActionType]],
         [
           tIssues("workflowFlow.meta.owner"),
-          workflowRun.currentAssigneeName || tIssues("workflowFlow.meta.unassigned"),
+          currentOwnerLabel,
         ],
         [
           tIssues("workflowFlow.meta.step"),
@@ -626,52 +905,387 @@ export function WorkflowIssueDetailFlow({
     <div className="flex h-full flex-col gap-2">
       <Card className="flex-shrink-0 border-app-border bg-app-content-bg shadow-none">
         <CardHeader className="flex flex-row items-start justify-between gap-4 p-4">
-          <div className="space-y-2">
-            <CardTitle className="text-xl text-app-text-primary">
-              {issue.title}
-            </CardTitle>
-            <div className="flex flex-wrap items-center gap-2 text-sm text-app-text-muted">
-              <Badge
-                variant="secondary"
-                className="bg-app-button-hover text-app-text-primary"
-              >
-                {tIssues("workflowFlow.header.workflow", {
-                  name: workflowIssue.workflowName,
-                })}
-              </Badge>
-              {workflowRun && (
-                <Badge
-                  variant="outline"
-                  className="border-app-border text-app-text-primary"
+          <div className="min-w-0 flex-1 space-y-3">
+            {isEditingTitle ? (
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  value={localIssue.title}
+                  onChange={(event) =>
+                    setLocalIssue({ ...localIssue, title: event.target.value })
+                  }
+                  className="flex-1 border-app-border bg-app-bg text-app-text-primary"
+                  autoFocus
+                />
+                <Button
+                  type="button"
+                  className="bg-sky-600 text-white hover:bg-sky-500"
+                  onClick={() =>
+                    void persistIssuePatch({ title: localIssue.title })
+                  }
                 >
-                  {runStatusLabels[workflowRun.runStatus]}
-                </Badge>
-              )}
+                  <RiSaveLine className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-app-border bg-transparent text-app-text-primary"
+                  onClick={handleCancelTitleEdit}
+                >
+                  <RiCloseLine className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <CardTitle className="min-w-0 truncate text-xl text-app-text-primary">
+                  {localIssue.title}
+                </CardTitle>
+                {canEditIssue && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 rounded-md text-app-text-secondary hover:bg-app-button-hover hover:text-app-text-primary"
+                    onClick={() => setIsEditingTitle(true)}
+                  >
+                    <RiEditLine className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-2">
               <Badge
                 variant="outline"
                 className="border-app-border text-app-text-primary"
               >
-                {tIssues("workflowFlow.header.priority", {
-                  value: issue.priority
-                    ? tIssues(`priority.${issue.priority.toLowerCase()}`)
-                    : tIssues("workflowFlow.meta.notSet"),
-                })}
+                {localIssue.key || `#${localIssue.id}`}
               </Badge>
+
+              {canEditIssue ? (
+                <Select
+                  value={localIssue.stateId ?? EMPTY_STATE_VALUE}
+                  onValueChange={(value) => {
+                    const nextState =
+                      value === EMPTY_STATE_VALUE
+                        ? null
+                        : issueStates.find((state) => state.id === value) ||
+                          null;
+                    void persistIssuePatch(
+                      { stateId: nextState?.id ?? null },
+                      { state: nextState },
+                    );
+                  }}
+                >
+                  <SelectTrigger className="h-8 w-auto min-w-[108px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
+                    {selectedState ? (
+                      <span data-slot="select-value">
+                        {tIssues("normalDetail.badges.state", {
+                          value: selectedState.name,
+                        })}
+                      </span>
+                    ) : (
+                      <SelectValue
+                        placeholder={tIssues(
+                          "normalDetail.select.statePlaceholder",
+                        )}
+                      />
+                    )}
+                  </SelectTrigger>
+                  <SelectContent className="border-app-border bg-app-content-bg">
+                    <SelectItem value={EMPTY_STATE_VALUE}>
+                      {tIssues("normalDetail.select.statePlaceholder")}
+                    </SelectItem>
+                    {issueStates.map((state) => (
+                      <SelectItem key={state.id} value={state.id}>
+                        {state.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge
+                  variant="secondary"
+                  className="bg-app-button-hover text-app-text-primary"
+                >
+                  {tIssues("normalDetail.badges.state", {
+                    value:
+                      selectedState?.name || tIssues("normalDetail.meta.notSet"),
+                  })}
+                </Badge>
+              )}
+
+              {canEditIssue ? (
+                <Select
+                  value={localIssue.priority ?? EMPTY_PRIORITY_VALUE}
+                  onValueChange={(value) =>
+                    void persistIssuePatch({
+                      priority:
+                        value === EMPTY_PRIORITY_VALUE
+                          ? null
+                          : (value as IssuePriority),
+                    })
+                  }
+                >
+                  <SelectTrigger className="h-8 w-auto min-w-[100px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
+                    {currentPriority ? (
+                      <span data-slot="select-value">
+                        {tIssues("normalDetail.badges.priority", {
+                          value: currentPriority.label,
+                        })}
+                      </span>
+                    ) : (
+                      <SelectValue
+                        placeholder={tIssues(
+                          "normalDetail.select.priorityPlaceholder",
+                        )}
+                      />
+                    )}
+                  </SelectTrigger>
+                  <SelectContent className="border-app-border bg-app-content-bg">
+                    <SelectItem value={EMPTY_PRIORITY_VALUE}>
+                      {tIssues("normalDetail.select.priorityPlaceholder")}
+                    </SelectItem>
+                    {priorityOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className={cn("border-transparent", currentPriority?.color)}
+                >
+                  {tIssues("normalDetail.badges.priority", {
+                    value:
+                      currentPriority?.label ||
+                      tIssues("normalDetail.meta.notSet"),
+                  })}
+                </Badge>
+              )}
+
+              {canEditIssue ? (
+                <Select
+                  value={localIssue.projectId ?? EMPTY_PROJECT_VALUE}
+                  onValueChange={(value) => {
+                    const nextProjectId =
+                      value === EMPTY_PROJECT_VALUE ? null : value;
+                    const nextProject =
+                      projects.find(
+                        (project) => project.id === nextProjectId,
+                      ) || null;
+                    void persistIssuePatch(
+                      { projectId: nextProjectId },
+                      { project: nextProject },
+                    );
+                  }}
+                >
+                  <SelectTrigger className="h-8 w-auto min-w-[120px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
+                    {selectedProjectName ? (
+                      <span data-slot="select-value">
+                        {tIssues("normalDetail.badges.project", {
+                          value: selectedProjectName,
+                        })}
+                      </span>
+                    ) : (
+                      <SelectValue
+                        placeholder={tIssues(
+                          "normalDetail.select.projectPlaceholder",
+                        )}
+                      />
+                    )}
+                  </SelectTrigger>
+                  <SelectContent className="border-app-border bg-app-content-bg">
+                    <SelectItem value={EMPTY_PROJECT_VALUE}>
+                      {tIssues("normalDetail.select.projectPlaceholder")}
+                    </SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="border-app-border text-app-text-primary"
+                >
+                  {tIssues("normalDetail.badges.project", {
+                    value:
+                      selectedProject?.name ||
+                      localIssue.project?.name ||
+                      tIssues("normalDetail.meta.notSet"),
+                  })}
+                </Badge>
+              )}
+
+              {canEditIssue && workspaceType !== "PERSONAL" ? (
+                <Select
+                  value={localIssue.directAssigneeId ?? EMPTY_ASSIGNEE_VALUE}
+                  onValueChange={(value) =>
+                    void persistIssuePatch({
+                      directAssigneeId:
+                        value === EMPTY_ASSIGNEE_VALUE ? null : value,
+                    })
+                  }
+                >
+                  <SelectTrigger className="h-8 w-auto min-w-[130px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
+                    {directAssignee ? (
+                      <span data-slot="select-value">
+                        {tIssues("normalDetail.badges.assignee", {
+                          value: directAssignee.name,
+                        })}
+                      </span>
+                    ) : (
+                      <SelectValue
+                        placeholder={tIssues(
+                          "normalDetail.select.assigneePlaceholder",
+                        )}
+                      />
+                    )}
+                  </SelectTrigger>
+                  <SelectContent className="border-app-border bg-app-content-bg">
+                    <SelectItem value={EMPTY_ASSIGNEE_VALUE}>
+                      {tIssues("normalDetail.select.assigneePlaceholder")}
+                    </SelectItem>
+                    {memberOptions.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="border-app-border text-app-text-primary"
+                >
+                  {tIssues("normalDetail.badges.assignee", {
+                    value:
+                      directAssignee?.name ||
+                      currentUserName ||
+                      tIssues("normalDetail.meta.unassigned"),
+                  })}
+                </Badge>
+              )}
+
+              {canEditIssue ? (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 border-app-border bg-app-content-bg text-app-text-primary"
+                    >
+                      <RiCalendarLine className="h-3 w-3" />
+                      {tIssues("normalDetail.badges.dueDate", {
+                        value: formatDateOnly(localIssue.dueDate, locale, tIssues),
+                      })}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    className="w-auto border-app-border bg-app-content-bg p-0"
+                  >
+                    <Calendar
+                      mode="single"
+                      selected={dueDateValue}
+                      onSelect={(date) =>
+                        void persistIssuePatch({
+                          dueDate: date ? toUtcMidnightIso(date) : null,
+                        })
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="border-app-border text-app-text-primary"
+                >
+                  {tIssues("normalDetail.badges.dueDate", {
+                    value: formatDateOnly(localIssue.dueDate, locale, tIssues),
+                  })}
+                </Badge>
+              )}
+
+              {canEditIssue ? (
+                <Select
+                  value={localIssue.visibility ?? VisibilityType.PRIVATE}
+                  onValueChange={(value) =>
+                    void persistIssuePatch({
+                      visibility: value as VisibilityType,
+                    })
+                  }
+                >
+                  <SelectTrigger className="h-8 w-auto min-w-[130px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
+                    <span data-slot="select-value">
+                      {tIssues("normalDetail.badges.visibility", {
+                        value: getVisibilityLabel(
+                          localIssue.visibility,
+                          visibilityOptions,
+                          tIssues,
+                        ),
+                      })}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent className="border-app-border bg-app-content-bg">
+                    {visibilityOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="border-app-border text-app-text-primary"
+                >
+                  {tIssues("normalDetail.badges.visibility", {
+                    value: getVisibilityLabel(
+                      localIssue.visibility,
+                      visibilityOptions,
+                      tIssues,
+                    ),
+                  })}
+                </Badge>
+              )}
+
+              {localIssue.assignees?.map((assignee) => (
+                <Badge
+                  key={assignee.id}
+                  variant="secondary"
+                  className="bg-app-button-hover text-app-text-primary"
+                >
+                  {tIssues("normalDetail.badges.collaborator", {
+                    value:
+                      memberOptions.find(
+                        (member) => member.id === assignee.memberId,
+                      )?.name || getIssueMemberName(assignee.member, tIssues),
+                  })}
+                </Badge>
+              ))}
+
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-8 border-app-border bg-transparent text-app-text-primary"
+                onClick={() => setIsAiThreadOpen(true)}
+              >
+                <RiSparklingLine className="h-4 w-4 text-sky-600" />
+                {tIssues("workflowFlow.actions.openAi")}
+              </Button>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="border-app-border bg-transparent text-app-text-primary"
-              onClick={() => setIsAiThreadOpen(true)}
-            >
-              <RiSparklingLine className="h-4 w-4 text-sky-600" />
-              {tIssues("workflowFlow.actions.openAi")}
-            </Button>
-
             <Button
               type="button"
               variant="ghost"
@@ -720,28 +1334,12 @@ export function WorkflowIssueDetailFlow({
             <CardContent className="min-h-0 flex-1 p-0">
               <TabsContent value="overview" className="mt-0 h-full">
                 <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto p-4">
-                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                    {issueMetaItems.map(([label, value]) => (
-                      <div
-                        key={label}
-                        className="rounded-lg border border-app-border bg-app-bg px-3 py-2"
-                      >
-                        <div className="text-[11px] font-medium uppercase tracking-wide text-app-text-muted">
-                          {label}
-                        </div>
-                        <div className="mt-1 truncate text-sm text-app-text-primary">
-                          {String(value)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
                   <div className="min-h-0 flex-1 rounded-lg border border-app-border bg-app-bg p-4">
                     <div className="text-sm font-medium text-app-text-primary">
                       {tIssues("workflowFlow.overview.title")}
                     </div>
                     <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-app-text-secondary">
-                      {issue.description?.trim() ||
+                      {localIssue.description?.trim() ||
                         tIssues("workflowFlow.overview.empty")}
                     </div>
                   </div>
@@ -781,22 +1379,25 @@ export function WorkflowIssueDetailFlow({
         </Tabs>
 
         <div className="flex min-h-0 flex-col gap-2 xl:col-start-1 xl:row-start-2">
-          {workflowRun && (
-            <Card className="border-app-border bg-app-content-bg shadow-none">
-              <CardHeader className="flex flex-row items-center justify-between gap-3 p-3 pb-2">
-                <div className="space-y-1">
-                  <CardTitle className="text-base text-app-text-primary">
-                    {tIssues("workflowFlow.collaboration.title")}
-                  </CardTitle>
-                </div>
-                <Badge
-                  variant="outline"
-                  className="border-app-border text-xs text-app-text-primary"
-                >
-                  {runStatusLabels[workflowRun.runStatus]}
-                </Badge>
-              </CardHeader>
-              <CardContent className="space-y-3 px-3 pb-3">
+          <div
+            className={`grid min-h-0 gap-2 ${showNodeStatusPanel ? "xl:grid-cols-2" : ""}`}
+          >
+            {workflowRun && (
+              <Card className="min-w-0 border-app-border bg-app-content-bg shadow-none">
+                <CardHeader className="flex flex-row items-center justify-between gap-3 p-3 pb-2">
+                  <div className="space-y-1">
+                    <CardTitle className="text-base text-app-text-primary">
+                      {tIssues("workflowFlow.collaboration.title")}
+                    </CardTitle>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className="border-app-border text-xs text-app-text-primary"
+                  >
+                    {runStatusLabels[workflowRun.runStatus]}
+                  </Badge>
+                </CardHeader>
+                <CardContent className="space-y-3 px-3 pb-3">
                 <div className="flex flex-wrap gap-2">
                   {collaborationTags.map(([label, value]) => (
                     <Badge
@@ -1093,23 +1694,28 @@ export function WorkflowIssueDetailFlow({
                     {tIssues("workflowFlow.done.description")}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          )}
+                </CardContent>
+              </Card>
+            )}
 
-          {currentNode && canEditNodeStatus && (
-            <NodeStatusUpdate
-              nodeId={currentNode.id}
-              currentStatus={currentNodeStatus?.status || "TODO"}
-              assignee={currentNodeStatus?.assigneeName}
-              canEdit={canEditNodeStatus}
-              onStatusUpdate={handleStatusUpdate}
-              onNext={handleNext}
-              onPrevious={handlePrevious}
-              canNext={canNext}
-              canPrevious={canPrevious}
-            />
-          )}
+            {showNodeStatusPanel && currentNode && (
+              <div className="min-w-0">
+                <NodeStatusUpdate
+                  nodeId={currentNode.id}
+                  issueTitle={localIssue.title}
+                  currentStatus={currentNodeStatus?.status || "TODO"}
+                  assignee={currentNodeStatus?.assigneeName}
+                  canEdit={canEditNodeStatus}
+                  onStatusUpdate={handleStatusUpdate}
+                  onAdvance={handleAdvance}
+                  onPrevious={handlePrevious}
+                  canAdvance={canAdvance}
+                  isFinalNode={isFinalNode}
+                  canPrevious={canPrevious}
+                />
+              </div>
+            )}
+          </div>
 
           {currentNodeFocusUsers.length > 0 && (
             <Card className="border-app-border bg-app-content-bg shadow-none">
@@ -1190,6 +1796,13 @@ export function WorkflowIssueDetailFlow({
         isOpen={isRecordModalOpen}
         onClose={() => setIsRecordModalOpen(false)}
         onSubmit={handleSubmitRecord}
+      />
+
+      <WorkflowCompletionConfirmDialog
+        isOpen={isCompletionConfirmOpen}
+        issueTitle={localIssue.title}
+        onClose={() => setIsCompletionConfirmOpen(false)}
+        onSubmit={handleConfirmWorkflowCompletion}
       />
 
       <AiThreadShell

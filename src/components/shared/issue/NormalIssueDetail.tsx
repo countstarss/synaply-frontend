@@ -913,15 +913,19 @@ export default function NormalIssueDetail({
                   }}
                 >
                   <SelectTrigger className="h-8 w-auto min-w-[108px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
-                    <SelectValue
-                      placeholder={tIssues("normalDetail.select.statePlaceholder")}
-                    >
-                      {selectedState
-                        ? tIssues("normalDetail.badges.state", {
-                            value: selectedState.name,
-                          })
-                        : undefined}
-                    </SelectValue>
+                    {selectedState ? (
+                      <span data-slot="select-value">
+                        {tIssues("normalDetail.badges.state", {
+                          value: selectedState.name,
+                        })}
+                      </span>
+                    ) : (
+                      <SelectValue
+                        placeholder={tIssues(
+                          "normalDetail.select.statePlaceholder",
+                        )}
+                      />
+                    )}
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>
@@ -961,17 +965,19 @@ export default function NormalIssueDetail({
                   }
                 >
                   <SelectTrigger className="h-8 w-auto min-w-[100px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
-                    <SelectValue
-                      placeholder={tIssues(
-                        "normalDetail.select.priorityPlaceholder",
-                      )}
-                    >
-                      {currentPriority
-                        ? tIssues("normalDetail.badges.priority", {
-                            value: currentPriority.label,
-                          })
-                        : undefined}
-                    </SelectValue>
+                    {currentPriority ? (
+                      <span data-slot="select-value">
+                        {tIssues("normalDetail.badges.priority", {
+                          value: currentPriority.label,
+                        })}
+                      </span>
+                    ) : (
+                      <SelectValue
+                        placeholder={tIssues(
+                          "normalDetail.select.priorityPlaceholder",
+                        )}
+                      />
+                    )}
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>
@@ -1016,17 +1022,19 @@ export default function NormalIssueDetail({
                   }}
                 >
                   <SelectTrigger className="h-8 w-auto min-w-[120px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
-                    <SelectValue
-                      placeholder={tIssues(
-                        "normalDetail.select.projectPlaceholder",
-                      )}
-                    >
-                      {selectedProjectName
-                        ? tIssues("normalDetail.badges.project", {
-                            value: selectedProjectName,
-                          })
-                        : undefined}
-                    </SelectValue>
+                    {selectedProjectName ? (
+                      <span data-slot="select-value">
+                        {tIssues("normalDetail.badges.project", {
+                          value: selectedProjectName,
+                        })}
+                      </span>
+                    ) : (
+                      <SelectValue
+                        placeholder={tIssues(
+                          "normalDetail.select.projectPlaceholder",
+                        )}
+                      />
+                    )}
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>
@@ -1066,17 +1074,19 @@ export default function NormalIssueDetail({
                   }
                 >
                   <SelectTrigger className="h-8 w-auto min-w-[130px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
-                    <SelectValue
-                      placeholder={tIssues(
-                        "normalDetail.select.assigneePlaceholder",
-                      )}
-                    >
-                      {directAssignee
-                        ? tIssues("normalDetail.badges.assignee", {
-                            value: directAssignee.name,
-                          })
-                        : undefined}
-                    </SelectValue>
+                    {directAssignee ? (
+                      <span data-slot="select-value">
+                        {tIssues("normalDetail.badges.assignee", {
+                          value: directAssignee.name,
+                        })}
+                      </span>
+                    ) : (
+                      <SelectValue
+                        placeholder={tIssues(
+                          "normalDetail.select.assigneePlaceholder",
+                        )}
+                      />
+                    )}
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>
@@ -1157,11 +1167,7 @@ export default function NormalIssueDetail({
                   }
                 >
                   <SelectTrigger className="h-8 w-auto min-w-[130px] rounded-md border-app-border bg-app-content-bg text-app-text-primary">
-                    <SelectValue
-                      placeholder={tIssues(
-                        "normalDetail.select.visibilityPlaceholder",
-                      )}
-                    >
+                    <span data-slot="select-value">
                       {tIssues("normalDetail.badges.visibility", {
                         value: getVisibilityLabel(
                           localIssue.visibility,
@@ -1169,7 +1175,7 @@ export default function NormalIssueDetail({
                           tIssues,
                         ),
                       })}
-                    </SelectValue>
+                    </span>
                   </SelectTrigger>
                   <SelectContent className="border-app-border bg-app-content-bg">
                     <SelectGroup>

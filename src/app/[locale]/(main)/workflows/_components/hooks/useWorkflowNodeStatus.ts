@@ -26,6 +26,7 @@ interface UseWorkflowNodeStatusProps {
   workflow: WorkflowData | null;
   workflowIssue: WorkflowIssue | null;
   setWorkflowIssue: React.Dispatch<React.SetStateAction<WorkflowIssue | null>>;
+  onIssueSynced?: (nextIssue: Issue) => void;
   currentNode: Node | null;
   user: {
     id?: string;
@@ -43,6 +44,7 @@ export const useWorkflowNodeStatus = ({
   workflow,
   workflowIssue,
   setWorkflowIssue,
+  onIssueSynced,
   currentNode,
   user,
   onUpdate,
@@ -53,15 +55,17 @@ export const useWorkflowNodeStatus = ({
   const revertWorkflowRunMutation = useRevertWorkflowRun();
 
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  const [isCompletionConfirmOpen, setIsCompletionConfirmOpen] = useState(false);
   const [pendingNextEdge, setPendingNextEdge] = useState<Edge | null>(null);
 
   const syncWorkflowIssue = useCallback(
     (nextIssue: Issue) => {
       const nextWorkflowIssue = createInitialWorkflowIssue(nextIssue);
       setWorkflowIssue(nextWorkflowIssue);
+      onIssueSynced?.(nextIssue);
       onUpdate();
     },
-    [onUpdate, setWorkflowIssue],
+    [onIssueSynced, onUpdate, setWorkflowIssue],
   );
 
   const ensureCurrentUserCanAct = useCallback(() => {
@@ -125,7 +129,7 @@ export const useWorkflowNodeStatus = ({
     ],
   );
 
-  const handleNext = useCallback(() => {
+  const handleAdvance = useCallback(() => {
     if (!workflow || !workflowIssue || !currentNode) {
       return;
     }
@@ -134,8 +138,12 @@ export const useWorkflowNodeStatus = ({
       return;
     }
 
-    const nextEdge = workflow.edges.find((edge: Edge) => edge.source === currentNode.id);
+    const nextEdge = workflow.edges.find(
+      (edge: Edge) => edge.source === currentNode.id,
+    );
     if (!nextEdge) {
+      setPendingNextEdge(null);
+      setIsCompletionConfirmOpen(true);
       return;
     }
 
@@ -179,6 +187,53 @@ export const useWorkflowNodeStatus = ({
     ],
   );
 
+  const handleConfirmWorkflowCompletion = useCallback(
+    async ({
+      completionConfirmed,
+      issueTitleConfirmation,
+    }: {
+      completionConfirmed: boolean;
+      issueTitleConfirmation: string;
+    }) => {
+      if (!currentNode) {
+        return;
+      }
+
+      if (!ensureCurrentUserCanAct()) {
+        return;
+      }
+
+      try {
+        const updatedIssue = await advanceWorkflowRunMutation.mutateAsync({
+          workspaceId: issue.workspaceId,
+          issueId: issue.id,
+          data: {
+            completionConfirmed,
+            issueTitleConfirmation,
+          },
+        });
+
+        setPendingNextEdge(null);
+        setIsCompletionConfirmOpen(false);
+        syncWorkflowIssue(updatedIssue);
+      } catch (error) {
+        console.error("Failed to complete workflow run", error);
+        toast.error(
+          error instanceof Error ? error.message : tWorkflows("runtime.advanceFailed"),
+        );
+      }
+    },
+    [
+      advanceWorkflowRunMutation,
+      currentNode,
+      ensureCurrentUserCanAct,
+      issue.id,
+      issue.workspaceId,
+      syncWorkflowIssue,
+      tWorkflows,
+    ],
+  );
+
   const handlePrevious = useCallback(async () => {
     if (!workflow || !workflowIssue || !currentNode) {
       return;
@@ -214,13 +269,29 @@ export const useWorkflowNodeStatus = ({
     workflowIssue,
   ]);
 
-  const canNext = useMemo(() => {
+  const hasNextStep = useMemo(() => {
     if (!workflow || !currentNode) {
       return false;
     }
 
     return workflow.edges.some((edge: Edge) => edge.source === currentNode.id);
   }, [currentNode, workflow]);
+
+  const isFinalNode = useMemo(() => {
+    if (!workflow || !currentNode) {
+      return false;
+    }
+
+    return !workflow.edges.some((edge: Edge) => edge.source === currentNode.id);
+  }, [currentNode, workflow]);
+
+  const canAdvance = useMemo(() => {
+    if (!currentNode) {
+      return false;
+    }
+
+    return hasNextStep || isFinalNode;
+  }, [currentNode, hasNextStep, isFinalNode]);
 
   const canPrevious = useMemo(() => {
     if (!workflow || !currentNode) {
@@ -232,12 +303,16 @@ export const useWorkflowNodeStatus = ({
 
   return {
     handleStatusUpdate,
-    handleNext,
+    handleAdvance,
     handlePrevious,
     handleSubmitRecord,
+    handleConfirmWorkflowCompletion,
     isRecordModalOpen,
     setIsRecordModalOpen,
-    canNext,
+    isCompletionConfirmOpen,
+    setIsCompletionConfirmOpen,
+    canAdvance,
+    isFinalNode,
     canPrevious,
     isBusy:
       updateWorkflowRunStatusMutation.isPending ||

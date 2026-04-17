@@ -15,31 +15,35 @@ import { cn } from "@/lib/utils";
 
 interface NodeStatusUpdateProps {
   nodeId: string;
+  issueTitle: string;
   currentStatus: string;
   assignee?: string;
   canEdit: boolean;
   onStatusUpdate: (nodeId: string, status: string, comment?: string) => void;
-  onNext: () => void;
+  onAdvance: () => void;
   onPrevious: () => void;
-  canNext: boolean;
+  canAdvance: boolean;
+  isFinalNode: boolean;
   canPrevious: boolean;
 }
 
 export function NodeStatusUpdate({
   nodeId,
+  issueTitle,
   currentStatus,
   assignee,
   canEdit,
   onStatusUpdate,
-  onNext,
+  onAdvance,
   onPrevious,
-  canNext,
+  canAdvance,
+  isFinalNode,
   canPrevious,
 }: NodeStatusUpdateProps) {
   const tIssues = useTranslations("issues");
   const [comment, setComment] = useState("");
   const [showCommentInput, setShowCommentInput] = useState(false);
-  const canMoveNext = canEdit && canNext && currentStatus === "DONE";
+  const canMoveForward = canEdit && canAdvance && currentStatus === "DONE";
 
   const statusOptions = [
     { value: "TODO", label: tIssues("status.todo") },
@@ -144,10 +148,12 @@ export function NodeStatusUpdate({
             type="button"
             size="sm"
             className="h-8 bg-sky-600 px-2 text-white hover:bg-sky-500"
-            disabled={!canMoveNext}
-            onClick={onNext}
+            disabled={!canMoveForward}
+            onClick={onAdvance}
           >
-            {tIssues("nodeStatus.next")}
+            {isFinalNode
+              ? tIssues("nodeStatus.finishWorkflow")
+              : tIssues("nodeStatus.next")}
             <RiArrowRightLine className="h-4 w-4" />
           </Button>
         </div>
@@ -156,9 +162,13 @@ export function NodeStatusUpdate({
           <p className="text-xs leading-5 text-app-text-muted">
             {!canEdit
               ? tIssues("nodeStatus.cannotEdit")
-              : canNext && currentStatus !== "DONE"
-                ? tIssues("nodeStatus.completeHint")
-                : tIssues("nodeStatus.ready")}
+              : currentStatus !== "DONE"
+                ? isFinalNode
+                  ? tIssues("nodeStatus.finishHint")
+                  : tIssues("nodeStatus.completeHint")
+                : isFinalNode
+                  ? tIssues("nodeStatus.finalReady", { title: issueTitle })
+                  : tIssues("nodeStatus.ready")}
           </p>
           <Button
             type="button"

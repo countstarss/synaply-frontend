@@ -196,12 +196,27 @@
     "unassigned": "未分配",
     "previous": "上一步",
     "next": "下一步",
+    "finishWorkflow": "完成任务",
     "cannotEdit": "只有当前负责人可以更新节点状态或推动工作流继续前进。",
     "completeHint": "请先将当前节点标记为“已完成”，再进入下一步。",
+    "finishHint": "请先将当前节点标记为“已完成”，再结束整个流程。",
     "ready": "这个节点已经可以继续推进。",
+    "finalReady": "这个节点已经可以结束整个 workflow issue：{title}。",
     "note": "备注",
     "notePlaceholder": "添加备注...",
     "add": "添加"
+  },
+  "workflowCompletionDialog": {
+    "title": "确认结束这个 workflow issue",
+    "description": "这是最后一个节点。提交后，这个 workflow issue 会直接标记为已完成。",
+    "confirmLabel": "我已经和团队完成最终确认，并确认这个 issue 可以结束",
+    "confirmDescription": "请只在需要的评审、交接或团队确认都已经完成后，再结束整个流程。",
+    "inputLabel": "输入当前 issue 标题以确认",
+    "inputPlaceholder": "请输入当前 issue 标题",
+    "inputHint": "请准确输入：{title}",
+    "inputError": "输入的 issue 标题不匹配。",
+    "cancel": "取消",
+    "submit": "确认完成"
   },
   "recordModal": {
     "title": "添加产出",

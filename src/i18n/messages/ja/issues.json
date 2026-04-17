@@ -196,12 +196,27 @@
     "unassigned": "未割り当て",
     "previous": "前へ",
     "next": "次へ",
+    "finishWorkflow": "完了する",
     "cannotEdit": "ノード状態を更新したりワークフローを前へ進めたりできるのは、現在の担当者だけです。",
     "completeHint": "次のステップへ進む前に、このノードを完了にしてください。",
+    "finishHint": "ワークフローを終了する前に、このノードを完了にしてください。",
     "ready": "このノードは次へ進める状態です。",
+    "finalReady": "このノードで workflow issue「{title}」を完了できます。",
     "note": "メモ",
     "notePlaceholder": "メモを追加...",
     "add": "追加"
+  },
+  "workflowCompletionDialog": {
+    "title": "workflow issue の完了を確認",
+    "description": "これは最後のノードです。送信すると、この workflow issue は完了としてマークされます。",
+    "confirmLabel": "この issue を完了してよいことをチームと最終確認しました",
+    "confirmDescription": "必要なレビュー、引き継ぎ、チーム確認がすべて終わってから完了してください。",
+    "inputLabel": "確認のため現在の issue タイトルを入力してください",
+    "inputPlaceholder": "現在の issue タイトルを入力",
+    "inputHint": "次を正確に入力してください: {title}",
+    "inputError": "入力した issue タイトルが一致しません。",
+    "cancel": "キャンセル",
+    "submit": "完了を確定"
   },
   "recordModal": {
     "title": "成果物を追加",

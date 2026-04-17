@@ -588,6 +588,8 @@ export interface AdvanceWorkflowRunDto {
   resultText?: string;
   comment?: string;
   attachments?: unknown;
+  completionConfirmed?: boolean;
+  issueTitleConfirmation?: string;
 }
 
 export interface RevertWorkflowRunDto {

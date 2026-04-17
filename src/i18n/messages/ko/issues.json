@@ -196,12 +196,27 @@
     "unassigned": "미할당",
     "previous": "이전",
     "next": "다음",
+    "finishWorkflow": "작업 완료",
     "cannotEdit": "현재 담당자만 노드 상태를 업데이트하거나 워크플로를 다음으로 진행시킬 수 있습니다.",
     "completeHint": "다음 단계로 넘어가기 전에 이 노드를 완료로 표시해 주세요.",
+    "finishHint": "워크플로를 끝내기 전에 이 노드를 완료로 표시해 주세요.",
     "ready": "이 노드는 다음으로 진행할 준비가 되었습니다.",
+    "finalReady": "이 노드는 workflow issue \"{title}\"를 끝낼 준비가 되었습니다.",
     "note": "메모",
     "notePlaceholder": "메모 추가...",
     "add": "추가"
+  },
+  "workflowCompletionDialog": {
+    "title": "workflow issue 완료 확인",
+    "description": "이것은 마지막 노드입니다. 제출하면 이 workflow issue 는 완료로 표시됩니다.",
+    "confirmLabel": "이 issue 를 종료해도 된다는 점을 팀과 최종 확인했습니다",
+    "confirmDescription": "필요한 리뷰, 인수인계, 팀 확인이 모두 끝난 뒤에만 워크플로를 종료하세요.",
+    "inputLabel": "확인을 위해 현재 issue 제목을 입력해 주세요",
+    "inputPlaceholder": "현재 issue 제목 입력",
+    "inputHint": "정확히 다음과 같이 입력해 주세요: {title}",
+    "inputError": "입력한 issue 제목이 일치하지 않습니다.",
+    "cancel": "취소",
+    "submit": "완료 확인"
   },
   "recordModal": {
     "title": "산출물 추가",
