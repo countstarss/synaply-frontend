@@ -9,20 +9,20 @@ import {
   pageOrderById,
 } from "@/lib/navigation/page-registry";
 import { CachedTasksPage } from "./pages/CachedTasksPage";
-import { CachedInboxPage } from "./pages/CachedInboxPage";
-import { CachedDocsPage } from "./pages/CachedDocsPage";
-import { CachedIssuesPage } from "./pages/CachedIssuesPage";
 import { CachedProjectsPage } from "./pages/CachedProjectsPage";
+import { CachedIssuesPage } from "./pages/CachedIssuesPage";
 import { CachedWorkflowsPage } from "./pages/CachedWorkflowsPage";
+import { CachedDocsPage } from "./pages/CachedDocsPage";
+import { CachedInboxPage } from "./pages/CachedInboxPage";
 import { CachedIntelligencePage } from "./pages/CachedIntelligencePage";
 
 const PAGE_COMPONENTS = {
   tasks: CachedTasksPage,
-  inbox: CachedInboxPage,
-  docs: CachedDocsPage,
-  issues: CachedIssuesPage,
   projects: CachedProjectsPage,
+  issues: CachedIssuesPage,
   workflows: CachedWorkflowsPage,
+  docs: CachedDocsPage,
+  inbox: CachedInboxPage,
   intelligence: CachedIntelligencePage,
 } as const;
 

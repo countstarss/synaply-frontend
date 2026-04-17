@@ -22,6 +22,7 @@ import { useTeam } from "@/hooks/useTeam";
 import { CreateTeamDialog } from "@/components/dialogs/CreateTeamDialog";
 import { useWorkspaceStore } from "@/stores/workspace";
 import type { Team } from "@/lib/fetchers/team";
+import { useInboxSummary } from "@/hooks/useInbox";
 
 interface SidebarProps {
   className?: string;
@@ -38,6 +39,23 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
   const { setCurrentWorkspaceId } = useWorkspaceStore();
   const [isCreateTeamDialogOpen, setIsCreateTeamDialogOpen] = useState(false);
   const navItems = getWorkspaceNavItems(t, currentWorkspace?.type);
+  const workspaceId = currentWorkspace?.id ?? "";
+  const { data: inboxSummary } = useInboxSummary(workspaceId, {
+    enabled: Boolean(workspaceId),
+  });
+  const inboxPendingCount = useMemo(() => {
+    if (!inboxSummary) {
+      return 0;
+    }
+
+    return (
+      inboxSummary.needsResponse +
+      inboxSummary.needsAttention +
+      inboxSummary.following +
+      inboxSummary.digest +
+      inboxSummary.snoozed
+    );
+  }, [inboxSummary]);
   const modeTransitionClass = isModeTransitionEnabled
     ? "transition-transform duration-300 ease-in-out"
     : "transition-none";
@@ -103,6 +121,9 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
                       icon={item.icon}
                       label={item.label}
                       href={item.href}
+                      badgeCount={
+                        item.href === "/inbox" ? inboxPendingCount : undefined
+                      }
                     />
                   ))}
                   <AiSidebarSection />
@@ -119,6 +140,9 @@ const Sidebar = React.memo(({ className }: SidebarProps) => {
                         icon={item.icon}
                         label={item.label}
                         href={item.href}
+                        badgeCount={
+                          item.href === "/inbox" ? inboxPendingCount : undefined
+                        }
                       />
                     ))}
                   </div>

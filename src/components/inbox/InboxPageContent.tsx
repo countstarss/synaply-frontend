@@ -207,6 +207,10 @@ function getViewSubLabel(
     : t("viewSubLabel.pendingEmpty");
 }
 
+function hasUnreadInView(summary: InboxSummary | undefined, view: InboxViewId) {
+  return (summary?.unreadByView?.[view] ?? 0) > 0;
+}
+
 function getEmptyCopy(
   activeView: InboxViewId,
   t: (key: string) => string,
@@ -414,6 +418,7 @@ function ViewTabs({
       <div className="grid min-w-0 grid-cols-2 md:grid-cols-5">
         {VIEW_ORDER.map((view) => {
           const active = activeView === view;
+          const hasUnread = hasUnreadInView(summary, view);
 
           return (
             <button
@@ -421,7 +426,7 @@ function ViewTabs({
               type="button"
               onClick={() => onChange(view)}
               className={cn(
-                "border-b-2 px-5 py-5 text-left transition",
+                "relative border-b-2 px-5 py-5 text-left transition",
                 active
                   ? "border-b-[#2f2d3a] bg-app-content-bg dark:border-b-[#f0ebfa]"
                   : "border-b-transparent bg-app-content-bg hover:bg-app-button-hover/60 dark:hover:bg-app-button-hover",
@@ -439,6 +444,12 @@ function ViewTabs({
               <div className="mt-1 text-sm text-[#7b768b] dark:text-[#9f99ae]">
                 {getViewSubLabel(summary, view, tInbox)}
               </div>
+              {hasUnread ? (
+                <span
+                  aria-hidden="true"
+                  className="absolute bottom-4 right-4 size-2.5 rounded-full border-2 border-app-content-bg bg-[#ff4d6d] dark:border-[#121212]"
+                />
+              ) : null}
             </button>
           );
         })}
