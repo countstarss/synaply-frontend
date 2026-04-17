@@ -5,6 +5,7 @@
     "placeholder": "选择文档来源"
   },
   "source": {
+    "personal": "我的文档",
     "team": "团队文档",
     "teamPersonal": "我的私密文档"
   },
@@ -20,7 +21,7 @@
       "templatePlaceholder": "选择模板",
       "titleLabel": "文档标题",
       "titlePlaceholder": "输入文档标题",
-      "projectHint": "这份文档会自动关联到当前项目。",
+      "projectHint": "这份文档会自动归档到当前项目空间中。",
       "parentHint": "这份文档会创建在当前文件夹中。",
       "cancel": "取消",
       "create": "创建文档",
@@ -123,24 +124,43 @@
     "shared": {
       "documentMetric": "文档",
       "folderMetric": "文件夹",
+      "structuredMetric": "结构化资料",
+      "recentMetric": "近 7 天更新",
       "newDocTitle": "新建文档",
       "categoryTitle": "分类",
       "recentTitle": "最近更新",
+      "recentDescription": "把最近发生变化的文档前置出来，方便你继续推进而不是重新找上下文。",
+      "structuredTitle": "协作资料包",
+      "structuredDescription": "把项目简报、决策记录、评审资料包和交接资料包放在同一工作面里，减少来回追问。",
+      "workspaceTitle": "顶层空间",
+      "workspaceDescription": "这些入口代表当前文档工作面的主空间，适合快速进入一个主题继续推进。",
+      "projectSpacesTitle": "项目空间",
+      "projectSpacesDescription": "把项目当作团队文档的主组织轴。每个项目都会拥有一个稳定的空间，用来沉淀简报、决策和交接。",
+      "otherSpacesTitle": "其他顶层空间",
+      "otherSpacesDescription": "这里保留不直接归属于某个项目的团队文档空间。",
+      "openAction": "打开",
+      "enterSpace": "进入空间",
+      "totalCount": "共 {count} 份文档",
       "folderContains": "{count} 项",
       "emptyFolder": "空文件夹",
-      "updatedAt": "更新于 {value}"
+      "updatedAt": "更新于 {value}",
+      "projectSpaceMeta": "{docs} 篇文档 · {folders} 个子文件夹"
     },
     "personal": {
+      "eyebrow": "个人工作面",
       "title": "我的文档",
       "subtitle": "{count} 份个人文档",
+      "heroDescription": "在这里沉淀你的思路、草稿和执行上下文。它应该像一个安静而高效的工作台，而不是一个需要不断整理的临时堆放区。",
       "newDocDescription": "创建一份新的个人文档",
       "emptyTitle": "还没有文档",
       "emptyDescription": "创建你的第一份文档，开始记录想法。",
       "emptyAction": "创建文档"
     },
     "team": {
+      "eyebrow": "团队知识面",
       "title": "团队文档",
       "subtitle": "{count} 份团队文档",
+      "heroDescription": "让项目、决策、评审和交接都留在同一处。团队不该靠翻聊天记录来找上下文，而应直接在文档面里看见当前状态。",
       "documentMetric": "团队文档",
       "newDocDescription": "创建一份新的团队文档",
       "emptyTitle": "还没有团队文档",
@@ -148,8 +168,10 @@
       "emptyAction": "创建团队文档"
     },
     "teamPersonal": {
+      "eyebrow": "个人工作副本",
       "title": "我的工作文档",
       "subtitle": "{count} 份个人工作文档",
+      "heroDescription": "把你在团队上下文中的私人判断、拆解和准备工作放在这里。既不污染团队主空间，也不让个人推进失去上下文。",
       "documentMetric": "工作文档",
       "newDocDescription": "创建一份新的个人工作文档",
       "emptyTitle": "还没有个人工作文档",
@@ -167,14 +189,32 @@
     "emptyDescription": "还没有文档。点击侧边栏中的 + 按钮创建一份。",
     "selectDescription": "从左侧选择一份文档开始编辑。"
   },
+  "emptyState": {
+    "eyebrow": "文档工作台",
+    "emptyDescription": "这里还没有已经打开的文档。你可以先从左侧浏览文档树，或者直接用快捷键开始记录。",
+    "selectDescription": "从左侧打开一份已有文档，或者用快捷键快速新建一份空白文档。",
+    "shortcutsTitle": "可用快捷键",
+    "createHint": "还没有文档时，可以先按 Cmd + N 快速新建一篇空白文档。",
+    "selectHint": "需要更大的编辑空间时，可以按 Cmd + B 隐藏或重新展开左侧文档栏。",
+    "shortcuts": {
+      "newDoc": "快速新建文档",
+      "toggleSidebar": "开关文档侧边栏",
+      "saveDoc": "保存当前文档"
+    }
+  },
   "sidebar": {
     "title": "文档",
     "searchPlaceholder": "搜索文档...",
     "newChildDoc": "创建子文档",
     "newDoc": "新建文档",
     "newFolder": "新建文件夹",
+    "duplicate": "复制",
+    "duplicateSuffix": "副本",
     "rename": "重命名",
     "delete": "删除",
+    "projectSpaces": "项目空间",
+    "otherSpaces": "其他空间",
+    "projectSpaceBadge": "项目",
     "emptySearch": "没有找到匹配的文档",
     "emptyTitle": "还没有文档",
     "emptyDescription": "点击上方的 + 按钮创建一份",
@@ -193,13 +233,17 @@
     "expand": "展开"
   },
   "tabs": {
-    "close": "关闭"
+    "close": "关闭",
+    "closeOthers": "关闭其他",
+    "closeAll": "关闭所有"
   },
   "editor": {
     "save": "保存",
     "saving": "保存中...",
     "cancel": "取消",
     "untitled": "未命名文档",
+    "editable": "可编辑",
+    "readonly": "只读",
     "clickToEdit": "点击标题即可编辑",
     "updatedAt": "更新于 {value}",
     "meta": {
@@ -219,7 +263,7 @@
     "errorStatus": "保存失败。你的本地草稿已保存在本地。",
     "recoveredDraft": "已恢复你的本地草稿",
     "draftPending": "本地草稿等待同步",
-    "savedAt": "已保存 • {value}",
+    "updatedAt": "更新于 {value}",
     "ready": "就绪",
     "shortcut": "按 {key} + S 保存 • 每 30 秒自动保存一次"
   },
@@ -228,6 +272,8 @@
     "folderMeta": "文件夹 • 创建于 {value}",
     "editDescription": "编辑说明",
     "title": "文件夹说明",
+    "projectRootBadge": "项目空间",
+    "projectRootDescription": "这个文件夹由项目自动托管。你可以继续维护里面的内容，但它会跟随项目的名称和生命周期同步。",
     "placeholder": "输入文件夹说明...",
     "saving": "保存中...",
     "save": "保存",
@@ -236,8 +282,9 @@
     "emptyReadonly": "还没有文件夹说明",
     "tipsTitle": "使用提示",
     "tip1": "这个文件夹用于整理和归类文档。",
-    "tip2": "右键点击文件夹即可创建子文档或子文件夹。",
+    "tip2": "右键点击文件夹即可创建子文档。",
     "tip3": "你可以在这里补充详细说明和使用方式。",
+    "projectRootTip": "项目仍然存在时，这个根文件夹不能直接删除。",
     "visibility": "文件夹可见性：{value}"
   },
   "context": {

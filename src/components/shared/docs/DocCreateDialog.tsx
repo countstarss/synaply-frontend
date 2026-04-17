@@ -29,6 +29,7 @@ import {
   resolveDocTemplateTitle,
   type DocTemplateKey,
 } from "./doc-template-config";
+import { clampDocTitle, DOC_TITLE_MAX_LENGTH } from "./doc-title";
 
 interface DocCreateDialogProps {
   open: boolean;
@@ -65,9 +66,11 @@ export default function DocCreateDialog({
 
     setSelectedTemplateKey(defaultTemplateKey);
     setTitle(
-      resolveDocTemplateTitle(defaultTemplateKey, tDocs, {
-        projectName,
-      })
+      clampDocTitle(
+        resolveDocTemplateTitle(defaultTemplateKey, tDocs, {
+          projectName,
+        }),
+      )
     );
     setHasEditedTitle(false);
   }, [defaultTemplateKey, open, projectName, tDocs]);
@@ -78,9 +81,11 @@ export default function DocCreateDialog({
     }
 
     setTitle(
-      resolveDocTemplateTitle(selectedTemplateKey, tDocs, {
-        projectName,
-      })
+      clampDocTitle(
+        resolveDocTemplateTitle(selectedTemplateKey, tDocs, {
+          projectName,
+        }),
+      )
     );
   }, [hasEditedTitle, open, projectName, selectedTemplateKey, tDocs]);
 
@@ -167,8 +172,9 @@ export default function DocCreateDialog({
               id="doc-title-input"
               value={title}
               placeholder={tDocs("creation.dialog.titlePlaceholder")}
+              maxLength={DOC_TITLE_MAX_LENGTH}
               onChange={(event) => {
-                setTitle(event.target.value);
+                setTitle(clampDocTitle(event.target.value));
                 setHasEditedTitle(true);
               }}
               autoFocus

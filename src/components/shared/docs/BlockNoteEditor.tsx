@@ -84,6 +84,23 @@ export default function DocsBlockNoteEditor({
     "ready" | "draft" | "saving" | "saved" | "error" | "conflict"
   >("ready");
   const [lastError, setLastError] = useState<string | null>(null);
+  const updatedAtLabel = lastSaved
+    ? lastSaved.toLocaleString(locale, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+    : new Date(doc.updatedAt).toLocaleString(locale, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
 
   const editor: BlockNoteEditor = useCreateBlockNote({
     initialContent: hydratedContent,
@@ -129,6 +146,10 @@ export default function DocsBlockNoteEditor({
       mounted = false;
     };
   }, [doc._id, initialContent]);
+
+  useEffect(() => {
+    setLastSaved(doc.updatedAt ? new Date(doc.updatedAt) : null);
+  }, [doc._id, doc.updatedAt]);
 
   useEffect(() => {
     if (editor && hydratedContent) {
@@ -299,7 +320,16 @@ export default function DocsBlockNoteEditor({
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col bg-app-content-bg">
-      <div className="shrink-0 flex items-center justify-between bg-app-bg px-8 py-2 text-xs text-app-text-muted">
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <BlockNoteView
+          editor={editor}
+          theme={theme}
+          className="h-full"
+          onChange={handleDocumentChange}
+        />
+      </div>
+
+      <div className="flex shrink-0 flex-col gap-2 border-t border-app-border/60 bg-app-content-bg px-5 py-3 text-xs text-app-text-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             {isSaving ? (
@@ -314,22 +344,15 @@ export default function DocsBlockNoteEditor({
                   ? tDocs("blocknote.recoveredDraft")
                   : tDocs("blocknote.draftPending")}
               </span>
-            ) : lastSaved ? (
-              <span>
-                {tDocs("blocknote.savedAt", {
-                  value: lastSaved.toLocaleTimeString(locale, {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }),
-                })}
-              </span>
+            ) : updatedAtLabel ? (
+              <span>{tDocs("blocknote.updatedAt", { value: updatedAtLabel })}</span>
             ) : (
               <span>{tDocs("blocknote.ready")}</span>
             )}
           </div>
         </div>
 
-        <div className="text-right text-xs text-app-text-muted">
+        <div className="text-left text-xs text-app-text-muted sm:text-right">
           <div>
             {tDocs("blocknote.shortcut", {
               key: navigator.platform.includes("Mac") ? "Cmd" : "Ctrl",
@@ -337,15 +360,6 @@ export default function DocsBlockNoteEditor({
           </div>
           {lastError && <div className="mt-0.5 text-amber-500">{lastError}</div>}
         </div>
-      </div>
-
-      <div className="min-h-0 flex-1">
-        <BlockNoteView
-          editor={editor}
-          theme={theme}
-          className="h-full"
-          onChange={handleDocumentChange}
-        />
       </div>
     </div>
   );

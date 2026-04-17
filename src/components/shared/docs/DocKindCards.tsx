@@ -85,7 +85,7 @@ export function DocKindCards({
 
   return (
     <div className={cn("space-y-3", className)}>
-      <div className="rounded-2xl border border-dashed border-app-border bg-app-content-bg px-4 py-3 text-xs leading-5 text-app-text-secondary">
+      <div className="rounded-xl bg-app-bg/60 px-4 py-3 text-xs leading-5 text-app-text-secondary shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
         {buildDocDigestSummary(docs, locale, tDocs)}
       </div>
 
@@ -96,7 +96,7 @@ export function DocKindCards({
           return (
             <div
               key={`${slot.kind}-${slot.templateKey}`}
-              className="rounded-2xl border border-app-border bg-app-content-bg px-4 py-4"
+              className="rounded-xl bg-app-content-bg/72 px-4 py-4 shadow-[0_14px_34px_rgba(15,23,42,0.05)] transition-transform hover:-translate-y-0.5"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -104,7 +104,7 @@ export function DocKindCards({
                     {kindLabel}
                   </div>
                   <div className="mt-2 flex items-start gap-2">
-                    <span className="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-xl border border-app-border bg-app-bg text-app-text-secondary">
+                    <span className="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-app-bg text-app-text-secondary">
                       <RiFileTextLine className="size-4" />
                     </span>
                     <div className="min-w-0">
@@ -131,7 +131,7 @@ export function DocKindCards({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="shrink-0 border-app-border bg-transparent text-app-text-primary"
+                  className="shrink-0 rounded-lg border-app-border/60 bg-app-bg/65 text-app-text-primary hover:bg-app-button-hover"
                   onClick={() => (doc ? onOpenDoc(doc) : onCreateDoc(slot))}
                 >
                   {doc ? (

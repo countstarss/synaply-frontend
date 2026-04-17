@@ -5,6 +5,7 @@
     "placeholder": "ドキュメントのソースを選択"
   },
   "source": {
+    "personal": "マイドキュメント",
     "team": "チームドキュメント",
     "teamPersonal": "自分専用ドキュメント"
   },
@@ -123,24 +124,43 @@
     "shared": {
       "documentMetric": "ドキュメント",
       "folderMetric": "フォルダ",
+      "structuredMetric": "構造化ドキュメント",
+      "recentMetric": "今週更新",
       "newDocTitle": "新規ドキュメント",
       "categoryTitle": "カテゴリ",
       "recentTitle": "最近更新",
+      "recentDescription": "動いているドキュメントを前に出し、文脈を探し直さずにそのまま続きへ戻れるようにします。",
+      "structuredTitle": "協業パケット",
+      "structuredDescription": "ブリーフ、意思決定ログ、レビューパケット、引き継ぎパケットを同じ作業面に置き、余分な追跡を減らします。",
+      "workspaceTitle": "トップレベル空間",
+      "workspaceDescription": "現在のドキュメント作業面で扱う主要テーマへの入口です。ひとつの流れに素早く戻りやすくなります。",
+      "projectSpacesTitle": "プロジェクト空間",
+      "projectSpacesDescription": "チームドキュメントはプロジェクトを主軸に整理します。各プロジェクトがブリーフ、決定、引き継ぎのための安定した空間を持ちます。",
+      "otherSpacesTitle": "その他のトップレベル空間",
+      "otherSpacesDescription": "特定プロジェクトに直接属さないチームドキュメント空間はここに残します。",
+      "openAction": "開く",
+      "enterSpace": "空間に入る",
+      "totalCount": "{count} 件のドキュメント",
       "folderContains": "{count} 件",
       "emptyFolder": "空のフォルダ",
-      "updatedAt": "{value} に更新"
+      "updatedAt": "{value} に更新",
+      "projectSpaceMeta": "{docs} 件のドキュメント · {folders} 件のサブフォルダ"
     },
     "personal": {
+      "eyebrow": "個人ワークスペース",
       "title": "マイドキュメント",
       "subtitle": "{count} 件の個人ドキュメント",
+      "heroDescription": "メモ、下書き、実行文脈を、散らかった一時置き場ではなく、落ち着いて使える作業面に残します。",
       "newDocDescription": "新しい個人ドキュメントを作成",
       "emptyTitle": "まだドキュメントはありません",
       "emptyDescription": "最初のドキュメントを作成して、アイデアを残し始めましょう。",
       "emptyAction": "ドキュメントを作成"
     },
     "team": {
+      "eyebrow": "チーム知識面",
       "title": "チームドキュメント",
       "subtitle": "{count} 件のチームドキュメント",
+      "heroDescription": "プロジェクト文脈、意思決定、レビュー、引き継ぎをひとつの意図ある作業面にまとめます。文脈を取り戻すためにチャット履歴をたどる必要はありません。",
       "documentMetric": "チームドキュメント",
       "newDocDescription": "新しいチームドキュメントを作成",
       "emptyTitle": "まだチームドキュメントはありません",
@@ -148,8 +168,10 @@
       "emptyAction": "チームドキュメントを作成"
     },
     "teamPersonal": {
+      "eyebrow": "個人作業レイヤー",
       "title": "マイワークドキュメント",
       "subtitle": "{count} 件の個人作業ドキュメント",
+      "heroDescription": "チーム文脈に紐づいた個人用の分解メモや準備作業を、共有面を汚さずに保持します。",
       "documentMetric": "作業ドキュメント",
       "newDocDescription": "新しい個人作業ドキュメントを作成",
       "emptyTitle": "まだ個人作業ドキュメントはありません",
@@ -167,14 +189,32 @@
     "emptyDescription": "まだドキュメントはありません。サイドバーの + ボタンから作成してください。",
     "selectDescription": "左側でドキュメントを選ぶと編集を開始できます。"
   },
+  "emptyState": {
+    "eyebrow": "ドキュメントワークスペース",
+    "emptyDescription": "まだ開いているドキュメントはありません。左のツリーから探すか、ショートカットですぐに書き始められます。",
+    "selectDescription": "左側から既存ドキュメントを開くか、ショートカットですぐに空白ドキュメントを作成できます。",
+    "shortcutsTitle": "使えるショートカット",
+    "createHint": "まだドキュメントがない場合は、Cmd + N で空白ドキュメントをすぐに作成できます。",
+    "selectHint": "編集領域を広く使いたいときは、Cmd + B で左のドキュメントサイドバーを隠したり戻したりできます。",
+    "shortcuts": {
+      "newDoc": "新規ドキュメントをすぐ作成",
+      "toggleSidebar": "ドキュメントサイドバーを切り替え",
+      "saveDoc": "現在のドキュメントを保存"
+    }
+  },
   "sidebar": {
     "title": "ドキュメント",
     "searchPlaceholder": "ドキュメントを検索...",
     "newChildDoc": "子ドキュメントを作成",
     "newDoc": "新規ドキュメント",
     "newFolder": "新規フォルダ",
+    "duplicate": "複製",
+    "duplicateSuffix": "コピー",
     "rename": "名前を変更",
     "delete": "削除",
+    "projectSpaces": "プロジェクト空間",
+    "otherSpaces": "その他の空間",
+    "projectSpaceBadge": "プロジェクト",
     "emptySearch": "一致するドキュメントが見つかりません",
     "emptyTitle": "まだドキュメントはありません",
     "emptyDescription": "上の + ボタンから作成してください",
@@ -193,13 +233,17 @@
     "expand": "広げる"
   },
   "tabs": {
-    "close": "閉じる"
+    "close": "閉じる",
+    "closeOthers": "他を閉じる",
+    "closeAll": "すべて閉じる"
   },
   "editor": {
     "save": "保存",
     "saving": "保存中...",
     "cancel": "キャンセル",
     "untitled": "無題のドキュメント",
+    "editable": "編集可能",
+    "readonly": "読み取り専用",
     "clickToEdit": "タイトルをクリックして編集",
     "updatedAt": "{value} に更新",
     "meta": {
@@ -219,7 +263,7 @@
     "errorStatus": "保存に失敗しました。ローカル下書きは端末上に保持されています。",
     "recoveredDraft": "ローカル下書きを復元しました",
     "draftPending": "ローカル下書きは同期待ちです",
-    "savedAt": "保存済み • {value}",
+    "updatedAt": "{value} に更新",
     "ready": "準備完了",
     "shortcut": "{key} + S で保存 • 30 秒ごとに自動保存"
   },
@@ -228,6 +272,8 @@
     "folderMeta": "フォルダ • {value} に作成",
     "editDescription": "説明を編集",
     "title": "フォルダ説明",
+    "projectRootBadge": "プロジェクト空間",
+    "projectRootDescription": "このフォルダはプロジェクトによって自動管理されています。中身は引き続き編集できますが、フォルダ自体はプロジェクト名とライフサイクルに合わせて保たれます。",
     "placeholder": "フォルダ説明を入力...",
     "saving": "保存中...",
     "save": "保存",
@@ -236,8 +282,9 @@
     "emptyReadonly": "まだフォルダ説明はありません",
     "tipsTitle": "ヒント",
     "tip1": "このフォルダはドキュメントを整理・分類するために使います。",
-    "tip2": "フォルダを右クリックすると、子ドキュメントや子フォルダを作成できます。",
+    "tip2": "フォルダを右クリックすると、子ドキュメントを作成できます。",
     "tip3": "ここに詳細なガイドや利用メモを追記できます。",
+    "projectRootTip": "プロジェクトが存在する間、このルートフォルダは削除できません。",
     "visibility": "フォルダの公開範囲: {value}"
   },
   "context": {

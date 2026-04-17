@@ -1,6 +1,14 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useDocStore } from "@/stores/doc-store";
 import { VisibilityType } from "@/types/prisma";
 import {
@@ -18,6 +26,7 @@ import {
   useUpdateDocMetaMutation,
   useDeleteDocMutation,
 } from "@/hooks/useDocApi";
+import { normalizeDocTitle } from "./doc-title";
 
 export type DocumentContext = DocContext;
 export type DocsDocument = DocRecord;
@@ -47,6 +56,8 @@ interface DocsContextType {
   activeDocId: string | null;
   openDoc: (doc: DocsDocument) => void;
   closeDoc: (docId: string) => void;
+  closeOtherDocs: (docId: string) => void;
+  closeAllDocs: () => void;
   createDoc: (title: string, options?: CreateDocOptions) => Promise<DocsDocument>;
   createFolder: (
     title: string,
@@ -118,6 +129,11 @@ export default function DocsProvider({
   const [docsRestored, setDocsRestored] = useState(false);
   const activeDocId = useDocStore((state) => state.activeDocId);
   const setActiveDocId = useDocStore((state) => state.setActiveDocId);
+  const openDocsRef = useRef(openDocs);
+  const activeDocIdRef = useRef(activeDocId);
+
+  openDocsRef.current = openDocs;
+  activeDocIdRef.current = activeDocId;
 
   const docsQuery = useDocsTree(
     workspaceId,
@@ -159,10 +175,21 @@ export default function DocsProvider({
   };
 
   const replaceOpenDoc = (nextDoc: DocsDocument) => {
-    setOpenDocs((current) =>
-      current.map((doc) => (doc._id === nextDoc._id ? nextDoc : doc))
+    const nextDocs = openDocsRef.current.map((doc) =>
+      doc._id === nextDoc._id ? nextDoc : doc
     );
+    commitOpenDocs(nextDocs);
   };
+
+  const commitOpenDocs = useCallback((nextDocs: DocsDocument[]) => {
+    openDocsRef.current = nextDocs;
+    setOpenDocs(nextDocs);
+  }, []);
+
+  const commitActiveDocId = useCallback((docId: string | null) => {
+    activeDocIdRef.current = docId;
+    setActiveDocId(docId);
+  }, [setActiveDocId]);
 
   useEffect(() => {
     if (isLoading || docsRestored) return;
@@ -177,10 +204,10 @@ export default function DocsProvider({
         const restoredDocs = openDocIds
           .map((docId) => documentMap.get(docId))
           .filter(Boolean) as DocsDocument[];
-        setOpenDocs(restoredDocs);
+        commitOpenDocs(restoredDocs);
 
         if (restoredDocs.length > 0 && !activeDocId) {
-          setActiveDocId(restoredDocs[0]._id);
+          commitActiveDocId(restoredDocs[0]._id);
         }
       } catch (error) {
         console.error("Failed to restore open docs:", error);
@@ -194,7 +221,8 @@ export default function DocsProvider({
     documentMap,
     isLoading,
     projectId,
-    setActiveDocId,
+    commitActiveDocId,
+    commitOpenDocs,
     workspaceId,
     workspaceType,
   ]);
@@ -202,12 +230,11 @@ export default function DocsProvider({
   useEffect(() => {
     if (!docsRestored) return;
 
-    setOpenDocs((current) =>
-      current
-        .map((doc) => documentMap.get(doc._id) ?? doc)
-        .filter((doc) => documentMap.has(doc._id))
-    );
-  }, [documentMap, docsRestored]);
+    const nextDocs = openDocsRef.current
+      .map((doc) => documentMap.get(doc._id) ?? doc)
+      .filter((doc) => documentMap.has(doc._id));
+    commitOpenDocs(nextDocs);
+  }, [commitOpenDocs, documentMap, docsRestored]);
 
   useEffect(() => {
     if (!docsRestored) return;
@@ -220,28 +247,50 @@ export default function DocsProvider({
   }, [context, docsRestored, openDocs, projectId, workspaceId, workspaceType]);
 
   const openDoc = (doc: DocsDocument) => {
-    setOpenDocs((current) => {
-      if (current.some((item) => item._id === doc._id)) {
-        return current;
-      }
-
-      return [...current, doc];
-    });
-    setActiveDocId(doc._id);
+    const currentDocs = openDocsRef.current;
+    if (!currentDocs.some((item) => item._id === doc._id)) {
+      commitOpenDocs([...currentDocs, doc]);
+    }
+    commitActiveDocId(doc._id);
   };
 
   const closeDoc = (docId: string) => {
-    setOpenDocs((current) => current.filter((doc) => doc._id !== docId));
-    if (activeDocId === docId) {
-      const remaining = openDocs.filter((doc) => doc._id !== docId);
-      setActiveDocId(remaining.length > 0 ? remaining[0]._id : null);
+    const currentDocs = openDocsRef.current;
+    const currentIndex = currentDocs.findIndex((doc) => doc._id === docId);
+    if (currentIndex === -1) {
+      return;
     }
+
+    const nextDocs = currentDocs.filter((doc) => doc._id !== docId);
+    commitOpenDocs(nextDocs);
+
+    if (activeDocIdRef.current === docId) {
+      const fallbackDoc =
+        nextDocs[currentIndex] ?? nextDocs[currentIndex - 1] ?? nextDocs[0] ?? null;
+      commitActiveDocId(fallbackDoc?._id ?? null);
+    }
+  };
+
+  const closeOtherDocs = (docId: string) => {
+    const targetDoc = openDocsRef.current.find((doc) => doc._id === docId);
+    if (!targetDoc) {
+      return;
+    }
+
+    commitOpenDocs([targetDoc]);
+    commitActiveDocId(docId);
+  };
+
+  const closeAllDocs = () => {
+    commitOpenDocs([]);
+    commitActiveDocId(null);
   };
 
   const createDoc = async (
     title: string,
     options?: CreateDocOptions
   ) => {
+    const normalizedTitle = normalizeDocTitle(title);
     const resolvedParentId = normalizeOptionalId(options?.parentId);
     const resolvedProjectId =
       normalizeOptionalId(options?.projectId) ?? normalizeOptionalId(projectId);
@@ -251,7 +300,7 @@ export default function DocsProvider({
     const createdDoc = await createDocMutation.mutateAsync({
       workspaceId,
       data: {
-        title,
+        title: normalizedTitle,
         parentDocument: resolvedParentId,
         projectId: resolvedProjectId,
         issueId: resolvedIssueId,
@@ -273,13 +322,14 @@ export default function DocsProvider({
     parentId?: string,
     docProjectId?: string
   ) => {
+    const normalizedTitle = normalizeDocTitle(title);
     const resolvedProjectId =
       normalizeOptionalId(docProjectId) ?? normalizeOptionalId(projectId);
 
     const createdFolder = await createFolderMutation.mutateAsync({
       workspaceId,
       data: {
-        title,
+        title: normalizedTitle,
         description: "",
         parentDocument: parentId,
         projectId: resolvedProjectId,
@@ -300,11 +350,12 @@ export default function DocsProvider({
   };
 
   const updateDocTitle = async (docId: string, title: string) => {
+    const normalizedTitle = normalizeDocTitle(title);
     const updatedDoc = await updateDocMetaMutation.mutateAsync({
       workspaceId,
       docId,
       data: {
-        title,
+        title: normalizedTitle,
       },
     });
 
@@ -375,6 +426,8 @@ export default function DocsProvider({
         activeDocId,
         openDoc,
         closeDoc,
+        closeOtherDocs,
+        closeAllDocs,
         createDoc,
         createFolder,
         deleteDoc,

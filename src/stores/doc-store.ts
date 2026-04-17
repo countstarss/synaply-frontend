@@ -7,5 +7,8 @@ interface DocState {
 
 export const useDocStore = create<DocState>((set) => ({
   activeDocId: null,
-  setActiveDocId: (docId) => set({ activeDocId: docId }),
+  setActiveDocId: (docId) =>
+    set((state) =>
+      state.activeDocId === docId ? state : { activeDocId: docId }
+    ),
 }));

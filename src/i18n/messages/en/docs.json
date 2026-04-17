@@ -5,6 +5,7 @@
     "placeholder": "Choose a doc source"
   },
   "source": {
+    "personal": "My docs",
     "team": "Team docs",
     "teamPersonal": "My private docs"
   },
@@ -20,7 +21,7 @@
       "templatePlaceholder": "Choose a template",
       "titleLabel": "Document title",
       "titlePlaceholder": "Enter a document title",
-      "projectHint": "This doc will be linked to the current project automatically.",
+      "projectHint": "This doc will be filed into the current project space automatically.",
       "parentHint": "This doc will be created inside the current folder.",
       "cancel": "Cancel",
       "create": "Create document",
@@ -123,24 +124,43 @@
     "shared": {
       "documentMetric": "Documents",
       "folderMetric": "Folders",
+      "structuredMetric": "Structured docs",
+      "recentMetric": "Updated this week",
       "newDocTitle": "New document",
       "categoryTitle": "Categories",
       "recentTitle": "Recently updated",
+      "recentDescription": "Bring active documents forward so you can continue the work without re-finding context.",
+      "structuredTitle": "Collaboration packets",
+      "structuredDescription": "Keep briefs, decision logs, review packets, and handoff packets on the same operating surface so the team can move without extra chasing.",
+      "workspaceTitle": "Top-level spaces",
+      "workspaceDescription": "These entries anchor the main themes of the current doc surface and make it easier to re-enter a stream of work quickly.",
+      "projectSpacesTitle": "Project spaces",
+      "projectSpacesDescription": "Use projects as the primary organizing axis for team docs. Each project keeps a stable space for briefs, decisions, and handoffs.",
+      "otherSpacesTitle": "Other top-level spaces",
+      "otherSpacesDescription": "Keep team doc spaces here when they do not belong directly to a single project.",
+      "openAction": "Open",
+      "enterSpace": "Enter space",
+      "totalCount": "{count} docs",
       "folderContains": "{count} items",
       "emptyFolder": "Empty folder",
-      "updatedAt": "Updated {value}"
+      "updatedAt": "Updated {value}",
+      "projectSpaceMeta": "{docs} docs · {folders} subfolders"
     },
     "personal": {
+      "eyebrow": "Personal workspace",
       "title": "My docs",
       "subtitle": "{count} personal docs",
+      "heroDescription": "Capture notes, drafts, and execution context in a workspace that feels calm and efficient instead of cluttered or temporary.",
       "newDocDescription": "Create a new personal doc",
       "emptyTitle": "No docs yet",
       "emptyDescription": "Create your first document to start capturing ideas.",
       "emptyAction": "Create doc"
     },
     "team": {
+      "eyebrow": "Team knowledge surface",
       "title": "Team docs",
       "subtitle": "{count} team docs",
+      "heroDescription": "Keep project context, decisions, reviews, and handoffs in one deliberate surface. The team should not need to replay chat history just to regain context.",
       "documentMetric": "Team docs",
       "newDocDescription": "Create a new team doc",
       "emptyTitle": "No team docs yet",
@@ -148,8 +168,10 @@
       "emptyAction": "Create team doc"
     },
     "teamPersonal": {
+      "eyebrow": "Private work layer",
       "title": "My work docs",
       "subtitle": "{count} personal work docs",
+      "heroDescription": "Keep your personal breakdowns, notes, and preparation work attached to the team context without polluting the shared surface.",
       "documentMetric": "Work docs",
       "newDocDescription": "Create a new personal work doc",
       "emptyTitle": "No personal work docs yet",
@@ -167,14 +189,32 @@
     "emptyDescription": "There are no docs yet. Click the + button in the sidebar to create one.",
     "selectDescription": "Choose a document on the left to start editing."
   },
+  "emptyState": {
+    "eyebrow": "Docs workspace",
+    "emptyDescription": "No document is open yet. Browse the tree on the left, or start with a shortcut and capture the next thing that matters.",
+    "selectDescription": "Open an existing document from the left, or use a shortcut to create a blank one right away.",
+    "shortcutsTitle": "Available shortcuts",
+    "createHint": "If there are no docs yet, press Cmd + N to create a blank document instantly.",
+    "selectHint": "Need more room to focus? Press Cmd + B to hide or bring back the doc sidebar.",
+    "shortcuts": {
+      "newDoc": "Quick new document",
+      "toggleSidebar": "Toggle doc sidebar",
+      "saveDoc": "Save current document"
+    }
+  },
   "sidebar": {
     "title": "Docs",
     "searchPlaceholder": "Search docs...",
     "newChildDoc": "Create child document",
     "newDoc": "New document",
     "newFolder": "New folder",
+    "duplicate": "Duplicate",
+    "duplicateSuffix": "Copy",
     "rename": "Rename",
     "delete": "Delete",
+    "projectSpaces": "Project spaces",
+    "otherSpaces": "Other spaces",
+    "projectSpaceBadge": "Project",
     "emptySearch": "No matching documents found",
     "emptyTitle": "No docs yet",
     "emptyDescription": "Click the + button above to create one",
@@ -193,13 +233,17 @@
     "expand": "Expand"
   },
   "tabs": {
-    "close": "Close"
+    "close": "Close",
+    "closeOthers": "Close others",
+    "closeAll": "Close all"
   },
   "editor": {
     "save": "Save",
     "saving": "Saving...",
     "cancel": "Cancel",
     "untitled": "Untitled document",
+    "editable": "Editable",
+    "readonly": "Read-only",
     "clickToEdit": "Click the title to edit",
     "updatedAt": "Updated {value}",
     "meta": {
@@ -219,7 +263,7 @@
     "errorStatus": "Save failed. Your local draft has been preserved locally.",
     "recoveredDraft": "Recovered your local draft",
     "draftPending": "Local draft pending sync",
-    "savedAt": "Saved • {value}",
+    "updatedAt": "Updated {value}",
     "ready": "Ready",
     "shortcut": "Press {key} + S to save • Auto-saves every 30 seconds"
   },
@@ -228,6 +272,8 @@
     "folderMeta": "Folder • Created {value}",
     "editDescription": "Edit description",
     "title": "Folder description",
+    "projectRootBadge": "Project space",
+    "projectRootDescription": "This folder is managed automatically by its project. You can keep editing the contents inside it, but the folder itself stays aligned with the project's name and lifecycle.",
     "placeholder": "Enter a folder description...",
     "saving": "Saving...",
     "save": "Save",
@@ -236,8 +282,9 @@
     "emptyReadonly": "No folder description yet",
     "tipsTitle": "Tips",
     "tip1": "This is a folder used to organize and categorize documents.",
-    "tip2": "Right-click the folder to create child documents or child folders.",
+    "tip2": "Right-click the folder to create a child document.",
     "tip3": "You can add detailed guidance and usage notes here.",
+    "projectRootTip": "This root folder cannot be deleted while its project still exists.",
     "visibility": "Folder visibility: {value}"
   },
   "context": {

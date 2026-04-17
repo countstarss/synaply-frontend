@@ -8,9 +8,14 @@
 
 .bn-editor {
   min-height: 100%;
-  padding: 2rem;
-  max-width: 56rem;
+  padding: clamp(1.5rem, 2vw, 2.25rem);
+  max-width: 62rem;
   margin: 0 auto;
+}
+
+.bn-editor .bn-block-group,
+.bn-editor .bn-inline-content {
+  letter-spacing: -0.01em;
 }
 
 /* Dark mode adjustments */
@@ -45,4 +50,10 @@
 /* Placeholder text */
 .dark .bn-is-empty:before {
   color: var(--app-text-muted);
+}
+
+@media (max-width: 768px) {
+  .bn-editor {
+    padding: 1rem;
+  }
 }

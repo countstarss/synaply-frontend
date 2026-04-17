@@ -41,6 +41,7 @@ export interface DocRecord {
   createdAt: number;
   updatedAt: number;
   lastEditedAt: number;
+  isProjectRootFolder?: boolean;
   canEdit: boolean;
   canDelete: boolean;
 }

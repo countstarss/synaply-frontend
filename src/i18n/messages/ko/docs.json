@@ -5,6 +5,7 @@
     "placeholder": "문서 출처 선택"
   },
   "source": {
+    "personal": "내 문서",
     "team": "팀 문서",
     "teamPersonal": "내 개인 문서"
   },
@@ -123,24 +124,43 @@
     "shared": {
       "documentMetric": "문서",
       "folderMetric": "폴더",
+      "structuredMetric": "구조화 문서",
+      "recentMetric": "이번 주 업데이트",
       "newDocTitle": "새 문서",
       "categoryTitle": "카테고리",
       "recentTitle": "최근 업데이트",
+      "recentDescription": "활성 문서를 앞으로 끌어와 맥락을 다시 찾지 않고 그대로 이어서 작업할 수 있게 합니다.",
+      "structuredTitle": "협업 패킷",
+      "structuredDescription": "브리프, 결정 기록, 검토 패킷, 인계 패킷을 한 작업면에 두어 불필요한 추적을 줄입니다.",
+      "workspaceTitle": "최상위 공간",
+      "workspaceDescription": "현재 문서 작업면의 주요 주제로 빠르게 다시 들어갈 수 있게 해 주는 진입점입니다.",
+      "projectSpacesTitle": "프로젝트 공간",
+      "projectSpacesDescription": "팀 문서는 프로젝트를 주축으로 정리합니다. 각 프로젝트는 브리프, 결정, 인계를 위한 안정적인 공간을 갖습니다.",
+      "otherSpacesTitle": "기타 최상위 공간",
+      "otherSpacesDescription": "특정 프로젝트에 직접 속하지 않는 팀 문서 공간은 여기에 둡니다.",
+      "openAction": "열기",
+      "enterSpace": "공간으로 이동",
+      "totalCount": "문서 {count}개",
       "folderContains": "{count}개 항목",
       "emptyFolder": "빈 폴더",
-      "updatedAt": "{value}에 업데이트"
+      "updatedAt": "{value}에 업데이트",
+      "projectSpaceMeta": "문서 {docs}개 · 하위 폴더 {folders}개"
     },
     "personal": {
+      "eyebrow": "개인 작업 공간",
       "title": "내 문서",
       "subtitle": "개인 문서 {count}개",
+      "heroDescription": "메모, 초안, 실행 맥락을 어수선한 임시 보관함이 아니라 차분하고 효율적인 작업면에 남깁니다.",
       "newDocDescription": "새 개인 문서 만들기",
       "emptyTitle": "아직 문서가 없습니다",
       "emptyDescription": "첫 문서를 만들어 아이디어를 기록하기 시작해 보세요.",
       "emptyAction": "문서 만들기"
     },
     "team": {
+      "eyebrow": "팀 지식 작업면",
       "title": "팀 문서",
       "subtitle": "팀 문서 {count}개",
+      "heroDescription": "프로젝트 맥락, 결정, 검토, 인계를 하나의 의도된 작업면에 모읍니다. 맥락을 되찾기 위해 채팅 기록을 다시 훑을 필요가 없습니다.",
       "documentMetric": "팀 문서",
       "newDocDescription": "새 팀 문서 만들기",
       "emptyTitle": "아직 팀 문서가 없습니다",
@@ -148,8 +168,10 @@
       "emptyAction": "팀 문서 만들기"
     },
     "teamPersonal": {
+      "eyebrow": "개인 작업 레이어",
       "title": "내 작업 문서",
       "subtitle": "개인 작업 문서 {count}개",
+      "heroDescription": "팀 맥락에 연결된 개인 메모, 분해, 준비 작업을 공유 면을 어지럽히지 않고 유지합니다.",
       "documentMetric": "작업 문서",
       "newDocDescription": "새 개인 작업 문서 만들기",
       "emptyTitle": "아직 개인 작업 문서가 없습니다",
@@ -167,14 +189,32 @@
     "emptyDescription": "아직 문서가 없습니다. 사이드바의 + 버튼을 눌러 만들어 보세요.",
     "selectDescription": "왼쪽에서 문서를 선택하면 편집을 시작할 수 있습니다."
   },
+  "emptyState": {
+    "eyebrow": "문서 작업 공간",
+    "emptyDescription": "아직 열려 있는 문서가 없습니다. 왼쪽 트리에서 찾아보거나 단축키로 바로 기록을 시작할 수 있습니다.",
+    "selectDescription": "왼쪽에서 기존 문서를 열거나 단축키로 바로 빈 문서를 새로 만들 수 있습니다.",
+    "shortcutsTitle": "사용 가능한 단축키",
+    "createHint": "아직 문서가 없다면 Cmd + N 으로 빈 문서를 바로 만들 수 있습니다.",
+    "selectHint": "더 넓게 편집하고 싶다면 Cmd + B 로 왼쪽 문서 사이드바를 숨기거나 다시 표시할 수 있습니다.",
+    "shortcuts": {
+      "newDoc": "빠른 새 문서",
+      "toggleSidebar": "문서 사이드바 전환",
+      "saveDoc": "현재 문서 저장"
+    }
+  },
   "sidebar": {
     "title": "문서",
     "searchPlaceholder": "문서 검색...",
     "newChildDoc": "하위 문서 만들기",
     "newDoc": "새 문서",
     "newFolder": "새 폴더",
+    "duplicate": "복제",
+    "duplicateSuffix": "복사본",
     "rename": "이름 바꾸기",
     "delete": "삭제",
+    "projectSpaces": "프로젝트 공간",
+    "otherSpaces": "기타 공간",
+    "projectSpaceBadge": "프로젝트",
     "emptySearch": "일치하는 문서를 찾지 못했습니다",
     "emptyTitle": "아직 문서가 없습니다",
     "emptyDescription": "위의 + 버튼을 눌러 만들어 보세요",
@@ -193,13 +233,17 @@
     "expand": "펼치기"
   },
   "tabs": {
-    "close": "닫기"
+    "close": "닫기",
+    "closeOthers": "다른 탭 닫기",
+    "closeAll": "모두 닫기"
   },
   "editor": {
     "save": "저장",
     "saving": "저장 중...",
     "cancel": "취소",
     "untitled": "이름 없는 문서",
+    "editable": "편집 가능",
+    "readonly": "읽기 전용",
     "clickToEdit": "제목을 클릭해 편집",
     "updatedAt": "{value}에 업데이트",
     "meta": {
@@ -219,7 +263,7 @@
     "errorStatus": "저장에 실패했습니다. 로컬 초안은 기기에 보존되었습니다.",
     "recoveredDraft": "로컬 초안을 복구했습니다",
     "draftPending": "로컬 초안이 동기화를 기다리는 중입니다",
-    "savedAt": "저장됨 • {value}",
+    "updatedAt": "{value}에 업데이트",
     "ready": "준비 완료",
     "shortcut": "{key} + S로 저장 • 30초마다 자동 저장"
   },
@@ -228,6 +272,8 @@
     "folderMeta": "폴더 • {value}에 생성",
     "editDescription": "설명 편집",
     "title": "폴더 설명",
+    "projectRootBadge": "프로젝트 공간",
+    "projectRootDescription": "이 폴더는 프로젝트가 자동으로 관리합니다. 안쪽 내용은 계속 편집할 수 있지만 폴더 자체는 프로젝트 이름과 생명주기에 맞춰 유지됩니다.",
     "placeholder": "폴더 설명 입력...",
     "saving": "저장 중...",
     "save": "저장",
@@ -236,8 +282,9 @@
     "emptyReadonly": "아직 폴더 설명이 없습니다",
     "tipsTitle": "팁",
     "tip1": "이 폴더는 문서를 정리하고 분류하는 데 사용합니다.",
-    "tip2": "폴더를 오른쪽 클릭하면 하위 문서나 하위 폴더를 만들 수 있습니다.",
+    "tip2": "폴더를 오른쪽 클릭하면 하위 문서를 만들 수 있습니다.",
     "tip3": "여기에 자세한 안내나 사용 메모를 남길 수 있습니다.",
+    "projectRootTip": "프로젝트가 존재하는 동안 이 루트 폴더는 삭제할 수 없습니다.",
     "visibility": "폴더 공개 범위: {value}"
   },
   "context": {

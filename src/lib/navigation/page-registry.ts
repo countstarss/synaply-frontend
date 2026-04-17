@@ -63,6 +63,7 @@ export const productPages = [
     label: "",
     labelKey: "nav.docs",
     href: "/docs",
+    borderlessShellPatterns: ["/docs", "/personal/doc"],
   },
   {
     id: "issues",

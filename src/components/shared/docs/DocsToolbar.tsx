@@ -3,39 +3,46 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { RiExpandLeftRightLine, RiContractLeftRightLine } from "react-icons/ri";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface DocsToolbarProps {
   isExpanded: boolean;
   onToggleExpand: () => void;
+  className?: string;
 }
 
 export default function DocsToolbar({
   isExpanded,
   onToggleExpand,
+  className,
 }: DocsToolbarProps) {
   const tDocs = useTranslations("docs");
 
   return (
-    <div className="absolute top-32 right-4 z-10">
-      <div className="rounded-xl border border-app-border bg-app-content-bg p-1 shadow-[0_16px_36px_rgba(15,23,42,0.12)] dark:shadow-black/20">
-        <button
-          onClick={onToggleExpand}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-app-text-secondary hover:text-app-text-primary hover:bg-app-button-hover rounded-md transition-colors"
-          title={isExpanded ? tDocs("toolbar.collapseTitle") : tDocs("toolbar.expandTitle")}
-        >
-          {isExpanded ? (
-            <>
-              <RiContractLeftRightLine className="w-4 h-4" />
-              {tDocs("toolbar.collapse")}
-            </>
-          ) : (
-            <>
-              <RiExpandLeftRightLine className="w-4 h-4" />
-              {tDocs("toolbar.expand")}
-            </>
-          )}
-        </button>
-      </div>
-    </div>
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={onToggleExpand}
+      title={
+        isExpanded
+          ? tDocs("toolbar.collapseTitle")
+          : tDocs("toolbar.expandTitle")
+      }
+      className={cn(
+        "h-9 rounded-lg border-app-border/60 bg-app-bg/70 px-3 text-app-text-secondary shadow-none backdrop-blur hover:bg-app-button-hover hover:text-app-text-primary",
+        className,
+      )}
+    >
+      {isExpanded ? (
+        <RiContractLeftRightLine className="size-4" />
+      ) : (
+        <RiExpandLeftRightLine className="size-4" />
+      )}
+      <span className="hidden sm:inline">
+        {isExpanded ? tDocs("toolbar.collapse") : tDocs("toolbar.expand")}
+      </span>
+    </Button>
   );
 }
