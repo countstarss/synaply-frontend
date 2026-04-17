@@ -34,6 +34,7 @@ export function IssueDocKindPanel({
   docs,
   locale,
   canCreate,
+  variant = "card",
 }: {
   workspaceId: string;
   workspaceType: "PERSONAL" | "TEAM";
@@ -41,6 +42,7 @@ export function IssueDocKindPanel({
   docs: DocRecord[];
   locale: string;
   canCreate: boolean;
+  variant?: "card" | "embedded";
 }) {
   const tIssues = useTranslations("issues");
   const tDocs = useTranslations("docs");
@@ -99,17 +101,19 @@ export function IssueDocKindPanel({
     }
   };
 
-  return (
-    <Card className="border-app-border bg-app-content-bg shadow-none">
-      <CardHeader className="border-b border-app-border p-4">
-        <CardTitle className="text-lg text-app-text-primary">
-          {tIssues("normalDetail.docCards.title")}
-        </CardTitle>
-        <p className="text-xs leading-5 text-app-text-muted">
-          {tIssues("normalDetail.docCards.subtitle")}
-        </p>
-      </CardHeader>
-      <CardContent className="p-4">
+  const title = tIssues("normalDetail.docCards.title");
+  const subtitle = tIssues("normalDetail.docCards.subtitle");
+
+  const panelContent = (
+    <>
+      {variant === "embedded" ? (
+        <div className="space-y-1 px-4 pt-4">
+          <h3 className="text-lg font-semibold text-app-text-primary">{title}</h3>
+          <p className="text-xs leading-5 text-app-text-muted">{subtitle}</p>
+        </div>
+      ) : null}
+
+      <div className={variant === "embedded" ? "p-4 pt-3" : ""}>
         <DocKindCards
           docs={docs}
           slots={ISSUE_DOC_SLOTS}
@@ -118,7 +122,23 @@ export function IssueDocKindPanel({
           onOpenDoc={openDoc}
           onCreateDoc={handleCreateDoc}
         />
-      </CardContent>
+      </div>
+    </>
+  );
+
+  if (variant === "embedded") {
+    return panelContent;
+  }
+
+  return (
+    <Card className="border-app-border bg-app-content-bg shadow-none">
+      <CardHeader className="border-b border-app-border p-4">
+        <CardTitle className="text-lg text-app-text-primary">{title}</CardTitle>
+        <p className="text-xs leading-5 text-app-text-muted">
+          {subtitle}
+        </p>
+      </CardHeader>
+      <CardContent className="p-4">{panelContent}</CardContent>
     </Card>
   );
 }

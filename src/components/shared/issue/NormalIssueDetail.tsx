@@ -43,6 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { IssueDescriptionTemplateAction } from "@/components/shared/issue/IssueDescriptionTemplateAction";
 import { IssueDocKindPanel } from "@/components/shared/issue/IssueDocKindPanel";
@@ -509,6 +510,9 @@ export default function NormalIssueDetail({
   const [isDocPickerOpen, setIsDocPickerOpen] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<DocRecord | null>(null);
   const [isAiThreadOpen, setIsAiThreadOpen] = useState(false);
+  const [rightPanelTab, setRightPanelTab] = useState<"discussion" | "docs">(
+    "discussion",
+  );
 
   const { data: projects = [] } = useProjects(workspaceId);
   const { data: issueStates = [] } = useIssueStates(workspaceId, {
@@ -678,6 +682,14 @@ export default function NormalIssueDetail({
       setEditingField(null);
     }
   }, [editingField, isLoadingIssue, issue]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    setRightPanelTab("discussion");
+  }, [isOpen, issueId]);
 
   useEffect(() => {
     const realtimeField =
@@ -1401,32 +1413,59 @@ export default function NormalIssueDetail({
           </ScrollArea>
         </Card>
 
-        <div className="flex min-h-[320px] flex-col gap-2 xl:min-h-0">
-          <IssueDocKindPanel
-            workspaceId={workspaceId}
-            workspaceType={workspaceType === "TEAM" ? "TEAM" : "PERSONAL"}
-            issue={localIssue}
-            docs={issueDocs}
-            locale={locale}
-            canCreate={canEditIssue}
-          />
-
-          <Card className="flex min-h-[320px] flex-1 flex-col overflow-hidden border-app-border bg-app-content-bg shadow-none xl:min-h-0">
+        <Tabs
+          value={rightPanelTab}
+          onValueChange={(value) =>
+            setRightPanelTab(value as "discussion" | "docs")
+          }
+          className="min-h-[320px] xl:min-h-0"
+        >
+          <Card className="flex h-full min-h-[320px] flex-col overflow-hidden border-app-border bg-app-content-bg shadow-none xl:min-h-0">
             <CardHeader className="border-b border-app-border p-4">
-              <CardTitle className="flex items-center gap-2 text-lg text-app-text-primary">
-                <RiFileTextLine className="h-5 w-5" />
-                {tIssues("tabs.discussion.title")}
-              </CardTitle>
+              <TabsList
+                variant="line"
+                className="h-auto w-full gap-2 bg-transparent p-0"
+              >
+                <TabsTrigger
+                  value="discussion"
+                  className="data-[state=active]:bg-sky-500/10 data-[state=active]:text-sky-700"
+                >
+                  {tIssues("tabs.discussion.title")}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="docs"
+                  className="data-[state=active]:bg-sky-500/10 data-[state=active]:text-sky-700"
+                >
+                  {tIssues("normalDetail.docCards.title")}
+                </TabsTrigger>
+              </TabsList>
             </CardHeader>
-            <CardContent className="min-h-0 flex-1 p-0">
-              <DiscussionTab
-                issueId={issueId}
-                workspaceId={workspaceId}
-                members={discussionMembers}
-              />
+
+            <CardContent className="min-h-0 flex flex-1 flex-col p-0">
+              <TabsContent value="discussion" className="mt-0 min-h-0 flex-1">
+                <DiscussionTab
+                  issueId={issueId}
+                  workspaceId={workspaceId}
+                  members={discussionMembers}
+                />
+              </TabsContent>
+              <TabsContent
+                value="docs"
+                className="mt-0 min-h-0 flex-1 overflow-y-auto"
+              >
+                <IssueDocKindPanel
+                  workspaceId={workspaceId}
+                  workspaceType={workspaceType === "TEAM" ? "TEAM" : "PERSONAL"}
+                  issue={localIssue}
+                  docs={issueDocs}
+                  locale={locale}
+                  canCreate={canEditIssue}
+                  variant="embedded"
+                />
+              </TabsContent>
             </CardContent>
           </Card>
-        </div>
+        </Tabs>
       </div>
 
       <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-3 rounded-lg border border-app-border bg-app-content-bg px-4 py-2 text-xs text-app-text-muted">
