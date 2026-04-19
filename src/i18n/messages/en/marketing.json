@@ -1,10 +1,10 @@
 {
   "site": {
-    "tagline": "A focused remote collaboration tool for small teams.",
+    "tagline": "Remote collaboration software for small startup teams.",
     "hero": {
-      "eyebrow": "Remote collaboration software for small teams",
+      "eyebrow": "Remote collaboration software for small startup teams",
       "title": "Bring projects, workflows, issues, and docs into one deliberate rhythm.",
-      "subtitle": "Synaply gives small distributed teams a shared context for planning, execution, handoff, and documentation so work keeps moving without constant follow-up.",
+      "subtitle": "Synaply gives small startup teams a shared context for planning, execution, handoff, and documentation so remote work keeps moving quickly without constant follow-up.",
       "primaryCta": "Start with clarity",
       "secondaryCta": "See the workflow in motion",
       "returningCta": "Enter your workspace"
@@ -279,12 +279,12 @@
       "titlePrefix": "We want remote teams to work with more",
       "titleFocus": "clarity",
       "titleSuffix": ".",
-      "description": "Synaply is built on a simple belief: the best collaboration systems are not faster inboxes. They are clearer environments where goals, process, work, and documentation belong to one logic.",
+      "description": "Synaply is built on a simple belief: the best collaboration software is not a faster inbox. It is a clearer environment where goals, process, work, and documentation belong to one logic.",
       "canvasWord": "order with momentum"
     },
     "story": [
       "Synaply was not designed to help teams manage more tasks.",
-      "It is a focused remote collaboration tool for small teams, where different roles can move through the same project context naturally.",
+      "It is focused remote collaboration software for small startup teams, where different roles can move through the same project context naturally.",
       "When workflow is legible, context is intact, and docs stay attached to execution, teams can focus on delivery again."
     ],
     "principlesSection": {
@@ -316,7 +316,7 @@
     },
     "symbol": {
       "label": "Operating symbol",
-      "description": "For us, a collaboration system is valuable only if it can keep holding context as work moves."
+      "description": "For us, collaboration software is valuable only if it can keep holding context as work moves."
     },
     "closing": "Less checking in. More work arriving where it needs to be."
   },
@@ -403,8 +403,8 @@
     },
     "pages": {
       "landing": {
-        "title": "Remote Collaboration Software for Small Remote Teams",
-        "description": "Synaply helps small remote teams stay aligned with clear execution, visible handoffs, and shared context across projects, issues, workflows, docs, and updates.",
+        "title": "Remote Collaboration Software for Small Startup Teams",
+        "description": "Synaply helps small startup teams stay aligned with clear execution, visible handoffs, and shared context across projects, issues, workflows, docs, and updates.",
         "keywords": [
           "remote collaboration software",
           "remote team collaboration tool",
@@ -416,7 +416,7 @@
       },
       "pricing": {
         "title": "Pricing for Remote Team Collaboration Software",
-        "description": "Explore Synaply pricing for remote product, design, engineering, and operations teams that need a calmer workflow, visible handoffs, and one shared execution system.",
+        "description": "Explore Synaply pricing for remote product, design, engineering, and operations teams that need a calmer workflow, visible handoffs, and one shared execution context.",
         "keywords": [
           "collaboration software pricing",
           "remote team software pricing",

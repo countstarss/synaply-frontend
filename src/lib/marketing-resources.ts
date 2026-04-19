@@ -156,7 +156,7 @@ const marketingResources: Record<MarketingContentLocale, MarketingResourcesDicti
       overviewLabel: "Execution hub",
       highlightsLabel: "What this page is meant to help with",
       previewEyebrow: "Product surface",
-      previewTitle: "Keep the workflow, docs, and ownership in one visible system.",
+      previewTitle: "Keep the workflow, docs, and ownership in one visible workspace.",
       previewDescription:
         "These pages should lead into a real product surface, not an abstract SEO shell. Synaply keeps projects, issues, workflows, and docs close enough that handoffs stay legible.",
       checklistEyebrow: "Use this when",
@@ -802,7 +802,7 @@ const marketingResources: Record<MarketingContentLocale, MarketingResourcesDicti
             breadcrumbLabel: "Remote Product Teams",
           },
           eyebrow: "Use case / Remote product teams",
-          title: "For small remote product teams that need one calmer execution system.",
+          title: "For small remote product teams that need a calmer collaboration tool.",
           summary:
             "Synaply fits teams that are too collaborative for simple task lists and too focused to want a bloated project-management suite. It is meant for product, design, engineering, and ops moving in one project context.",
           cardDescription:
@@ -858,7 +858,7 @@ const marketingResources: Record<MarketingContentLocale, MarketingResourcesDicti
           ],
           ctaTitle: "Build a calmer operating rhythm for the whole team.",
           ctaDescription:
-            "If your team is spending too much energy stitching together tools and follow-ups, start with a system that keeps execution context intact from project to delivery.",
+            "If your team is spending too much energy stitching together tools and follow-ups, start with software that keeps execution context intact from project to delivery.",
         },
       ),
       "use-cases/design-engineering-handoff": createPage(
@@ -1615,7 +1615,7 @@ const marketingResources: Record<MarketingContentLocale, MarketingResourcesDicti
       overviewLabel: "执行专题",
       highlightsLabel: "这页主要解决的问题",
       previewEyebrow: "产品界面",
-      previewTitle: "把 workflow、docs 和 owner 放进同一个可见系统里。",
+      previewTitle: "把 workflow、docs 和 owner 放进同一个可见的协作空间里。",
       previewDescription:
         "这些页面不应该只是 SEO 壳子，而应该回到真实产品界面。Synaply 把 projects、issues、workflows 和 docs 收在一起，让 handoff 不再依赖口头同步。",
       checklistEyebrow: "适用场景",
@@ -1735,7 +1735,7 @@ const marketingResources: Record<MarketingContentLocale, MarketingResourcesDicti
             "设计交接流程",
             "异步发布推进",
             "跨职能团队协作",
-            "远程执行系统",
+            "远程协作软件",
           ],
           breadcrumbLabel: "场景页",
         },
@@ -2244,13 +2244,13 @@ const marketingResources: Record<MarketingContentLocale, MarketingResourcesDicti
         "remote-product-teams",
         {
           seo: {
-            title: "适合小型远程产品团队的协作系统",
+            title: "适合小型远程产品团队的协作软件",
             description:
               "Synaply 适合 3 到 15 人的远程跨职能团队，把 projects、issues、workflows、docs、blocker 和 async updates 串成一个共享执行语境。",
             keywords: [
               "远程产品团队协作",
-              "小团队协作系统",
-              "跨职能团队执行系统",
+              "小团队协作软件",
+              "跨职能团队协作软件",
               "远程执行工具",
               "异步协作平台",
             ],
@@ -2261,7 +2261,7 @@ const marketingResources: Record<MarketingContentLocale, MarketingResourcesDicti
           summary:
             "Synaply 更适合那些已经跨 product、design、engineering、ops 协作，但又不想上来就用重型 enterprise PM 套件的小型远程团队。",
           cardDescription:
-            "面向 3-15 人 product、design、engineering、ops 团队的更克制执行系统。",
+            "面向 3-15 人 product、design、engineering、ops 团队的更克制远程协作软件。",
           highlights: [
             "核心角色在同一 execution context 里推进",
             "减少靠会议维持协作秩序",
@@ -2275,7 +2275,7 @@ const marketingResources: Record<MarketingContentLocale, MarketingResourcesDicti
               [
                 "产品背景在 design 和 engineering 之间逐渐失真。",
                 "docs 和 decisions 离实际 work item 越来越远。",
-                "进度变得依赖个人 follow-up 习惯，而不是系统设计。",
+                "进度变得依赖个人 follow-up 习惯，而不是产品设计。",
               ],
             ),
             createSection(
@@ -2291,7 +2291,7 @@ const marketingResources: Record<MarketingContentLocale, MarketingResourcesDicti
             createSection(
               "谁不适合用这种逻辑来选工具",
               "如果你的核心痛点不是 execution clarity，就不一定要选 Synaply。",
-              "需要 built-in chat、重型 planning、资源排期或超大规模 enterprise 配置的团队，可能更适合其它系统。Synaply 更聚焦于小型跨职能团队的 momentum。",
+              "需要 built-in chat、重型 planning、资源排期或超大规模 enterprise 配置的团队，可能更适合其它软件。Synaply 更聚焦于小型跨职能团队的 momentum。",
               [
                 "不适合 planning-heavy 的大组织。",
                 "不想把 chat 变成产品重心。",
@@ -2304,7 +2304,7 @@ const marketingResources: Record<MarketingContentLocale, MarketingResourcesDicti
             "把 product、design、engineering、ops 收进同一条执行链",
             "在更少会议里保持远程团队同频",
             "让 blocker、handoff 和 decision 都变成可见对象",
-            "寻找比泛项目管理工具更聚焦的小团队系统",
+            "寻找比泛项目管理工具更聚焦的小团队协作软件",
           ],
           relatedPaths: [
             getMarketingDetailPath("features", "handoffs"),
