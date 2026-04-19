@@ -83,10 +83,13 @@ const getErrorMessage = async (
 const normalizeTeamMember = (member: TeamMember): TeamMember => ({
   ...member,
   user: {
-    ...member.user,
-    name: member.user.name ?? undefined,
-    avatarUrl: member.user.avatarUrl ?? member.user.avatar_url ?? undefined,
-    avatar_url: member.user.avatar_url ?? member.user.avatarUrl ?? undefined,
+    id: member.user?.id ?? member.userId,
+    email: member.user?.email ?? "",
+    name: member.user?.name ?? undefined,
+    avatarUrl:
+      member.user?.avatarUrl ?? member.user?.avatar_url ?? undefined,
+    avatar_url:
+      member.user?.avatar_url ?? member.user?.avatarUrl ?? undefined,
   },
 });
 
